@@ -46,16 +46,129 @@ class TicketCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: ColorPalette.opsBorder),
             ),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _Stripe(color: _stripeColor),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                      child: _CardBody(ticket: ticket),
+                  // Title row with small colored dot and optional price on right
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.only(right: 10, top: 4),
+                        decoration: BoxDecoration(
+                          color: _stripeColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          ticket.title,
+                          style: TypographyManager.cardTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // placeholder for price/amount if showable
+                      // keep space but hide if not available
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Meta row: room, department, time
+                  _MetaRow(ticket: ticket),
+                  const SizedBox(height: 12),
+
+                  // Item preview row (avatar + item title + small subtitle)
+                  if (ticket.items.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: ColorPalette.opsSurfaceSubtle,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          // avatar / thumbnail
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: ColorPalette.grey100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.restaurant_menu_rounded,
+                              size: 18,
+                              color: ColorPalette.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  ticket.items.first.title,
+                                  style: TypographyManager.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  ticket.items.first.subtitle,
+                                  style: TypographyManager.bodySmall.copyWith(
+                                    color: ColorPalette.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ColorPalette.opsPurple,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                            ),
+                            icon: const Icon(Icons.play_arrow, size: 16),
+                            label: Text(
+                              'Start Work',
+                              style: TypographyManager.labelSmall.copyWith(
+                                color: ColorPalette.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+
+                  const SizedBox(height: 10),
+                  // Footer: status badge and optional ETA
+                  Row(
+                    children: [
+                      _StatusBadge(ticket: ticket),
+                      const Spacer(),
+                      if (ticket.eta != null &&
+                          ticket.status != TicketStatus.done)
+                        _EtaBadge(eta: ticket.eta!, overdue: ticket.isOverdue),
+                    ],
                   ),
                 ],
               ),
@@ -64,16 +177,6 @@ class TicketCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _Stripe extends StatelessWidget {
-  final Color color;
-  const _Stripe({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(width: 4, color: color);
   }
 }
 
@@ -214,39 +317,25 @@ class _StatusBadge extends StatelessWidget {
 
   ({String label, Color color}) _spec(AppLocalizations s) {
     if (ticket.isOverdue) {
-      return (
-        label: s.statusOverdue,
-        color: ColorPalette.statusOverdue,
-      );
+      return (label: s.statusOverdue, color: ColorPalette.statusOverdue);
     }
     switch (ticket.status) {
       case TicketStatus.incoming:
         return (
-          label: ticket.assigneeName == null
-              ? s.statusUnassigned
-              : s.statusNew,
+          label: ticket.assigneeName == null ? s.statusUnassigned : s.statusNew,
           color: ColorPalette.statusUnassigned,
         );
       case TicketStatus.accepted:
-        return (
-          label: s.statusAccepted,
-          color: ColorPalette.statusInProgress,
-        );
+        return (label: s.statusAccepted, color: ColorPalette.statusInProgress);
       case TicketStatus.inProgress:
         return (
           label: s.statusInProgress,
           color: ColorPalette.statusInProgress,
         );
       case TicketStatus.done:
-        return (
-          label: s.statusDone,
-          color: ColorPalette.statusDone,
-        );
+        return (label: s.statusDone, color: ColorPalette.statusDone);
       case TicketStatus.cancelled:
-        return (
-          label: s.statusCancelled,
-          color: ColorPalette.statusUnassigned,
-        );
+        return (label: s.statusCancelled, color: ColorPalette.statusUnassigned);
     }
   }
 
@@ -259,10 +348,7 @@ class _StatusBadge extends StatelessWidget {
         Container(
           width: 6,
           height: 6,
-          decoration: BoxDecoration(
-            color: spec.color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: spec.color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
         Text(
