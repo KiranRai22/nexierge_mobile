@@ -76,17 +76,52 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
                     ? '?'
                     : session.displayName[0].toUpperCase(),
                 hasUnreadNotifications: true,
-                onThemeToggle: () => ref
-                    .read(themeModeControllerProvider.notifier)
-                    .toggle(),
+                onThemeToggle: () =>
+                    ref.read(themeModeControllerProvider.notifier).toggle(),
                 onLanguageTap: () => LanguagePickerSheet.show(context),
                 onNotifications: () => _showNotificationsHint(context),
               ),
             ),
+            // Title row: All Tickets + small filter button
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: _Greeting(name: session.displayName),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.l10n.ticketsTitle, // 'All Tickets'
+                      style: TypographyManager.headlineSmall.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 24,
+                      ),
+                    ),
+                  ),
+                  // circular filter button matching screenshot
+                  Semantics(
+                    button: true,
+                    label: context.l10n.filterTitle,
+                    child: InkWell(
+                      onTap: () => FilterDepartmentSheet.show(context),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: ColorPalette.opsSurfaceSubtle,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Icon(
+                          Icons.filter_list,
+                          size: 18,
+                          color: ColorPalette.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
+
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: ScopeSegmentedTabs(
@@ -101,6 +136,48 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: _SearchField(controller: _searchCtl),
             ),
+            // Quick filter chips (All / Accepted / In Progress / Overdue)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: asyncList.when(
+                data: (v) {
+                  final allCount = v.totalCount;
+                  final acceptedCount = v.acceptedCount;
+                  final inProgressCount = v.inProgressCount;
+                  final overdueCount = v.overdueCount;
+                  return SizedBox(
+                    height: 40,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        _FilterChip(
+                          label: context.l10n.filterAll,
+                          count: allCount,
+                          selected: true,
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: context.l10n.statusAccepted,
+                          count: acceptedCount,
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: context.l10n.statusInProgress,
+                          count: inProgressCount,
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: context.l10n.statusOverdue,
+                          count: overdueCount,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: asyncList.when(
@@ -109,16 +186,10 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
                   inProgress: v.kpiInProgress,
                   overdue: v.kpiOverdue,
                 ),
-                loading: () => const KpiStrip(
-                  incoming: 0,
-                  inProgress: 0,
-                  overdue: 0,
-                ),
-                error: (_, __) => const KpiStrip(
-                  incoming: 0,
-                  inProgress: 0,
-                  overdue: 0,
-                ),
+                loading: () =>
+                    const KpiStrip(incoming: 0, inProgress: 0, overdue: 0),
+                error: (_, __) =>
+                    const KpiStrip(incoming: 0, inProgress: 0, overdue: 0),
               ),
             ),
             Padding(
@@ -175,8 +246,7 @@ class _SearchField extends ConsumerWidget {
     return TextField(
       controller: controller,
       style: TypographyManager.bodyMedium,
-      onChanged: (v) =>
-          ref.read(ticketsSearchQueryProvider.notifier).state = v,
+      onChanged: (v) => ref.read(ticketsSearchQueryProvider.notifier).state = v,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
         hintText: context.l10n.ticketsSearchHint,
@@ -189,8 +259,10 @@ class _SearchField extends ConsumerWidget {
         ),
         filled: true,
         fillColor: ColorPalette.opsSurfaceSubtle,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: ColorPalette.opsBorder),
@@ -233,14 +305,12 @@ class _TicketsList extends StatelessWidget {
         parent: BouncingScrollPhysics(),
       ),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-      itemCount: sections.fold<int>(
-        0,
-        (sum, s) => sum + s.tickets.length + 1,
-      ),
+      itemCount: sections.fold<int>(0, (sum, s) => sum + s.tickets.length + 1),
       itemBuilder: (context, raw) {
         var i = raw;
         for (final s in sections) {
-          if (i == 0) return _SectionHeader(title: s.title, count: s.tickets.length);
+          if (i == 0)
+            return _SectionHeader(title: s.title, count: s.tickets.length);
           i -= 1;
           if (i < s.tickets.length) {
             return Padding(
@@ -330,11 +400,7 @@ class _EmptyView extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: 80),
-        Icon(
-          Icons.inbox_outlined,
-          size: 56,
-          color: ColorPalette.textDisabled,
-        ),
+        Icon(Icons.inbox_outlined, size: 56, color: ColorPalette.textDisabled),
         const SizedBox(height: 12),
         Center(
           child: Text(
