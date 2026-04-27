@@ -90,7 +90,7 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      context.l10n.ticketsTitle, // 'All Tickets'
+                      '${context.l10n.activityTypeAll} ${context.l10n.navTickets}',
                       style: TypographyManager.headlineSmall.copyWith(
                         fontWeight: FontWeight.w800,
                         fontSize: 24,
