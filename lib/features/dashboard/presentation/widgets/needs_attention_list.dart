@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../tickets/domain/models/department.dart';
 import '../providers/dashboard_view.dart';
 
 /// "Needs attention" block: list of high-priority tickets, or an
-/// "All caught up" empty state when nothing is urgent.
+/// "All clear" empty state when nothing is urgent. Mirrors the React design
+/// in `docs/ai_prompts/Dashboard.tsx`.
 class NeedsAttentionList extends StatelessWidget {
   final List<AttentionItem> items;
-  final Department? deptHint;
   final void Function(AttentionItem item) onItemTap;
   final VoidCallback onViewAll;
 
@@ -20,7 +20,6 @@ class NeedsAttentionList extends StatelessWidget {
     required this.items,
     required this.onItemTap,
     required this.onViewAll,
-    this.deptHint,
   });
 
   @override
@@ -47,7 +46,7 @@ class NeedsAttentionList extends StatelessWidget {
           ),
         ),
         if (items.isEmpty)
-          _AllCaughtUpEmpty(deptHint: deptHint)
+          const _AllClearEmpty()
         else
           Column(
             children: [
@@ -90,16 +89,12 @@ class _ViewAllButton extends StatelessWidget {
   }
 }
 
-class _AllCaughtUpEmpty extends StatelessWidget {
-  final Department? deptHint;
-  const _AllCaughtUpEmpty({this.deptHint});
+class _AllClearEmpty extends StatelessWidget {
+  const _AllClearEmpty();
 
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
-    final body = deptHint == null
-        ? s.dashboardAllCaughtUpGeneric
-        : s.dashboardAllCaughtUpDept(deptHint!.label(s));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
@@ -112,14 +107,14 @@ class _AllCaughtUpEmpty extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.done_all_rounded,
+              LucideIcons.checkCheck,
               color: ColorPalette.activityDoneFg,
               size: 22,
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            s.dashboardAllCaughtUp,
+            s.dashboardAllClearTitle,
             style: TypographyManager.titleSmall.copyWith(
               color: ColorPalette.textPrimary,
               fontWeight: FontWeight.w600,
@@ -127,10 +122,18 @@ class _AllCaughtUpEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            body,
+            s.dashboardAllClearBody,
             textAlign: TextAlign.center,
             style: TypographyManager.bodyMedium.copyWith(
               color: ColorPalette.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            s.dashboardAllClearHint,
+            textAlign: TextAlign.center,
+            style: TypographyManager.bodySmall.copyWith(
+              color: ColorPalette.textDisabled,
             ),
           ),
         ],
@@ -145,7 +148,8 @@ class _AttentionRow extends StatelessWidget {
 
   const _AttentionRow({required this.item, required this.onTap});
 
-  ({Color iconBg, Color iconFg, Color pillBg, Color pillFg}) _palette() {
+  ({Color iconBg, Color iconFg, Color pillBg, Color pillFg, IconData glyph})
+  _palette() {
     switch (item.severity) {
       case AttentionSeverity.overdue:
         return (
@@ -153,38 +157,52 @@ class _AttentionRow extends StatelessWidget {
           iconFg: ColorPalette.activityOverdueFg,
           pillBg: ColorPalette.activityOverdueBg,
           pillFg: ColorPalette.activityOverdueFg,
+          glyph: LucideIcons.circleAlert,
         );
-      case AttentionSeverity.warning:
+      case AttentionSeverity.dueSoon:
         return (
           iconBg: ColorPalette.chipManualBg,
           iconFg: ColorPalette.chipManualFg,
           pillBg: ColorPalette.chipManualBg,
           pillFg: ColorPalette.chipManualFg,
+          glyph: LucideIcons.clock,
         );
-      case AttentionSeverity.eta:
+      case AttentionSeverity.notStarted:
         return (
           iconBg: ColorPalette.chipCatalogBg,
           iconFg: ColorPalette.chipCatalogFg,
           pillBg: ColorPalette.chipCatalogBg,
           pillFg: ColorPalette.chipCatalogFg,
+          glyph: LucideIcons.circlePause,
+        );
+      case AttentionSeverity.needsAck:
+        return (
+          iconBg: ColorPalette.kpiNeutralTint,
+          iconFg: ColorPalette.textSecondary,
+          pillBg: ColorPalette.kpiNeutralTint,
+          pillFg: ColorPalette.textSecondary,
+          glyph: LucideIcons.circlePlay,
         );
     }
   }
 
   String _pillLabel(AppLocalizations s) {
-    if (item.severity == AttentionSeverity.eta) {
-      return s.dashboardEtaPill(item.waitMin);
+    switch (item.severity) {
+      case AttentionSeverity.overdue:
+        return s.dashboardOverduePill(item.minutes);
+      case AttentionSeverity.dueSoon:
+        return s.dashboardDueSoonPill(item.minutes < 0 ? 0 : item.minutes);
+      case AttentionSeverity.notStarted:
+        return s.dashboardNotStartedPill;
+      case AttentionSeverity.needsAck:
+        return s.dashboardWaitingPill(item.minutes);
     }
-    return s.dashboardWaitPill(item.waitMin);
   }
 
   String _subtitle(AppLocalizations s) {
     final parts = <String>[
       s.dashboardRoomPrefix(item.ticket.room.number),
       item.ticket.department.label(s),
-      if (item.severity == AttentionSeverity.eta &&
-          item.ticket.assigneeName != null)
-        item.ticket.assigneeName!,
     ];
     return parts.join(' · ');
   }
@@ -193,68 +211,66 @@ class _AttentionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.l10n;
     final p = _palette();
+    final radius = BorderRadius.circular(12);
     return Material(
       color: ColorPalette.opsSurface,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: radius,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
+        borderRadius: radius,
+        child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: radius,
             border: Border.all(color: ColorPalette.opsBorder, width: 1),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration:
-                    BoxDecoration(color: p.iconBg, shape: BoxShape.circle),
-                child: Icon(
-                  item.severity == AttentionSeverity.overdue
-                      ? Icons.error_outline
-                      : Icons.access_time_rounded,
-                  color: p.iconFg,
-                  size: 18,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: p.iconBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(p.glyph, color: p.iconFg, size: 18),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      item.ticket.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TypographyManager.bodyMedium.copyWith(
-                        color: ColorPalette.textPrimary,
-                        fontWeight: FontWeight.w600,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item.ticket.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TypographyManager.bodyMedium.copyWith(
+                          color: ColorPalette.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _subtitle(s),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TypographyManager.bodySmall.copyWith(
-                        color: ColorPalette.textSecondary,
+                      const SizedBox(height: 2),
+                      Text(
+                        _subtitle(s),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TypographyManager.bodySmall.copyWith(
+                          color: ColorPalette.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _SeverityPill(
-                label: _pillLabel(s),
-                bg: p.pillBg,
-                fg: p.pillFg,
-                showClock: item.severity != AttentionSeverity.eta,
-              ),
-            ],
+                const SizedBox(width: 8),
+                _SeverityPill(
+                  label: _pillLabel(s),
+                  bg: p.pillBg,
+                  fg: p.pillFg,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -266,13 +282,11 @@ class _SeverityPill extends StatelessWidget {
   final String label;
   final Color bg;
   final Color fg;
-  final bool showClock;
 
   const _SeverityPill({
     required this.label,
     required this.bg,
     required this.fg,
-    required this.showClock,
   });
 
   @override
@@ -283,22 +297,13 @@ class _SeverityPill extends StatelessWidget {
         color: bg,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (showClock) ...[
-            Icon(Icons.access_time_rounded, size: 12, color: fg),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: TypographyManager.labelSmall.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w600,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: TypographyManager.labelSmall.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w600,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
       ),
     );
   }

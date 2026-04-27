@@ -19,6 +19,9 @@ Dio _buildDio({String? authToken}) {
       contentType: APIEndpoints.contentTypeJson,
       responseType: ResponseType.json,
       validateStatus: (status) => status != null && status < 500,
+      headers: {
+        APIEndpoints.clientHeader: APIEndpoints.clientHeaderValue,
+      },
     ),
   );
 

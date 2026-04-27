@@ -12,12 +12,12 @@ sealed class LoginCredentials {
 class EmailPasswordCredentials extends LoginCredentials {
   final String email;
   final String password;
-  final String deviceToken; // Optional FCM token for push notifications
+  final String fcm_token; // Optional FCM token for push notifications
 
   const EmailPasswordCredentials({
     required this.email,
     required this.password,
-    required this.deviceToken,
+    required this.fcm_token,
   });
 }
 
@@ -28,11 +28,11 @@ class EmployeeCodeCredentials extends LoginCredentials {
   /// Trimmed only.
   final String loginCode;
 
-  final String deviceToken; // Optional FCM token for push notifications
+  final String fcm_token; // Optional FCM token for push notifications
 
   const EmployeeCodeCredentials({
     required this.employeeCode,
     required this.loginCode,
-    required this.deviceToken,
+    required this.fcm_token,
   });
 }

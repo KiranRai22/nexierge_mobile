@@ -1,139 +1,154 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/i18n/app_locale.dart';
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/i18n/language_picker_sheet.dart';
-import '../../../../core/i18n/locale_controller.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../shell/presentation/widgets/coming_soon_view.dart';
+import '../../../../l10n/generated/app_localizations.dart';
+import '../../domain/entities/user_profile.dart';
+import '../providers/user_profile_controller.dart';
+import '../widgets/profile_header_card.dart';
+import '../widgets/profile_info_section.dart';
+import '../widgets/profile_language_card.dart';
+import '../widgets/profile_logout_button.dart';
+import '../widgets/profile_theme_card.dart';
 
-/// Bottom-nav slot for Profile.
-///
-/// First-class controls (language, eventually theme + sign-out) live at the
-/// top as settings tiles. Anything we haven't built yet falls into the
-/// "Coming soon" view below so the tab still feels finished.
+/// Profile tab. Renders the avatar header, account/work info sections, the
+/// language preference, and the logout CTA. Mirrors the design captured in
+/// the conversion plan screenshots — see also `docs/05_UI_IMPLEMENTATION_RULES.md`
+/// for the spacing / palette discipline this screen follows.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  void _showAvatarComingSoon(BuildContext context) {
+    final s = context.l10n;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(s.profileChangeAvatarComingSoon)),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final s = context.l10n;
-    final activeLocale =
-        ref.watch(localeControllerProvider).valueOrNull ?? AppLocale.system;
+    final c = context.appColors;
+    final asyncProfile = ref.watch(userProfileControllerProvider);
 
-    return Scaffold(
-      backgroundColor: ColorPalette.opsSurface,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 12),
-            _SectionHeader(label: s.profileSectionPreferences),
-            _SettingsTile(
-              icon: Icons.language_outlined,
-              label: s.languageTitle,
-              trailing: activeLocale.label(s),
-              onTap: () => LanguagePickerSheet.show(context),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: ComingSoonView(
-                icon: Icons.person_outline,
-                description: s.comingSoonProfile,
+    return Container(
+      color: c.bgSubtle,
+      child: SafeArea(
+        bottom: false,
+        child: asyncProfile.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                e.toString(),
+                textAlign: TextAlign.center,
+                style: TypographyManager.bodyMedium.copyWith(color: c.fgSubtle),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String label;
-  const _SectionHeader({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Text(
-        label.toUpperCase(),
-        style: TypographyManager.labelSmall.copyWith(
-          color: ColorPalette.textSecondary,
-          letterSpacing: 0.6,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String trailing;
-  final VoidCallback onTap;
-  const _SettingsTile({
-    required this.icon,
-    required this.label,
-    required this.trailing,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: ColorPalette.opsSurface,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: const BoxDecoration(
-            border: Border(
-              top: BorderSide(color: ColorPalette.opsDividerSubtle),
-              bottom: BorderSide(color: ColorPalette.opsDividerSubtle),
             ),
           ),
-          child: Row(
+          data: (profile) => _ProfileBody(
+            profile: profile,
+            onChangeAvatar: () => _showAvatarComingSoon(context),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileBody extends StatelessWidget {
+  final UserProfile profile;
+  final VoidCallback onChangeAvatar;
+
+  const _ProfileBody({required this.profile, required this.onChangeAvatar});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Pinned: the avatar block stays anchored while the info sections
+        // scroll underneath it.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: ProfileHeaderCard(
+            profile: profile,
+            onChangeAvatar: onChangeAvatar,
+          ),
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: ColorPalette.opsPurpleSoft,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: ColorPalette.opsPurple),
+              ProfileInfoSection(
+                title: s.profileSectionAccountInformation,
+                rows: [
+                  ProfileInfoRow(
+                    label: s.profileFieldName,
+                    value: profile.fullName,
+                  ),
+                  ProfileInfoRow(
+                    label: s.profileFieldEmail,
+                    value: profile.email,
+                  ),
+                  ProfileInfoRow(
+                    label: s.profileFieldEmployeeCode,
+                    value: profile.employeeCode ?? s.profileFieldEmptyValue,
+                  ),
+                  ProfileInfoRow(
+                    label: s.profileFieldRole,
+                    value: profile.role,
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TypographyManager.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
+              const SizedBox(height: 24),
+              ProfileInfoSection(
+                title: s.profileSectionWorkInformation,
+                rows: [
+                  ProfileInfoRow(
+                    label: s.profileFieldDepartments,
+                    value: profile.departments.join(', '),
+                  ),
+                  ProfileInfoRow(
+                    label: s.profileFieldStatus,
+                    value: _statusLabel(s, profile.status),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+                child: Builder(
+                  builder: (context) => Text(
+                    s.profileSectionPreferences.toUpperCase(),
+                    style: TypographyManager.kpiLabel.copyWith(
+                      color: context.appColors.fgSubtle,
+                      letterSpacing: 0.6,
+                    ),
                   ),
                 ),
               ),
-              Text(
-                trailing,
-                style: TypographyManager.bodySmall.copyWith(
-                  color: ColorPalette.textSecondary,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: ColorPalette.textSecondary,
-              ),
+              const ProfileLanguageCard(),
+              const SizedBox(height: 12),
+              const ProfileThemeCard(),
+              const SizedBox(height: 24),
+              const ProfileLogoutButton(),
             ],
           ),
         ),
-      ),
+      ],
     );
+  }
+
+  String _statusLabel(AppLocalizations s, UserStatus status) {
+    switch (status) {
+      case UserStatus.active:
+        return s.profileStatusActive;
+      case UserStatus.inactive:
+        return s.profileStatusInactive;
+    }
   }
 }

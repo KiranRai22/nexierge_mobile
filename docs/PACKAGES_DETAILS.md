@@ -148,6 +148,14 @@ Last updated: 2026-04-26.
 - **Description:** Cross-platform secure key-value storage. Uses Keychain on iOS / macOS, EncryptedSharedPreferences (AES + Android Keystore) on Android, libsecret/Credential Locker on Linux/Windows, IndexedDB+Web Crypto on Web. BSD-3-Clause. Active maintenance.
 - **Why we use it:** The login spec mandates secure token storage (§9.2). Auth tokens (`authToken`, `refresh_token`) MUST live in the platform secure store — never in `shared_preferences` (which is plaintext on Android). Wrapped behind `AuthSessionStorage` so the rest of the app stays agnostic.
 
+### `lucide_icons_flutter`
+- **Package name:** `lucide_icons_flutter`
+- **Version:** `^3.0.0`
+- **Owner:** `lucide-icons` org (Lucide community fork of Feather Icons)
+- **License:** ISC (permissive — same family as MIT/BSD; commercial use allowed without attribution beyond license preservation)
+- **Description:** Pure-Dart Flutter binding for the Lucide icon set (~1500 SVG glyphs exposed as `IconData`). No native code; works on Android, iOS, web, desktop. Active maintenance with frequent releases tracking upstream Lucide.
+- **Why we use it:** The HotelOps web prototype uses Lucide icons across the dashboard (`Sun`, `Moon`, `Clock`, `AlertCircle`, `CheckCheck`, `ChevronRight`, `PauseCircle`, `PlayCircle`, `Bell`). Matching the visual identity 1:1 in Flutter requires the same glyph set — Material Icons cannot reproduce Lucide's stroke-style consistently.
+
 ---
 
 ## Dev dependencies

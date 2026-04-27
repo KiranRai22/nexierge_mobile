@@ -646,13 +646,28 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get dashboardIncomingNow => 'Entrantes ahora';
+  String get dashboardNeedsAcknowledgment => 'Necesita confirmación';
+
+  @override
+  String get dashboardIncomingFooterEmpty => 'A la espera de aceptación';
 
   @override
   String get dashboardInProgressLabel => 'En curso';
 
   @override
+  String get dashboardInProgressFooter => 'En atención ahora mismo';
+
+  @override
   String get dashboardOverdueLabel => 'Atrasados';
+
+  @override
+  String get dashboardOverdueFooter => 'Pasada la hora límite';
+
+  @override
+  String get dashboardNotStartedLabel => 'Sin iniciar';
+
+  @override
+  String get dashboardNotStartedFooter => 'Aceptado pero no iniciado';
 
   @override
   String get dashboardNeedsAttention => 'Necesita atención';
@@ -661,16 +676,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dashboardViewAll => 'Ver todos';
 
   @override
-  String get dashboardAllCaughtUp => 'Todo al día';
+  String get dashboardAllClearTitle => 'Todo en orden';
 
   @override
-  String dashboardAllCaughtUpDept(String dept) {
-    return 'Nada urgente en $dept en este momento.';
-  }
+  String get dashboardAllClearBody =>
+      'Ningún ticket requiere atención inmediata en este momento.';
 
   @override
-  String get dashboardAllCaughtUpGeneric =>
-      'No hay tickets atrasados ni urgentes ahora.';
+  String get dashboardAllClearHint =>
+      'Los tickets nuevos y activos están en la pestaña Tickets.';
 
   @override
   String dashboardBreakdownUniversal(int n) {
@@ -688,13 +702,21 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String dashboardWaitPill(int minutes) {
-    return '${minutes}m';
+  String dashboardOverduePill(int minutes) {
+    return 'Atrasado $minutes min';
   }
 
   @override
-  String dashboardEtaPill(int minutes) {
-    return 'ETA ${minutes}m';
+  String dashboardDueSoonPill(int minutes) {
+    return 'En $minutes min';
+  }
+
+  @override
+  String get dashboardNotStartedPill => 'Sin iniciar';
+
+  @override
+  String dashboardWaitingPill(int minutes) {
+    return 'Esperando $minutes min';
   }
 
   @override
@@ -810,6 +832,82 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileSectionPreferences => 'Preferencias';
+
+  @override
+  String get profileSectionAccountInformation => 'Información de la cuenta';
+
+  @override
+  String get profileSectionWorkInformation => 'Información laboral';
+
+  @override
+  String get profileFieldName => 'Nombre';
+
+  @override
+  String get profileFieldEmail => 'Correo';
+
+  @override
+  String get profileFieldEmployeeCode => 'Código de empleado';
+
+  @override
+  String get profileFieldRole => 'Rol';
+
+  @override
+  String get profileFieldDepartments => 'Departamentos';
+
+  @override
+  String get profileFieldStatus => 'Estado';
+
+  @override
+  String get profileFieldEmptyValue => '—';
+
+  @override
+  String get profileLanguageTitle => 'Idioma';
+
+  @override
+  String get profileLanguageSubtitle => 'Elige el idioma de la interfaz';
+
+  @override
+  String get profileThemeTitle => 'Apariencia';
+
+  @override
+  String get profileThemeSubtitle => 'Elige cómo se ve la app';
+
+  @override
+  String get profileThemeLight => 'Claro';
+
+  @override
+  String get profileThemeDark => 'Oscuro';
+
+  @override
+  String get profileThemeSystem => 'Sistema';
+
+  @override
+  String get profileStatusActive => 'Activo';
+
+  @override
+  String get profileStatusInactive => 'Inactivo';
+
+  @override
+  String get profileChangeAvatar => 'Cambiar foto de perfil';
+
+  @override
+  String get profileChangeAvatarComingSoon => 'Carga de foto — próximamente';
+
+  @override
+  String get profileLogout => 'Cerrar sesión';
+
+  @override
+  String get profileLogoutConfirmTitle => '¿Cerrar sesión?';
+
+  @override
+  String get profileLogoutConfirmBody =>
+      'Tendrás que iniciar sesión de nuevo para acceder a tus tickets.';
+
+  @override
+  String get profileLogoutConfirmCancel => 'Cancelar';
+
+  @override
+  String get profileLogoutConfirmAction => 'Cerrar sesión';
 
   @override
   String get notifChannelName => 'Notificaciones importantes';

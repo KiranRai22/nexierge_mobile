@@ -2,18 +2,18 @@
 class EmailLoginRequestDto {
   final String email;
   final String password;
-  final String deviceToken;
+  final String fcm_token; // Optional FCM token for push notifications  
 
   const EmailLoginRequestDto({
     required this.email,
     required this.password,
-    required this.deviceToken,
+    required this.fcm_token,
   });
 
   Map<String, dynamic> toJson() {
     final json = {'email': email, 'password': password};
-    if (deviceToken.isNotEmpty) {
-      json['device_token'] = deviceToken;
+    if (fcm_token.isNotEmpty) {
+      json['fcm_token'] = fcm_token;
     }
     return json;
   }
@@ -23,18 +23,18 @@ class EmailLoginRequestDto {
 class CodeLoginRequestDto {
   final String employeeCode;
   final String loginCode;
-  final String deviceToken;
+  final String fcm_token; // Optional FCM token for push notifications  
 
   const CodeLoginRequestDto({
     required this.employeeCode,
     required this.loginCode,
-    required this.deviceToken,
+    required this.fcm_token,
   });
 
   Map<String, dynamic> toJson() {
     final json = {'employee_code': employeeCode, 'login_code': loginCode};
-    if (deviceToken.isNotEmpty) {
-      json['device_token'] = deviceToken;
+    if (fcm_token.isNotEmpty) {
+      json['fcm_token'] = fcm_token;
     }
     return json;
   }

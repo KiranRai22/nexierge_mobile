@@ -6,7 +6,6 @@ import '../../../../core/services/device_token_service.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../shell/presentation/screens/home_shell.dart';
 import '../../domain/entities/login_credentials.dart';
 import '../providers/login_controller.dart';
 import '../utils/login_error_copy.dart';
@@ -17,7 +16,6 @@ import '../widgets/login_footer.dart';
 import '../widgets/login_form_fields.dart';
 import '../widgets/login_method_tabs.dart';
 import '../widgets/login_state_dialog.dart';
-import 'login_loading_screen.dart';
 
 /// Login screen wired to the auth API per the locked spec.
 ///
@@ -27,7 +25,9 @@ import 'login_loading_screen.dart';
 /// * disable the submit button while a request is in flight
 /// * surface failures via toast (transient) or dialog (account state)
 /// * preserve typed values on failure
-/// * navigate through the [LoginLoadingScreen] then to [HomeShell] on success
+///
+/// Routing on success is reactive: the controller publishes the session to
+/// `authSessionControllerProvider` and the root widget swaps in `HomeShell`.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -136,38 +136,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ? EmailPasswordCredentials(
             email: LoginValidators.normaliseEmail(_emailCtrl.text),
             password: _passwordCtrl.text,
-            deviceToken: deviceToken,
+            fcm_token: deviceToken,
           )
         : EmployeeCodeCredentials(
             employeeCode: LoginValidators.normaliseCode(_employeeCodeCtrl.text),
             loginCode: LoginValidators.normaliseCode(_loginCodeCtrl.text),
-            deviceToken: deviceToken,
+            fcm_token: deviceToken,
           );
 
-    // final session = await ref
-    //     .read(loginControllerProvider.notifier)
-    //     .submit(credentials);
-    // if (!mounted) return;
-
-    // if (session != null) {
-    //   await _showLoadingThenNavigate();
-    // }
-    // Failure path is rendered by ref.listen in build().
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const HomeShell()),
-    );
-  }
-
-  Future<void> _showLoadingThenNavigate() async {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const LoginLoadingScreen()),
-    );
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const HomeShell()),
-    );
+    await ref.read(loginControllerProvider.notifier).submit(credentials);
+    // Success path: the root widget reacts to `authSessionControllerProvider`.
+    // Failure path: rendered by the `ref.listen` in `build`.
   }
 
   /// Retrieve the device token from shared preferences.

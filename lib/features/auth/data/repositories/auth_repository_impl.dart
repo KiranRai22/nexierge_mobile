@@ -23,14 +23,14 @@ class _AuthRepositoryImpl implements AuthRepository {
           EmailLoginRequestDto(
             email: c.email,
             password: c.password,
-            deviceToken: c.deviceToken,
+            fcm_token: c.fcm_token,
           ),
         ),
         EmployeeCodeCredentials c => await _remote.loginWithCode(
           CodeLoginRequestDto(
             employeeCode: c.employeeCode,
             loginCode: c.loginCode,
-            deviceToken: c.deviceToken,
+            fcm_token: c.fcm_token,
           ),
         ),
       };

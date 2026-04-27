@@ -1,12 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/auth_repository_impl.dart';
-import '../../data/services/auth_session_storage_impl.dart';
 import '../../domain/entities/auth_session.dart';
 import '../../domain/entities/login_credentials.dart';
 import '../../domain/exceptions/auth_exception.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../domain/services/auth_session_storage.dart';
+import 'auth_session_controller.dart';
 
 // Re-export so callers (incl. existing widgets) can keep importing the
 // controller and still see the [LoginMode] enum from the domain layer.
@@ -51,12 +50,10 @@ class LoginUiState {
 /// network call whose state the UI must reflect.
 class LoginController extends AutoDisposeNotifier<LoginUiState> {
   late AuthRepository _repo;
-  late AuthSessionStorage _storage;
 
   @override
   LoginUiState build() {
     _repo = ref.read(authRepositoryProvider);
-    _storage = ref.read(authSessionStorageProvider);
     return const LoginUiState();
   }
 
@@ -97,8 +94,13 @@ class LoginController extends AutoDisposeNotifier<LoginUiState> {
     state = state.copyWith(submission: const AsyncLoading());
     try {
       final session = await _repo.signIn(credentials);
-      await _storage.write(session);
       state = state.copyWith(submission: AsyncData(session));
+      // Publishing the session flips the global auth provider, which the
+      // root widget watches to swap LoginScreen → HomeShell. No imperative
+      // navigation here — that previously raced with widget disposal.
+      await ref
+          .read(authSessionControllerProvider.notifier)
+          .setSession(session);
       return session;
     } on AuthException catch (e, st) {
       state = state.copyWith(submission: AsyncError(e, st));

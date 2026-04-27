@@ -304,17 +304,19 @@
   "@dashboardGreetingEvening": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "dashboardIncomingNow": "Incoming Now",
-  "dashboardInProgressLabel": "In Progress",
+  "dashboardNeedsAcknowledgment": "Needs acknowledgment",
+  "dashboardIncomingFooterEmpty": "Awaiting acceptance",
+  "dashboardInProgressLabel": "In progress",
+  "dashboardInProgressFooter": "Currently being worked on",
   "dashboardOverdueLabel": "Overdue",
+  "dashboardOverdueFooter": "Past due time",
+  "dashboardNotStartedLabel": "Not started",
+  "dashboardNotStartedFooter": "Accepted but not started",
   "dashboardNeedsAttention": "Needs attention",
   "dashboardViewAll": "View all",
-  "dashboardAllCaughtUp": "All caught up",
-  "dashboardAllCaughtUpDept": "Nothing urgent in {dept} right now.",
-  "@dashboardAllCaughtUpDept": {
-    "placeholders": { "dept": { "type": "String" } }
-  },
-  "dashboardAllCaughtUpGeneric": "No overdue or urgent items right now.",
+  "dashboardAllClearTitle": "All clear",
+  "dashboardAllClearBody": "No tickets need immediate attention right now.",
+  "dashboardAllClearHint": "New and active tickets are available in the Tickets tab.",
   "dashboardBreakdownUniversal": "{n} universal",
   "@dashboardBreakdownUniversal": {
     "placeholders": { "n": { "type": "int" } }
@@ -327,12 +329,17 @@
   "@dashboardBreakdownManual": {
     "placeholders": { "n": { "type": "int" } }
   },
-  "dashboardWaitPill": "{minutes}m",
-  "@dashboardWaitPill": {
+  "dashboardOverduePill": "Overdue {minutes}m",
+  "@dashboardOverduePill": {
     "placeholders": { "minutes": { "type": "int" } }
   },
-  "dashboardEtaPill": "ETA {minutes}m",
-  "@dashboardEtaPill": {
+  "dashboardDueSoonPill": "Due in {minutes}m",
+  "@dashboardDueSoonPill": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "dashboardNotStartedPill": "Not started",
+  "dashboardWaitingPill": "Waiting {minutes}m",
+  "@dashboardWaitingPill": {
     "placeholders": { "minutes": { "type": "int" } }
   },
   "dashboardRoomPrefix": "Room {number}",
@@ -398,6 +405,31 @@
   "tooltipNotifications": "Notifications",
 
   "profileSectionPreferences": "Preferences",
+  "profileSectionAccountInformation": "Account information",
+  "profileSectionWorkInformation": "Work information",
+  "profileFieldName": "Name",
+  "profileFieldEmail": "Email",
+  "profileFieldEmployeeCode": "Employee code",
+  "profileFieldRole": "Role",
+  "profileFieldDepartments": "Departments",
+  "profileFieldStatus": "Status",
+  "profileFieldEmptyValue": "—",
+  "profileLanguageTitle": "Language",
+  "profileLanguageSubtitle": "Choose your interface language",
+  "profileThemeTitle": "Appearance",
+  "profileThemeSubtitle": "Choose how the app looks",
+  "profileThemeLight": "Light",
+  "profileThemeDark": "Dark",
+  "profileThemeSystem": "System",
+  "profileStatusActive": "Active",
+  "profileStatusInactive": "Inactive",
+  "profileChangeAvatar": "Change profile photo",
+  "profileChangeAvatarComingSoon": "Avatar upload — coming soon",
+  "profileLogout": "Log Out",
+  "profileLogoutConfirmTitle": "Log out?",
+  "profileLogoutConfirmBody": "You'll need to sign in again to access your tickets.",
+  "profileLogoutConfirmCancel": "Cancel",
+  "profileLogoutConfirmAction": "Log out",
 
   "notifChannelName": "High importance notifications",
   "notifChannelDescription": "Used for critical app notifications.",

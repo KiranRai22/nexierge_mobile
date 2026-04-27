@@ -5,23 +5,30 @@ import '../../../tickets/domain/models/ticket.dart';
 import '../../../tickets/presentation/providers/repository_providers.dart';
 import '../../../tickets/presentation/providers/session_providers.dart';
 
-/// Severity bucket for the *Needs attention* list.
-enum AttentionSeverity { overdue, warning, eta }
+/// Severity bucket for the *Needs attention* list. Mirrors the four cases in
+/// the React HotelOps dashboard so the UI rendering can stay 1:1 with the
+/// design — see `docs/ai_prompts/Dashboard.tsx`.
+enum AttentionSeverity { overdue, dueSoon, notStarted, needsAck }
 
 /// One row inside *Needs attention*.
 class AttentionItem {
   final Ticket ticket;
-  final int waitMin;
+
+  /// Minutes value used both for chip display and secondary sort. Semantics
+  /// vary by severity:
+  /// * `overdue` / `notStarted` / `needsAck` → minutes elapsed (longest first)
+  /// * `dueSoon` → minutes until the ETA (smallest first = most urgent)
+  final int minutes;
   final AttentionSeverity severity;
 
   const AttentionItem({
     required this.ticket,
-    required this.waitMin,
+    required this.minutes,
     required this.severity,
   });
 }
 
-/// Counts that drive the small breakdown line under *Incoming Now*.
+/// Counts that drive the small breakdown line under *Needs acknowledgment*.
 class IncomingBreakdown {
   final int universal;
   final int catalog;
@@ -40,6 +47,7 @@ class IncomingBreakdown {
 /// list sub-tab and search query — the dashboard is its own surface.
 class DashboardView {
   final int incomingCount;
+  final int acceptedCount;
   final int inProgressCount;
   final int overdueCount;
   final IncomingBreakdown incomingBreakdown;
@@ -47,6 +55,7 @@ class DashboardView {
 
   const DashboardView({
     required this.incomingCount,
+    required this.acceptedCount,
     required this.inProgressCount,
     required this.overdueCount,
     required this.incomingBreakdown,
@@ -56,10 +65,17 @@ class DashboardView {
   bool get hasUnread => incomingCount > 0 || overdueCount > 0;
 }
 
+// Thresholds (minutes) for the attention classifier. Matches the React
+// constants in `Dashboard.tsx` so behaviour stays in sync across platforms.
+const int _needsAckAfterMin = 5;
+const int _notStartedAfterMin = 5;
+const int _dueSoonWithinMin = 10;
+
 /// Reactive dashboard view bound to the repository. Recomputes whenever
 /// tickets change or the operator's scope/department filter moves.
-final dashboardViewProvider =
-    StreamProvider.autoDispose<DashboardView>((ref) {
+final dashboardViewProvider = StreamProvider.autoDispose<DashboardView>((
+  ref,
+) {
   final repo = ref.watch(ticketsRepositoryProvider);
   final scope = ref.watch(ticketScopeProvider);
   final dept = ref.watch(departmentFilterProvider);
@@ -90,14 +106,18 @@ List<Ticket> _applyScope(
 DashboardView _project(List<Ticket> tickets) {
   final now = DateTime.now();
 
-  final incoming =
-      tickets.where((t) => t.status == TicketStatus.incoming).toList();
-  final inProgress = tickets
-      .where((t) =>
-          t.status == TicketStatus.inProgress ||
-          t.status == TicketStatus.accepted)
+  final incoming = tickets
+      .where((t) => t.status == TicketStatus.incoming)
       .toList();
-  final overdue = tickets.where((t) => t.isOverdue).toList();
+  final accepted = tickets
+      .where((t) => t.status == TicketStatus.accepted)
+      .toList();
+  final inProgress = tickets
+      .where((t) => t.status == TicketStatus.inProgress)
+      .toList();
+  final overdue = inProgress
+      .where((t) => t.eta != null && now.isAfter(t.eta!))
+      .toList();
 
   final breakdown = IncomingBreakdown(
     universal: incoming.where((t) => t.kind == TicketKind.universal).length,
@@ -107,55 +127,81 @@ DashboardView _project(List<Ticket> tickets) {
 
   final attention = <AttentionItem>[];
   for (final t in tickets) {
-    if (t.isOverdue) {
-      final base = t.eta ?? t.createdAt;
-      final wait = now.difference(base).inMinutes;
-      attention.add(AttentionItem(
-        ticket: t,
-        waitMin: wait < 0 ? 0 : wait,
-        severity: AttentionSeverity.overdue,
-      ));
-      continue;
-    }
-    if (t.status == TicketStatus.incoming) {
-      final wait = now.difference(t.createdAt).inMinutes;
-      if (wait >= 5) {
-        attention.add(AttentionItem(
-          ticket: t,
-          waitMin: wait,
-          severity: AttentionSeverity.warning,
-        ));
-      }
-      continue;
-    }
-    if ((t.status == TicketStatus.inProgress ||
-            t.status == TicketStatus.accepted) &&
-        t.eta != null) {
-      final etaIn = t.eta!.difference(now).inMinutes;
-      attention.add(AttentionItem(
-        ticket: t,
-        waitMin: etaIn < 0 ? 0 : etaIn,
-        severity: AttentionSeverity.eta,
-      ));
-    }
+    final item = _classify(t, now);
+    if (item != null) attention.add(item);
   }
-
-  attention.sort((a, b) {
-    final order = {
-      AttentionSeverity.overdue: 0,
-      AttentionSeverity.warning: 1,
-      AttentionSeverity.eta: 2,
-    };
-    final cmp = order[a.severity]!.compareTo(order[b.severity]!);
-    if (cmp != 0) return cmp;
-    return b.waitMin.compareTo(a.waitMin);
-  });
+  attention.sort(_compareAttention);
 
   return DashboardView(
     incomingCount: incoming.length,
+    acceptedCount: accepted.length,
     inProgressCount: inProgress.length,
     overdueCount: overdue.length,
     incomingBreakdown: breakdown,
-    needsAttention: attention.take(4).toList(growable: false),
+    needsAttention: attention.take(5).toList(growable: false),
   );
+}
+
+AttentionItem? _classify(Ticket t, DateTime now) {
+  switch (t.status) {
+    case TicketStatus.inProgress:
+      final eta = t.eta;
+      if (eta == null) return null;
+      if (!now.isBefore(eta)) {
+        return AttentionItem(
+          ticket: t,
+          minutes: now.difference(eta).inMinutes,
+          severity: AttentionSeverity.overdue,
+        );
+      }
+      final remaining = eta.difference(now).inMinutes;
+      if (remaining <= _dueSoonWithinMin) {
+        return AttentionItem(
+          ticket: t,
+          minutes: remaining < 0 ? 0 : remaining,
+          severity: AttentionSeverity.dueSoon,
+        );
+      }
+      return null;
+    case TicketStatus.accepted:
+      final accAt = t.acceptedAt ?? t.createdAt;
+      final since = now.difference(accAt).inMinutes;
+      if (since >= _notStartedAfterMin) {
+        return AttentionItem(
+          ticket: t,
+          minutes: since,
+          severity: AttentionSeverity.notStarted,
+        );
+      }
+      return null;
+    case TicketStatus.incoming:
+      final since = now.difference(t.createdAt).inMinutes;
+      if (since >= _needsAckAfterMin) {
+        return AttentionItem(
+          ticket: t,
+          minutes: since,
+          severity: AttentionSeverity.needsAck,
+        );
+      }
+      return null;
+    case TicketStatus.done:
+    case TicketStatus.cancelled:
+      return null;
+  }
+}
+
+int _compareAttention(AttentionItem a, AttentionItem b) {
+  const order = {
+    AttentionSeverity.overdue: 0,
+    AttentionSeverity.dueSoon: 1,
+    AttentionSeverity.notStarted: 2,
+    AttentionSeverity.needsAck: 3,
+  };
+  final cmp = order[a.severity]!.compareTo(order[b.severity]!);
+  if (cmp != 0) return cmp;
+  // dueSoon: smallest minutes first (most urgent). Others: largest first.
+  if (a.severity == AttentionSeverity.dueSoon) {
+    return a.minutes.compareTo(b.minutes);
+  }
+  return b.minutes.compareTo(a.minutes);
 }

@@ -1,86 +1,180 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+import 'app_radii.dart';
+import 'app_shadows.dart';
 import 'color_palette.dart';
 import 'typography_manager.dart';
 
+/// Light + dark `ThemeData` for the app.
+///
+/// Both themes:
+/// 1. Install `AppColors`, `AppRadii`, `AppShadows` extensions so widgets
+///    can read the Medusa tokens via `context.appColors.*` etc.
+/// 2. Derive the Material 3 `ColorScheme`, `scaffoldBackgroundColor`,
+///    `cardTheme`, `dialogTheme`, `snackBarTheme`, `appBarTheme`,
+///    `dividerTheme`, and `bottomSheetTheme` from those tokens — so even
+///    Material defaults (AlertDialog, ListTile, SnackBar, etc.) flip
+///    correctly when the user toggles light/dark.
+///
+/// The legacy `ColorPalette.primary` is preserved as the brand colour for
+/// `ElevatedButton` / outlined / text button defaults so existing CTAs
+/// (login, logout) keep their look during the migration.
 abstract class ThemeManager {
-  static ThemeData get lightTheme => ThemeData(
-        useMaterial3: true,
-        colorScheme: const ColorScheme.light(
-          primary: ColorPalette.primary,
-          onPrimary: ColorPalette.textOnPrimary,
-          secondary: ColorPalette.secondary,
-          onSecondary: ColorPalette.textOnPrimary,
-          error: ColorPalette.error,
-          surface: ColorPalette.surfaceLight,
-          onSurface: ColorPalette.textPrimary,
+  static ThemeData get lightTheme => _build(brightness: Brightness.light);
+  static ThemeData get darkTheme => _build(brightness: Brightness.dark);
+
+  static ThemeData _build({required Brightness brightness}) {
+    final isDark = brightness == Brightness.dark;
+    final colors = isDark ? AppColors.dark : AppColors.light;
+    final shadows = isDark ? AppShadows.dark : AppShadows.light;
+    const radii = AppRadii.standard;
+
+    final colorScheme = ColorScheme(
+      brightness: brightness,
+      // Brand primary stays on the legacy `ColorPalette.primary` so existing
+      // pink CTAs (logout, login button) keep working without per-widget
+      // overrides. New work should read explicit AppColors tokens.
+      primary: ColorPalette.primary,
+      onPrimary: colors.fgOnColor,
+      secondary: colors.bgInteractive,
+      onSecondary: colors.fgOnColor,
+      error: colors.fgError,
+      onError: colors.fgOnColor,
+      surface: colors.bgBase,
+      onSurface: colors.fgBase,
+      surfaceContainerHighest: colors.bgComponent,
+      surfaceContainerHigh: colors.bgComponent,
+      surfaceContainer: colors.bgComponent,
+      surfaceContainerLow: colors.bgSubtle,
+      surfaceContainerLowest: colors.bgSubtle,
+      onSurfaceVariant: colors.fgSubtle,
+      outline: colors.borderStrong,
+      outlineVariant: colors.borderBase,
+      shadow: const Color(0xFF000000),
+      scrim: colors.bgOverlay,
+      inverseSurface: colors.contrastBgBase,
+      onInverseSurface: colors.contrastFgPrimary,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: colors.bgSubtle,
+      canvasColor: colors.bgBase,
+      textTheme: _textTheme(colors),
+      iconTheme: IconThemeData(color: colors.fgBase, size: 20),
+      primaryIconTheme: IconThemeData(color: colors.fgBase, size: 20),
+      dividerTheme: DividerThemeData(color: colors.borderBase, thickness: 1),
+      appBarTheme: AppBarTheme(
+        backgroundColor: colors.bgBase,
+        foregroundColor: colors.fgBase,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: colors.fgBase),
+        titleTextStyle: TypographyManager.textHeading.copyWith(
+          color: colors.fgBase,
         ),
-        scaffoldBackgroundColor: ColorPalette.backgroundLight,
-        textTheme: _textTheme,
-        appBarTheme: _appBarTheme,
-        elevatedButtonTheme: _elevatedButtonTheme,
-        outlinedButtonTheme: _outlinedButtonTheme,
-        textButtonTheme: _textButtonTheme,
-        inputDecorationTheme: _inputDecorationTheme,
-        cardTheme: _cardTheme,
-        dividerTheme: const DividerThemeData(
-          color: ColorPalette.divider,
-          thickness: 1,
+      ),
+      cardTheme: CardThemeData(
+        color: colors.bgBase,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radii.xl),
+          side: BorderSide(color: colors.borderBase),
         ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colors.bgBase,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radii.xl),
+        ),
+        titleTextStyle: TypographyManager.textHeading.copyWith(
+          color: colors.fgBase,
+        ),
+        contentTextStyle: TypographyManager.textBody.copyWith(
+          color: colors.fgSubtle,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: colors.contrastBgBase,
+        contentTextStyle: TypographyManager.textBody.copyWith(
+          color: colors.contrastFgPrimary,
+        ),
+        actionTextColor: colors.fgInteractive,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radii.md),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colors.bgBase,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: colors.bgBase,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(radii.xl),
+          ),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: colors.bgBase,
+        selectedItemColor: colors.fgInteractive,
+        unselectedItemColor: colors.fgMuted,
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colors.bgBase,
+        indicatorColor: colors.bgHighlight,
+        surfaceTintColor: Colors.transparent,
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: colors.fgSubtle,
+        textColor: colors.fgBase,
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: colors.fgInteractive,
+      ),
+      elevatedButtonTheme: _elevatedButtonTheme,
+      outlinedButtonTheme: _outlinedButtonTheme(colors),
+      textButtonTheme: _textButtonTheme(colors),
+      inputDecorationTheme: _inputDecorationTheme(colors, radii),
+      extensions: <ThemeExtension<dynamic>>[colors, radii, shadows],
+    );
+  }
+
+  static TextTheme _textTheme(AppColors colors) => TextTheme(
+        displayLarge:
+            TypographyManager.displayLarge.copyWith(color: colors.fgBase),
+        displayMedium:
+            TypographyManager.displayMedium.copyWith(color: colors.fgBase),
+        displaySmall:
+            TypographyManager.displaySmall.copyWith(color: colors.fgBase),
+        headlineLarge:
+            TypographyManager.headlineLarge.copyWith(color: colors.fgBase),
+        headlineMedium:
+            TypographyManager.headlineMedium.copyWith(color: colors.fgBase),
+        headlineSmall:
+            TypographyManager.headlineSmall.copyWith(color: colors.fgBase),
+        titleLarge: TypographyManager.titleLarge.copyWith(color: colors.fgBase),
+        titleMedium:
+            TypographyManager.titleMedium.copyWith(color: colors.fgBase),
+        titleSmall: TypographyManager.titleSmall.copyWith(color: colors.fgBase),
+        bodyLarge: TypographyManager.bodyLarge.copyWith(color: colors.fgBase),
+        bodyMedium: TypographyManager.bodyMedium.copyWith(color: colors.fgBase),
+        bodySmall:
+            TypographyManager.bodySmall.copyWith(color: colors.fgSubtle),
+        labelLarge: TypographyManager.labelLarge.copyWith(color: colors.fgBase),
+        labelMedium:
+            TypographyManager.labelMedium.copyWith(color: colors.fgBase),
+        labelSmall:
+            TypographyManager.labelSmall.copyWith(color: colors.fgSubtle),
       );
-
-  static ThemeData get darkTheme => ThemeData(
-        useMaterial3: true,
-        colorScheme: const ColorScheme.dark(
-          primary: ColorPalette.primaryLight,
-          onPrimary: ColorPalette.textOnPrimary,
-          secondary: ColorPalette.secondaryLight,
-          onSecondary: ColorPalette.textOnPrimary,
-          error: ColorPalette.error,
-          surface: ColorPalette.surfaceDark,
-          onSurface: ColorPalette.textOnDark,
-        ),
-        scaffoldBackgroundColor: ColorPalette.backgroundDark,
-        textTheme: _textTheme,
-        appBarTheme: _appBarTheme.copyWith(
-          backgroundColor: ColorPalette.surfaceDark,
-          foregroundColor: ColorPalette.textOnDark,
-        ),
-        elevatedButtonTheme: _elevatedButtonTheme,
-        outlinedButtonTheme: _outlinedButtonTheme,
-        textButtonTheme: _textButtonTheme,
-        inputDecorationTheme: _inputDecorationTheme,
-        cardTheme: _cardTheme,
-        dividerTheme: const DividerThemeData(
-          color: ColorPalette.grey700,
-          thickness: 1,
-        ),
-      );
-
-  static TextTheme get _textTheme => TextTheme(
-    displayLarge: TypographyManager.displayLarge,
-    displayMedium: TypographyManager.displayMedium,
-    displaySmall: TypographyManager.displaySmall,
-    headlineLarge: TypographyManager.headlineLarge,
-    headlineMedium: TypographyManager.headlineMedium,
-    headlineSmall: TypographyManager.headlineSmall,
-    titleLarge: TypographyManager.titleLarge,
-    titleMedium: TypographyManager.titleMedium,
-    titleSmall: TypographyManager.titleSmall,
-    bodyLarge: TypographyManager.bodyLarge,
-    bodyMedium: TypographyManager.bodyMedium,
-    bodySmall: TypographyManager.bodySmall,
-    labelLarge: TypographyManager.labelLarge,
-    labelMedium: TypographyManager.labelMedium,
-    labelSmall: TypographyManager.labelSmall,
-  );
-
-  static const AppBarTheme _appBarTheme = AppBarTheme(
-    backgroundColor: ColorPalette.primary,
-    foregroundColor: ColorPalette.textOnPrimary,
-    elevation: 0,
-    centerTitle: true,
-  );
 
   static final ElevatedButtonThemeData _elevatedButtonTheme =
       ElevatedButtonThemeData(
@@ -94,57 +188,53 @@ abstract class ThemeManager {
     ),
   );
 
-  static final OutlinedButtonThemeData _outlinedButtonTheme =
+  static OutlinedButtonThemeData _outlinedButtonTheme(AppColors c) =>
       OutlinedButtonThemeData(
-    style: OutlinedButton.styleFrom(
-      foregroundColor: ColorPalette.primary,
-      minimumSize: const Size.fromHeight(48),
-      side: const BorderSide(color: ColorPalette.primary),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      textStyle: TypographyManager.labelLarge,
-    ),
-  );
+        style: OutlinedButton.styleFrom(
+          foregroundColor: c.fgInteractive,
+          minimumSize: const Size.fromHeight(48),
+          side: BorderSide(color: c.borderStrong),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          textStyle: TypographyManager.labelLarge,
+        ),
+      );
 
-  static final TextButtonThemeData _textButtonTheme = TextButtonThemeData(
-    style: TextButton.styleFrom(
-      foregroundColor: ColorPalette.primary,
-      textStyle: TypographyManager.labelLarge,
-    ),
-  );
+  static TextButtonThemeData _textButtonTheme(AppColors c) =>
+      TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: c.fgInteractive,
+          textStyle: TypographyManager.labelLarge,
+        ),
+      );
 
-  static final InputDecorationTheme _inputDecorationTheme =
+  static InputDecorationTheme _inputDecorationTheme(
+    AppColors c,
+    AppRadii r,
+  ) =>
       InputDecorationTheme(
-    filled: true,
-    fillColor: ColorPalette.inputBackground,
-    contentPadding:
-        const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide.none,
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide.none,
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: ColorPalette.primary, width: 1.5),
-    ),
-    errorBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: ColorPalette.error),
-    ),
-    hintStyle: TypographyManager.bodyMedium
-        .copyWith(color: ColorPalette.textSecondary),
-    labelStyle: TypographyManager.bodyMedium,
-    errorStyle:
-        TypographyManager.bodySmall.copyWith(color: ColorPalette.error),
-  );
-
-  static final CardThemeData _cardTheme = CardThemeData(
-    elevation: 2,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    color: ColorPalette.surfaceLight,
-    margin: EdgeInsets.zero,
-  );
+        filled: true,
+        fillColor: c.bgField,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(r.md),
+          borderSide: BorderSide(color: c.borderBase),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(r.md),
+          borderSide: BorderSide(color: c.borderBase),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(r.md),
+          borderSide: BorderSide(color: c.borderInteractive, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(r.md),
+          borderSide: BorderSide(color: c.borderError),
+        ),
+        hintStyle: TypographyManager.textBody.copyWith(color: c.fgMuted),
+        labelStyle: TypographyManager.textLabel.copyWith(color: c.fgSubtle),
+        errorStyle: TypographyManager.textCaption.copyWith(color: c.fgError),
+      );
 }

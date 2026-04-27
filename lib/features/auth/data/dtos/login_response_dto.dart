@@ -19,21 +19,40 @@ class LoginResponseDto {
     if (token is! String || token.isEmpty) {
       throw const FormatException('login response missing authToken');
     }
-    final rawUser = json['user'];
+
+    // Accept either nested `user` object or opportunistic top-level fields
+    Map<String, dynamic>? rawUser = json['user'] is Map<String, dynamic>
+        ? json['user'] as Map<String, dynamic>
+        : null;
+
+    if (rawUser == null) {
+      // Some backends return user fields at top-level (e.g. Xano). Normalize.
+      final hasTopLevelUser =
+          json['hotel_user_id'] != null ||
+          json['hotel_id'] != null ||
+          json['hierarchy_role'] != null ||
+          json['id'] != null;
+      if (hasTopLevelUser) {
+        rawUser = <String, dynamic>{
+          'id': json['hotel_user_id'] ?? json['id'],
+          'role': json['hierarchy_role'] ?? json['role'],
+          'hotel_id': json['hotel_id'] ?? json['hotelId'],
+        };
+      }
+    }
+
     return LoginResponseDto(
       authToken: token,
       refreshToken: json['refresh_token'] as String?,
-      user: rawUser is Map<String, dynamic>
-          ? AuthUserDto.fromJson(rawUser)
-          : null,
+      user: rawUser != null ? AuthUserDto.fromJson(rawUser) : null,
     );
   }
 
   AuthSession toDomain() => AuthSession(
-        authToken: authToken,
-        refreshToken: refreshToken,
-        user: user?.toDomain(),
-      );
+    authToken: authToken,
+    refreshToken: refreshToken,
+    user: user?.toDomain(),
+  );
 }
 
 class AuthUserDto {
@@ -41,16 +60,12 @@ class AuthUserDto {
   final String? role;
   final String? hotelId;
 
-  const AuthUserDto({
-    required this.id,
-    this.role,
-    this.hotelId,
-  });
+  const AuthUserDto({required this.id, this.role, this.hotelId});
 
   factory AuthUserDto.fromJson(Map<String, dynamic> json) {
     return AuthUserDto(
-      id: (json['id'] ?? '').toString(),
-      role: json['role'] as String?,
+      id: (json['id'] ?? json['hotel_user_id'] ?? json['hotelUserId'] ?? '').toString(),
+      role: (json['role'] ?? json['hierarchy_role']) as String?,
       hotelId: (json['hotel_id'] ?? json['hotelId']) as String?,
     );
   }

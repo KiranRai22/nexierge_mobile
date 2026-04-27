@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/dashboard_view.dart';
@@ -53,6 +54,7 @@ class DashboardStatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.appColors;
     final breakdownText = <String>[
       if (breakdown.universal > 0)
         s.dashboardBreakdownUniversal(breakdown.universal),
@@ -77,10 +79,10 @@ class DashboardStatsGrid extends StatelessWidget {
               ? breakdownText
               : s.dashboardIncomingFooterEmpty,
           size: StatNoteSize.large,
-          trailing: const Icon(
+          trailing: Icon(
             LucideIcons.chevronRight,
             size: 18,
-            color: ColorPalette.textDisabled,
+            color: c.fgDisabled,
           ),
           onTap: onTapIncoming,
         ),
@@ -128,15 +130,16 @@ class DashboardStatsGrid extends StatelessWidget {
 enum _OverdueVariant { zero, warning, danger }
 
 /// Visual tone of a [StatNoteCard]. Each tone resolves to a (background,
-/// foreground, accent) triple from [ColorPalette] — no hex literals here so
-/// theming stays centralised per `docs/04_BASE_LAYER_RULES.md`.
+/// foreground, accent) triple from the active theme — see [_palette].
+/// Brand purple is intentionally static (legacy `ColorPalette.opsPurple*`)
+/// because brand colour stays consistent across light/dark.
 enum StatNoteTone { neutral, purple, red, orange, blue }
 
 enum StatNoteSize { medium, large }
 
 /// Reusable KPI tile. Mirrors the `StatNoteCard` component from
-/// `docs/ai_prompts/Dashboard.tsx`. Shape: ALL-CAPS badge, big number, soft
-/// footer line, optional trailing glyph; rounded card surface tinted by tone.
+/// `docs/ai_prompts/Dashboard.tsx`. Shape: ALL-CAPS badge in a tinted pill,
+/// big number, soft footer line, optional trailing glyph.
 class StatNoteCard extends StatelessWidget {
   final StatNoteTone tone;
   final String badgeLabel;
@@ -157,54 +160,52 @@ class StatNoteCard extends StatelessWidget {
     this.onTap,
   });
 
-  _TonePalette _palette() {
+  _TonePalette _palette(AppColors c) {
     switch (tone) {
       case StatNoteTone.neutral:
         return _TonePalette(
-          background: ColorPalette.opsSurface,
-          accent: ColorPalette.textSecondary,
-          number: ColorPalette.textPrimary,
-          footer: ColorPalette.textSecondary,
+          accent: c.fgSubtle,
+          number: c.fgBase,
+          footer: c.fgSubtle,
         );
       case StatNoteTone.purple:
-        return _TonePalette(
-          background: ColorPalette.opsPurpleSoft,
+        // Brand purple — kept on the legacy palette so it stays consistent
+        // across light/dark.
+        return const _TonePalette(
           accent: ColorPalette.opsPurpleDark,
           number: ColorPalette.opsPurpleDark,
           footer: ColorPalette.opsPurpleDark,
         );
       case StatNoteTone.red:
         return _TonePalette(
-          background: ColorPalette.kpiOverdueTint,
-          accent: ColorPalette.kpiOverdueText,
-          number: ColorPalette.kpiOverdueText,
-          footer: ColorPalette.kpiOverdueText,
+          accent: c.tagRedText,
+          number: c.tagRedText,
+          footer: c.tagRedText,
         );
       case StatNoteTone.orange:
         return _TonePalette(
-          background: ColorPalette.chipManualBg,
-          accent: ColorPalette.chipManualFg,
-          number: ColorPalette.chipManualFg,
-          footer: ColorPalette.chipManualFg,
+          accent: c.tagOrangeText,
+          number: c.tagOrangeText,
+          footer: c.tagOrangeText,
         );
       case StatNoteTone.blue:
         return _TonePalette(
-          background: ColorPalette.chipCatalogBg,
-          accent: ColorPalette.chipCatalogFg,
-          number: ColorPalette.chipCatalogFg,
-          footer: ColorPalette.chipCatalogFg,
+          accent: c.tagBlueText,
+          number: c.tagBlueText,
+          footer: c.tagBlueText,
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final p = _palette();
+    final c = context.appColors;
+    final p = _palette(c);
     final isLarge = size == StatNoteSize.large;
     final radius = BorderRadius.circular(16);
 
     return Material(
-      color: ColorPalette.white,
+      color: c.bgBase,
       borderRadius: radius,
       child: InkWell(
         onTap: onTap,
@@ -212,7 +213,7 @@ class StatNoteCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: radius,
-            border: Border.all(color: ColorPalette.opsBorder, width: 1),
+            border: Border.all(color: c.borderBase, width: 1),
           ),
           padding: EdgeInsets.all(isLarge ? 18 : 14),
           child: Semantics(
@@ -224,20 +225,21 @@ class StatNoteCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Colored title pill
+                    // Tinted badge pill — accent colour at 20% alpha so the
+                    // hue reads through but the surface stays calm.
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: p.accent.withOpacity(0.2),
+                        color: p.accent.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         badgeLabel.toUpperCase(),
                         style: TypographyManager.kpiLabel.copyWith(
-                          color: ColorPalette.black,
+                          color: c.fgBase,
                         ),
                       ),
                     ),
@@ -277,13 +279,11 @@ class StatNoteCard extends StatelessWidget {
 }
 
 class _TonePalette {
-  final Color background;
   final Color accent;
   final Color number;
   final Color footer;
 
   const _TonePalette({
-    required this.background,
     required this.accent,
     required this.number,
     required this.footer,

@@ -1232,23 +1232,53 @@ abstract class AppLocalizations {
   /// **'Good evening, {name}'**
   String dashboardGreetingEvening(String name);
 
-  /// No description provided for @dashboardIncomingNow.
+  /// No description provided for @dashboardNeedsAcknowledgment.
   ///
   /// In en, this message translates to:
-  /// **'Incoming Now'**
-  String get dashboardIncomingNow;
+  /// **'Needs acknowledgment'**
+  String get dashboardNeedsAcknowledgment;
+
+  /// No description provided for @dashboardIncomingFooterEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting acceptance'**
+  String get dashboardIncomingFooterEmpty;
 
   /// No description provided for @dashboardInProgressLabel.
   ///
   /// In en, this message translates to:
-  /// **'In Progress'**
+  /// **'In progress'**
   String get dashboardInProgressLabel;
+
+  /// No description provided for @dashboardInProgressFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Currently being worked on'**
+  String get dashboardInProgressFooter;
 
   /// No description provided for @dashboardOverdueLabel.
   ///
   /// In en, this message translates to:
   /// **'Overdue'**
   String get dashboardOverdueLabel;
+
+  /// No description provided for @dashboardOverdueFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Past due time'**
+  String get dashboardOverdueFooter;
+
+  /// No description provided for @dashboardNotStartedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get dashboardNotStartedLabel;
+
+  /// No description provided for @dashboardNotStartedFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted but not started'**
+  String get dashboardNotStartedFooter;
 
   /// No description provided for @dashboardNeedsAttention.
   ///
@@ -1262,23 +1292,23 @@ abstract class AppLocalizations {
   /// **'View all'**
   String get dashboardViewAll;
 
-  /// No description provided for @dashboardAllCaughtUp.
+  /// No description provided for @dashboardAllClearTitle.
   ///
   /// In en, this message translates to:
-  /// **'All caught up'**
-  String get dashboardAllCaughtUp;
+  /// **'All clear'**
+  String get dashboardAllClearTitle;
 
-  /// No description provided for @dashboardAllCaughtUpDept.
+  /// No description provided for @dashboardAllClearBody.
   ///
   /// In en, this message translates to:
-  /// **'Nothing urgent in {dept} right now.'**
-  String dashboardAllCaughtUpDept(String dept);
+  /// **'No tickets need immediate attention right now.'**
+  String get dashboardAllClearBody;
 
-  /// No description provided for @dashboardAllCaughtUpGeneric.
+  /// No description provided for @dashboardAllClearHint.
   ///
   /// In en, this message translates to:
-  /// **'No overdue or urgent items right now.'**
-  String get dashboardAllCaughtUpGeneric;
+  /// **'New and active tickets are available in the Tickets tab.'**
+  String get dashboardAllClearHint;
 
   /// No description provided for @dashboardBreakdownUniversal.
   ///
@@ -1298,17 +1328,29 @@ abstract class AppLocalizations {
   /// **'{n} manual'**
   String dashboardBreakdownManual(int n);
 
-  /// No description provided for @dashboardWaitPill.
+  /// No description provided for @dashboardOverduePill.
   ///
   /// In en, this message translates to:
-  /// **'{minutes}m'**
-  String dashboardWaitPill(int minutes);
+  /// **'Overdue {minutes}m'**
+  String dashboardOverduePill(int minutes);
 
-  /// No description provided for @dashboardEtaPill.
+  /// No description provided for @dashboardDueSoonPill.
   ///
   /// In en, this message translates to:
-  /// **'ETA {minutes}m'**
-  String dashboardEtaPill(int minutes);
+  /// **'Due in {minutes}m'**
+  String dashboardDueSoonPill(int minutes);
+
+  /// No description provided for @dashboardNotStartedPill.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get dashboardNotStartedPill;
+
+  /// No description provided for @dashboardWaitingPill.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting {minutes}m'**
+  String dashboardWaitingPill(int minutes);
 
   /// No description provided for @dashboardRoomPrefix.
   ///
@@ -1507,6 +1549,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Preferences'**
   String get profileSectionPreferences;
+
+  /// No description provided for @profileSectionAccountInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Account information'**
+  String get profileSectionAccountInformation;
+
+  /// No description provided for @profileSectionWorkInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Work information'**
+  String get profileSectionWorkInformation;
+
+  /// No description provided for @profileFieldName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get profileFieldName;
+
+  /// No description provided for @profileFieldEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get profileFieldEmail;
+
+  /// No description provided for @profileFieldEmployeeCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Employee code'**
+  String get profileFieldEmployeeCode;
+
+  /// No description provided for @profileFieldRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get profileFieldRole;
+
+  /// No description provided for @profileFieldDepartments.
+  ///
+  /// In en, this message translates to:
+  /// **'Departments'**
+  String get profileFieldDepartments;
+
+  /// No description provided for @profileFieldStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get profileFieldStatus;
+
+  /// No description provided for @profileFieldEmptyValue.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get profileFieldEmptyValue;
+
+  /// No description provided for @profileLanguageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get profileLanguageTitle;
+
+  /// No description provided for @profileLanguageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your interface language'**
+  String get profileLanguageSubtitle;
+
+  /// No description provided for @profileThemeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get profileThemeTitle;
+
+  /// No description provided for @profileThemeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how the app looks'**
+  String get profileThemeSubtitle;
+
+  /// No description provided for @profileThemeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get profileThemeLight;
+
+  /// No description provided for @profileThemeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get profileThemeDark;
+
+  /// No description provided for @profileThemeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get profileThemeSystem;
+
+  /// No description provided for @profileStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get profileStatusActive;
+
+  /// No description provided for @profileStatusInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get profileStatusInactive;
+
+  /// No description provided for @profileChangeAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Change profile photo'**
+  String get profileChangeAvatar;
+
+  /// No description provided for @profileChangeAvatarComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar upload — coming soon'**
+  String get profileChangeAvatarComingSoon;
+
+  /// No description provided for @profileLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Out'**
+  String get profileLogout;
+
+  /// No description provided for @profileLogoutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out?'**
+  String get profileLogoutConfirmTitle;
+
+  /// No description provided for @profileLogoutConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll need to sign in again to access your tickets.'**
+  String get profileLogoutConfirmBody;
+
+  /// No description provided for @profileLogoutConfirmCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get profileLogoutConfirmCancel;
+
+  /// No description provided for @profileLogoutConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out'**
+  String get profileLogoutConfirmAction;
 
   /// No description provided for @notifChannelName.
   ///

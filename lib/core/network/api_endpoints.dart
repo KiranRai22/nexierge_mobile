@@ -11,7 +11,7 @@ abstract class APIEndpoints {
 
   static const String _host = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.nexierge.io',
+    defaultValue: 'https://xvmf-wx0g-xvlj.b2.xano.io',
   );
 
   static const String _authPath = String.fromEnvironment(
@@ -27,24 +27,10 @@ abstract class APIEndpoints {
 
   // ---------------------------------------------------------------------------
   // Auth endpoints
-  //
-  // The spec contains two contradicting endpoint paths for login:
-  //   - Section 5.1 / 5.2:         /auth/login/password    /auth/login/code
-  //   - Section 17 (LOCKED Rules): /auth/login/password_login
-  //                                /auth/login/code_login
-  //
-  // We use the LOCKED Rules paths as the authoritative contract because
-  // section 17 is explicitly marked as the locked product rule set.
-  // If the backend actually ships the shorter paths, swap the two
-  // constants below to the alternative on lines 50-51.
   // ---------------------------------------------------------------------------
 
-  static const String loginEmail = '$authBaseUrl/auth/login/password_login';
-  static const String loginCode = '$authBaseUrl/auth/login/code_login';
-
-  // Alternative (Section 5) paths — keep here for quick swap if backend differs.
-  // static const String loginEmail = '$authBaseUrl/auth/login/password';
-  // static const String loginCode = '$authBaseUrl/auth/login/code';
+  static const String loginEmail = '$authBaseUrl/auth/login/password';
+  static const String loginCode = '$authBaseUrl/auth/login/code';
 
   static const String logout = '$authBaseUrl/auth/logout';
   static const String refreshToken = '$authBaseUrl/auth/refresh';
@@ -68,4 +54,7 @@ abstract class APIEndpoints {
   static const String contentTypeJson = 'application/json';
   static const String authorizationHeader = 'Authorization';
   static const String bearerPrefix = 'Bearer ';
+
+  static const String clientHeader = 'client';
+  static const String clientHeaderValue = 'mobile';
 }

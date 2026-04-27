@@ -10,7 +10,9 @@ import 'core/services/notification_service.dart';
 import 'core/theme/theme_manager.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'core/utils/string_manager.dart';
+import 'features/auth/presentation/providers/auth_session_controller.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/shell/presentation/screens/home_shell.dart';
 import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
@@ -52,6 +54,7 @@ class MyApp extends ConsumerWidget {
         ref.watch(themeModeControllerProvider).valueOrNull ?? ThemeMode.system;
     final appLocale =
         ref.watch(localeControllerProvider).valueOrNull ?? AppLocale.system;
+    final session = ref.watch(authSessionControllerProvider);
     return MaterialApp(
       title: StringManager.appName,
       debugShowCheckedModeBanner: false,
@@ -63,7 +66,24 @@ class MyApp extends ConsumerWidget {
       locale: appLocale.toLocale(),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: const LoginScreen(),
+      // Cold-start: AsyncLoading while we read secure storage. Then route
+      // to HomeShell if a stored session was found (auto-login), else to
+      // LoginScreen. Errors during hydration also fall back to login —
+      // a corrupt blob is treated as "no session" by the storage layer.
+      home: session.when(
+        loading: () => const _AuthBootstrapSplash(),
+        error: (_, _) => const LoginScreen(),
+        data: (s) => s == null ? const LoginScreen() : const HomeShell(),
+      ),
     );
+  }
+}
+
+class _AuthBootstrapSplash extends StatelessWidget {
+  const _AuthBootstrapSplash();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

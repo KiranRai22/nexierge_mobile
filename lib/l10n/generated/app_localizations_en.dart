@@ -641,13 +641,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get dashboardIncomingNow => 'Incoming Now';
+  String get dashboardNeedsAcknowledgment => 'Needs acknowledgment';
 
   @override
-  String get dashboardInProgressLabel => 'In Progress';
+  String get dashboardIncomingFooterEmpty => 'Awaiting acceptance';
+
+  @override
+  String get dashboardInProgressLabel => 'In progress';
+
+  @override
+  String get dashboardInProgressFooter => 'Currently being worked on';
 
   @override
   String get dashboardOverdueLabel => 'Overdue';
+
+  @override
+  String get dashboardOverdueFooter => 'Past due time';
+
+  @override
+  String get dashboardNotStartedLabel => 'Not started';
+
+  @override
+  String get dashboardNotStartedFooter => 'Accepted but not started';
 
   @override
   String get dashboardNeedsAttention => 'Needs attention';
@@ -656,16 +671,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardViewAll => 'View all';
 
   @override
-  String get dashboardAllCaughtUp => 'All caught up';
+  String get dashboardAllClearTitle => 'All clear';
 
   @override
-  String dashboardAllCaughtUpDept(String dept) {
-    return 'Nothing urgent in $dept right now.';
-  }
+  String get dashboardAllClearBody =>
+      'No tickets need immediate attention right now.';
 
   @override
-  String get dashboardAllCaughtUpGeneric =>
-      'No overdue or urgent items right now.';
+  String get dashboardAllClearHint =>
+      'New and active tickets are available in the Tickets tab.';
 
   @override
   String dashboardBreakdownUniversal(int n) {
@@ -683,13 +697,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String dashboardWaitPill(int minutes) {
-    return '${minutes}m';
+  String dashboardOverduePill(int minutes) {
+    return 'Overdue ${minutes}m';
   }
 
   @override
-  String dashboardEtaPill(int minutes) {
-    return 'ETA ${minutes}m';
+  String dashboardDueSoonPill(int minutes) {
+    return 'Due in ${minutes}m';
+  }
+
+  @override
+  String get dashboardNotStartedPill => 'Not started';
+
+  @override
+  String dashboardWaitingPill(int minutes) {
+    return 'Waiting ${minutes}m';
   }
 
   @override
@@ -805,6 +827,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileSectionPreferences => 'Preferences';
+
+  @override
+  String get profileSectionAccountInformation => 'Account information';
+
+  @override
+  String get profileSectionWorkInformation => 'Work information';
+
+  @override
+  String get profileFieldName => 'Name';
+
+  @override
+  String get profileFieldEmail => 'Email';
+
+  @override
+  String get profileFieldEmployeeCode => 'Employee code';
+
+  @override
+  String get profileFieldRole => 'Role';
+
+  @override
+  String get profileFieldDepartments => 'Departments';
+
+  @override
+  String get profileFieldStatus => 'Status';
+
+  @override
+  String get profileFieldEmptyValue => '—';
+
+  @override
+  String get profileLanguageTitle => 'Language';
+
+  @override
+  String get profileLanguageSubtitle => 'Choose your interface language';
+
+  @override
+  String get profileThemeTitle => 'Appearance';
+
+  @override
+  String get profileThemeSubtitle => 'Choose how the app looks';
+
+  @override
+  String get profileThemeLight => 'Light';
+
+  @override
+  String get profileThemeDark => 'Dark';
+
+  @override
+  String get profileThemeSystem => 'System';
+
+  @override
+  String get profileStatusActive => 'Active';
+
+  @override
+  String get profileStatusInactive => 'Inactive';
+
+  @override
+  String get profileChangeAvatar => 'Change profile photo';
+
+  @override
+  String get profileChangeAvatarComingSoon => 'Avatar upload — coming soon';
+
+  @override
+  String get profileLogout => 'Log Out';
+
+  @override
+  String get profileLogoutConfirmTitle => 'Log out?';
+
+  @override
+  String get profileLogoutConfirmBody =>
+      'You\'ll need to sign in again to access your tickets.';
+
+  @override
+  String get profileLogoutConfirmCancel => 'Cancel';
+
+  @override
+  String get profileLogoutConfirmAction => 'Log out';
 
   @override
   String get notifChannelName => 'High importance notifications';

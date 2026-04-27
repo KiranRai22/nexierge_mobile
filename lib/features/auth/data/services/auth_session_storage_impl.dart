@@ -24,7 +24,20 @@ class _AuthSessionStorageImpl implements AuthSessionStorage {
       final map = jsonDecode(raw) as Map<String, dynamic>;
       final token = map['authToken'] as String?;
       if (token == null || token.isEmpty) return null;
-      final userJson = map['user'];
+
+      // Accept either nested `user` or opportunistic top-level user fields
+      final userJson = map['user'] is Map<String, dynamic>
+          ? map['user'] as Map<String, dynamic>
+          : (map['hotel_user_id'] != null ||
+                    map['hotel_id'] != null ||
+                    map['id'] != null
+                ? {
+                    'id': map['hotel_user_id'] ?? map['id'] ?? '',
+                    'role': map['hierarchy_role'] ?? map['role'],
+                    'hotel_id': map['hotel_id'],
+                  }
+                : null);
+
       final user = userJson is Map<String, dynamic>
           ? AuthUser(
               id: (userJson['id'] ?? '').toString(),
@@ -49,8 +62,7 @@ class _AuthSessionStorageImpl implements AuthSessionStorage {
     final user = session.user;
     final payload = <String, dynamic>{
       'authToken': session.authToken,
-      if (session.refreshToken != null)
-        'refresh_token': session.refreshToken,
+      if (session.refreshToken != null) 'refresh_token': session.refreshToken,
       if (user != null)
         'user': {
           'id': user.id,

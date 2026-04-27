@@ -223,17 +223,19 @@
   "@dashboardGreetingEvening": {
     "placeholders": { "name": { "type": "String" } }
   },
-  "dashboardIncomingNow": "Entrantes ahora",
+  "dashboardNeedsAcknowledgment": "Necesita confirmación",
+  "dashboardIncomingFooterEmpty": "A la espera de aceptación",
   "dashboardInProgressLabel": "En curso",
+  "dashboardInProgressFooter": "En atención ahora mismo",
   "dashboardOverdueLabel": "Atrasados",
+  "dashboardOverdueFooter": "Pasada la hora límite",
+  "dashboardNotStartedLabel": "Sin iniciar",
+  "dashboardNotStartedFooter": "Aceptado pero no iniciado",
   "dashboardNeedsAttention": "Necesita atención",
   "dashboardViewAll": "Ver todos",
-  "dashboardAllCaughtUp": "Todo al día",
-  "dashboardAllCaughtUpDept": "Nada urgente en {dept} en este momento.",
-  "@dashboardAllCaughtUpDept": {
-    "placeholders": { "dept": { "type": "String" } }
-  },
-  "dashboardAllCaughtUpGeneric": "No hay tickets atrasados ni urgentes ahora.",
+  "dashboardAllClearTitle": "Todo en orden",
+  "dashboardAllClearBody": "Ningún ticket requiere atención inmediata en este momento.",
+  "dashboardAllClearHint": "Los tickets nuevos y activos están en la pestaña Tickets.",
   "dashboardBreakdownUniversal": "{n} universal",
   "@dashboardBreakdownUniversal": {
     "placeholders": { "n": { "type": "int" } }
@@ -246,12 +248,17 @@
   "@dashboardBreakdownManual": {
     "placeholders": { "n": { "type": "int" } }
   },
-  "dashboardWaitPill": "{minutes}m",
-  "@dashboardWaitPill": {
+  "dashboardOverduePill": "Atrasado {minutes} min",
+  "@dashboardOverduePill": {
     "placeholders": { "minutes": { "type": "int" } }
   },
-  "dashboardEtaPill": "ETA {minutes}m",
-  "@dashboardEtaPill": {
+  "dashboardDueSoonPill": "En {minutes} min",
+  "@dashboardDueSoonPill": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "dashboardNotStartedPill": "Sin iniciar",
+  "dashboardWaitingPill": "Esperando {minutes} min",
+  "@dashboardWaitingPill": {
     "placeholders": { "minutes": { "type": "int" } }
   },
   "dashboardRoomPrefix": "Habitación {number}",
@@ -297,6 +304,31 @@
   "tooltipNotifications": "Notificaciones",
 
   "profileSectionPreferences": "Preferencias",
+  "profileSectionAccountInformation": "Información de la cuenta",
+  "profileSectionWorkInformation": "Información laboral",
+  "profileFieldName": "Nombre",
+  "profileFieldEmail": "Correo",
+  "profileFieldEmployeeCode": "Código de empleado",
+  "profileFieldRole": "Rol",
+  "profileFieldDepartments": "Departamentos",
+  "profileFieldStatus": "Estado",
+  "profileFieldEmptyValue": "—",
+  "profileLanguageTitle": "Idioma",
+  "profileLanguageSubtitle": "Elige el idioma de la interfaz",
+  "profileThemeTitle": "Apariencia",
+  "profileThemeSubtitle": "Elige cómo se ve la app",
+  "profileThemeLight": "Claro",
+  "profileThemeDark": "Oscuro",
+  "profileThemeSystem": "Sistema",
+  "profileStatusActive": "Activo",
+  "profileStatusInactive": "Inactivo",
+  "profileChangeAvatar": "Cambiar foto de perfil",
+  "profileChangeAvatarComingSoon": "Carga de foto — próximamente",
+  "profileLogout": "Cerrar sesión",
+  "profileLogoutConfirmTitle": "¿Cerrar sesión?",
+  "profileLogoutConfirmBody": "Tendrás que iniciar sesión de nuevo para acceder a tus tickets.",
+  "profileLogoutConfirmCancel": "Cancelar",
+  "profileLogoutConfirmAction": "Cerrar sesión",
 
   "notifChannelName": "Notificaciones importantes",
   "notifChannelDescription": "Se usa para notificaciones críticas de la app.",
