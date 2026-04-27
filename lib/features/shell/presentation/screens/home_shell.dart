@@ -53,14 +53,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           const ProfileScreen(),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onFabPressed,
-        backgroundColor: ColorPalette.bottomNavActive,
-        foregroundColor: Colors.white,
-        elevation: 6,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, size: 28),
-      ),
+      floatingActionButton: CenterFab(onPressed: _onFabPressed),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: AppBottomNav(current: _current, onSelect: _onSelect),
     );

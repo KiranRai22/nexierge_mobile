@@ -82,25 +82,26 @@ class TicketCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   // Meta row: room, department, time
                   _MetaRow(ticket: ticket),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
 
                   // Item preview row (avatar + item title + small subtitle)
                   if (ticket.items.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: ColorPalette.opsSurfaceSubtle,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: ColorPalette.opsBorder),
                       ),
                       child: Row(
                         children: [
                           // avatar / thumbnail
                           Container(
-                            width: 36,
-                            height: 36,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
                               color: ColorPalette.grey100,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(
                               Icons.restaurant_menu_rounded,
@@ -108,7 +109,7 @@ class TicketCard extends StatelessWidget {
                               color: ColorPalette.textSecondary,
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,7 +122,7 @@ class TicketCard extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 4),
                                 Text(
                                   ticket.items.first.subtitle,
                                   style: TypographyManager.bodySmall.copyWith(
@@ -133,25 +134,24 @@ class TicketCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           ElevatedButton.icon(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: ColorPalette.opsPurple,
+                              backgroundColor: ColorPalette.chipCatalogFg,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               elevation: 0,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              minimumSize: const Size(96, 36),
                             ),
-                            icon: const Icon(Icons.play_arrow, size: 16),
+                            icon: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
                             label: Text(
                               'Start Work',
                               style: TypographyManager.labelSmall.copyWith(
                                 color: ColorPalette.white,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
