@@ -5,6 +5,7 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../core/widgets/dotted_divider.dart';
 import '../../domain/models/department.dart';
 import '../providers/session_providers.dart';
 
@@ -76,14 +77,10 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
           children: [
             const _Handle(),
             _Header(subtitle: _subtitle(context.l10n)),
-            const Divider(height: 1, color: ColorPalette.opsDividerSubtle),
+            DottedDivider(color: ColorPalette.opsDividerSubtle, thickness: 1, height: 8, dashWidth: 6, gap: 4),
             _DeptList(selected: _draft, onToggle: _toggle),
-            const Divider(height: 1, color: ColorPalette.opsDividerSubtle),
-            _Footer(
-              onSelectAll: _selectAll,
-              onClear: _clear,
-              onApply: _apply,
-            ),
+            DottedDivider(color: ColorPalette.opsDividerSubtle, thickness: 1, height: 8, dashWidth: 6, gap: 4),
+            _Footer(onSelectAll: _selectAll, onClear: _clear, onApply: _apply),
           ],
         ),
       ),
@@ -151,8 +148,7 @@ class _DeptList extends StatelessWidget {
         return InkWell(
           onTap: () => onToggle(d),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 Expanded(
@@ -192,10 +188,7 @@ class _Footer extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
         children: [
-          TextButton(
-            onPressed: onSelectAll,
-            child: Text(s.filterSelectAll),
-          ),
+          TextButton(onPressed: onSelectAll, child: Text(s.filterSelectAll)),
           TextButton(
             onPressed: onClear,
             style: TextButton.styleFrom(

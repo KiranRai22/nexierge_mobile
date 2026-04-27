@@ -21,7 +21,13 @@ class _AuthSessionStorageImpl implements AuthSessionStorage {
     final raw = await _storage.read(_kKey);
     if (raw == null || raw.isEmpty) return null;
     try {
-      final map = jsonDecode(raw) as Map<String, dynamic>;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        throw FormatException(
+          'Expected Map<String, dynamic>, got ${decoded.runtimeType}',
+        );
+      }
+      final map = decoded;
       final token = map['authToken'] as String?;
       if (token == null || token.isEmpty) return null;
 

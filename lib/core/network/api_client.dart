@@ -19,9 +19,7 @@ Dio _buildDio({String? authToken}) {
       contentType: APIEndpoints.contentTypeJson,
       responseType: ResponseType.json,
       validateStatus: (status) => status != null && status < 500,
-      headers: {
-        APIEndpoints.clientHeader: APIEndpoints.clientHeaderValue,
-      },
+      headers: {APIEndpoints.clientHeader: APIEndpoints.clientHeaderValue},
     ),
   );
 
@@ -53,6 +51,26 @@ Dio _buildDio({String? authToken}) {
 /// for authenticated endpoints will eventually depend on a token-aware
 /// variant (`authedDioProvider`) once the session is wired in.
 final dioProvider = Provider<Dio>((ref) => _buildDio());
+
+/// Token-aware [Dio]. Reads bearer token from the active auth session.
+/// Use for any authenticated endpoint (dashboard, tickets, profile…).
+/// Rebuilds when the session changes — interceptors stay current.
+final authedDioProvider = Provider<Dio>((ref) {
+  // Lazy import boundary: read via dynamic ref so we keep `core` from
+  // taking a hard dep on `features/auth`. The provider id is resolved at
+  // runtime via the riverpod graph.
+  final session = ref.watch(_authTokenProvider);
+  return _buildDio(authToken: session);
+});
+
+/// Internal accessor — overridden in `main.dart` after auth feature loads
+/// to point at the real session token. Default returns null (unauth).
+final _authTokenProvider = Provider<String?>((ref) => null);
+
+/// Public override hook so the auth feature can wire the token without
+/// `core` importing `features/auth`. Call from a `ProviderScope` override:
+///   `authTokenProviderOverride.overrideWith((ref) => ref.watch(...).token)`
+final authTokenProviderOverride = _authTokenProvider;
 
 /// Translates a [DioException] into the project's `AppException`. Keeps
 /// HTTP semantics out of repositories and UI.
@@ -90,16 +108,10 @@ AppException _fromStatus(int? status, String? message) {
     );
   }
   if (status == 403) {
-    return AppException(
-      type: AppErrorType.forbidden,
-      overrideMessage: message,
-    );
+    return AppException(type: AppErrorType.forbidden, overrideMessage: message);
   }
   if (status == 404) {
-    return AppException(
-      type: AppErrorType.notFound,
-      overrideMessage: message,
-    );
+    return AppException(type: AppErrorType.notFound, overrideMessage: message);
   }
   if (status >= 400 && status < 500) {
     return AppException(
@@ -107,10 +119,7 @@ AppException _fromStatus(int? status, String? message) {
       overrideMessage: message,
     );
   }
-  return AppException(
-    type: AppErrorType.serverError,
-    overrideMessage: message,
-  );
+  return AppException(type: AppErrorType.serverError, overrideMessage: message);
 }
 
 String? _readMessage(dynamic data) {

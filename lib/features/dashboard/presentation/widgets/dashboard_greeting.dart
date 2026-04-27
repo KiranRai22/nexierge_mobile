@@ -43,16 +43,12 @@ class DashboardGreeting extends StatelessWidget {
       children: [
         Text(
           _greeting(s),
-          style: TypographyManager.headlineSmall.copyWith(
-            color: c.fgBase,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
-          ),
+          style: TypographyManager.textTitle.copyWith(color: c.fgBase),
         ),
         const SizedBox(height: 4),
         Text(
           meta,
-          style: TypographyManager.bodyMedium.copyWith(color: c.fgSubtle),
+          style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
         ),
       ],
     );

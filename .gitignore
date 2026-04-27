@@ -12,6 +12,9 @@
 .swiftpm/
 migrate_working_dir/
 
+#windsurf
+.windsurf/
+
 # IntelliJ related
 *.iml
 *.ipr

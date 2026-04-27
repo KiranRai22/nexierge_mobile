@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
+import '../../../../../core/widgets/dotted_divider.dart';
 import '../../../domain/models/ticket.dart';
 import '../../providers/universal_create_controller.dart';
 
@@ -80,10 +81,7 @@ class _RoomSheetBodyState extends ConsumerState<_RoomSheetBody> {
                   onChanged: (v) => setState(() => _query = v),
                 ),
               ),
-              const Divider(
-                height: 1,
-                color: ColorPalette.opsDividerSubtle,
-              ),
+              DottedDivider(color: ColorPalette.opsDividerSubtle, thickness: 1, height: 8, dashWidth: 6, gap: 4),
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.symmetric(vertical: 8),

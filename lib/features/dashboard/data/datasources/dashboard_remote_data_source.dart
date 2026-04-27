@@ -38,7 +38,7 @@ class _DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
 final dashboardRemoteDataSourceProvider = Provider<DashboardRemoteDataSource>((
   ref,
 ) {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.watch(authedDioProvider);
   return _DashboardRemoteDataSourceImpl(dio);
 });
 

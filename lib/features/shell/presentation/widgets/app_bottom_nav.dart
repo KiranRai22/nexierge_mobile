@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Bottom navigation tab identifier shared between the shell and router.
@@ -24,7 +25,7 @@ class AppBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.l10n;
     return Material(
-      color: ColorPalette.bottomNavSurface,
+      color: context.appColors.bgComponent,
       elevation: 8,
       child: SafeArea(
         top: false,
@@ -84,8 +85,7 @@ class AppBottomNav extends StatelessWidget {
                 label,
                 style: TypographyManager.labelSmall.copyWith(
                   color: color,
-                  fontWeight:
-                      isActive ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ],

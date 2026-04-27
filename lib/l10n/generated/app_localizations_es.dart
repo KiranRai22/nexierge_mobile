@@ -347,6 +347,141 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionUndo => 'DESHACER';
 
   @override
+  String get ticketTabDetails => 'Detalles';
+
+  @override
+  String get ticketTabActivity => 'Actividad';
+
+  @override
+  String get ticketSectionGuestRoom => 'HUÉSPED Y HABITACIÓN';
+
+  @override
+  String get ticketSectionInformation => 'INFORMACIÓN DEL TICKET';
+
+  @override
+  String get ticketFieldGuest => 'Huésped';
+
+  @override
+  String get ticketFieldRoom => 'Habitación';
+
+  @override
+  String get ticketFieldRoomType => 'Tipo de habitación';
+
+  @override
+  String get ticketFieldDepartment => 'Departamento';
+
+  @override
+  String get ticketFieldConversation => 'Conversación';
+
+  @override
+  String get ticketFieldStatus => 'Estado';
+
+  @override
+  String get ticketFieldTicketType => 'Tipo de ticket';
+
+  @override
+  String get ticketFieldSource => 'Origen';
+
+  @override
+  String ticketRoomNumber(String number) {
+    return '#$number';
+  }
+
+  @override
+  String get ticketPriorityP1 => 'P1';
+
+  @override
+  String get ticketPriorityP2 => 'P2';
+
+  @override
+  String get ticketPriorityP3 => 'P3';
+
+  @override
+  String get ticketStatusBadgeAccepted => 'ACEPTADO';
+
+  @override
+  String get ticketStatusBadgeIncoming => 'ENTRANTE';
+
+  @override
+  String get ticketStatusBadgeInProgress => 'EN CURSO';
+
+  @override
+  String get ticketStatusBadgeDone => 'HECHO';
+
+  @override
+  String get ticketStatusBadgeCancelled => 'CANCELADO';
+
+  @override
+  String get ticketSourceGuestApp => 'App del huésped';
+
+  @override
+  String get ticketSourceFrontDesk => 'Recepción';
+
+  @override
+  String get ticketSourcePhone => 'Teléfono';
+
+  @override
+  String get ticketSourceWalkIn => 'Sin cita';
+
+  @override
+  String get ticketSourceSystem => 'Sistema';
+
+  @override
+  String ticketElapsed(String elapsed) {
+    return '$elapsed transcurridos';
+  }
+
+  @override
+  String get ticketActionStartWork => 'Comenzar';
+
+  @override
+  String get ticketActionPause => 'Pausar';
+
+  @override
+  String get ticketActionResume => 'Reanudar';
+
+  @override
+  String get ticketActionComplete => 'Completar';
+
+  @override
+  String get ticketActionChangeDue => 'Cambiar plazo';
+
+  @override
+  String get ticketActionCancel => 'Cancelar';
+
+  @override
+  String get ticketActionReset => 'Restablecer';
+
+  @override
+  String get ticketActivityCreated => 'Ticket creado';
+
+  @override
+  String ticketActivityStatusChange(String from, String to) {
+    return '$from → $to';
+  }
+
+  @override
+  String get ticketActivityBadgeAcknowledged => 'Reconocido';
+
+  @override
+  String get ticketActivityBadgeCreated => 'Creado';
+
+  @override
+  String get ticketActivityBadgeDone => 'Hecho';
+
+  @override
+  String get ticketActivityBadgeCancelled => 'Cancelado';
+
+  @override
+  String get ticketActivityBadgeNote => 'Nota';
+
+  @override
+  String get ticketActivityBadgeReassigned => 'Reasignado';
+
+  @override
+  String get ticketActivityBadgeOverdue => 'Vencido';
+
+  @override
   String get etaTitle => '¿Cuándo estará listo?';
 
   @override
@@ -775,7 +910,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get labelGuestCheckoutTomorrow => 'Salida mañana';
 
   @override
-  String get relativeJustNow => 'Justo ahora';
+  String get relativeJustNow => 'ahora mismo';
 
   @override
   String relativeSeconds(int seconds) {
@@ -922,5 +1057,52 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String notifNewTicket(String ticketCode) {
     return 'Nuevo ticket: $ticketCode';
+  }
+
+  @override
+  String get notificationsTitle => 'Notificaciones';
+
+  @override
+  String notificationsUnread(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sin leer',
+      one: '1 sin leer',
+      zero: 'Sin no leídas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notificationsTotal(int count) {
+    return '$count en total';
+  }
+
+  @override
+  String get notificationsMarkAllRead => 'Marcar todo como leído';
+
+  @override
+  String get notificationsEmpty => 'Estás al día';
+
+  @override
+  String get notificationsEmptyHint => 'La nueva actividad aparecerá aquí.';
+
+  @override
+  String get notificationsItemNewTicket => 'Nuevo ticket recibido';
+
+  @override
+  String relativeMinutesAgo(int minutes) {
+    return 'hace $minutes min';
+  }
+
+  @override
+  String relativeHoursAgo(int hours) {
+    return 'hace $hours h';
+  }
+
+  @override
+  String relativeDaysAgo(int days) {
+    return 'hace $days d';
   }
 }
