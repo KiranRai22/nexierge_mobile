@@ -99,7 +99,7 @@ class _SegmentTab extends StatelessWidget {
               boxShadow: selected
                   ? [
                       BoxShadow(
-                        color: Colors.black.withValues(0.06),
+                        color: Colors.black.withValues(alpha: 0.06),
                         blurRadius: 6,
                         offset: const Offset(0, 1),
                       ),
