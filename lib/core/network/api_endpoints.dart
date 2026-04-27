@@ -43,6 +43,31 @@ abstract class APIEndpoints {
   static const String profile = '$baseUrl/v1/user/profile';
   static const String updateProfile = '$baseUrl/v1/user/profile';
 
+  // Dashboard
+  static const String dashboardHotelDetails =
+      '$baseUrl/dashboard/hotel_details';
+  static const String dashboardNumbers = '$baseUrl/dashboard/numbers';
+
+  // FCM
+  static const String fcmUpdate = '$baseUrl/fcm_update';
+
+  // Firebase helper
+  static const String firebaseSignUp = '$baseUrl/firebase/sign_up';
+
+  // Rooms
+  static const String roomsDetails = '$baseUrl/rooms/details';
+  static const String roomsGetAll = '$baseUrl/rooms/get/all';
+  static const String roomsUpdateStatus = '$baseUrl/rooms/update_status';
+  static const String roomsApproveStatusChange =
+      '$baseUrl/rooms/approve_status_change';
+
+  // Staff
+  static const String staffGetAllHousekeeping =
+      '$baseUrl/staff/get_all_housekeeping';
+
+  // Languages
+  static const String languagesAll = '$baseUrl/languages/all';
+
   // ---------------------------------------------------------------------------
   // Timeouts & headers
   // ---------------------------------------------------------------------------
