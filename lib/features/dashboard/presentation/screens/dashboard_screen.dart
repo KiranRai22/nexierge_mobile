@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/i18n/language_picker_sheet.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../shell/presentation/widgets/app_bottom_nav.dart';
@@ -15,8 +14,10 @@ import '../widgets/dashboard_greeting.dart';
 import '../widgets/dashboard_stats_grid.dart';
 import '../widgets/needs_attention_list.dart';
 
-/// Operator dashboard: greeting, stats grid (Incoming Now / In Progress /
-/// Overdue) and a *Needs attention* list of high-priority tickets.
+/// Operator dashboard. Mirrors `docs/ai_prompts/Dashboard.tsx`:
+/// header (avatar + theme + bell) → greeting → 2×2 stats grid (Needs
+/// acknowledgment / In progress / Overdue / Not started) → Needs attention
+/// list → empty state.
 class DashboardScreen extends ConsumerWidget {
   /// Switch the host shell to the Tickets tab. Wired by [HomeShell] via
   /// the bottom-nav controller it owns.
@@ -43,10 +44,24 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
+  bool _resolveDark(BuildContext context, ThemeMode? mode) {
+    switch (mode) {
+      case ThemeMode.dark:
+        return true;
+      case ThemeMode.light:
+        return false;
+      case ThemeMode.system:
+      case null:
+        return MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(operatorSessionProvider);
     final asyncView = ref.watch(dashboardViewProvider);
+    final themeMode = ref.watch(themeModeControllerProvider).valueOrNull;
+    final isDark = _resolveDark(context, themeMode);
 
     final initials = session.displayName.isEmpty
         ? '?'
@@ -57,73 +72,83 @@ class DashboardScreen extends ConsumerWidget {
       color: ColorPalette.opsSurfaceSubtle,
       child: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () => _refresh(ref),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                sliver: SliverToBoxAdapter(
-                  child: AppTopBar(
-                    avatarInitials: initials,
-                    hasUnreadNotifications: asyncView.maybeWhen(
-                      data: (v) => v.hasUnread,
-                      orElse: () => false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Fixed top: app bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              child: AppTopBar(
+                avatarInitials: initials,
+                isDarkMode: isDark,
+                hasUnreadNotifications: asyncView.maybeWhen(
+                  data: (v) => v.hasUnread,
+                  orElse: () => false,
+                ),
+                onThemeToggle: () =>
+                    ref.read(themeModeControllerProvider.notifier).toggle(),
+                onNotifications: () => _showNotificationsHint(context),
+              ),
+            ),
+
+            // Fixed greeting under the app bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: DashboardGreeting(
+                firstName: firstName,
+                deptHint: session.homeDepartment,
+                now: DateTime.now(),
+              ),
+            ),
+
+            // Scrollable content below
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => _refresh(ref),
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      sliver: SliverToBoxAdapter(
+                        child: asyncView.when(
+                          data: (v) => DashboardStatsGrid(
+                            incoming: v.incomingCount,
+                            accepted: v.acceptedCount,
+                            inProgress: v.inProgressCount,
+                            overdue: v.overdueCount,
+                            breakdown: v.incomingBreakdown,
+                            onTapIncoming: () => onSwitchTab(ShellTab.tickets),
+                            onTapInProgress: () =>
+                                onSwitchTab(ShellTab.tickets),
+                            onTapOverdue: () => onSwitchTab(ShellTab.tickets),
+                            onTapAccepted: () => onSwitchTab(ShellTab.tickets),
+                          ),
+                          loading: () => const _StatsSkeleton(),
+                          error: (_, _) => const _StatsSkeleton(),
+                        ),
+                      ),
                     ),
-                    onThemeToggle: () => ref
-                        .read(themeModeControllerProvider.notifier)
-                        .toggle(),
-                    onLanguageTap: () =>
-                        LanguagePickerSheet.show(context),
-                    onNotifications: () => _showNotificationsHint(context),
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                sliver: SliverToBoxAdapter(
-                  child: DashboardGreeting(
-                    firstName: firstName,
-                    deptHint: session.homeDepartment,
-                    now: DateTime.now(),
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                sliver: SliverToBoxAdapter(
-                  child: asyncView.when(
-                    data: (v) => DashboardStatsGrid(
-                      incoming: v.incomingCount,
-                      inProgress: v.inProgressCount,
-                      overdue: v.overdueCount,
-                      breakdown: v.incomingBreakdown,
-                      onTapAll: () => onSwitchTab(ShellTab.tickets),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                      sliver: SliverToBoxAdapter(
+                        child: asyncView.when(
+                          data: (v) => NeedsAttentionList(
+                            items: v.needsAttention,
+                            onItemTap: (item) =>
+                                _openTicket(context, item.ticket),
+                            onViewAll: () => onSwitchTab(ShellTab.tickets),
+                          ),
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, _) => const SizedBox.shrink(),
+                        ),
+                      ),
                     ),
-                    loading: () => const _StatsSkeleton(),
-                    error: (_, __) => const _StatsSkeleton(),
-                  ),
+                  ],
                 ),
               ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                sliver: SliverToBoxAdapter(
-                  child: asyncView.when(
-                    data: (v) => NeedsAttentionList(
-                      items: v.needsAttention,
-                      deptHint: session.homeDepartment,
-                      onItemTap: (item) =>
-                          _openTicket(context, item.ticket),
-                      onViewAll: () => onSwitchTab(ShellTab.tickets),
-                    ),
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -135,12 +160,16 @@ class _StatsSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const DashboardStatsGrid(
+    return DashboardStatsGrid(
       incoming: 0,
+      accepted: 0,
       inProgress: 0,
       overdue: 0,
-      breakdown: IncomingBreakdown(universal: 0, catalog: 0, manual: 0),
-      onTapAll: _noop,
+      breakdown: const IncomingBreakdown(universal: 0, catalog: 0, manual: 0),
+      onTapIncoming: _noop,
+      onTapInProgress: _noop,
+      onTapOverdue: _noop,
+      onTapAccepted: _noop,
     );
   }
 
