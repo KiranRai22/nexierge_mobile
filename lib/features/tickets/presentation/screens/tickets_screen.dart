@@ -15,6 +15,7 @@ import '../widgets/kpi_strip.dart';
 import '../widgets/scope_segmented_tabs.dart';
 import '../widgets/sub_tab_bar.dart';
 import '../widgets/ticket_card.dart';
+import '_tickets_helpers.dart';
 import 'ticket_detail_screen.dart';
 
 /// Top-level dashboard for the operator. Composes top bar, scope tabs,
@@ -141,32 +142,32 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: asyncList.when(
                 data: (v) {
-                  final allCount = v.totalCount;
-                  final acceptedCount = v.acceptedCount;
-                  final inProgressCount = v.inProgressCount;
-                  final overdueCount = v.overdueCount;
+                  final allCount = v.incomingNow.length + v.inProgress.length + v.completedToday.length + v.scheduled.length;
+                  final acceptedCount = v.inProgress.where((t) => t.status == TicketStatus.accepted).length;
+                  final inProgressCount = v.inProgress.where((t) => t.status == TicketStatus.inProgress).length;
+                  final overdueCount = v.kpiOverdue;
                   return SizedBox(
                     height: 40,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: [
-                        _FilterChip(
-                          label: context.l10n.filterAll,
+                        TicketsFilterChip(
+                          label: context.l10n.activityTypeAll,
                           count: allCount,
                           selected: true,
                         ),
                         const SizedBox(width: 8),
-                        _FilterChip(
+                        TicketsFilterChip(
                           label: context.l10n.statusAccepted,
                           count: acceptedCount,
                         ),
                         const SizedBox(width: 8),
-                        _FilterChip(
+                        TicketsFilterChip(
                           label: context.l10n.statusInProgress,
                           count: inProgressCount,
                         ),
                         const SizedBox(width: 8),
-                        _FilterChip(
+                        TicketsFilterChip(
                           label: context.l10n.statusOverdue,
                           count: overdueCount,
                         ),

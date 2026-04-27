@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-class _FilterChip extends StatelessWidget {
+class TicketsFilterChip extends StatelessWidget {
   final String label;
   final int count;
   final bool selected;

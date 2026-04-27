@@ -7,6 +7,7 @@ import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../tickets/presentation/screens/tickets_screen.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'create_router.dart';
+import '../widgets/center_fab.dart';
 
 /// Single host that owns the bottom-nav state.
 ///
