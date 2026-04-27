@@ -70,7 +70,7 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
         style: ElevatedButton.styleFrom(
           backgroundColor: ColorPalette.primary,
           foregroundColor: ColorPalette.white,
-          disabledBackgroundColor: ColorPalette.primary.withOpacity(0.6),
+          disabledBackgroundColor: ColorPalette.primary.withValues(0.6),
           disabledForegroundColor: ColorPalette.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
