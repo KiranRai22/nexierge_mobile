@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "723358623825",
+    "project_id": "nexierge-mobile-app",
+    "storage_bucket": "nexierge-mobile-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:723358623825:android:807c6355c3972c3775f070",
+        "android_client_info": {
+          "package_name": "com.nexierge.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCza0XKy2yGgbwTYmdZN0C-gfD-7_Dxgjw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

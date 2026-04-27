@@ -1,0 +1,411 @@
+{
+  "@@locale": "en",
+
+  "appName": "Nexierge",
+  "appTagline": "Your tagline here",
+
+  "login": "Login",
+  "logout": "Logout",
+  "register": "Register",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "forgotPassword": "Forgot Password?",
+  "resetPassword": "Reset Password",
+
+  "loginWelcomeTitle": "Welcome to Nexierge",
+  "loginWelcomeSubtitle": "Sign in to continue managing your hotel operations.",
+  "loginTabEmail": "Email",
+  "loginTabEmployeeCode": "Employee Code",
+  "loginEmailLabel": "Work email",
+  "loginPasswordLabel": "Password",
+  "loginEmployeeCodeLabel": "Employee Code",
+  "loginCodeLabel": "Login Code",
+  "loginAccessButton": "Sign in",
+  "loginEmailHint": "you@yourhotel.com",
+  "loginEmployeeCodeHint": "e.g. EMP-001",
+  "loginCodeHint": "Enter your login code",
+  "loginAdminContactFooter": "If you don't remember your access codes or password, contact the admin of your hotel.",
+  "loginAppVersion": "v1.0.0",
+  "loginEmployeeHelper": "Use the credentials provided by your hotel administrator.",
+  "loginErrorInvalidEmail": "Invalid email or password.",
+  "loginErrorInvalidCode": "Invalid employee code or login code.",
+  "loginErrorCodeExpired": "Code expired. Please request a new one.",
+  "loginErrorPendingReviewTitle": "Access pending review",
+  "loginErrorPendingReviewBody": "Your access request is still under review.",
+  "loginErrorRejectedTitle": "Access not approved",
+  "loginErrorRejectedBody": "Your access request was not approved. Please contact support.",
+  "loginErrorDisabledTitle": "Account disabled",
+  "loginErrorDisabledBody": "Your account is currently disabled. Please contact your administrator.",
+  "loginErrorInactiveHotelTitle": "Hotel inactive",
+  "loginErrorInactiveHotelBody": "This hotel account is not currently active.",
+  "loginErrorGeneric": "Something went wrong. Please try again.",
+  "loginErrorSignInFailed": "We couldn't sign you in right now. Please try again.",
+
+  "networkError": "No internet connection. Please check your network and try again.",
+  "timeoutError": "Request timed out. Please try again.",
+  "unauthorizedError": "Your session has expired. Please login again.",
+  "forbiddenError": "You don't have permission to perform this action.",
+  "notFoundError": "The requested resource was not found.",
+  "serverError": "Something went wrong on our end. Please try again later.",
+  "unknownError": "An unexpected error occurred. Please try again.",
+  "validationError": "Please check your input and try again.",
+
+  "successSaved": "Saved successfully.",
+  "successUpdated": "Updated successfully.",
+  "successDeleted": "Deleted successfully.",
+
+  "save": "Save",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "delete": "Delete",
+  "edit": "Edit",
+  "done": "Done",
+  "retry": "Retry",
+  "back": "Back",
+  "next": "Next",
+  "submit": "Submit",
+  "search": "Search",
+  "loading": "Loading...",
+
+  "emptyState": "Nothing here yet.",
+  "emptySearch": "No results found.",
+
+  "requiredField": "This field is required.",
+  "invalidEmail": "Please enter a valid email address.",
+  "passwordTooShort": "Password must be at least 8 characters.",
+  "passwordsDoNotMatch": "Passwords do not match.",
+
+  "scopeMyDept": "My Dept",
+  "scopeAllHotel": "All Hotel",
+  "greeting": "Hi, {name}",
+  "@greeting": {
+    "placeholders": {
+      "name": { "type": "String", "example": "Fola" }
+    }
+  },
+
+  "ticketsSearchHint": "Search ticket, room or guest…",
+  "kpiIncoming": "INCOMING",
+  "kpiInProgress": "IN PROGRESS",
+  "kpiOverdue": "OVERDUE",
+
+  "subTabIncoming": "Incoming",
+  "subTabToday": "Today",
+  "subTabScheduled": "Scheduled",
+  "subTabDone": "Done",
+
+  "sectionIncomingNow": "INCOMING NOW",
+  "sectionInProgress": "IN PROGRESS",
+  "sectionCompletedToday": "COMPLETED TODAY",
+  "sectionScheduled": "SCHEDULED",
+
+  "chipUniversal": "Universal",
+  "chipCatalog": "Catalog",
+  "chipManual": "Manual",
+  "statusNew": "New",
+  "statusUnassigned": "Unassigned",
+  "statusAccepted": "Accepted",
+  "statusInProgress": "In progress",
+  "statusDone": "Done",
+  "statusCancelled": "Cancelled",
+  "statusOverdue": "Overdue",
+
+  "detailRoomLabel": "ROOM",
+  "detailGuestLabel": "GUEST",
+  "detailRequestLabel": "REQUEST",
+  "detailGuestNoteLabel": "GUEST NOTE",
+  "detailTimingLabel": "TIMING",
+  "detailCreated": "Created",
+  "detailAccepted": "Accepted",
+  "detailDone": "Done",
+  "detailEmpty": "—",
+
+  "actionAccept": "Accept & set ETA",
+  "actionChangeDept": "Change dept",
+  "actionAddNote": "Add note",
+  "actionStart": "Start",
+  "actionMarkDone": "Mark done",
+  "actionUndo": "UNDO",
+
+  "etaTitle": "When will this be done?",
+  "etaSubtitle": "Accepting {ticketCode}",
+  "@etaSubtitle": {
+    "placeholders": {
+      "ticketCode": { "type": "String", "example": "TKT-3042" }
+    }
+  },
+  "eta10": "10 minutes",
+  "eta15": "15 minutes",
+  "eta30": "30 minutes",
+  "eta60": "1 hour",
+  "etaLater": "Later today",
+  "etaCustom": "Custom time",
+  "etaGuestNotified": "Guest will be notified",
+  "etaReadyBy": "Ready by {time}",
+  "@etaReadyBy": {
+    "placeholders": {
+      "time": { "type": "String", "example": "1:40 AM" }
+    }
+  },
+  "etaConfirmMinutes": "Accept · {minutes} min",
+  "@etaConfirmMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int", "example": "15" }
+    }
+  },
+  "etaConfirmHours": "Accept · {hours}h",
+  "@etaConfirmHours": {
+    "placeholders": {
+      "hours": { "type": "int", "example": "1" }
+    }
+  },
+  "etaShortNow": "Now",
+  "etaShortMinutes": "ETA {minutes}m",
+  "@etaShortMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int", "example": "5" }
+    }
+  },
+  "etaShortHours": "ETA {hours}h",
+  "@etaShortHours": {
+    "placeholders": {
+      "hours": { "type": "int", "example": "1" }
+    }
+  },
+
+  "activityTypeAll": "All",
+  "activityTypeCreated": "Created",
+  "activityTypeAccepted": "Accepted",
+  "activityTypeDone": "Done",
+  "activityTypeOverdue": "Overdue",
+  "activityTypeCancelled": "Cancelled",
+  "activityTypeNotes": "Notes",
+  "activityTypeReassigned": "Reassigned",
+
+  "dayToday": "TODAY",
+  "dayYesterday": "YESTERDAY",
+  "dayOlder": "OLDER",
+
+  "activityCreatedTitle": "Ticket created",
+  "activityAcceptedTitle": "{actor} accepted the ticket",
+  "@activityAcceptedTitle": {
+    "placeholders": {
+      "actor": { "type": "String", "example": "Blessing K." }
+    }
+  },
+  "activityDoneTitle": "{actor} marked this done",
+  "@activityDoneTitle": {
+    "placeholders": {
+      "actor": { "type": "String" }
+    }
+  },
+  "activityOverdueTitle": "Ticket is overdue",
+  "activityCancelledTitle": "{actor} cancelled this ticket",
+  "@activityCancelledTitle": {
+    "placeholders": {
+      "actor": { "type": "String" }
+    }
+  },
+  "activityNoteTitle": "{actor} added a note",
+  "@activityNoteTitle": {
+    "placeholders": {
+      "actor": { "type": "String" }
+    }
+  },
+  "activityReassignedTitle": "{actor} reassigned to {target}",
+  "@activityReassignedTitle": {
+    "placeholders": {
+      "actor": { "type": "String" },
+      "target": { "type": "String", "example": "Maintenance" }
+    }
+  },
+
+  "createNewTitle": "Create new",
+  "createNewSubtitle": "What kind of ticket are you creating?",
+  "createUniversalTitle": "Universal request",
+  "createUniversalDesc": "Towels, pillows, toiletries — quick operational asks",
+  "createCatalogTitle": "Catalog",
+  "createCatalogDesc": "Room service, spa, bar — anything a guest is paying for",
+  "createManualTitle": "Manual ticket",
+  "createManualDesc": "Complaints, issues, anything that doesn't fit above",
+  "createHint": "Not sure? Manual works for anything.",
+
+  "universalHeading": "Universal request",
+  "universalSubheading": "Tap what you need",
+  "itemTowels": "Towels",
+  "itemPillows": "Pillows",
+  "itemToiletries": "Toiletries",
+  "itemBlanket": "Blanket",
+  "itemWater": "Water",
+  "itemOther": "Other",
+  "roomLabel": "ROOM",
+  "roomFind": "Find",
+  "roomRecentHelper": "Recent rooms · tap to select",
+  "noteLabel": "NOTE (OPTIONAL)",
+  "noteHint": "Add a note for the team…",
+  "pickItemHint": "Pick an item to start",
+  "pickRoomHint": "Pick a room to continue",
+  "createCta": "Create",
+  "createSuccessToast": "Ticket created",
+  "tapToAdd": "Tap to add",
+  "itemsSelected": "{count, plural, one{1 item selected} other{{count} items selected}}",
+  "@itemsSelected": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "roomPickerTitle": "Select room",
+  "roomPickerRecent": "Recent",
+  "roomPickerAll": "All rooms",
+  "roomFloor": "Floor {floor}",
+  "@roomFloor": {
+    "placeholders": {
+      "floor": { "type": "int", "example": "2" }
+    }
+  },
+  "roomNumber": "Room {number}",
+  "@roomNumber": {
+    "placeholders": {
+      "number": { "type": "String", "example": "208" }
+    }
+  },
+  "roomSearchHint": "Search room number…",
+
+  "filterTitle": "Filter by department",
+  "filterSubtitleAll": "Showing all departments",
+  "filterSubtitleSome": "{count, plural, one{Showing 1 department} other{Showing {count} departments}}",
+  "@filterSubtitleSome": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "filterSelectAll": "Select all",
+  "filterClear": "Clear",
+  "filterApply": "Apply",
+
+  "deptConcierge": "Concierge",
+  "deptFnb": "F&B",
+  "deptFrontDesk": "Front Desk",
+  "deptHousekeeping": "Housekeeping",
+  "deptMaintenance": "Maintenance",
+  "deptRoomService": "Room Service",
+
+  "dashboardGreetingMorning": "Good morning, {name}",
+  "@dashboardGreetingMorning": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "dashboardGreetingAfternoon": "Good afternoon, {name}",
+  "@dashboardGreetingAfternoon": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "dashboardGreetingEvening": "Good evening, {name}",
+  "@dashboardGreetingEvening": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "dashboardIncomingNow": "Incoming Now",
+  "dashboardInProgressLabel": "In Progress",
+  "dashboardOverdueLabel": "Overdue",
+  "dashboardNeedsAttention": "Needs attention",
+  "dashboardViewAll": "View all",
+  "dashboardAllCaughtUp": "All caught up",
+  "dashboardAllCaughtUpDept": "Nothing urgent in {dept} right now.",
+  "@dashboardAllCaughtUpDept": {
+    "placeholders": { "dept": { "type": "String" } }
+  },
+  "dashboardAllCaughtUpGeneric": "No overdue or urgent items right now.",
+  "dashboardBreakdownUniversal": "{n} universal",
+  "@dashboardBreakdownUniversal": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dashboardBreakdownCatalog": "{n} catalog",
+  "@dashboardBreakdownCatalog": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dashboardBreakdownManual": "{n} manual",
+  "@dashboardBreakdownManual": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dashboardWaitPill": "{minutes}m",
+  "@dashboardWaitPill": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "dashboardEtaPill": "ETA {minutes}m",
+  "@dashboardEtaPill": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "dashboardRoomPrefix": "Room {number}",
+  "@dashboardRoomPrefix": {
+    "placeholders": { "number": { "type": "String" } }
+  },
+
+  "navDashboard": "Dashboard",
+  "navTickets": "Tickets",
+  "navActivity": "Activity",
+  "navCreate": "Create",
+  "navModules": "Modules",
+  "navProfile": "Profile",
+
+  "comingSoonTitle": "Coming soon",
+  "comingSoonModules": "Modules will give you quick access to housekeeping, F&B and more.",
+  "comingSoonProfile": "Your profile, settings and preferences will live here.",
+  "comingSoonCatalog": "Order room service, spa, and other paid items here.",
+  "comingSoonManual": "Free-form complaint or issue ticket. We'll wire this up next.",
+  "comingSoonNotifications": "Notifications inbox — coming soon",
+  "backToTickets": "Back to tickets",
+
+  "labelEta": "ETA",
+  "labelGuestCheckoutTomorrow": "Check-out tomorrow",
+
+  "relativeJustNow": "Just now",
+  "relativeSeconds": "{seconds}s ago",
+  "@relativeSeconds": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "relativeMinutes": "{minutes}m ago",
+  "@relativeMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "relativeHours": "{hours}h ago",
+  "@relativeHours": {
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "relativeDays": "{days}d ago",
+  "@relativeDays": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+
+  "languageTitle": "Language",
+  "languageSubtitle": "Pick the language you'd like the app to use.",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languageSystem": "Match device language",
+  "languageChangedToast": "Language updated",
+  "languageNativeEnglish": "English",
+  "languageNativeSpanish": "Español",
+
+  "tooltipToggleTheme": "Toggle theme",
+  "tooltipLanguage": "Language",
+  "tooltipNotifications": "Notifications",
+
+  "profileSectionPreferences": "Preferences",
+
+  "notifChannelName": "High importance notifications",
+  "notifChannelDescription": "Used for critical app notifications.",
+  "notifGenericTitle": "Nexierge",
+  "notifNewTicket": "New ticket: {ticketCode}",
+  "@notifNewTicket": {
+    "placeholders": {
+      "ticketCode": { "type": "String", "example": "TKT-3042" }
+    }
+  }
+}
