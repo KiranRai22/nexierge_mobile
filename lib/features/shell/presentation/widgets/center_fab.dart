@@ -25,7 +25,7 @@ class CenterFab extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: ColorPalette.opsPurple.withValues(alpha: 0.35),
+              color: ColorPalette.opsPurple.withOpacity(0.35),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),

@@ -26,12 +26,11 @@ class ScopeSegmentedTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _SegmentedTrack(scope: scope, onChanged: onScopeChanged)),
-        const SizedBox(width: 8),
-        _FilterButton(
-          active: hasActiveFilter,
-          onTap: onFilterTap,
+        Expanded(
+          child: _SegmentedTrack(scope: scope, onChanged: onScopeChanged),
         ),
+        const SizedBox(width: 8),
+        _FilterButton(active: hasActiveFilter, onTap: onFilterTap),
       ],
     );
   }
@@ -100,7 +99,7 @@ class _SegmentTab extends StatelessWidget {
               boxShadow: selected
                   ? [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
+                        color: Colors.black.withOpacity(0.06),
                         blurRadius: 6,
                         offset: const Offset(0, 1),
                       ),

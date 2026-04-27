@@ -226,15 +226,18 @@ class StatNoteCard extends StatelessWidget {
                   children: [
                     // Colored title pill
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: p.accent,
+                        color: p.accent.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         badgeLabel.toUpperCase(),
                         style: TypographyManager.kpiLabel.copyWith(
-                          color: ColorPalette.white,
+                          color: ColorPalette.black,
                         ),
                       ),
                     ),
@@ -251,7 +254,7 @@ class StatNoteCard extends StatelessWidget {
                               height: 1.15,
                             ),
                     ),
-                    const SizedBox(height: 4),
+                    Divider(color: p.accent, thickness: .05),
                     Text(
                       footer,
                       style: TypographyManager.bodySmall.copyWith(
