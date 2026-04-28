@@ -439,5 +439,108 @@
     "placeholders": {
       "ticketCode": { "type": "String", "example": "TKT-3042" }
     }
-  }
+  },
+
+  "ticketTabDetails": "Details",
+  "ticketTabActivity": "Activity",
+  "ticketSectionGuestRoom": "GUEST & ROOM",
+  "ticketSectionInformation": "TICKET INFORMATION",
+  "ticketFieldGuest": "Guest",
+  "ticketFieldRoom": "Room",
+  "ticketFieldRoomType": "Room type",
+  "ticketFieldDepartment": "Department",
+  "ticketFieldConversation": "Conversation",
+  "ticketFieldStatus": "Status",
+  "ticketFieldTicketType": "Ticket type",
+  "ticketFieldSource": "Source",
+  "ticketRoomNumber": "#{number}",
+  "@ticketRoomNumber": {
+    "placeholders": {
+      "number": { "type": "String", "example": "309" }
+    }
+  },
+  "ticketPriorityP1": "P1",
+  "ticketPriorityP2": "P2",
+  "ticketPriorityP3": "P3",
+  "ticketStatusBadgeAccepted": "ACCEPTED",
+  "ticketStatusBadgeIncoming": "INCOMING",
+  "ticketStatusBadgeInProgress": "IN PROGRESS",
+  "ticketStatusBadgeDone": "DONE",
+  "ticketStatusBadgeCancelled": "CANCELLED",
+  "ticketSourceGuestApp": "Guest app",
+  "ticketSourceFrontDesk": "Front desk",
+  "ticketSourcePhone": "Phone",
+  "ticketSourceWalkIn": "Walk-in",
+  "ticketSourceSystem": "System",
+  "ticketElapsed": "{elapsed} elapsed",
+  "@ticketElapsed": {
+    "placeholders": {
+      "elapsed": { "type": "String", "example": "8h 30m 12s" }
+    }
+  },
+  "ticketActionStartWork": "Start Work",
+  "ticketActionPause": "Pause",
+  "ticketActionResume": "Resume",
+  "ticketActionComplete": "Complete",
+  "ticketActionChangeDue": "Change Due",
+  "ticketActionCancel": "Cancel",
+  "ticketActionReset": "Reset",
+  "ticketActivityCreated": "Ticket created",
+  "ticketActivityStatusChange": "{from} → {to}",
+  "@ticketActivityStatusChange": {
+    "placeholders": {
+      "from": { "type": "String", "example": "New" },
+      "to": { "type": "String", "example": "Accepted" }
+    }
+  },
+  "ticketActivityBadgeAcknowledged": "Acknowledged",
+  "ticketActivityBadgeCreated": "Created",
+  "ticketActivityBadgeDone": "Done",
+  "ticketActivityBadgeCancelled": "Cancelled",
+  "ticketActivityBadgeNote": "Note",
+  "ticketActivityBadgeReassigned": "Reassigned",
+  "ticketActivityBadgeOverdue": "Overdue",
+
+  "notificationsTitle": "Notifications",
+  "notificationsUnread": "{count, plural, =0{No unread} =1{1 unread} other{{count} unread}}",
+  "@notificationsUnread": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "notificationsTotal": "{count} total",
+  "@notificationsTotal": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "notificationsMarkAllRead": "Mark all as read",
+  "notificationsEmpty": "You're all caught up",
+  "notificationsEmptyHint": "New activity will appear here.",
+  "notificationsItemNewTicket": "New ticket received",
+  "relativeJustNow": "just now",
+  "relativeMinutesAgo": "{minutes}m ago",
+  "@relativeMinutesAgo": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "relativeHoursAgo": "{hours}h ago",
+  "@relativeHoursAgo": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "relativeDaysAgo": "{days}d ago",
+  "@relativeDaysAgo": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+
+  "ticketKindUniversal": "Universal",
+  "ticketKindCatalog": "Catalog", 
+  "ticketKindManual": "Manual",
+  
+  "filterNewestFirst": "Newest first",
+  "filterOldestFirst": "Oldest first",
+  "filterThisWeek": "This week",
+  "filterThisMonth": "This month",
+
+  "profileAvatarSheetTitle": "Change profile photo",
+  "profileAvatarSheetSubtitle": "Choose a new photo from your camera or gallery.",
+  "profileAvatarSheetUploadTitle": "Choose from gallery",
+  "profileAvatarSheetUploadSubtitle": "Select an existing photo from your device.",
+  "profileAvatarSheetCameraTitle": "Take photo",
+  "profileAvatarSheetCameraSubtitle": "Use your camera to take a new photo."
 }

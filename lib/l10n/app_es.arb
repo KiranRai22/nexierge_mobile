@@ -333,5 +333,12 @@
   "notifChannelName": "Notificaciones importantes",
   "notifChannelDescription": "Se usa para notificaciones críticas de la app.",
   "notifGenericTitle": "Nexierge",
-  "notifNewTicket": "Nuevo ticket: {ticketCode}"
+  "notifNewTicket": "Nuevo ticket: {ticketCode}",
+
+  "profileAvatarSheetTitle": "Cambiar foto de perfil",
+  "profileAvatarSheetSubtitle": "Elige una nueva foto desde tu cámara o galería.",
+  "profileAvatarSheetUploadTitle": "Elegir de la galería",
+  "profileAvatarSheetUploadSubtitle": "Selecciona una foto existente de tu dispositivo.",
+  "profileAvatarSheetCameraTitle": "Tomar foto",
+  "profileAvatarSheetCameraSubtitle": "Usa tu cámara para tomar una nueva foto."
 }

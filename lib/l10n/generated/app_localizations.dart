@@ -1451,7 +1451,7 @@ abstract class AppLocalizations {
   /// No description provided for @relativeJustNow.
   ///
   /// In en, this message translates to:
-  /// **'Just now'**
+  /// **'just now'**
   String get relativeJustNow;
 
   /// No description provided for @relativeSeconds.
@@ -1723,6 +1723,402 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New ticket: {ticketCode}'**
   String notifNewTicket(String ticketCode);
+
+  /// No description provided for @ticketTabDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get ticketTabDetails;
+
+  /// No description provided for @ticketTabActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get ticketTabActivity;
+
+  /// No description provided for @ticketSectionGuestRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'GUEST & ROOM'**
+  String get ticketSectionGuestRoom;
+
+  /// No description provided for @ticketSectionInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'TICKET INFORMATION'**
+  String get ticketSectionInformation;
+
+  /// No description provided for @ticketFieldGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get ticketFieldGuest;
+
+  /// No description provided for @ticketFieldRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get ticketFieldRoom;
+
+  /// No description provided for @ticketFieldRoomType.
+  ///
+  /// In en, this message translates to:
+  /// **'Room type'**
+  String get ticketFieldRoomType;
+
+  /// No description provided for @ticketFieldDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'Department'**
+  String get ticketFieldDepartment;
+
+  /// No description provided for @ticketFieldConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get ticketFieldConversation;
+
+  /// No description provided for @ticketFieldStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get ticketFieldStatus;
+
+  /// No description provided for @ticketFieldTicketType.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket type'**
+  String get ticketFieldTicketType;
+
+  /// No description provided for @ticketFieldSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get ticketFieldSource;
+
+  /// No description provided for @ticketRoomNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'#{number}'**
+  String ticketRoomNumber(String number);
+
+  /// No description provided for @ticketPriorityP1.
+  ///
+  /// In en, this message translates to:
+  /// **'P1'**
+  String get ticketPriorityP1;
+
+  /// No description provided for @ticketPriorityP2.
+  ///
+  /// In en, this message translates to:
+  /// **'P2'**
+  String get ticketPriorityP2;
+
+  /// No description provided for @ticketPriorityP3.
+  ///
+  /// In en, this message translates to:
+  /// **'P3'**
+  String get ticketPriorityP3;
+
+  /// No description provided for @ticketStatusBadgeAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'ACCEPTED'**
+  String get ticketStatusBadgeAccepted;
+
+  /// No description provided for @ticketStatusBadgeIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'INCOMING'**
+  String get ticketStatusBadgeIncoming;
+
+  /// No description provided for @ticketStatusBadgeInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'IN PROGRESS'**
+  String get ticketStatusBadgeInProgress;
+
+  /// No description provided for @ticketStatusBadgeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'DONE'**
+  String get ticketStatusBadgeDone;
+
+  /// No description provided for @ticketStatusBadgeCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'CANCELLED'**
+  String get ticketStatusBadgeCancelled;
+
+  /// No description provided for @ticketSourceGuestApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest app'**
+  String get ticketSourceGuestApp;
+
+  /// No description provided for @ticketSourceFrontDesk.
+  ///
+  /// In en, this message translates to:
+  /// **'Front desk'**
+  String get ticketSourceFrontDesk;
+
+  /// No description provided for @ticketSourcePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get ticketSourcePhone;
+
+  /// No description provided for @ticketSourceWalkIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk-in'**
+  String get ticketSourceWalkIn;
+
+  /// No description provided for @ticketSourceSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get ticketSourceSystem;
+
+  /// No description provided for @ticketElapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{elapsed} elapsed'**
+  String ticketElapsed(String elapsed);
+
+  /// No description provided for @ticketActionStartWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Work'**
+  String get ticketActionStartWork;
+
+  /// No description provided for @ticketActionPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get ticketActionPause;
+
+  /// No description provided for @ticketActionResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get ticketActionResume;
+
+  /// No description provided for @ticketActionComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get ticketActionComplete;
+
+  /// No description provided for @ticketActionChangeDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Due'**
+  String get ticketActionChangeDue;
+
+  /// No description provided for @ticketActionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get ticketActionCancel;
+
+  /// No description provided for @ticketActionReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get ticketActionReset;
+
+  /// No description provided for @ticketActivityCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket created'**
+  String get ticketActivityCreated;
+
+  /// No description provided for @ticketActivityStatusChange.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} → {to}'**
+  String ticketActivityStatusChange(String from, String to);
+
+  /// No description provided for @ticketActivityBadgeAcknowledged.
+  ///
+  /// In en, this message translates to:
+  /// **'Acknowledged'**
+  String get ticketActivityBadgeAcknowledged;
+
+  /// No description provided for @ticketActivityBadgeCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get ticketActivityBadgeCreated;
+
+  /// No description provided for @ticketActivityBadgeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get ticketActivityBadgeDone;
+
+  /// No description provided for @ticketActivityBadgeCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get ticketActivityBadgeCancelled;
+
+  /// No description provided for @ticketActivityBadgeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get ticketActivityBadgeNote;
+
+  /// No description provided for @ticketActivityBadgeReassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Reassigned'**
+  String get ticketActivityBadgeReassigned;
+
+  /// No description provided for @ticketActivityBadgeOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get ticketActivityBadgeOverdue;
+
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @notificationsUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No unread} =1{1 unread} other{{count} unread}}'**
+  String notificationsUnread(int count);
+
+  /// No description provided for @notificationsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} total'**
+  String notificationsTotal(int count);
+
+  /// No description provided for @notificationsMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get notificationsMarkAllRead;
+
+  /// No description provided for @notificationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get notificationsEmpty;
+
+  /// No description provided for @notificationsEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'New activity will appear here.'**
+  String get notificationsEmptyHint;
+
+  /// No description provided for @notificationsItemNewTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'New ticket received'**
+  String get notificationsItemNewTicket;
+
+  /// No description provided for @relativeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m ago'**
+  String relativeMinutesAgo(int minutes);
+
+  /// No description provided for @relativeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h ago'**
+  String relativeHoursAgo(int hours);
+
+  /// No description provided for @relativeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d ago'**
+  String relativeDaysAgo(int days);
+
+  /// No description provided for @ticketKindUniversal.
+  ///
+  /// In en, this message translates to:
+  /// **'Universal'**
+  String get ticketKindUniversal;
+
+  /// No description provided for @ticketKindCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog'**
+  String get ticketKindCatalog;
+
+  /// No description provided for @ticketKindManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get ticketKindManual;
+
+  /// No description provided for @filterNewestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get filterNewestFirst;
+
+  /// No description provided for @filterOldestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get filterOldestFirst;
+
+  /// No description provided for @filterThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get filterThisWeek;
+
+  /// No description provided for @filterThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get filterThisMonth;
+
+  /// No description provided for @profileAvatarSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change profile photo'**
+  String get profileAvatarSheetTitle;
+
+  /// No description provided for @profileAvatarSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new photo from your camera or gallery.'**
+  String get profileAvatarSheetSubtitle;
+
+  /// No description provided for @profileAvatarSheetUploadTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get profileAvatarSheetUploadTitle;
+
+  /// No description provided for @profileAvatarSheetUploadSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an existing photo from your device.'**
+  String get profileAvatarSheetUploadSubtitle;
+
+  /// No description provided for @profileAvatarSheetCameraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get profileAvatarSheetCameraTitle;
+
+  /// No description provided for @profileAvatarSheetCameraSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your camera to take a new photo.'**
+  String get profileAvatarSheetCameraSubtitle;
 }
 
 class _AppLocalizationsDelegate

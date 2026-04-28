@@ -72,6 +72,12 @@ dependencies:
   # Lucide icon glyphs (matches the React design system used by HotelOps).
   lucide_icons_flutter: ^3.0.0
 
+  # Image picker for avatar uploads
+  image_picker: ^1.1.2
+
+  # Image compression for avatar uploads
+  flutter_image_compress: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -10,7 +10,7 @@ import 'api_endpoints.dart';
 /// Centralised so we can attach the bearer token, log in debug, and
 /// translate `DioException` → `AppException` in one place. UI must NEVER
 /// import this directly; data sources / repositories sit between.
-Dio _buildDio({String? authToken}) {
+Dio buildDio({String? authToken, String? Function()? tokenProvider}) {
   final dio = Dio(
     BaseOptions(
       connectTimeout: APIEndpoints.connectTimeout,
@@ -19,18 +19,17 @@ Dio _buildDio({String? authToken}) {
       contentType: APIEndpoints.contentTypeJson,
       responseType: ResponseType.json,
       validateStatus: (status) => status != null && status < 500,
-      headers: {
-        APIEndpoints.clientHeader: APIEndpoints.clientHeaderValue,
-      },
+      headers: {APIEndpoints.clientHeader: APIEndpoints.clientHeaderValue},
     ),
   );
 
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) {
-        if (authToken != null && authToken.isNotEmpty) {
+        final token = tokenProvider?.call() ?? authToken;
+        if (token != null && token.isNotEmpty) {
           options.headers[APIEndpoints.authorizationHeader] =
-              '${APIEndpoints.bearerPrefix}$authToken';
+              '${APIEndpoints.bearerPrefix}$token';
         }
         handler.next(options);
       },
@@ -52,7 +51,7 @@ Dio _buildDio({String? authToken}) {
 /// Riverpod accessor. The token-less client is the default; data sources
 /// for authenticated endpoints will eventually depend on a token-aware
 /// variant (`authedDioProvider`) once the session is wired in.
-final dioProvider = Provider<Dio>((ref) => _buildDio());
+final dioProvider = Provider<Dio>((ref) => buildDio());
 
 /// Translates a [DioException] into the project's `AppException`. Keeps
 /// HTTP semantics out of repositories and UI.
@@ -90,16 +89,10 @@ AppException _fromStatus(int? status, String? message) {
     );
   }
   if (status == 403) {
-    return AppException(
-      type: AppErrorType.forbidden,
-      overrideMessage: message,
-    );
+    return AppException(type: AppErrorType.forbidden, overrideMessage: message);
   }
   if (status == 404) {
-    return AppException(
-      type: AppErrorType.notFound,
-      overrideMessage: message,
-    );
+    return AppException(type: AppErrorType.notFound, overrideMessage: message);
   }
   if (status >= 400 && status < 500) {
     return AppException(
@@ -107,10 +100,7 @@ AppException _fromStatus(int? status, String? message) {
       overrideMessage: message,
     );
   }
-  return AppException(
-    type: AppErrorType.serverError,
-    overrideMessage: message,
-  );
+  return AppException(type: AppErrorType.serverError, overrideMessage: message);
 }
 
 String? _readMessage(dynamic data) {
