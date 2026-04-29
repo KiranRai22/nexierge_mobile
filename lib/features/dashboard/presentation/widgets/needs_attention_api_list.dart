@@ -13,12 +13,14 @@ class NeedsAttentionApiList extends StatelessWidget {
   final List<NeedsAttentionItem> items;
   final bool isLoading;
   final VoidCallback onViewAll;
+  final ValueChanged<String> onItemTap;
 
   const NeedsAttentionApiList({
     super.key,
     required this.items,
     required this.isLoading,
     required this.onViewAll,
+    required this.onItemTap,
   });
 
   @override
@@ -53,7 +55,10 @@ class NeedsAttentionApiList extends StatelessWidget {
                   children: [
                     for (var i = 0; i < items.length; i++) ...[
                       if (i > 0) const SizedBox(height: 8),
-                      _AttentionRow(item: items[i]),
+                      _AttentionRow(
+                        item: items[i],
+                        onTap: () => onItemTap(items[i].id),
+                      ),
                     ],
                   ],
                 ),
@@ -135,8 +140,9 @@ class _AllClearEmpty extends StatelessWidget {
 
 class _AttentionRow extends StatelessWidget {
   final NeedsAttentionItem item;
+  final VoidCallback onTap;
 
-  const _AttentionRow({required this.item});
+  const _AttentionRow({required this.item, required this.onTap});
 
   ({Color iconBg, Color iconFg, Color pillBg, Color pillFg, IconData glyph})
   _palette(AppColors c) {
@@ -195,65 +201,69 @@ class _AttentionRow extends StatelessWidget {
     return Material(
       color: c.bgBase,
       borderRadius: radius,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          border: Border.all(color: c.borderBase, width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: c.borderBase.withValues(alpha: 0.04),
-              offset: const Offset(0, 1),
-              blurRadius: 2,
-            ),
-            BoxShadow(
-              color: c.borderBase.withValues(alpha: 0.04),
-              offset: const Offset(0, 0),
-              blurRadius: 1,
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: p.iconBg,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(p.glyph, color: p.iconFg, size: 18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: c.borderBase, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: c.borderBase.withValues(alpha: 0.04),
+                offset: const Offset(0, 1),
+                blurRadius: 2,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      item.guestName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TypographyManager.textBodyStrong.copyWith(
-                        color: c.fgBase,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _subtitle(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TypographyManager.textMeta.copyWith(
-                        color: c.fgMuted,
-                      ),
-                    ),
-                  ],
-                ),
+              BoxShadow(
+                color: c.borderBase.withValues(alpha: 0.04),
+                offset: const Offset(0, 0),
+                blurRadius: 1,
               ),
-              const SizedBox(width: 8),
-              _SeverityPill(label: _pillLabel(s), bg: p.pillBg, fg: p.pillFg),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: p.iconBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(p.glyph, color: p.iconFg, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item.guestName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TypographyManager.textBodyStrong.copyWith(
+                          color: c.fgBase,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _subtitle(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TypographyManager.textMeta.copyWith(
+                          color: c.fgMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _SeverityPill(label: _pillLabel(s), bg: p.pillBg, fg: p.pillFg),
+              ],
+            ),
           ),
         ),
       ),

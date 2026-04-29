@@ -187,16 +187,26 @@ class DashboardScreen extends ConsumerWidget {
                             items: items,
                             isLoading: false,
                             onViewAll: () => onSwitchTab(ShellTab.tickets),
+                            onItemTap: (ticketId) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) =>
+                                      TicketDetailScreen(ticketId: ticketId),
+                                ),
+                              );
+                            },
                           ),
                           loading: () => NeedsAttentionApiList(
                             items: const [],
                             isLoading: true,
                             onViewAll: () => onSwitchTab(ShellTab.tickets),
+                            onItemTap: (_) {},
                           ),
                           error: (_, _) => NeedsAttentionApiList(
                             items: const [],
                             isLoading: false,
                             onViewAll: () => onSwitchTab(ShellTab.tickets),
+                            onItemTap: (_) {},
                           ),
                         ),
                       ),

@@ -44,9 +44,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     final t = widget.ticket;
     if (t.status == TicketStatus.inProgress ||
         t.status == TicketStatus.accepted) {
-      await _withGuard(
-        () => ref.read(ticketActionsProvider).markDone(t.id),
-      );
+      await _withGuard(() => ref.read(ticketActionsProvider).markDone(t.id));
       return;
     }
     final picked = await EtaBottomSheet.show(context, ticketCode: t.code);
@@ -91,8 +89,11 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     final primaryLabel = switch (t.status) {
       TicketStatus.inProgress => s.ticketActionComplete,
       TicketStatus.accepted => s.ticketActionStartWork,
+      TicketStatus.incoming => s.ticketActionStartWork,
       _ => s.ticketActionStartWork,
     };
+
+    final showSecondary = t.status != TicketStatus.incoming;
 
     return Material(
       color: c.bgBase,
@@ -121,34 +122,36 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _SecondaryButton(
-                    icon: LucideIcons.calendarClock,
-                    label: s.ticketActionChangeDue,
-                    onTap: _busy ? null : _onChangeDue,
+            if (showSecondary) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _SecondaryButton(
+                      icon: LucideIcons.calendarClock,
+                      label: s.ticketActionChangeDue,
+                      onTap: _busy ? null : _onChangeDue,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _SecondaryButton(
-                    icon: LucideIcons.circleX,
-                    label: s.ticketActionCancel,
-                    onTap: _busy ? null : _onCancel,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SecondaryButton(
+                      icon: LucideIcons.circleX,
+                      label: s.ticketActionCancel,
+                      onTap: _busy ? null : _onCancel,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _SecondaryButton(
-                    icon: LucideIcons.rotateCcw,
-                    label: s.ticketActionReset,
-                    onTap: _busy ? null : _onReset,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SecondaryButton(
+                      icon: LucideIcons.rotateCcw,
+                      label: s.ticketActionReset,
+                      onTap: _busy ? null : _onReset,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -172,19 +175,13 @@ class _SecondaryButton extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: onTap,
       icon: Icon(icon, size: 16),
-      label: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
       style: OutlinedButton.styleFrom(
         foregroundColor: c.fgBase,
         side: BorderSide(color: c.borderBase),
         minimumSize: const Size.fromHeight(44),
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         textStyle: TypographyManager.textLabel,
       ),
     );

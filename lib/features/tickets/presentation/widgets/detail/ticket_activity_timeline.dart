@@ -1,51 +1,116 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
-import '../../../../activity/domain/models/activity_event.dart';
-import '../../providers/repository_providers.dart';
+import '../../../domain/entities/ticket_detail.dart';
 
-/// Activity timeline for a single ticket. Subscribes to the activity feed
-/// and renders only the events whose `ticketId` matches the given id.
+/// Activity timeline for a single ticket using API events.
 ///
 /// Visual:
-///   ●─┐  Title           [pill]
+///   ●─┐  Title           [emoji pill]
 ///     │  timestamp
-///     ●  Title           [pill]
+///     ●  Title           [emoji pill]
 ///        timestamp
-class TicketActivityTimeline extends ConsumerWidget {
-  final String ticketId;
-  const TicketActivityTimeline({super.key, required this.ticketId});
+class TicketActivityTimeline extends StatelessWidget {
+  final TicketDetail ticket;
+  const TicketActivityTimeline({super.key, required this.ticket});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final repo = ref.watch(activityRepositoryProvider);
-    return StreamBuilder<List<ActivityEvent>>(
-      stream: repo.watchEvents(),
-      initialData: repo.eventsSnapshot(),
-      builder: (context, snapshot) {
-        final all = snapshot.data ?? const <ActivityEvent>[];
-        final events = all.where((e) => e.ticketId == ticketId).toList()
-          ..sort((a, b) => b.at.compareTo(a.at));
-        if (events.isEmpty) return const SizedBox.shrink();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < events.length; i++)
-              _TimelineRow(event: events[i], isLast: i == events.length - 1),
-          ],
-        );
-      },
+  Widget build(BuildContext context) {
+    // Create events list including ticket creation
+    final allEvents = <_TimelineEvent>[];
+
+    // Add ticket created event
+    allEvents.add(
+      _TimelineEvent(
+        createdAt: ticket.createdAt,
+        eventType: 'created',
+        fromStatus: '',
+        toStatus: 'new',
+        notes: '',
+        eventBy: '',
+        firstName: '',
+        lastName: '',
+        color: '#3B82F6',
+        emoji: '🎫',
+      ),
+    );
+
+    // Add API events
+    for (final event in ticket.events) {
+      allEvents.add(
+        _TimelineEvent(
+          createdAt: event.createdAt,
+          eventType: event.eventType,
+          fromStatus: event.fromStatus,
+          toStatus: event.toStatus,
+          notes: event.notes,
+          eventBy: event.eventBy,
+          firstName: event.firstName,
+          lastName: event.lastName,
+          color: event.color,
+          emoji: event.emoji,
+        ),
+      );
+    }
+
+    // Sort in descending order by createdAt
+    allEvents.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    if (allEvents.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'No activity yet',
+            style: TypographyManager.textBody.copyWith(
+              color: context.themeColors.fgMuted,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < allEvents.length; i++)
+          _TimelineRow(event: allEvents[i], isLast: i == allEvents.length - 1),
+      ],
     );
   }
 }
 
+class _TimelineEvent {
+  final int createdAt;
+  final String eventType;
+  final String fromStatus;
+  final String toStatus;
+  final String notes;
+  final String eventBy;
+  final String firstName;
+  final String lastName;
+  final String color;
+  final String emoji;
+
+  const _TimelineEvent({
+    required this.createdAt,
+    required this.eventType,
+    required this.fromStatus,
+    required this.toStatus,
+    required this.notes,
+    required this.eventBy,
+    required this.firstName,
+    required this.lastName,
+    required this.color,
+    required this.emoji,
+  });
+}
+
 class _TimelineRow extends StatelessWidget {
-  final ActivityEvent event;
+  final _TimelineEvent event;
   final bool isLast;
   const _TimelineRow({required this.event, required this.isLast});
 
@@ -53,7 +118,14 @@ class _TimelineRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final s = context.l10n;
-    final visual = _resolve(c, s, event.type);
+    final bgColor = _parseColor(event.color, c);
+
+    // Build title based on event type
+    final title = _buildTitle(s, event);
+
+    // Build pill label (emoji + event type or status change)
+    final pillLabel = _buildPillLabel(event);
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,20 +133,20 @@ class _TimelineRow extends StatelessWidget {
           Column(
             children: [
               Container(
-                width: 26,
-                height: 26,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
-                  color: visual.iconBg,
+                  color: bgColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: Icon(visual.icon, size: 14, color: visual.iconFg),
+                child: Text(event.emoji, style: const TextStyle(fontSize: 16)),
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
                     width: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 2),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
                     color: c.borderBase,
                   ),
                 ),
@@ -92,7 +164,7 @@ class _TimelineRow extends StatelessWidget {
                     children: [
                       Flexible(
                         child: Text(
-                          visual.title,
+                          title,
                           style: TypographyManager.textBodyStrong.copyWith(
                             color: c.fgBase,
                           ),
@@ -105,13 +177,13 @@ class _TimelineRow extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: visual.pillBg,
+                          color: bgColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          visual.pillLabel,
+                          pillLabel,
                           style: TypographyManager.textMicro.copyWith(
-                            color: visual.pillFg,
+                            color: bgColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -120,11 +192,30 @@ class _TimelineRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _formatDateTime(event.at),
+                    _formatTimestamp(event.createdAt),
                     style: TypographyManager.textMeta.copyWith(
                       color: c.fgMuted,
                     ),
                   ),
+                  if (event.notes.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      event.notes,
+                      style: TypographyManager.textBody.copyWith(
+                        color: c.fgMuted,
+                      ),
+                    ),
+                  ],
+                  if (event.firstName.isNotEmpty ||
+                      event.lastName.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${event.firstName} ${event.lastName}'.trim(),
+                      style: TypographyManager.textMeta.copyWith(
+                        color: c.fgMuted,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -134,97 +225,54 @@ class _TimelineRow extends StatelessWidget {
     );
   }
 
-  ({
-    Color iconBg,
-    Color iconFg,
-    IconData icon,
-    String title,
-    String pillLabel,
-    Color pillBg,
-    Color pillFg,
-  })
-  _resolve(AppColors c, AppLocalizations s, ActivityType type) {
-    switch (type) {
-      case ActivityType.created:
-        return (
-          iconBg: c.tagBlueBg,
-          iconFg: c.tagBlueText,
-          icon: LucideIcons.circlePlus,
-          title: s.ticketActivityCreated,
-          pillLabel: s.ticketActivityBadgeCreated,
-          pillBg: c.tagNeutralBg,
-          pillFg: c.tagNeutralText,
-        );
-      case ActivityType.accepted:
-        return (
-          iconBg: c.tagGreenBg,
-          iconFg: c.tagGreenText,
-          icon: LucideIcons.circleCheck,
-          title: s.ticketActivityStatusChange(s.statusNew, s.statusAccepted),
-          pillLabel: s.ticketActivityBadgeAcknowledged,
-          pillBg: c.tagGreenBg,
-          pillFg: c.tagGreenText,
-        );
-      case ActivityType.done:
-        return (
-          iconBg: c.tagGreenBg,
-          iconFg: c.tagGreenText,
-          icon: LucideIcons.circleCheck,
-          title: s.ticketActivityStatusChange(s.statusInProgress, s.statusDone),
-          pillLabel: s.ticketActivityBadgeDone,
-          pillBg: c.tagGreenBg,
-          pillFg: c.tagGreenText,
-        );
-      case ActivityType.cancelled:
-        return (
-          iconBg: c.tagRedBg,
-          iconFg: c.tagRedText,
-          icon: LucideIcons.circleX,
-          title: s.ticketActivityStatusChange(
-            s.statusInProgress,
-            s.statusCancelled,
-          ),
-          pillLabel: s.ticketActivityBadgeCancelled,
-          pillBg: c.tagRedBg,
-          pillFg: c.tagRedText,
-        );
-      case ActivityType.overdue:
-        return (
-          iconBg: c.tagRedBg,
-          iconFg: c.tagRedText,
-          icon: LucideIcons.triangleAlert,
-          title: s.activityOverdueTitle,
-          pillLabel: s.ticketActivityBadgeOverdue,
-          pillBg: c.tagRedBg,
-          pillFg: c.tagRedText,
-        );
-      case ActivityType.note:
-        return (
-          iconBg: c.tagAmberBg,
-          iconFg: c.tagAmberText,
-          icon: LucideIcons.notebookPen,
-          title: s.ticketActivityBadgeNote,
-          pillLabel: s.ticketActivityBadgeNote,
-          pillBg: c.tagAmberBg,
-          pillFg: c.tagAmberText,
-        );
-      case ActivityType.reassigned:
-        return (
-          iconBg: c.tagPurpleBg,
-          iconFg: c.tagPurpleText,
-          icon: LucideIcons.repeat,
-          title: s.ticketActivityBadgeReassigned,
-          pillLabel: s.ticketActivityBadgeReassigned,
-          pillBg: c.tagPurpleBg,
-          pillFg: c.tagPurpleText,
-        );
+  String _buildTitle(AppLocalizations s, _TimelineEvent event) {
+    if (event.eventType == 'created') {
+      return s.ticketActivityCreated;
     }
+
+    if (event.fromStatus.isNotEmpty && event.toStatus.isNotEmpty) {
+      return '${_capitalize(event.fromStatus)} → ${_capitalize(event.toStatus)}';
+    }
+
+    return _capitalize(event.eventType);
   }
 
-  /// Formats `Apr 26, 2026, 2:35 PM` — locale-friendly enough without
-  /// pulling in the full `intl` package wiring (already in pubspec; using
-  /// it here would require passing the active locale around).
-  String _formatDateTime(DateTime dt) {
+  String _buildPillLabel(_TimelineEvent event) {
+    if (event.eventType == 'created') {
+      return 'Created';
+    }
+
+    if (event.eventType.isNotEmpty) {
+      return _capitalize(event.eventType);
+    }
+
+    if (event.toStatus.isNotEmpty) {
+      return _capitalize(event.toStatus);
+    }
+
+    return '';
+  }
+
+  String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1).toLowerCase();
+  }
+
+  Color _parseColor(String hexColor, AppColors c) {
+    try {
+      final hex = hexColor.replaceAll('#', '');
+      if (hex.length == 6) {
+        final r = int.parse(hex.substring(0, 2), radix: 16);
+        final g = int.parse(hex.substring(2, 4), radix: 16);
+        final b = int.parse(hex.substring(4, 6), radix: 16);
+        return Color.fromARGB(255, r, g, b);
+      }
+    } catch (_) {}
+    return c.tagBlueIcon;
+  }
+
+  String _formatTimestamp(int timestamp) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
     const months = [
       'Jan',
       'Feb',

@@ -65,6 +65,9 @@ abstract class APIEndpoints {
   static const String roomsApproveStatusChange =
       '$baseUrl/rooms/approve_status_change';
 
+  // Tickets
+  static const String ticketsDetails = '$_host/api:bAt3sLZU/tickets/details';
+
   // Staff
   static const String staffGetAllHousekeeping =
       '$baseUrl/staff/get_all_housekeeping';

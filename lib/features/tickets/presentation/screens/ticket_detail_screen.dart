@@ -5,15 +5,85 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../domain/entities/ticket_detail.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
-import '../providers/ticket_detail_controller.dart';
+import '../providers/ticket_detail_api_controller.dart';
 import '../widgets/detail/ticket_action_bar.dart';
 import '../widgets/detail/ticket_activity_timeline.dart';
 import '../widgets/detail/ticket_detail_app_bar.dart';
 import '../widgets/detail/ticket_detail_tabs.dart';
 import '../widgets/detail/ticket_hero_card.dart';
 import '../widgets/detail/ticket_info_card.dart';
+
+Ticket _mapToTicket(TicketDetail detail) {
+  return Ticket(
+    id: detail.id,
+    code: detail.id.substring(0, 8),
+    title: detail.guestName,
+    kind: TicketKind.manual,
+    status: _mapStatus(detail.status),
+    department: _mapDepartment(detail.departmentId),
+    room: Room(id: detail.room, number: detail.onbRoomNumber, floor: 0),
+    guest: Guest(id: detail.room, displayName: detail.guestName),
+    items: const [],
+    note: detail.issueDetails.isNotEmpty ? detail.issueDetails : null,
+    assigneeName: null,
+    priority: _mapPriority(detail.priority),
+    source: _mapSource(detail.source),
+    createdAt: DateTime.fromMillisecondsSinceEpoch(detail.createdAt),
+    acceptedAt: detail.acknowledgedAt > 0
+        ? DateTime.fromMillisecondsSinceEpoch(detail.acknowledgedAt)
+        : null,
+    doneAt: null,
+    eta: null,
+  );
+}
+
+Department _mapDepartment(String deptId) {
+  return Department.housekeeping;
+}
+
+TicketStatus _mapStatus(String status) {
+  switch (status) {
+    case 'ACCEPTED':
+      return TicketStatus.accepted;
+    case 'NEW':
+      return TicketStatus.incoming;
+    case 'IN_PROGRESS':
+      return TicketStatus.inProgress;
+    case 'DONE':
+      return TicketStatus.done;
+    case 'CANCELLED':
+      return TicketStatus.cancelled;
+    default:
+      return TicketStatus.incoming;
+  }
+}
+
+TicketPriority _mapPriority(String priority) {
+  switch (priority) {
+    case 'P1':
+      return TicketPriority.p1;
+    case 'P2':
+      return TicketPriority.p2;
+    case 'P3':
+      return TicketPriority.p3;
+    default:
+      return TicketPriority.p3;
+  }
+}
+
+TicketSource _mapSource(String source) {
+  switch (source) {
+    case 'Manual':
+      return TicketSource.frontDesk;
+    case 'System':
+      return TicketSource.system;
+    default:
+      return TicketSource.guestApp;
+  }
+}
 
 /// Ticket detail screen — port of the Lovable prototype.
 ///
@@ -34,12 +104,15 @@ class TicketDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncTicket = ref.watch(ticketByIdProvider(ticketId));
+    Future.microtask(
+      () => ref.read(ticketIdProvider.notifier).state = ticketId,
+    );
+    final asyncTicket = ref.watch(ticketDetailApiControllerProvider);
     final c = context.themeColors;
     return Scaffold(
       backgroundColor: c.bgBase,
       body: asyncTicket.when(
-        data: (t) => t == null ? const _MissingView() : _DetailBody(ticket: t),
+        data: (t) => _DetailBody(ticket: t),
         loading: () => const _LoadingView(),
         error: (e, _) => _ErrorView(error: e.toString()),
       ),
@@ -48,8 +121,10 @@ class TicketDetailScreen extends ConsumerWidget {
 }
 
 class _DetailBody extends StatefulWidget {
-  final Ticket ticket;
+  final TicketDetail ticket;
   const _DetailBody({required this.ticket});
+
+  Ticket get mappedTicket => _mapToTicket(ticket);
 
   @override
   State<_DetailBody> createState() => _DetailBodyState();
@@ -58,11 +133,17 @@ class _DetailBody extends StatefulWidget {
 class _DetailBodyState extends State<_DetailBody>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
+  int _selectedTab = 0;
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
+    _tabs.addListener(() {
+      if (_tabs.indexIsChanging) {
+        setState(() => _selectedTab = _tabs.index);
+      }
+    });
   }
 
   @override
@@ -74,28 +155,24 @@ class _DetailBodyState extends State<_DetailBody>
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    return Column(
-      children: [
-        TicketDetailAppBar(
-          ticket: widget.ticket,
-          onBack: () => Navigator.of(context).pop(),
-          onClose: () => Navigator.of(context).pop(),
-        ),
-        TicketDetailTabs(controller: _tabs),
-        Expanded(
-          child: Container(
-            color: c.bgBase,
-            child: TabBarView(
-              controller: _tabs,
-              children: [
-                _DetailsTab(ticket: widget.ticket),
-                _ActivityTab(ticket: widget.ticket),
-              ],
-            ),
+    return Scaffold(
+      backgroundColor: c.bgBase,
+      body: Column(
+        children: [
+          TicketDetailAppBar(
+            ticket: widget.mappedTicket,
+            onBack: () => Navigator.of(context).pop(),
+            onClose: () => Navigator.of(context).pop(),
           ),
-        ),
-        TicketActionBar(ticket: widget.ticket),
-      ],
+          TicketDetailTabs(controller: _tabs),
+          Expanded(
+            child: _selectedTab == 0
+                ? _DetailsTab(ticket: widget.mappedTicket)
+                : _ActivityTab(ticket: widget.ticket),
+          ),
+          TicketActionBar(ticket: widget.mappedTicket),
+        ],
+      ),
     );
   }
 }
@@ -127,7 +204,7 @@ class _DetailsTab extends StatelessWidget {
             ),
             TicketInfoRow(
               label: s.ticketFieldRoomType,
-              value: ticket.room.type,
+              value: ticket.room.type ?? '—',
             ),
             TicketInfoRow(
               label: s.ticketFieldDepartment,
@@ -245,7 +322,7 @@ class _DetailsTab extends StatelessWidget {
 }
 
 class _ActivityTab extends StatelessWidget {
-  final Ticket ticket;
+  final TicketDetail ticket;
   const _ActivityTab({required this.ticket});
 
   @override
@@ -253,7 +330,7 @@ class _ActivityTab extends StatelessWidget {
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      children: [TicketActivityTimeline(ticketId: ticket.id)],
+      children: [TicketActivityTimeline(ticket: ticket)],
     );
   }
 }
@@ -263,22 +340,253 @@ class _LoadingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    return Center(child: CircularProgressIndicator(color: c.tagPurpleIcon));
+    return Scaffold(
+      backgroundColor: c.bgBase,
+      body: Column(
+        children: [
+          _AppBarShimmer(c: c),
+          _TabsShimmer(c: c),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _HeroShimmer(c: c),
+                const SizedBox(height: 16),
+                _InfoShimmer(c: c),
+              ],
+            ),
+          ),
+          _ActionBarShimmer(c: c),
+        ],
+      ),
+    );
   }
 }
 
-class _MissingView extends StatelessWidget {
-  const _MissingView();
+class _AppBarShimmer extends StatelessWidget {
+  final AppColors c;
+  const _AppBarShimmer({required this.c});
+
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Container(
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        border: Border(bottom: BorderSide(color: c.borderBase, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: c.borderBase.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              height: 20,
+              width: 100,
+              decoration: BoxDecoration(
+                color: c.borderBase.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: c.borderBase.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabsShimmer extends StatelessWidget {
+  final AppColors c;
+  const _TabsShimmer({required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        border: Border(bottom: BorderSide(color: c.borderBase, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 24,
+              width: 60,
+              decoration: BoxDecoration(
+                color: c.borderBase.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+          const SizedBox(width: 24),
+          Expanded(
+            child: Container(
+              height: 24,
+              width: 60,
+              decoration: BoxDecoration(
+                color: c.borderBase.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroShimmer extends StatelessWidget {
+  final AppColors c;
+  const _HeroShimmer({required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 120,
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.borderBase, width: 1),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          context.l10n.notFoundError,
-          textAlign: TextAlign.center,
-          style: TypographyManager.textBody,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              height: 20,
+              width: 80,
+              decoration: BoxDecoration(
+                color: c.borderBase.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 16,
+              width: 120,
+              decoration: BoxDecoration(
+                color: c.borderBase.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              height: 16,
+              width: 100,
+              decoration: BoxDecoration(
+                color: c.borderBase.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _InfoShimmer extends StatelessWidget {
+  final AppColors c;
+  const _InfoShimmer({required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.borderBase, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            for (var i = 0; i < 4; i++) ...[
+              if (i > 0) const SizedBox(height: 12),
+              Row(
+                children: [
+                  Container(
+                    height: 14,
+                    width: 80,
+                    decoration: BoxDecoration(
+                      color: c.borderBase.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    height: 14,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      color: c.borderBase.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionBarShimmer extends StatelessWidget {
+  final AppColors c;
+  const _ActionBarShimmer({required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 72,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        border: Border(top: BorderSide(color: c.borderBase, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: c.borderBase.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: c.borderBase.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
