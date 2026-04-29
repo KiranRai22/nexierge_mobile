@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
+import '../../../../core/theme/typography_manager.dart';
 import '../../../notifications/presentation/providers/notification_inbox_controller.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
 import '../../../shell/presentation/widgets/app_bottom_nav.dart';
@@ -15,6 +16,7 @@ import '../providers/dashboard_counts_controller.dart';
 import '../providers/dashboard_view.dart';
 import '../providers/needs_attention_controller.dart';
 import '../widgets/dashboard_greeting.dart';
+import '../widgets/dashboard_stats_compact.dart';
 import '../widgets/dashboard_stats_grid.dart';
 import '../widgets/needs_attention_api_list.dart';
 
@@ -22,12 +24,58 @@ import '../widgets/needs_attention_api_list.dart';
 /// header (avatar + theme + bell) → greeting → 2×2 stats grid (Needs
 /// acknowledgment / In progress / Overdue / Not started) → Needs attention
 /// list → empty state.
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   /// Switch the host shell to the Tickets tab. Wired by [HomeShell] via
   /// the bottom-nav controller it owns.
   final ValueChanged<ShellTab> onSwitchTab;
 
   const DashboardScreen({super.key, required this.onSwitchTab});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isCompact = false;
+  static const double _compactThreshold = 50.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.hasClients) {
+      final offset = _scrollController.offset;
+      // Use different thresholds to prevent flickering
+      // Enter compact mode when scrolling up past 50px
+      // Exit compact mode only when scrolling down near the top (20px)
+      if (_isCompact) {
+        // In compact mode - require scrolling down to near top to exit
+        if (offset < 20) {
+          setState(() {
+            _isCompact = false;
+          });
+        }
+      } else {
+        // In full mode - enter compact when scrolling up
+        if (offset > _compactThreshold) {
+          setState(() {
+            _isCompact = true;
+          });
+        }
+      }
+    }
+  }
 
   void _openNotifications(BuildContext context) {
     NotificationsSheet.show(
@@ -40,7 +88,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _refresh(WidgetRef ref) async {
+  Future<void> _refresh() async {
     // Refresh API counts and needs attention in parallel.
     // User profile is managed by bootstrap and doesn't need refresh here.
     await Future.wait<void>([
@@ -62,7 +110,7 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final session = ref.watch(operatorSessionProvider);
     final userProfile = ref.watch(bootstrapUserProfileProvider);
     final asyncCounts = ref.watch(dashboardCountsControllerProvider);
@@ -141,52 +189,126 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
 
-            // Scrollable content below
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () => _refresh(ref),
-                child: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                      sliver: SliverToBoxAdapter(
-                        // KPI counts come from the real `dashboard/numbers`
-                        // endpoint. Breakdown line stays driven by the local
-                        // mock projection until the backend exposes it.
-                        child: asyncCounts.when(
-                          data: (counts) => DashboardStatsGrid(
-                            incoming: counts.needsAcknowledgmentCount,
-                            accepted: counts.notStartedCount,
-                            inProgress: counts.inProgressCount,
-                            overdue: counts.overdueCount,
-                            breakdown: asyncView.maybeWhen(
-                              data: (v) => v.incomingBreakdown,
-                              orElse: () => const IncomingBreakdown(
-                                universal: 0,
-                                catalog: 0,
-                                manual: 0,
-                              ),
-                            ),
-                            onTapIncoming: () => onSwitchTab(ShellTab.tickets),
-                            onTapInProgress: () =>
-                                onSwitchTab(ShellTab.tickets),
-                            onTapOverdue: () => onSwitchTab(ShellTab.tickets),
-                            onTapAccepted: () => onSwitchTab(ShellTab.tickets),
+            // Animated stats section - compact when scrolled
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: _isCompact
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: asyncCounts.when(
+                        data: (counts) => DashboardStatsCompact(
+                          incoming: counts.needsAcknowledgmentCount,
+                          accepted: counts.notStartedCount,
+                          inProgress: counts.inProgressCount,
+                          overdue: counts.overdueCount,
+                          onTapIncoming: () =>
+                              widget.onSwitchTab(ShellTab.tickets),
+                          onTapInProgress: () =>
+                              widget.onSwitchTab(ShellTab.tickets),
+                          onTapOverdue: () =>
+                              widget.onSwitchTab(ShellTab.tickets),
+                          onTapAccepted: () =>
+                              widget.onSwitchTab(ShellTab.tickets),
+                        ),
+                        loading: () => const SizedBox(height: 48),
+                        error: (_, _) => const SizedBox(height: 48),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+
+            // Needs attention header - always visible when compact
+            if (_isCompact)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Needs Attention',
+                      style: TypographyManager.textHeading.copyWith(
+                        color: c.fgBase,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => widget.onSwitchTab(ShellTab.tickets),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
+                        child: Text(
+                          'View All',
+                          style: TypographyManager.textCaption.copyWith(
+                            color: c.tagPurpleIcon,
                           ),
-                          loading: () => const _StatsSkeleton(),
-                          error: (_, _) => const _StatsSkeleton(),
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+
+            // Scrollable content below
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    if (!_isCompact)
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                        sliver: SliverToBoxAdapter(
+                          // KPI counts come from the real `dashboard/numbers`
+                          // endpoint. Breakdown line stays driven by the local
+                          // mock projection until the backend exposes it.
+                          child: asyncCounts.when(
+                            data: (counts) => DashboardStatsGrid(
+                              incoming: counts.needsAcknowledgmentCount,
+                              accepted: counts.notStartedCount,
+                              inProgress: counts.inProgressCount,
+                              overdue: counts.overdueCount,
+                              breakdown: asyncView.maybeWhen(
+                                data: (v) => v.incomingBreakdown,
+                                orElse: () => const IncomingBreakdown(
+                                  universal: 0,
+                                  catalog: 0,
+                                  manual: 0,
+                                ),
+                              ),
+                              onTapIncoming: () =>
+                                  widget.onSwitchTab(ShellTab.tickets),
+                              onTapInProgress: () =>
+                                  widget.onSwitchTab(ShellTab.tickets),
+                              onTapOverdue: () =>
+                                  widget.onSwitchTab(ShellTab.tickets),
+                              onTapAccepted: () =>
+                                  widget.onSwitchTab(ShellTab.tickets),
+                            ),
+                            loading: () => const _StatsSkeleton(),
+                            error: (_, _) => const _StatsSkeleton(),
+                          ),
+                        ),
+                      ),
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                      padding: EdgeInsets.fromLTRB(
+                        16,
+                        _isCompact ? 30 : 0,
+                        16,
+                        96,
+                      ),
                       sliver: SliverToBoxAdapter(
                         child: asyncNeedsAttention.when(
                           data: (items) => NeedsAttentionApiList(
                             items: items,
                             isLoading: false,
-                            onViewAll: () => onSwitchTab(ShellTab.tickets),
+                            showHeader: !_isCompact,
+                            onViewAll: () =>
+                                widget.onSwitchTab(ShellTab.tickets),
                             onItemTap: (ticketId) {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
@@ -199,13 +321,17 @@ class DashboardScreen extends ConsumerWidget {
                           loading: () => NeedsAttentionApiList(
                             items: const [],
                             isLoading: true,
-                            onViewAll: () => onSwitchTab(ShellTab.tickets),
+                            showHeader: !_isCompact,
+                            onViewAll: () =>
+                                widget.onSwitchTab(ShellTab.tickets),
                             onItemTap: (_) {},
                           ),
                           error: (_, _) => NeedsAttentionApiList(
                             items: const [],
                             isLoading: false,
-                            onViewAll: () => onSwitchTab(ShellTab.tickets),
+                            showHeader: !_isCompact,
+                            onViewAll: () =>
+                                widget.onSwitchTab(ShellTab.tickets),
                             onItemTap: (_) {},
                           ),
                         ),

@@ -14,6 +14,7 @@ class NeedsAttentionApiList extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onViewAll;
   final ValueChanged<String> onItemTap;
+  final bool showHeader;
 
   const NeedsAttentionApiList({
     super.key,
@@ -21,6 +22,7 @@ class NeedsAttentionApiList extends StatelessWidget {
     required this.isLoading,
     required this.onViewAll,
     required this.onItemTap,
+    this.showHeader = true,
   });
 
   @override
@@ -30,20 +32,23 @@ class NeedsAttentionApiList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                s.dashboardNeedsAttention,
-                style: TypographyManager.textHeading.copyWith(color: c.fgBase),
-              ),
-              if (!isLoading && items.isNotEmpty)
-                _ViewAllButton(label: s.dashboardViewAll, onTap: onViewAll),
-            ],
+        if (showHeader)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  s.dashboardNeedsAttention,
+                  style: TypographyManager.textHeading.copyWith(
+                    color: c.fgBase,
+                  ),
+                ),
+                if (!isLoading && items.isNotEmpty)
+                  _ViewAllButton(label: s.dashboardViewAll, onTap: onViewAll),
+              ],
+            ),
           ),
-        ),
         // Needs attention list content
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -188,8 +193,12 @@ class _AttentionRow extends StatelessWidget {
     }
   }
 
-  String _subtitle() {
-    return '${item.department.name} · ${item.onbRoomNumber}';
+  String _roomLabel() {
+    return 'Room No: ${item.onbRoomNumber}';
+  }
+
+  String _departmentLabel() {
+    return item.department.name;
   }
 
   @override
@@ -250,7 +259,15 @@ class _AttentionRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _subtitle(),
+                        _roomLabel(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TypographyManager.textMeta.copyWith(
+                          color: c.fgMuted,
+                        ),
+                      ),
+                      Text(
+                        _departmentLabel(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TypographyManager.textMeta.copyWith(
