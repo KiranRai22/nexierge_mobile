@@ -87,12 +87,14 @@ class _LoginTextField extends StatelessWidget {
   final String? autofillHint;
   final String semanticsLabel;
   final Widget? trailing;
+  final bool isEmail;
 
   const _LoginTextField({
     required this.controller,
     required this.hint,
     required this.prefixIcon,
     required this.semanticsLabel,
+    required this.isEmail,
     this.obscureText = false,
     this.hasError = false,
     this.autofocus = false,
@@ -135,16 +137,19 @@ class _LoginTextField extends StatelessWidget {
                 obscureText: obscureText,
                 keyboardType: keyboardType,
                 textInputAction: textInputAction,
-                onSubmitted:
-                    onSubmitted == null ? null : (_) => onSubmitted!(),
+                onSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
                 onChanged: onChanged,
                 cursorColor: ColorPalette.loginInputText,
                 inputFormatters: [
                   LengthLimitingTextInputFormatter(
-                      LoginValidators.maxFieldLength),
+                    LoginValidators.maxFieldLength,
+                  ),
+                  if (!isEmail) ...[
+                    UpperCaseTextFormatter(),
+                    FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9-]')),
+                  ],
                 ],
-                autofillHints:
-                    autofillHint == null ? null : [autofillHint!],
+                autofillHints: autofillHint == null ? null : [autofillHint!],
                 style: TypographyManager.bodyMedium.copyWith(
                   color: ColorPalette.loginInputText,
                 ),
@@ -162,8 +167,7 @@ class _LoginTextField extends StatelessWidget {
                   disabledBorder: InputBorder.none,
                   errorBorder: InputBorder.none,
                   focusedErrorBorder: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
             ),
@@ -205,14 +209,13 @@ class IdentifierField extends StatelessWidget {
         controller: controller,
         hint: isEmail ? s.loginEmailHint : s.loginEmployeeCodeHint,
         prefixIcon: isEmail ? Icons.mail_outline : Icons.tag,
-        keyboardType:
-            isEmail ? TextInputType.emailAddress : TextInputType.text,
+        keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
         textInputAction: TextInputAction.next,
         autofillHint: isEmail ? AutofillHints.email : AutofillHints.username,
-        semanticsLabel:
-            isEmail ? s.loginEmailLabel : s.loginEmployeeCodeLabel,
+        semanticsLabel: isEmail ? s.loginEmailLabel : s.loginEmployeeCodeLabel,
         hasError: errorText != null,
         autofocus: autofocus,
+        isEmail: isEmail,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
       ),
@@ -256,11 +259,12 @@ class SecretField extends StatelessWidget {
         obscureText: obscure,
         keyboardType: TextInputType.visiblePassword,
         textInputAction: TextInputAction.done,
-        autofillHint:
-            isEmail ? AutofillHints.password : AutofillHints.oneTimeCode,
-        semanticsLabel:
-            isEmail ? s.loginPasswordLabel : s.loginCodeLabel,
+        autofillHint: isEmail
+            ? AutofillHints.password
+            : AutofillHints.oneTimeCode,
+        semanticsLabel: isEmail ? s.loginPasswordLabel : s.loginCodeLabel,
         hasError: errorText != null,
+        isEmail: isEmail,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
         trailing: isEmail
@@ -287,6 +291,20 @@ class SecretField extends StatelessWidget {
               )
             : null,
       ),
+    );
+  }
+}
+
+/// Text formatter that converts all input to uppercase
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }

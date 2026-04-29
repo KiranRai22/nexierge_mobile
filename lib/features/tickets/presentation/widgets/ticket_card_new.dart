@@ -15,8 +15,14 @@ import '../providers/ticket_detail_controller.dart';
 class TicketCardNew extends ConsumerWidget {
   final Ticket ticket;
   final VoidCallback? onTap;
+  final VoidCallback? onAccept;
 
-  const TicketCardNew({super.key, required this.ticket, this.onTap});
+  const TicketCardNew({
+    super.key,
+    required this.ticket,
+    this.onTap,
+    this.onAccept,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +34,7 @@ class TicketCardNew extends ConsumerWidget {
         color: c.bgBase,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
+        child: GestureDetector(
           onTap: onTap,
           child: Container(
             decoration: BoxDecoration(
@@ -48,7 +54,7 @@ class TicketCardNew extends ConsumerWidget {
                   _RoomRow(ticket: ticket),
                   const SizedBox(height: 12),
                   // Inner card with avatar, details, tag, Accept button
-                  _InnerCard(ticket: ticket),
+                  _InnerCard(ticket: ticket, onAccept: onAccept),
                 ],
               ),
             ),
@@ -143,7 +149,8 @@ class _RoomRow extends StatelessWidget {
 
 class _InnerCard extends StatelessWidget {
   final Ticket ticket;
-  const _InnerCard({required this.ticket});
+  final VoidCallback? onAccept;
+  const _InnerCard({required this.ticket, this.onAccept});
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +210,7 @@ class _InnerCard extends StatelessWidget {
           _TagPill(ticket: ticket),
           const SizedBox(width: 8),
           // Accept button
-          _AcceptButton(),
+          _AcceptButton(onPressed: onAccept),
         ],
       ),
     );
@@ -290,7 +297,8 @@ class _TagPill extends StatelessWidget {
 }
 
 class _AcceptButton extends StatelessWidget {
-  const _AcceptButton();
+  final VoidCallback? onPressed;
+  const _AcceptButton({this.onPressed});
 
   @override
   Widget build(BuildContext context) {

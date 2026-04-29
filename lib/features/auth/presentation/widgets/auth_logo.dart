@@ -1,30 +1,26 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/color_palette.dart';
-
 /// Circular brand mark used at the top of the dark login screen.
 ///
-/// Solid dark disc with a thin translucent ring and a centered person
-/// glyph rendered in white.
+/// App logo inside a light gray circle with padding.
 class AuthLogo extends StatelessWidget {
   final double size;
 
-  const AuthLogo({super.key, this.size = 56});
+  const AuthLogo({super.key, this.size = 64});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: ColorPalette.loginLogoBg,
+        color: const Color(0xFFE5E5E5), // Light gray background
         shape: BoxShape.circle,
-        border: Border.all(color: ColorPalette.loginLogoBorder, width: 1),
       ),
-      child: Icon(
-        Icons.person_outline,
-        color: ColorPalette.loginLogoIcon,
-        size: size * 0.45,
+      child: Image.asset(
+        'assets/images/app_logo_with_shadow.png',
+        fit: BoxFit.contain,
       ),
     );
   }

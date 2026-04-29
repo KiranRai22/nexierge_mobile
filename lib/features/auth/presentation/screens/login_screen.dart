@@ -11,8 +11,8 @@ import '../providers/login_controller.dart';
 import '../utils/login_error_copy.dart';
 import '../utils/login_validators.dart';
 import '../widgets/auth_logo.dart';
-import '../widgets/login_alert.dart';
 import '../widgets/login_footer.dart';
+import '../widgets/login_top_toast.dart';
 import '../widgets/login_form_fields.dart';
 import '../widgets/login_method_tabs.dart';
 import '../widgets/login_state_dialog.dart';
@@ -86,28 +86,61 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool get _canSubmit {
     final state = ref.read(loginControllerProvider);
     if (state.isSubmitting) return false;
-    if (state.mode == LoginMode.email) {
-      return _emailCtrl.text.trim().isNotEmpty && _passwordCtrl.text.isNotEmpty;
+
+    final s = AppLocalizations.of(context)!;
+    final mode = state.mode;
+
+    // Check if fields pass validation
+    if (mode == LoginMode.email) {
+      final emailValid = LoginValidators.email(_emailCtrl.text, s) == null;
+      final passwordValid =
+          LoginValidators.password(_passwordCtrl.text, s) == null;
+      return emailValid && passwordValid;
+    } else {
+      final empCodeValid =
+          LoginValidators.employeeCode(_employeeCodeCtrl.text, s) == null;
+      final loginCodeValid =
+          LoginValidators.loginCode(_loginCodeCtrl.text, s) == null;
+      return empCodeValid && loginCodeValid;
     }
-    return _employeeCodeCtrl.text.trim().isNotEmpty &&
-        _loginCodeCtrl.text.trim().isNotEmpty;
   }
 
   bool _validate(AppLocalizations s, LoginMode mode) {
     String? idErr;
     String? secretErr;
+
     if (mode == LoginMode.email) {
-      idErr = LoginValidators.email(_emailCtrl.text, s);
-      secretErr = LoginValidators.password(_passwordCtrl.text, s);
+      idErr = LoginValidators.email(_emailCtrl.text.trim(), s);
+      secretErr = LoginValidators.password(_passwordCtrl.text.trim(), s);
     } else {
-      idErr = LoginValidators.employeeCode(_employeeCodeCtrl.text, s);
-      secretErr = LoginValidators.loginCode(_loginCodeCtrl.text, s);
+      idErr = LoginValidators.employeeCode(_employeeCodeCtrl.text.trim(), s);
+      secretErr = LoginValidators.loginCode(_loginCodeCtrl.text.trim(), s);
     }
+
     setState(() {
       _identifierError = idErr;
       _secretError = secretErr;
     });
-    return idErr == null && secretErr == null;
+
+    // Show top toast for validation errors
+    if (idErr != null) {
+      LoginTopToast.show(
+        context,
+        severity: ToastSeverity.error,
+        message: idErr,
+      );
+      return false;
+    }
+    if (secretErr != null) {
+      LoginTopToast.show(
+        context,
+        severity: ToastSeverity.error,
+        message: secretErr,
+      );
+      return false;
+    }
+
+    return true;
   }
 
   void _clearInlineErrors() {
@@ -189,7 +222,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [ColorPalette.loginBgTop, ColorPalette.loginBgBottom],
+            colors: [
+              Color(0xFF1A1025), // Dark purple top
+              Color(0xFF0D0612), // Almost black purple bottom
+            ],
           ),
         ),
         child: SafeArea(
@@ -246,9 +282,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     switch (copy.channel) {
       case LoginErrorChannel.toast:
-        LoginAlert.show(
+        LoginTopToast.show(
           context,
-          severity: LoginAlertSeverity.error,
+          severity: ToastSeverity.error,
           message: copy.message,
         );
       case LoginErrorChannel.dialog:

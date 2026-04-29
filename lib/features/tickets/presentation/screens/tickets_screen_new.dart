@@ -6,6 +6,7 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../providers/session_providers.dart';
@@ -16,6 +17,8 @@ import '../widgets/tickets_top_bar.dart';
 import '../widgets/tickets_main_tabs.dart';
 import '../widgets/tickets_filter_chips.dart';
 import '../widgets/filter_department_sheet.dart';
+import '../widgets/accept_sheet.dart';
+import '../widgets/department_switcher.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
 import 'ticket_detail_screen.dart';
 
@@ -126,21 +129,14 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
               ),
             ),
 
-            // Title row: All Tickets + filter button
+            // Title row: Department Switcher + filter button
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Text(
-                      '${context.l10n.activityTypeAll} ${context.l10n.navTickets}',
-                      style: TypographyManager.headlineSmall.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 24,
-                        color: c.fgBase,
-                      ),
-                    ),
-                  ),
+                  // Department title (switcher ready when multi-dept support added)
+                  _DepartmentTitle(dept: session.homeDepartment),
+                  const Spacer(),
                   // Funnel filter button in circle
                   Semantics(
                     button: true,
@@ -233,6 +229,27 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   }
 }
 
+class _DepartmentTitle extends StatelessWidget {
+  final Department dept;
+
+  const _DepartmentTitle({required this.dept});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+
+    return Text(
+      dept.label(s),
+      style: TypographyManager.headlineSmall.copyWith(
+        fontWeight: FontWeight.w800,
+        fontSize: 24,
+        color: c.fgBase,
+      ),
+    );
+  }
+}
+
 class _SearchField extends ConsumerWidget {
   final TextEditingController controller;
   const _SearchField({required this.controller});
@@ -296,6 +313,7 @@ class _TicketsList extends StatelessWidget {
           child: TicketCardNew(
             ticket: ticket,
             onTap: () => _openDetail(context, ticket),
+            onAccept: () => _showAcceptSheet(context, ticket),
           ),
         );
       },
@@ -324,6 +342,32 @@ class _TicketsList extends StatelessWidget {
         builder: (_) => TicketDetailScreen(ticketId: t.id),
       ),
     );
+  }
+
+  Future<void> _showAcceptSheet(BuildContext context, Ticket ticket) async {
+    final result = await AcceptSheet.show(
+      context: context,
+      ticketCode: ticket.code,
+      ticketTitle: ticket.title,
+      ticketType: _mapTicketKind(ticket.kind),
+      hasGuest: ticket.guest != null,
+    );
+
+    if (result != null && context.mounted) {
+      // TODO: Call accept ticket API with ETA result
+      // result.mode, result.minutesFromNow, result.customTime
+    }
+  }
+
+  TicketAcceptType _mapTicketKind(TicketKind kind) {
+    switch (kind) {
+      case TicketKind.universal:
+        return TicketAcceptType.universal;
+      case TicketKind.catalog:
+        return TicketAcceptType.paid;
+      case TicketKind.manual:
+        return TicketAcceptType.manual;
+    }
   }
 }
 
