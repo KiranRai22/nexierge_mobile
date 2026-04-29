@@ -47,49 +47,25 @@ class TicketsTopBar extends StatelessWidget {
           ),
           const Spacer(),
           // Search toggle
-          IconButton(
+          _CircleIconButton(
             tooltip: s.ticketsSearchHint,
             onPressed: onSearchToggle,
-            icon: Icon(
-              isSearchVisible ? LucideIcons.x : LucideIcons.search,
-              color: c.fgBase,
-              size: 20,
-            ),
+            icon: isSearchVisible ? LucideIcons.x : LucideIcons.search,
           ),
+          const SizedBox(width: 8),
           // Theme toggle
-          IconButton(
+          _CircleIconButton(
             tooltip: s.tooltipToggleTheme,
             onPressed: onThemeToggle,
-            icon: Icon(
-              isDarkMode ? LucideIcons.sun : LucideIcons.moon,
-              color: c.fgBase,
-              size: 20,
-            ),
+            icon: isDarkMode ? LucideIcons.sun : LucideIcons.moon,
           ),
+          const SizedBox(width: 8),
           // Notifications bell
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                tooltip: s.tooltipNotifications,
-                onPressed: onNotifications,
-                icon: Icon(LucideIcons.bell, color: c.fgBase, size: 20),
-              ),
-              if (hasUnreadNotifications)
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: c.tagRedText,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: c.bgBase, width: 1.5),
-                    ),
-                  ),
-                ),
-            ],
+          _CircleIconButton(
+            tooltip: s.tooltipNotifications,
+            onPressed: onNotifications,
+            icon: LucideIcons.bell,
+            badge: hasUnreadNotifications,
           ),
         ],
       ),
@@ -147,6 +123,59 @@ class _Avatar extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: 0.6,
         ),
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  final String tooltip;
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final bool badge;
+
+  const _CircleIconButton({
+    required this.tooltip,
+    this.onPressed,
+    required this.icon,
+    this.badge = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Tooltip(
+      message: tooltip,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          GestureDetector(
+            onTap: onPressed,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: c.bgSubtle,
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Icon(icon, size: 18, color: c.fgBase),
+            ),
+          ),
+          if (badge)
+            Positioned(
+              right: 0,
+              top: 0,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: c.tagRedText,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: c.bgBase, width: 1.5),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

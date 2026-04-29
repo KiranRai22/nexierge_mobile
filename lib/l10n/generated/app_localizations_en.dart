@@ -1128,23 +1128,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterThisMonth => 'This month';
 
   @override
-  String get profileAvatarSheetTitle => 'Change profile photo';
+  String get profileAvatarSheetTitle => 'Change profile picture';
 
   @override
   String get profileAvatarSheetSubtitle =>
-      'Choose a new photo from your camera or gallery.';
+      'Choose how you\'d like to update your photo';
 
   @override
-  String get profileAvatarSheetUploadTitle => 'Choose from gallery';
+  String get profileAvatarSheetUploadTitle => 'Upload photo';
 
   @override
   String get profileAvatarSheetUploadSubtitle =>
-      'Select an existing photo from your device.';
+      'Pick an image from your device';
 
   @override
   String get profileAvatarSheetCameraTitle => 'Take photo';
 
   @override
-  String get profileAvatarSheetCameraSubtitle =>
-      'Use your camera to take a new photo.';
+  String get profileAvatarSheetCameraSubtitle => 'Use your camera';
+
+  @override
+  String get profileUpdateAvatarSuccess => 'Profile photo updated';
+
+  @override
+  String get profileUpdateAvatarFailed => 'Failed to update profile photo';
+
+  @override
+  String get profileEditNameTitle => 'Edit name';
+
+  @override
+  String get profileEditNameSave => 'Save';
+
+  @override
+  String get profileFirstName => 'First name';
+
+  @override
+  String get profileLastName => 'Last name';
+
+  @override
+  String get profileUpdateNameSuccess => 'Name updated';
+
+  @override
+  String get profileUpdateNameFailed => 'Failed to update name';
 }

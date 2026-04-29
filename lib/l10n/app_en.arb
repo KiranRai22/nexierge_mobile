@@ -556,10 +556,18 @@
   "filterThisWeek": "This week",
   "filterThisMonth": "This month",
 
-  "profileAvatarSheetTitle": "Change profile photo",
-  "profileAvatarSheetSubtitle": "Choose a new photo from your camera or gallery.",
-  "profileAvatarSheetUploadTitle": "Choose from gallery",
-  "profileAvatarSheetUploadSubtitle": "Select an existing photo from your device.",
+  "profileAvatarSheetTitle": "Change profile picture",
+  "profileAvatarSheetSubtitle": "Choose how you'd like to update your photo",
+  "profileAvatarSheetUploadTitle": "Upload photo",
+  "profileAvatarSheetUploadSubtitle": "Pick an image from your device",
   "profileAvatarSheetCameraTitle": "Take photo",
-  "profileAvatarSheetCameraSubtitle": "Use your camera to take a new photo."
+  "profileAvatarSheetCameraSubtitle": "Use your camera",
+  "profileUpdateAvatarSuccess": "Profile photo updated",
+  "profileUpdateAvatarFailed": "Failed to update profile photo",
+  "profileEditNameTitle": "Edit name",
+  "profileEditNameSave": "Save",
+  "profileFirstName": "First name",
+  "profileLastName": "Last name",
+  "profileUpdateNameSuccess": "Name updated",
+  "profileUpdateNameFailed": "Failed to update name"
 }

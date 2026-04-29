@@ -71,4 +71,37 @@ class UserEditService {
       rethrow;
     }
   }
+
+  /// Update first_name / last_name without touching the profile image.
+  Future<UserProfileDto?> updateName({
+    required String firstName,
+    required String lastName,
+  }) async {
+    final formData = FormData.fromMap({
+      'first_name': firstName,
+      'last_name': lastName,
+    });
+    try {
+      final response = await _dio.post(
+        APIEndpoints.updateProfile,
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+      final status = response.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        throw Exception('Name update failed ($status)');
+      }
+      final data = response.data;
+      if (data is Map<String, dynamic> && data.containsKey('id')) {
+        try {
+          return UserProfileDto.fromJson(data);
+        } catch (_) {
+          return null;
+        }
+      }
+      return null;
+    } catch (_) {
+      rethrow;
+    }
+  }
 }

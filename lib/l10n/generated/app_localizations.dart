@@ -2099,25 +2099,25 @@ abstract class AppLocalizations {
   /// No description provided for @profileAvatarSheetTitle.
   ///
   /// In en, this message translates to:
-  /// **'Change profile photo'**
+  /// **'Change profile picture'**
   String get profileAvatarSheetTitle;
 
   /// No description provided for @profileAvatarSheetSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose a new photo from your camera or gallery.'**
+  /// **'Choose how you\'d like to update your photo'**
   String get profileAvatarSheetSubtitle;
 
   /// No description provided for @profileAvatarSheetUploadTitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose from gallery'**
+  /// **'Upload photo'**
   String get profileAvatarSheetUploadTitle;
 
   /// No description provided for @profileAvatarSheetUploadSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Select an existing photo from your device.'**
+  /// **'Pick an image from your device'**
   String get profileAvatarSheetUploadSubtitle;
 
   /// No description provided for @profileAvatarSheetCameraTitle.
@@ -2129,8 +2129,56 @@ abstract class AppLocalizations {
   /// No description provided for @profileAvatarSheetCameraSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Use your camera to take a new photo.'**
+  /// **'Use your camera'**
   String get profileAvatarSheetCameraSubtitle;
+
+  /// No description provided for @profileUpdateAvatarSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo updated'**
+  String get profileUpdateAvatarSuccess;
+
+  /// No description provided for @profileUpdateAvatarFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update profile photo'**
+  String get profileUpdateAvatarFailed;
+
+  /// No description provided for @profileEditNameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit name'**
+  String get profileEditNameTitle;
+
+  /// No description provided for @profileEditNameSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get profileEditNameSave;
+
+  /// No description provided for @profileFirstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get profileFirstName;
+
+  /// No description provided for @profileLastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name'**
+  String get profileLastName;
+
+  /// No description provided for @profileUpdateNameSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Name updated'**
+  String get profileUpdateNameSuccess;
+
+  /// No description provided for @profileUpdateNameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update name'**
+  String get profileUpdateNameFailed;
 }
 
 class _AppLocalizationsDelegate

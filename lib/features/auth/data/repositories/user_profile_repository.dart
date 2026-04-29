@@ -61,6 +61,23 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   }
 
   @override
+  Future<UserProfile> updateName({
+    required String firstName,
+    required String lastName,
+  }) async {
+    final editService = UserEditService(_dioClient.authenticatedDio);
+    final dto = await editService.updateName(
+      firstName: firstName,
+      lastName: lastName,
+    );
+    // Server returns partial/empty on this endpoint — always refetch to keep
+    // nested fields (userSettings, hotelDetails, etc.) intact.
+    final updated = dto?.toEntity() ?? await fetchProfile();
+    await _profileService.saveProfile(updated);
+    return updated;
+  }
+
+  @override
   Future<UserProfile?> getCachedProfile() async {
     return _profileService.getProfile();
   }

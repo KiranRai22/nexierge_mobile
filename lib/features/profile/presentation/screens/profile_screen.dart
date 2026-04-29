@@ -5,31 +5,112 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../data/services/image_picker_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../providers/user_profile_controller.dart';
+import '../widgets/change_profile_picture_sheet.dart';
 import '../widgets/profile_header_card.dart';
 import '../widgets/profile_info_section.dart';
 import '../widgets/profile_language_card.dart';
 import '../widgets/profile_logout_button.dart';
 import '../widgets/profile_theme_card.dart';
 
-/// Profile tab. Renders the avatar header, account/work info sections, the
-/// language preference, and the logout CTA. All data comes from the real
-/// `me_user` API via [userProfileControllerProvider], which caches the
-/// response in SharedPreferences so the screen loads instantly on warm
-/// starts and survives offline sessions.
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
-  void _showAvatarComingSoon(BuildContext context) {
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _uploadingAvatar = false;
+  bool _updatingName = false;
+
+  // ── Avatar upload ──────────────────────────────────────────────────────────
+
+  Future<void> _onChangeAvatar() async {
+    if (_uploadingAvatar) return;
+
+    final source = await ChangeProfilePictureSheet.show(context);
+    if (source == null || !mounted) return;
+
+    final picker = ImagePickerService();
+    final file = await picker.pickAndCompress(source);
+    if (file == null || !mounted) return;
+
+    setState(() => _uploadingAvatar = true);
+    final messenger = ScaffoldMessenger.of(context);
     final s = context.l10n;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(s.profileChangeAvatarComingSoon)));
+
+    try {
+      final success = await ref
+          .read(userProfileControllerProvider.notifier)
+          .updateAvatar(file);
+      if (!mounted) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? s.profileUpdateAvatarSuccess
+                  : s.profileUpdateAvatarFailed,
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
   }
 
+  // ── Name edit ──────────────────────────────────────────────────────────────
+
+  Future<void> _onEditName(UserProfile profile) async {
+    if (_updatingName) return;
+
+    final parts = profile.fullName.trim().split(RegExp(r'\s+'));
+    final originalFirst = parts.first;
+    final originalLast = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    final result = await showDialog<(String, String)?>(
+      context: context,
+      builder: (ctx) => _EditNameDialog(
+        initialFirstName: originalFirst,
+        initialLastName: originalLast,
+      ),
+    );
+
+    if (result == null || !mounted) return;
+    final (firstName, lastName) = result;
+    if (firstName.trim().isEmpty) return;
+
+    setState(() => _updatingName = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final s = context.l10n;
+
+    try {
+      final success = await ref
+          .read(userProfileControllerProvider.notifier)
+          .updateName(firstName.trim(), lastName.trim());
+      if (!mounted) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? s.profileUpdateNameSuccess : s.profileUpdateNameFailed,
+            ),
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _updatingName = false);
+    }
+  }
+
+  // ── Build ──────────────────────────────────────────────────────────────────
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final c = context.themeColors;
     final asyncProfile = ref.watch(userProfileControllerProvider);
 
@@ -51,7 +132,10 @@ class ProfileScreen extends ConsumerWidget {
           ),
           data: (profile) => _ProfileBody(
             profile: profile,
-            onChangeAvatar: () => _showAvatarComingSoon(context),
+            uploadingAvatar: _uploadingAvatar,
+            updatingName: _updatingName,
+            onChangeAvatar: _onChangeAvatar,
+            onEditName: () => _onEditName(profile),
           ),
         ),
       ),
@@ -59,11 +143,22 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+// ── Body ─────────────────────────────────────────────────────────────────────
+
 class _ProfileBody extends StatelessWidget {
   final UserProfile profile;
+  final bool uploadingAvatar;
+  final bool updatingName;
   final VoidCallback onChangeAvatar;
+  final VoidCallback onEditName;
 
-  const _ProfileBody({required this.profile, required this.onChangeAvatar});
+  const _ProfileBody({
+    required this.profile,
+    required this.uploadingAvatar,
+    required this.updatingName,
+    required this.onChangeAvatar,
+    required this.onEditName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -71,19 +166,20 @@ class _ProfileBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Pinned avatar block — stays anchored while info sections scroll.
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: ProfileHeaderCard(
             profile: profile,
+            uploadingAvatar: uploadingAvatar,
+            updatingName: updatingName,
             onChangeAvatar: onChangeAvatar,
+            onEditName: onEditName,
           ),
         ),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
             children: [
-              // ── Account Information ────────────────────────────────────
               ProfileInfoSection(
                 title: s.profileSectionAccountInformation,
                 rows: [
@@ -111,8 +207,6 @@ class _ProfileBody extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-
-              // ── Work Information ───────────────────────────────────────
               ProfileInfoSection(
                 title: s.profileSectionWorkInformation,
                 rows: [
@@ -135,8 +229,6 @@ class _ProfileBody extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
-
-              // ── Preferences ────────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                 child: Builder(
@@ -168,5 +260,186 @@ class _ProfileBody extends StatelessWidget {
       case UserStatus.inactive:
         return s.profileStatusInactive;
     }
+  }
+}
+
+// ── Edit name dialog ──────────────────────────────────────────────────────────
+
+class _EditNameDialog extends StatefulWidget {
+  final String initialFirstName;
+  final String initialLastName;
+
+  const _EditNameDialog({
+    required this.initialFirstName,
+    required this.initialLastName,
+  });
+
+  @override
+  State<_EditNameDialog> createState() => _EditNameDialogState();
+}
+
+class _EditNameDialogState extends State<_EditNameDialog> {
+  late final TextEditingController _firstCtl;
+  late final TextEditingController _lastCtl;
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _firstCtl = TextEditingController(text: widget.initialFirstName);
+    _lastCtl = TextEditingController(text: widget.initialLastName);
+  }
+
+  @override
+  void dispose() {
+    _firstCtl.dispose();
+    _lastCtl.dispose();
+    super.dispose();
+  }
+
+  /// Validates name according to rules:
+  /// - Only alphabets and single space allowed
+  /// - Cannot start with space or special characters
+  /// - Max 1 space between letters
+  /// - Min 3 characters
+  String? _validateName(String value, String fieldName) {
+    final trimmed = value.trim();
+
+    if (trimmed.length < 3) {
+      return '$fieldName must be at least 3 characters';
+    }
+
+    // Check if starts with space
+    if (value.startsWith(' ')) {
+      return '$fieldName cannot start with space';
+    }
+
+    // Check for valid characters (alphabets and single space only)
+    final validCharsRegex = RegExp(r'^[a-zA-Z]+( [a-zA-Z]+)*$');
+    if (!validCharsRegex.hasMatch(trimmed)) {
+      return '$fieldName can only contain letters and single spaces';
+    }
+
+    // Check for multiple consecutive spaces
+    if (trimmed.contains('  ')) {
+      return '$fieldName cannot have multiple spaces';
+    }
+
+    return null;
+  }
+
+  bool _isValid() {
+    final firstError = _validateName(_firstCtl.text, 'First name');
+    final lastError = _validateName(_lastCtl.text, 'Last name');
+
+    if (firstError != null || lastError != null) {
+      setState(() {
+        _errorText = firstError ?? lastError;
+      });
+      return false;
+    }
+
+    // Check if name is unchanged
+    final currentFirst = _firstCtl.text.trim();
+    final currentLast = _lastCtl.text.trim();
+
+    if (currentFirst == widget.initialFirstName.trim() &&
+        currentLast == widget.initialLastName.trim()) {
+      setState(() {
+        _errorText = 'No changes detected. Please modify the name to save.';
+      });
+      return false;
+    }
+
+    setState(() => _errorText = null);
+    return true;
+  }
+
+  void _onSave() {
+    if (_isValid()) {
+      Navigator.of(context).pop((_firstCtl.text.trim(), _lastCtl.text.trim()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    final c = context.themeColors;
+
+    return AlertDialog(
+      title: Text(s.profileEditNameTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _firstCtl,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              labelText: s.profileFirstName,
+              errorText: _errorText?.contains('First') == true
+                  ? _errorText
+                  : null,
+            ),
+            autofocus: true,
+            onChanged: (_) => setState(() => _errorText = null),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _lastCtl,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              labelText: s.profileLastName,
+              errorText: _errorText?.contains('Last') == true
+                  ? _errorText
+                  : null,
+            ),
+            onChanged: (_) => setState(() => _errorText = null),
+          ),
+          if (_errorText != null &&
+              !_errorText!.contains('First') &&
+              !_errorText!.contains('Last')) ...[
+            const SizedBox(height: 8),
+            Text(
+              _errorText!,
+              style: TypographyManager.bodySmall.copyWith(color: c.tagRedIcon),
+            ),
+          ],
+        ],
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      actions: [
+        Row(
+          children: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(null),
+              child: Text(
+                s.cancel,
+                style: TypographyManager.bodyMedium.copyWith(color: c.fgMuted),
+              ),
+            ),
+            const Spacer(),
+            ElevatedButton(
+              onPressed: _onSave,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: c.tagPurpleIcon,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(96, 44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                s.profileEditNameSave,
+                style: TypographyManager.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }

@@ -338,11 +338,11 @@
   "notifNewTicket": "Nuevo ticket: {ticketCode}",
 
   "profileAvatarSheetTitle": "Cambiar foto de perfil",
-  "profileAvatarSheetSubtitle": "Elige una nueva foto desde tu cámara o galería.",
-  "profileAvatarSheetUploadTitle": "Elegir de la galería",
-  "profileAvatarSheetUploadSubtitle": "Selecciona una foto existente de tu dispositivo.",
+  "profileAvatarSheetSubtitle": "Elige cómo quieres actualizar tu foto",
+  "profileAvatarSheetUploadTitle": "Subir foto",
+  "profileAvatarSheetUploadSubtitle": "Elige una imagen de tu dispositivo",
   "profileAvatarSheetCameraTitle": "Tomar foto",
-  "profileAvatarSheetCameraSubtitle": "Usa tu cámara para tomar una nueva foto.",
+  "profileAvatarSheetCameraSubtitle": "Usa tu cámara",
 
   "notificationsTitle": "Notificaciones",
   "notificationsUnread": "{count, plural, =0{Sin no leídas} =1{1 sin leer} other{{count} sin leer}}",
@@ -439,5 +439,13 @@
   "ticketActivityBadgeCancelled": "Cancelado",
   "ticketActivityBadgeNote": "Nota",
   "ticketActivityBadgeReassigned": "Reasignado",
-  "ticketActivityBadgeOverdue": "Vencido"
+  "ticketActivityBadgeOverdue": "Vencido",
+  "profileUpdateAvatarSuccess": "Foto de perfil actualizada",
+  "profileUpdateAvatarFailed": "Error al actualizar la foto de perfil",
+  "profileEditNameTitle": "Editar nombre",
+  "profileEditNameSave": "Guardar",
+  "profileFirstName": "Nombre",
+  "profileLastName": "Apellido",
+  "profileUpdateNameSuccess": "Nombre actualizado",
+  "profileUpdateNameFailed": "Error al actualizar el nombre"
 }

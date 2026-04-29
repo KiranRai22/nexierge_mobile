@@ -108,6 +108,25 @@ class UserProfileController extends StateNotifier<UserProfileState> {
     }
   }
 
+  /// Update first and last name. Returns true on success.
+  Future<bool> updateName({
+    required String firstName,
+    required String lastName,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final updated = await _repository.updateName(
+        firstName: firstName,
+        lastName: lastName,
+      );
+      state = state.copyWith(profile: updated, isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+      return false;
+    }
+  }
+
   /// Clear profile and token (logout)
   Future<void> clearProfile() async {
     await _repository.clearProfile();

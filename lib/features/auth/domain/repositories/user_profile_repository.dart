@@ -11,6 +11,12 @@ abstract class UserProfileRepository {
   /// and cache atomically.
   Future<UserProfile> updateProfilePicture(File imageFile);
 
+  /// Update first and last name via the `/user/edit` endpoint.
+  Future<UserProfile> updateName({
+    required String firstName,
+    required String lastName,
+  });
+
   /// Get cached profile from local storage
   Future<UserProfile?> getCachedProfile();
 

@@ -6,11 +6,12 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/date_utils.dart';
+import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../providers/ticket_detail_controller.dart';
 
-/// Updated ticket card with colored kind chips and inline Start Work / Complete
-/// button. Used by [TicketsScreenNew].
+/// Ticket card matching image design with dot indicator, timer, inner card.
+/// Used by [TicketsScreenNew].
 class TicketCardNew extends ConsumerWidget {
   final Ticket ticket;
   final VoidCallback? onTap;
@@ -25,121 +26,29 @@ class TicketCardNew extends ConsumerWidget {
       label: '${ticket.code} ${ticket.title}',
       child: Material(
         color: c.bgBase,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: c.borderBase),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Title row with kind chip and optional action button
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _TicketKindChip(ticket: ticket),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          ticket.title,
-                          style: TypographyManager.cardTitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (_shouldShowActionButton(ticket)) ...[
-                        const SizedBox(width: 8),
-                        _ActionButton(ticket: ticket),
-                      ],
-                    ],
-                  ),
+                  // Title row: dot + title + timer
+                  _TitleRow(ticket: ticket),
                   const SizedBox(height: 8),
-                  // Meta row: room · department · time
-                  _MetaRow(ticket: ticket),
-
-                  // Item preview row (if items exist)
-                  if (ticket.items.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: c.bgSubtle,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: c.borderBase),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: c.bgComponent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            alignment: Alignment.center,
-                            child: Icon(
-                              _itemIcon(ticket.items.first),
-                              size: 16,
-                              color: c.fgMuted,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  ticket.items.first.title,
-                                  style: TypographyManager.bodyMedium.copyWith(
-                                    color: c.fgBase,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (ticket.items.first.subtitle.isNotEmpty)
-                                  Text(
-                                    ticket.items.first.subtitle,
-                                    style: TypographyManager.bodySmall.copyWith(
-                                      color: c.fgMuted,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                              ],
-                            ),
-                          ),
-                          if (ticket.items.length > 1)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: c.bgComponent,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                '+${ticket.items.length - 1}',
-                                style: TypographyManager.labelSmall.copyWith(
-                                  color: c.fgMuted,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  // Room row: icon + room · department
+                  _RoomRow(ticket: ticket),
+                  const SizedBox(height: 12),
+                  // Inner card with avatar, details, tag, Accept button
+                  _InnerCard(ticket: ticket),
                 ],
               ),
             ),
@@ -148,45 +57,215 @@ class TicketCardNew extends ConsumerWidget {
       ),
     );
   }
+}
 
-  bool _shouldShowActionButton(Ticket ticket) {
-    return ticket.status == TicketStatus.incoming ||
-        ticket.status == TicketStatus.accepted ||
-        ticket.status == TicketStatus.inProgress;
-  }
+class _TitleRow extends StatelessWidget {
+  final Ticket ticket;
+  const _TitleRow({required this.ticket});
 
-  IconData _itemIcon(dynamic item) {
-    final title = (item.title as String).toLowerCase();
-    if (title.contains('towel')) return LucideIcons.droplets;
-    if (title.contains('pillow')) return LucideIcons.bed;
-    if (title.contains('water')) return LucideIcons.droplet;
-    if (title.contains('food')) return LucideIcons.utensils;
-    return LucideIcons.package;
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Row(
+      children: [
+        // Status dot - color based on department
+        _StatusDot(ticket: ticket),
+        const SizedBox(width: 8),
+        // Title
+        Expanded(
+          child: Text(
+            ticket.title,
+            style: TypographyManager.cardTitle.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        // Timer
+        Text(
+          '20h 14m 52s',
+          style: TypographyManager.bodySmall.copyWith(
+            color: c.fgMuted,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 }
 
-class _TicketKindChip extends StatelessWidget {
+class _StatusDot extends StatelessWidget {
   final Ticket ticket;
-  const _TicketKindChip({required this.ticket});
+  const _StatusDot({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    // Color based on department
+    final dotColor = _getDotColor(c);
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+    );
+  }
+
+  Color _getDotColor(AppColors c) {
+    if (ticket.department == Department.housekeeping) return c.tagPurpleIcon;
+    if (ticket.department == Department.roomService) return c.tagBlueIcon;
+    if (ticket.department == Department.maintenance) return c.fgMuted;
+    return c.tagPurpleIcon;
+  }
+}
+
+class _RoomRow extends StatelessWidget {
+  final Ticket ticket;
+  const _RoomRow({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+    return Row(
+      children: [
+        Icon(LucideIcons.building2, size: 14, color: c.fgMuted),
+        const SizedBox(width: 4),
+        Text(
+          '${ticket.room.number} · ${ticket.department.label(s)}',
+          style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
+        ),
+      ],
+    );
+  }
+}
+
+class _InnerCard extends StatelessWidget {
+  final Ticket ticket;
+  const _InnerCard({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final s = context.l10n;
 
-    final Color bg;
-    final Color fg;
-    final String label;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: c.bgSubtle,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          // Avatar
+          _ItemAvatar(ticket: ticket),
+          const SizedBox(width: 12),
+          // Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Title line: "Universal request · 1 item"
+                RichText(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
+                    style: TypographyManager.bodyMedium.copyWith(
+                      color: c.fgBase,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    children: [
+                      TextSpan(text: _getItemTitle(ticket)),
+                      TextSpan(
+                        text:
+                            ' · ${ticket.items.length} ${ticket.items.length == 1 ? 'item' : 'items'}',
+                        style: TypographyManager.bodyMedium.copyWith(
+                          color: c.fgMuted,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                // Department
+                Text(
+                  ticket.department.label(s),
+                  style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Tag pill
+          _TagPill(ticket: ticket),
+          const SizedBox(width: 8),
+          // Accept button
+          _AcceptButton(),
+        ],
+      ),
+    );
+  }
+
+  String _getItemTitle(Ticket ticket) {
+    if (ticket.items.isEmpty) return 'Request';
+    // Use first item title or truncate if multiple
+    final firstTitle = ticket.items.first.title;
+    if (ticket.items.length == 1) return firstTitle;
+    // For multiple items, show "Item (x items)" format like image
+    return firstTitle;
+  }
+}
+
+class _ItemAvatar extends StatelessWidget {
+  final Ticket ticket;
+  const _ItemAvatar({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        shape: BoxShape.circle,
+        border: Border.all(color: c.borderBase),
+      ),
+      child: ClipOval(child: _buildFallback(c)),
+    );
+  }
+
+  Widget _buildFallback(AppColors c) {
+    return Center(child: Icon(LucideIcons.package, size: 18, color: c.fgMuted));
+  }
+}
+
+class _TagPill extends StatelessWidget {
+  final Ticket ticket;
+  const _TagPill({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+
+    // Tag based on ticket kind
+    Color bg;
+    Color fg;
+    String label;
 
     switch (ticket.kind) {
       case TicketKind.universal:
-        bg = c.tagBlueBg;
-        fg = c.tagBlueText;
+        bg = c.tagPurpleBg;
+        fg = c.tagPurpleText;
         label = s.ticketKindUniversal;
       case TicketKind.catalog:
-        bg = c.tagGreenBg;
-        fg = c.tagGreenText;
-        label = s.ticketKindCatalog;
+        bg = c.tagBlueBg;
+        fg = c.tagBlueText;
+        label = 'Paid'; // Image shows "Paid" for orders
       case TicketKind.manual:
         bg = c.tagOrangeBg;
         fg = c.tagOrangeText;
@@ -194,111 +273,48 @@ class _TicketKindChip extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
         style: TypographyManager.labelSmall.copyWith(
           color: fg,
           fontWeight: FontWeight.w600,
-          fontSize: 10,
         ),
       ),
     );
   }
 }
 
-class _ActionButton extends ConsumerWidget {
-  final Ticket ticket;
-  const _ActionButton({required this.ticket});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.themeColors;
-    final s = context.l10n;
-
-    final String label;
-    switch (ticket.status) {
-      case TicketStatus.incoming:
-      case TicketStatus.accepted:
-        label = s.ticketActionStartWork;
-      case TicketStatus.inProgress:
-        label = s.ticketActionComplete;
-      default:
-        return const SizedBox.shrink();
-    }
-
-    return GestureDetector(
-      onTap: () {
-        if (ticket.status == TicketStatus.inProgress) {
-          ref.read(ticketActionsProvider).markDone(ticket.id);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: c.tagPurpleBg,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(LucideIcons.circlePlay, size: 12, color: c.tagPurpleText),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TypographyManager.labelSmall.copyWith(
-                color: c.tagPurpleText,
-                fontWeight: FontWeight.w600,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MetaRow extends StatelessWidget {
-  final Ticket ticket;
-  const _MetaRow({required this.ticket});
+class _AcceptButton extends StatelessWidget {
+  const _AcceptButton();
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final s = context.l10n;
-
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: c.bgComponent,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            s.roomNumber(ticket.room.number),
-            style: TypographyManager.labelSmall.copyWith(
-              color: c.fgBase,
-              fontWeight: FontWeight.w500,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: c.tagPurpleIcon,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LucideIcons.check, size: 16, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            'Accept',
+            style: TypographyManager.bodyMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          ticket.department.label(s),
-          style: TypographyManager.cardMeta.copyWith(color: c.fgMuted),
-        ),
-        const Spacer(),
-        Text(
-          AppDateUtils.relative(ticket.createdAt),
-          style: TypographyManager.cardMeta.copyWith(color: c.fgMuted),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1138,19 +1138,43 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileAvatarSheetSubtitle =>
-      'Elige una nueva foto desde tu cámara o galería.';
+      'Elige cómo quieres actualizar tu foto';
 
   @override
-  String get profileAvatarSheetUploadTitle => 'Elegir de la galería';
+  String get profileAvatarSheetUploadTitle => 'Subir foto';
 
   @override
   String get profileAvatarSheetUploadSubtitle =>
-      'Selecciona una foto existente de tu dispositivo.';
+      'Elige una imagen de tu dispositivo';
 
   @override
   String get profileAvatarSheetCameraTitle => 'Tomar foto';
 
   @override
-  String get profileAvatarSheetCameraSubtitle =>
-      'Usa tu cámara para tomar una nueva foto.';
+  String get profileAvatarSheetCameraSubtitle => 'Usa tu cámara';
+
+  @override
+  String get profileUpdateAvatarSuccess => 'Foto de perfil actualizada';
+
+  @override
+  String get profileUpdateAvatarFailed =>
+      'Error al actualizar la foto de perfil';
+
+  @override
+  String get profileEditNameTitle => 'Editar nombre';
+
+  @override
+  String get profileEditNameSave => 'Guardar';
+
+  @override
+  String get profileFirstName => 'Nombre';
+
+  @override
+  String get profileLastName => 'Apellido';
+
+  @override
+  String get profileUpdateNameSuccess => 'Nombre actualizado';
+
+  @override
+  String get profileUpdateNameFailed => 'Error al actualizar el nombre';
 }

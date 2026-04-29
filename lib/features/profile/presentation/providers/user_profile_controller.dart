@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/domain/entities/user_profile.dart' as auth_entity;
@@ -92,6 +94,37 @@ class UserProfileController extends AutoDisposeAsyncNotifier<UserProfile> {
       throw Exception(freshState.error);
     }
     throw Exception('Profile unavailable');
+  }
+
+  /// Upload a new avatar image. Returns true on success.
+  Future<bool> updateAvatar(File imageFile) async {
+    final authNotifier =
+        ref.read(auth_ctrl.userProfileControllerProvider.notifier);
+    final success = await authNotifier.updateProfilePicture(imageFile);
+    if (success) {
+      final authState = ref.read(auth_ctrl.userProfileControllerProvider);
+      if (authState.profile != null) {
+        state = AsyncData(_mapToProfileEntity(authState.profile!));
+      }
+    }
+    return success;
+  }
+
+  /// Update the user's first and last name. Returns true on success.
+  Future<bool> updateName(String firstName, String lastName) async {
+    final authNotifier =
+        ref.read(auth_ctrl.userProfileControllerProvider.notifier);
+    final success = await authNotifier.updateName(
+      firstName: firstName,
+      lastName: lastName,
+    );
+    if (success) {
+      final authState = ref.read(auth_ctrl.userProfileControllerProvider);
+      if (authState.profile != null) {
+        state = AsyncData(_mapToProfileEntity(authState.profile!));
+      }
+    }
+    return success;
   }
 
   /// Pull-to-refresh: re-fetches from the API, persists, and emits new data
