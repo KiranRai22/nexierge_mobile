@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/dashboard_view.dart';
@@ -25,40 +25,41 @@ class NeedsAttentionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.themeColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 s.dashboardNeedsAttention,
-                style: TypographyManager.titleMedium.copyWith(
-                  color: ColorPalette.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TypographyManager.textHeading.copyWith(color: c.fgBase),
               ),
               if (items.isNotEmpty)
                 _ViewAllButton(label: s.dashboardViewAll, onTap: onViewAll),
             ],
           ),
         ),
-        if (items.isEmpty)
-          const _AllClearEmpty()
-        else
-          Column(
-            children: [
-              for (var i = 0; i < items.length; i++) ...[
-                if (i > 0) const SizedBox(height: 8),
-                _AttentionRow(
-                  item: items[i],
-                  onTap: () => onItemTap(items[i]),
+        // Needs attention list content
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: items.isEmpty
+              ? const _AllClearEmpty()
+              : Column(
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 8),
+                      _AttentionRow(
+                        item: items[i],
+                        onTap: () => onItemTap(items[i]),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ],
-          ),
+        ),
       ],
     );
   }
@@ -72,6 +73,7 @@ class _ViewAllButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
@@ -79,10 +81,7 @@ class _ViewAllButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Text(
           label,
-          style: TypographyManager.labelLarge.copyWith(
-            color: ColorPalette.opsPurple,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TypographyManager.textCaption.copyWith(color: c.tagPurpleIcon),
         ),
       ),
     );
@@ -95,6 +94,7 @@ class _AllClearEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.themeColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
@@ -102,39 +102,32 @@ class _AllClearEmpty extends StatelessWidget {
           Container(
             width: 48,
             height: 48,
-            decoration: const BoxDecoration(
-              color: ColorPalette.activityDoneBg,
+            decoration: BoxDecoration(
+              color: c.tagGreenBg,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               LucideIcons.checkCheck,
-              color: ColorPalette.activityDoneFg,
+              color: c.tagGreenIcon,
               size: 22,
             ),
           ),
           const SizedBox(height: 12),
           Text(
             s.dashboardAllClearTitle,
-            style: TypographyManager.titleSmall.copyWith(
-              color: ColorPalette.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase),
           ),
           const SizedBox(height: 4),
           Text(
             s.dashboardAllClearBody,
             textAlign: TextAlign.center,
-            style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.textSecondary,
-            ),
+            style: TypographyManager.textBody.copyWith(color: c.fgMuted),
           ),
           const SizedBox(height: 4),
           Text(
             s.dashboardAllClearHint,
             textAlign: TextAlign.center,
-            style: TypographyManager.bodySmall.copyWith(
-              color: ColorPalette.textDisabled,
-            ),
+            style: TypographyManager.textMicro.copyWith(color: c.fgSubtle),
           ),
         ],
       ),
@@ -149,38 +142,38 @@ class _AttentionRow extends StatelessWidget {
   const _AttentionRow({required this.item, required this.onTap});
 
   ({Color iconBg, Color iconFg, Color pillBg, Color pillFg, IconData glyph})
-  _palette() {
+  _palette(AppColors c) {
     switch (item.severity) {
       case AttentionSeverity.overdue:
         return (
-          iconBg: ColorPalette.activityOverdueBg,
-          iconFg: ColorPalette.activityOverdueFg,
-          pillBg: ColorPalette.activityOverdueBg,
-          pillFg: ColorPalette.activityOverdueFg,
+          iconBg: c.tagRedBg,
+          iconFg: c.tagRedIcon,
+          pillBg: c.tagRedBg,
+          pillFg: c.tagRedText,
           glyph: LucideIcons.circleAlert,
         );
       case AttentionSeverity.dueSoon:
         return (
-          iconBg: ColorPalette.chipManualBg,
-          iconFg: ColorPalette.chipManualFg,
-          pillBg: ColorPalette.chipManualBg,
-          pillFg: ColorPalette.chipManualFg,
+          iconBg: c.tagOrangeBg,
+          iconFg: c.tagOrangeIcon,
+          pillBg: c.tagOrangeBg,
+          pillFg: c.tagOrangeText,
           glyph: LucideIcons.clock,
         );
       case AttentionSeverity.notStarted:
         return (
-          iconBg: ColorPalette.chipCatalogBg,
-          iconFg: ColorPalette.chipCatalogFg,
-          pillBg: ColorPalette.chipCatalogBg,
-          pillFg: ColorPalette.chipCatalogFg,
+          iconBg: c.tagBlueBg,
+          iconFg: c.tagBlueIcon,
+          pillBg: c.tagBlueBg,
+          pillFg: c.tagBlueText,
           glyph: LucideIcons.circlePause,
         );
       case AttentionSeverity.needsAck:
         return (
-          iconBg: ColorPalette.kpiNeutralTint,
-          iconFg: ColorPalette.textSecondary,
-          pillBg: ColorPalette.kpiNeutralTint,
-          pillFg: ColorPalette.textSecondary,
+          iconBg: c.tagNeutralBg,
+          iconFg: c.tagNeutralIcon,
+          pillBg: c.tagNeutralBg,
+          pillFg: c.tagNeutralText,
           glyph: LucideIcons.circlePlay,
         );
     }
@@ -210,18 +203,31 @@ class _AttentionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
-    final p = _palette();
+    final c = context.themeColors;
+    final p = _palette(c);
     final radius = BorderRadius.circular(12);
     return Material(
-      color: ColorPalette.opsSurface,
+      color: c.bgBase,
       borderRadius: radius,
       child: InkWell(
         onTap: onTap,
         borderRadius: radius,
-        child: Ink(
+        child: Container(
           decoration: BoxDecoration(
             borderRadius: radius,
-            border: Border.all(color: ColorPalette.opsBorder, width: 1),
+            border: Border.all(color: c.borderBase, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: c.borderBase.withValues(alpha: 0.04),
+                offset: const Offset(0, 1),
+                blurRadius: 2,
+              ),
+              BoxShadow(
+                color: c.borderBase.withValues(alpha: 0.04),
+                offset: const Offset(0, 0),
+                blurRadius: 1,
+              ),
+            ],
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -246,9 +252,8 @@ class _AttentionRow extends StatelessWidget {
                         item.ticket.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TypographyManager.bodyMedium.copyWith(
-                          color: ColorPalette.textPrimary,
-                          fontWeight: FontWeight.w600,
+                        style: TypographyManager.textBodyStrong.copyWith(
+                          color: c.fgBase,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -256,19 +261,15 @@ class _AttentionRow extends StatelessWidget {
                         _subtitle(s),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TypographyManager.bodySmall.copyWith(
-                          color: ColorPalette.textSecondary,
+                        style: TypographyManager.textMeta.copyWith(
+                          color: c.fgMuted,
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                _SeverityPill(
-                  label: _pillLabel(s),
-                  bg: p.pillBg,
-                  fg: p.pillFg,
-                ),
+                _SeverityPill(label: _pillLabel(s), bg: p.pillBg, fg: p.pillFg),
               ],
             ),
           ),
@@ -299,11 +300,7 @@ class _SeverityPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TypographyManager.labelSmall.copyWith(
-          color: fg,
-          fontWeight: FontWeight.w600,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        ),
+        style: TypographyManager.textCaption.copyWith(color: fg),
       ),
     );
   }

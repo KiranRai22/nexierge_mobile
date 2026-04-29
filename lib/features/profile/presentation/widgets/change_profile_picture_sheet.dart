@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../data/services/image_picker_service.dart';
 
@@ -20,7 +20,7 @@ class ChangeProfilePictureSheet {
     return showModalBottomSheet<ImageSource$>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.appColors.bgBase,
+      backgroundColor: context.themeColors.bgBase,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -34,7 +34,7 @@ class _SheetBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final s = context.l10n;
     return SafeArea(
       top: false,
@@ -130,7 +130,7 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Material(
       color: c.bgBase,
       shape: RoundedRectangleBorder(
@@ -192,7 +192,7 @@ class _CancelButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final s = context.l10n;
     return Material(
       color: c.bgSubtle,

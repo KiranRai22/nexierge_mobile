@@ -36,8 +36,7 @@ abstract class MockSeed {
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
 
-    Room room(String number) =>
-        rooms.firstWhere((r) => r.number == number);
+    Room room(String number) => rooms.firstWhere((r) => r.number == number);
 
     final t1 = Ticket(
       id: 't1',
@@ -53,14 +52,11 @@ abstract class MockSeed {
         statusLine: 'Check-out tomorrow',
       ),
       items: const [
-        RequestItem(
-          id: 'i1',
-          title: 'Towels',
-          subtitle: 'Bath',
-          quantity: 2,
-        ),
+        RequestItem(id: 'i1', title: 'Towels', subtitle: 'Bath', quantity: 2),
       ],
       createdAt: now.subtract(const Duration(minutes: 2)),
+      priority: TicketPriority.p3,
+      source: TicketSource.guestApp,
     );
 
     final t2 = Ticket(
@@ -78,12 +74,7 @@ abstract class MockSeed {
       ),
       note: 'Please leave at the door, guest is resting.',
       items: const [
-        RequestItem(
-          id: 'i1',
-          title: 'Towels',
-          subtitle: 'Bath',
-          quantity: 2,
-        ),
+        RequestItem(id: 'i1', title: 'Towels', subtitle: 'Bath', quantity: 2),
         RequestItem(
           id: 'i2',
           title: 'Pillow',
@@ -98,6 +89,8 @@ abstract class MockSeed {
         ),
       ],
       createdAt: now.subtract(const Duration(minutes: 4)),
+      priority: TicketPriority.p2,
+      source: TicketSource.guestApp,
     );
 
     final t3 = Ticket(
@@ -139,6 +132,8 @@ abstract class MockSeed {
       createdAt: now.subtract(const Duration(hours: 1, minutes: 5)),
       acceptedAt: now.subtract(const Duration(minutes: 25)),
       eta: now.add(const Duration(minutes: 3)),
+      priority: TicketPriority.p2,
+      source: TicketSource.frontDesk,
     );
 
     final t5 = Ticket(
@@ -151,12 +146,7 @@ abstract class MockSeed {
       room: room('410'),
       assigneeName: 'Blessing K.',
       items: const [
-        RequestItem(
-          id: 'i6',
-          title: 'Water',
-          subtitle: 'Bottled',
-          quantity: 3,
-        ),
+        RequestItem(id: 'i6', title: 'Water', subtitle: 'Bottled', quantity: 3),
       ],
       createdAt: yesterday.add(const Duration(hours: 6)),
       acceptedAt: yesterday.add(const Duration(hours: 6, minutes: 5)),
@@ -168,11 +158,21 @@ abstract class MockSeed {
     final events = <ActivityEvent>[
       _ev(t1, ActivityType.created, t1.createdAt),
       _ev(t3, ActivityType.created, t3.createdAt),
-      _ev(t4, ActivityType.accepted, t4.acceptedAt!,
-          actor: 'Blessing K.', eta: const Duration(minutes: 3)),
+      _ev(
+        t4,
+        ActivityType.accepted,
+        t4.acceptedAt!,
+        actor: 'Blessing K.',
+        eta: const Duration(minutes: 3),
+      ),
       _ev(t4, ActivityType.created, t4.createdAt),
-      _ev(t5, ActivityType.accepted, t5.acceptedAt!,
-          actor: 'Blessing K.', eta: const Duration(minutes: 5)),
+      _ev(
+        t5,
+        ActivityType.accepted,
+        t5.acceptedAt!,
+        actor: 'Blessing K.',
+        eta: const Duration(minutes: 5),
+      ),
       _ev(t5, ActivityType.done, t5.doneAt!, actor: 'Blessing K.'),
       _ev(t5, ActivityType.created, t5.createdAt),
     ];

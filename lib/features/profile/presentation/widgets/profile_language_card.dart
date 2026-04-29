@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/app_locale.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/locale_controller.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -26,7 +26,7 @@ class ProfileLanguageCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = context.l10n;
-    final c = context.appColors;
+    final c = context.themeColors;
     final current =
         ref.watch(localeControllerProvider).valueOrNull ?? AppLocale.system;
     final selected = _resolveSelected(context, current);
@@ -80,7 +80,7 @@ class _LanguageSegmented extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -119,7 +119,7 @@ class _SegmentChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Material(
       // Brand purple selected state — intentionally NOT theme-aware.
       color: isSelected ? ColorPalette.opsPurple : Colors.transparent,

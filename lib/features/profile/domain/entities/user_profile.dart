@@ -10,6 +10,24 @@ class UserProfile {
   final List<String> departments;
   final UserStatus status;
 
+  /// URL of the user's profile picture returned by the API.
+  /// `null` when no picture has been uploaded — avatar falls back to [initials].
+  final String? avatarUrl;
+
+  /// BCP-47 language code stored in user_settings (e.g. `"en"`, `"es"`).
+  /// Used to seed the locale controller on first login when the user has no
+  /// explicit local preference set.
+  final String lang;
+
+  /// Theme preference stored in user_settings (e.g. `"light"`, `"dark"`).
+  final String theme;
+
+  /// Optional phone number.
+  final String? phone;
+
+  /// Name of the property (hotel) the user belongs to.
+  final String? hotelName;
+
   const UserProfile({
     required this.id,
     required this.fullName,
@@ -17,7 +35,12 @@ class UserProfile {
     required this.role,
     required this.departments,
     required this.status,
+    required this.lang,
+    required this.theme,
     this.employeeCode,
+    this.avatarUrl,
+    this.phone,
+    this.hotelName,
   });
 
   /// Two-letter initials for the avatar — uses first + last name when

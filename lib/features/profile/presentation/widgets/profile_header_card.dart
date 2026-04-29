@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../domain/entities/user_profile.dart';
 
-/// Big avatar block at the top of the profile screen — purple disc with
-/// initials, camera affordance, full name, role pill, departments meta.
-/// Pure presentational; tap on the camera surfaces a "coming soon" toast
-/// via [onChangeAvatar] which the host wires up.
+/// Big avatar block at the top of the profile screen — shows the user's
+/// profile picture when available, otherwise a purple disc with initials.
+/// Camera affordance triggers [onChangeAvatar] wired by the host screen.
 class ProfileHeaderCard extends StatelessWidget {
   final UserProfile profile;
   final VoidCallback? onChangeAvatar;
@@ -23,7 +22,7 @@ class ProfileHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Container(
       decoration: BoxDecoration(
         color: c.bgBase,
@@ -33,7 +32,11 @@ class ProfileHeaderCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       child: Column(
         children: [
-          _Avatar(initials: profile.initials, onChange: onChangeAvatar),
+          _Avatar(
+            initials: profile.initials,
+            avatarUrl: profile.avatarUrl,
+            onChange: onChangeAvatar,
+          ),
           const SizedBox(height: 16),
           Text(
             profile.fullName,
@@ -46,12 +49,14 @@ class ProfileHeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _RolePill(label: profile.role),
-          const SizedBox(height: 12),
-          Text(
-            profile.departments.join(' · '),
-            textAlign: TextAlign.center,
-            style: TypographyManager.bodyMedium.copyWith(color: c.fgSubtle),
-          ),
+          if (profile.departments.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              profile.departments.join(' · '),
+              textAlign: TextAlign.center,
+              style: TypographyManager.bodyMedium.copyWith(color: c.fgSubtle),
+            ),
+          ],
         ],
       ),
     );
@@ -60,38 +65,56 @@ class ProfileHeaderCard extends StatelessWidget {
 
 class _Avatar extends StatelessWidget {
   final String initials;
+  final String? avatarUrl;
   final VoidCallback? onChange;
-  const _Avatar({required this.initials, this.onChange});
+
+  const _Avatar({
+    required this.initials,
+    this.avatarUrl,
+    this.onChange,
+  });
 
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
-    final c = context.appColors;
+    final c = context.themeColors;
     return SizedBox(
       width: 96,
       height: 96,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Container(
-            width: 96,
-            height: 96,
-            decoration: const BoxDecoration(
-              // Brand purple — intentionally NOT theme-aware. Brand colour
-              // stays consistent across light and dark.
-              color: ColorPalette.opsPurple,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              initials,
-              style: TypographyManager.headlineMedium.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.4,
-              ),
-            ),
+          // Avatar circle — image when available, initials fallback.
+          ClipOval(
+            child: avatarUrl != null && avatarUrl!.isNotEmpty
+                ? Image.network(
+                    avatarUrl!,
+                    width: 96,
+                    height: 96,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        _InitialsDisc(initials: initials),
+                    loadingBuilder: (_, child, progress) {
+                      if (progress == null) return child;
+                      return Container(
+                        width: 96,
+                        height: 96,
+                        color: ColorPalette.opsPurple,
+                        alignment: Alignment.center,
+                        child: const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                : _InitialsDisc(initials: initials),
           ),
+          // Camera affordance badge.
           Positioned(
             right: -2,
             bottom: -2,
@@ -123,6 +146,29 @@ class _Avatar extends StatelessWidget {
   }
 }
 
+class _InitialsDisc extends StatelessWidget {
+  final String initials;
+  const _InitialsDisc({required this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 96,
+      height: 96,
+      color: ColorPalette.opsPurple,
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: TypographyManager.headlineMedium.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
+}
+
 class _RolePill extends StatelessWidget {
   final String label;
   const _RolePill({required this.label});
@@ -132,7 +178,6 @@ class _RolePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        // Brand purple soft — stays consistent across themes.
         color: ColorPalette.opsPurpleSoft,
         borderRadius: BorderRadius.circular(999),
       ),

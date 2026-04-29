@@ -10,7 +10,7 @@ import 'typography_manager.dart';
 ///
 /// Both themes:
 /// 1. Install `AppColors`, `AppRadii`, `AppShadows` extensions so widgets
-///    can read the Medusa tokens via `context.appColors.*` etc.
+///    can read the Medusa tokens via `context.themeColors.*` etc.
 /// 2. Derive the Material 3 `ColorScheme`, `scaffoldBackgroundColor`,
 ///    `cardTheme`, `dialogTheme`, `snackBarTheme`, `appBarTheme`,
 ///    `dividerTheme`, and `bottomSheetTheme` from those tokens — so even

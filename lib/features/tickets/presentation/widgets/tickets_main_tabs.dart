@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexierge/l10n/generated/app_localizations.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Full-width tabs for Incoming, Today, Scheduled, Done with counts
@@ -20,7 +20,7 @@ class TicketsMainTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final s = context.l10n;
 
     return Container(
@@ -76,7 +76,7 @@ class _TabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,

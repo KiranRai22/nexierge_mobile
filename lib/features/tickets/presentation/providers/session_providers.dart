@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models/department.dart';
+import '../../../auth/presentation/providers/user_profile_controller.dart';
 
 /// Operator scope toggle. Persisted only in memory for now.
 enum TicketScope { myDept, allHotel }
@@ -16,18 +17,44 @@ class OperatorSession {
   });
 }
 
-/// Mock session — replace with auth-backed provider in Phase 7.
+/// Real session data from user profile
 final operatorSessionProvider = Provider<OperatorSession>((ref) {
-  return const OperatorSession(
-    displayName: 'Fola',
-    homeDepartment: Department.frontDesk,
+  final userProfile = ref.watch(userProfileProvider);
+
+  if (userProfile == null) {
+    // Fallback to mock data while profile loads
+    return const OperatorSession(
+      displayName: 'Loading...',
+      homeDepartment: Department.frontDesk,
+    );
+  }
+
+  // Extract display name from user profile
+  final displayName = '${userProfile.firstName} ${userProfile.lastName}';
+
+  // Extract home department from user hotel status hierarchy role
+  Department homeDepartment = Department.frontDesk; // default fallback
+  try {
+    homeDepartment = Department.values.firstWhere(
+      (dept) => dept.name == userProfile.userHotelStatus.hierarchyRole,
+    );
+  } catch (_) {
+    // If hierarchy role doesn't match any department, use default
+    homeDepartment = Department.frontDesk;
+  }
+
+  return OperatorSession(
+    displayName: displayName,
+    homeDepartment: homeDepartment,
   );
 });
 
 /// Scope tab (My Dept / All Hotel) — shared between Tickets and Activity.
-final ticketScopeProvider =
-    StateProvider<TicketScope>((ref) => TicketScope.myDept);
+final ticketScopeProvider = StateProvider<TicketScope>(
+  (ref) => TicketScope.myDept,
+);
 
 /// Department-filter selection — shared between Tickets and Activity.
-final departmentFilterProvider =
-    StateProvider<Set<Department>>((ref) => const {});
+final departmentFilterProvider = StateProvider<Set<Department>>(
+  (ref) => const {},
+);

@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../domain/models/ticket.dart';
+import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../providers/session_providers.dart';
 import '../providers/tickets_list_controller.dart';
 import '../providers/tickets_main_tab_provider.dart';
@@ -76,14 +77,32 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
     final mainTab = ref.watch(ticketsMainTabProvider);
     final selectedFilter = ref.watch(ticketsFilterProvider);
     final asyncList = ref.watch(ticketsListProvider);
+    final userProfile = ref.watch(userProfileProvider);
+    final session = ref.watch(operatorSessionProvider);
     final themeMode =
         ref.watch(themeModeControllerProvider).valueOrNull ?? ThemeMode.system;
     final isDarkMode = themeMode == ThemeMode.dark;
 
-    final c = context.appColors;
+    final c = context.themeColors;
 
     // Calculate counts for each main tab
     final counts = _calculateTabCounts(asyncList.valueOrNull);
+
+    // Use user profile data if available, fallback to session data
+    final displayName = userProfile?.firstName != null
+        ? '${userProfile!.firstName} ${userProfile.lastName}'
+        : session.displayName;
+    final initials = (() {
+      final name = displayName.trim();
+      if (name.isEmpty) return '?';
+      final parts = name
+          .split(RegExp(r'\s+'))
+          .where((p) => p.isNotEmpty)
+          .toList();
+      if (parts.length == 1) return parts.first[0].toUpperCase();
+      return (parts.first[0] + parts.last[0]).toUpperCase();
+    })();
+    final profilePictureUrl = userProfile?.pictureProfile?.url;
 
     return Container(
       color: c.bgBase,
@@ -95,6 +114,8 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TicketsTopBar(
+                avatarInitials: initials,
+                avatarImageUrl: profilePictureUrl,
                 hasUnreadNotifications: true,
                 isDarkMode: isDarkMode,
                 onThemeToggle: () =>
@@ -218,7 +239,7 @@ class _SearchField extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return TextField(
       controller: controller,
       style: TypographyManager.bodyMedium,
@@ -319,9 +340,9 @@ class _LoadingList extends StatelessWidget {
         child: Container(
           height: 92,
           decoration: BoxDecoration(
-            color: context.appColors.bgSubtle,
+            color: context.themeColors.bgSubtle,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: context.appColors.borderBase),
+            border: Border.all(color: context.themeColors.borderBase),
           ),
         ),
       ),
@@ -340,14 +361,14 @@ class _EmptyView extends StatelessWidget {
         Icon(
           Icons.inbox_outlined,
           size: 56,
-          color: context.appColors.fgDisabled,
+          color: context.themeColors.fgDisabled,
         ),
         const SizedBox(height: 12),
         Center(
           child: Text(
             context.l10n.emptyState,
             style: TypographyManager.bodyMedium.copyWith(
-              color: context.appColors.fgMuted,
+              color: context.themeColors.fgMuted,
             ),
           ),
         ),
@@ -369,7 +390,7 @@ class _ErrorView extends StatelessWidget {
         Icon(
           Icons.error_outline_rounded,
           size: 56,
-          color: context.appColors.tagRedIcon,
+          color: context.themeColors.tagRedIcon,
         ),
         const SizedBox(height: 12),
         Text(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/models/department.dart';
@@ -12,10 +12,11 @@ import '../providers/session_providers.dart';
 /// list-of-checkboxes pattern. Apply / Clear at the bottom.
 class FilterDepartmentSheet {
   static Future<void> show(BuildContext context) {
+    final c = context.themeColors;
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: c.bgSubtle,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -67,6 +68,7 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final c = context.themeColors;
     return Padding(
       padding: EdgeInsets.only(bottom: viewInsets),
       child: SafeArea(
@@ -74,16 +76,12 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const _Handle(),
-            _Header(subtitle: _subtitle(context.l10n)),
-            const Divider(height: 1, color: ColorPalette.opsDividerSubtle),
-            _DeptList(selected: _draft, onToggle: _toggle),
-            const Divider(height: 1, color: ColorPalette.opsDividerSubtle),
-            _Footer(
-              onSelectAll: _selectAll,
-              onClear: _clear,
-              onApply: _apply,
+            _Header(
+              subtitle: _subtitle(context.l10n),
+              onClose: () => Navigator.of(context).pop(),
             ),
+            _DeptList(selected: _draft, onToggle: _toggle),
+            _Footer(onSelectAll: _selectAll, onClear: _clear, onApply: _apply),
           ],
         ),
       ),
@@ -95,12 +93,13 @@ class _Handle extends StatelessWidget {
   const _Handle();
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
     return Container(
       width: 40,
       height: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: ColorPalette.opsBorder,
+        color: c.borderBase,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -109,23 +108,49 @@ class _Handle extends StatelessWidget {
 
 class _Header extends StatelessWidget {
   final String subtitle;
-  const _Header({required this.subtitle});
+  final VoidCallback onClose;
+  const _Header({required this.subtitle, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      child: Row(
         children: [
-          Text(
-            context.l10n.filterTitle,
-            style: TypographyManager.titleMedium.copyWith(
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Filter by department',
+                  style: TypographyManager.titleMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: c.fgBase,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TypographyManager.bodySmall.copyWith(
+                    color: c.fgSubtle,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(subtitle, style: TypographyManager.bodySmall),
+          GestureDetector(
+            onTap: onClose,
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: c.bgSubtle,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.close, size: 20, color: c.fgMuted),
+            ),
+          ),
         ],
       ),
     );
@@ -140,6 +165,7 @@ class _DeptList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.themeColors;
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -151,26 +177,59 @@ class _DeptList extends StatelessWidget {
         return InkWell(
           onTap: () => onToggle(d),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
                 Expanded(
-                  child: Text(d.label(s), style: TypographyManager.bodyMedium),
+                  child: Text(
+                    d.label(s),
+                    style: TypographyManager.bodyMedium.copyWith(
+                      color: c.fgBase,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
-                Icon(
-                  isOn
-                      ? Icons.check_box_rounded
-                      : Icons.check_box_outline_blank_rounded,
-                  color: isOn
-                      ? ColorPalette.opsPurple
-                      : ColorPalette.textSecondary,
+                _CustomCheckbox(
+                  isChecked: isOn,
+                  activeColor: c.tagPurpleIcon,
+                  inactiveColor: c.borderBase,
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _CustomCheckbox extends StatelessWidget {
+  final bool isChecked;
+  final Color activeColor;
+  final Color inactiveColor;
+
+  const _CustomCheckbox({
+    required this.isChecked,
+    required this.activeColor,
+    required this.inactiveColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isChecked ? activeColor : inactiveColor,
+          width: 2,
+        ),
+        color: isChecked ? activeColor : Colors.transparent,
+      ),
+      child: isChecked
+          ? Icon(Icons.check, size: 16, color: Colors.white)
+          : null,
     );
   }
 }
@@ -188,33 +247,36 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.themeColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
         children: [
           TextButton(
-            onPressed: onSelectAll,
-            child: Text(s.filterSelectAll),
-          ),
-          TextButton(
             onPressed: onClear,
-            style: TextButton.styleFrom(
-              foregroundColor: ColorPalette.textSecondary,
+            child: Text(
+              'Clear',
+              style: TypographyManager.bodyMedium.copyWith(color: c.fgMuted),
             ),
-            child: Text(s.filterClear),
           ),
           const Spacer(),
           ElevatedButton(
             onPressed: onApply,
             style: ElevatedButton.styleFrom(
-              backgroundColor: ColorPalette.opsPurple,
-              foregroundColor: ColorPalette.white,
+              backgroundColor: c.tagPurpleIcon,
+              foregroundColor: Colors.white,
               minimumSize: const Size(96, 44),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: Text(s.filterApply),
+            child: Text(
+              'Apply',
+              style: TypographyManager.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),

@@ -347,6 +347,141 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionUndo => 'DESHACER';
 
   @override
+  String get ticketTabDetails => 'Detalles';
+
+  @override
+  String get ticketTabActivity => 'Actividad';
+
+  @override
+  String get ticketSectionGuestRoom => 'HUÉSPED Y HABITACIÓN';
+
+  @override
+  String get ticketSectionInformation => 'INFORMACIÓN DEL TICKET';
+
+  @override
+  String get ticketFieldGuest => 'Huésped';
+
+  @override
+  String get ticketFieldRoom => 'Habitación';
+
+  @override
+  String get ticketFieldRoomType => 'Tipo de habitación';
+
+  @override
+  String get ticketFieldDepartment => 'Departamento';
+
+  @override
+  String get ticketFieldConversation => 'Conversación';
+
+  @override
+  String get ticketFieldStatus => 'Estado';
+
+  @override
+  String get ticketFieldTicketType => 'Tipo de ticket';
+
+  @override
+  String get ticketFieldSource => 'Origen';
+
+  @override
+  String ticketRoomNumber(String number) {
+    return '#$number';
+  }
+
+  @override
+  String get ticketPriorityP1 => 'P1';
+
+  @override
+  String get ticketPriorityP2 => 'P2';
+
+  @override
+  String get ticketPriorityP3 => 'P3';
+
+  @override
+  String get ticketStatusBadgeAccepted => 'ACEPTADO';
+
+  @override
+  String get ticketStatusBadgeIncoming => 'ENTRANTE';
+
+  @override
+  String get ticketStatusBadgeInProgress => 'EN CURSO';
+
+  @override
+  String get ticketStatusBadgeDone => 'HECHO';
+
+  @override
+  String get ticketStatusBadgeCancelled => 'CANCELADO';
+
+  @override
+  String get ticketSourceGuestApp => 'App del huésped';
+
+  @override
+  String get ticketSourceFrontDesk => 'Recepción';
+
+  @override
+  String get ticketSourcePhone => 'Teléfono';
+
+  @override
+  String get ticketSourceWalkIn => 'Sin cita';
+
+  @override
+  String get ticketSourceSystem => 'Sistema';
+
+  @override
+  String ticketElapsed(String elapsed) {
+    return '$elapsed transcurridos';
+  }
+
+  @override
+  String get ticketActionStartWork => 'Comenzar';
+
+  @override
+  String get ticketActionPause => 'Pausar';
+
+  @override
+  String get ticketActionResume => 'Reanudar';
+
+  @override
+  String get ticketActionComplete => 'Completar';
+
+  @override
+  String get ticketActionChangeDue => 'Cambiar plazo';
+
+  @override
+  String get ticketActionCancel => 'Cancelar';
+
+  @override
+  String get ticketActionReset => 'Restablecer';
+
+  @override
+  String get ticketActivityCreated => 'Ticket creado';
+
+  @override
+  String ticketActivityStatusChange(String from, String to) {
+    return '$from → $to';
+  }
+
+  @override
+  String get ticketActivityBadgeAcknowledged => 'Reconocido';
+
+  @override
+  String get ticketActivityBadgeCreated => 'Creado';
+
+  @override
+  String get ticketActivityBadgeDone => 'Hecho';
+
+  @override
+  String get ticketActivityBadgeCancelled => 'Cancelado';
+
+  @override
+  String get ticketActivityBadgeNote => 'Nota';
+
+  @override
+  String get ticketActivityBadgeReassigned => 'Reasignado';
+
+  @override
+  String get ticketActivityBadgeOverdue => 'Vencido';
+
+  @override
   String get etaTitle => '¿Cuándo estará listo?';
 
   @override
@@ -775,7 +910,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get labelGuestCheckoutTomorrow => 'Salida mañana';
 
   @override
-  String get relativeJustNow => 'Justo ahora';
+  String get relativeJustNow => 'ahora mismo';
 
   @override
   String relativeSeconds(int seconds) {
@@ -852,6 +987,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get profileFieldRole => 'Rol';
 
   @override
+  String get profileFieldPhone => 'Teléfono';
+
+  @override
+  String get profileFieldHotel => 'Propiedad';
+
+  @override
   String get profileFieldDepartments => 'Departamentos';
 
   @override
@@ -925,207 +1066,72 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get ticketTabDetails => 'Details';
-
-  @override
-  String get ticketTabActivity => 'Activity';
-
-  @override
-  String get ticketSectionGuestRoom => 'GUEST & ROOM';
-
-  @override
-  String get ticketSectionInformation => 'TICKET INFORMATION';
-
-  @override
-  String get ticketFieldGuest => 'Guest';
-
-  @override
-  String get ticketFieldRoom => 'Room';
-
-  @override
-  String get ticketFieldRoomType => 'Room type';
-
-  @override
-  String get ticketFieldDepartment => 'Department';
-
-  @override
-  String get ticketFieldConversation => 'Conversation';
-
-  @override
-  String get ticketFieldStatus => 'Status';
-
-  @override
-  String get ticketFieldTicketType => 'Ticket type';
-
-  @override
-  String get ticketFieldSource => 'Source';
-
-  @override
-  String ticketRoomNumber(String number) {
-    return '#$number';
-  }
-
-  @override
-  String get ticketPriorityP1 => 'P1';
-
-  @override
-  String get ticketPriorityP2 => 'P2';
-
-  @override
-  String get ticketPriorityP3 => 'P3';
-
-  @override
-  String get ticketStatusBadgeAccepted => 'ACCEPTED';
-
-  @override
-  String get ticketStatusBadgeIncoming => 'INCOMING';
-
-  @override
-  String get ticketStatusBadgeInProgress => 'IN PROGRESS';
-
-  @override
-  String get ticketStatusBadgeDone => 'DONE';
-
-  @override
-  String get ticketStatusBadgeCancelled => 'CANCELLED';
-
-  @override
-  String get ticketSourceGuestApp => 'Guest app';
-
-  @override
-  String get ticketSourceFrontDesk => 'Front desk';
-
-  @override
-  String get ticketSourcePhone => 'Phone';
-
-  @override
-  String get ticketSourceWalkIn => 'Walk-in';
-
-  @override
-  String get ticketSourceSystem => 'System';
-
-  @override
-  String ticketElapsed(String elapsed) {
-    return '$elapsed elapsed';
-  }
-
-  @override
-  String get ticketActionStartWork => 'Start Work';
-
-  @override
-  String get ticketActionPause => 'Pause';
-
-  @override
-  String get ticketActionResume => 'Resume';
-
-  @override
-  String get ticketActionComplete => 'Complete';
-
-  @override
-  String get ticketActionChangeDue => 'Change Due';
-
-  @override
-  String get ticketActionCancel => 'Cancel';
-
-  @override
-  String get ticketActionReset => 'Reset';
-
-  @override
-  String get ticketActivityCreated => 'Ticket created';
-
-  @override
-  String ticketActivityStatusChange(String from, String to) {
-    return '$from → $to';
-  }
-
-  @override
-  String get ticketActivityBadgeAcknowledged => 'Acknowledged';
-
-  @override
-  String get ticketActivityBadgeCreated => 'Created';
-
-  @override
-  String get ticketActivityBadgeDone => 'Done';
-
-  @override
-  String get ticketActivityBadgeCancelled => 'Cancelled';
-
-  @override
-  String get ticketActivityBadgeNote => 'Note';
-
-  @override
-  String get ticketActivityBadgeReassigned => 'Reassigned';
-
-  @override
-  String get ticketActivityBadgeOverdue => 'Overdue';
-
-  @override
-  String get notificationsTitle => 'Notifications';
+  String get notificationsTitle => 'Notificaciones';
 
   @override
   String notificationsUnread(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count unread',
-      one: '1 unread',
-      zero: 'No unread',
+      other: '$count sin leer',
+      one: '1 sin leer',
+      zero: 'Sin no leídas',
     );
     return '$_temp0';
   }
 
   @override
   String notificationsTotal(int count) {
-    return '$count total';
+    return '$count en total';
   }
 
   @override
-  String get notificationsMarkAllRead => 'Mark all as read';
+  String get notificationsMarkAllRead => 'Marcar todo como leído';
 
   @override
-  String get notificationsEmpty => 'You\'re all caught up';
+  String get notificationsEmpty => 'Estás al día';
 
   @override
-  String get notificationsEmptyHint => 'New activity will appear here.';
+  String get notificationsEmptyHint => 'La nueva actividad aparecerá aquí.';
 
   @override
-  String get notificationsItemNewTicket => 'New ticket received';
+  String get notificationsItemNewTicket => 'Nuevo ticket recibido';
 
   @override
   String relativeMinutesAgo(int minutes) {
-    return '${minutes}m ago';
+    return 'hace $minutes min';
   }
 
   @override
   String relativeHoursAgo(int hours) {
-    return '${hours}h ago';
+    return 'hace $hours h';
   }
 
   @override
   String relativeDaysAgo(int days) {
-    return '${days}d ago';
+    return 'hace $days d';
   }
 
   @override
   String get ticketKindUniversal => 'Universal';
 
   @override
-  String get ticketKindCatalog => 'Catalog';
+  String get ticketKindCatalog => 'Catálogo';
 
   @override
   String get ticketKindManual => 'Manual';
 
   @override
-  String get filterNewestFirst => 'Newest first';
+  String get filterNewestFirst => 'Más reciente primero';
 
   @override
-  String get filterOldestFirst => 'Oldest first';
+  String get filterOldestFirst => 'Más antiguo primero';
 
   @override
-  String get filterThisWeek => 'This week';
+  String get filterThisWeek => 'Esta semana';
 
   @override
-  String get filterThisMonth => 'This month';
+  String get filterThisMonth => 'Este mes';
 
   @override
   String get profileAvatarSheetTitle => 'Cambiar foto de perfil';

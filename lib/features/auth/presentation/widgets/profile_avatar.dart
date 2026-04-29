@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../domain/entities/user_profile.dart';
 import '../providers/user_profile_controller.dart';
@@ -29,7 +29,7 @@ class ProfileAvatar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(userProfileControllerProvider);
-    final c = context.appColors;
+    final c = context.themeColors;
 
     // Handle loading state
     if (profileState.isLoading && profileState.profile == null) {
@@ -136,7 +136,7 @@ class _AvatarPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final displayInitials = initials ?? '?';
 
     return GestureDetector(
@@ -210,7 +210,7 @@ class ProfileAvatarWithStatus extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: Colors.green,
                 shape: BoxShape.circle,
-                border: Border.all(color: context.appColors.bgBase, width: 2),
+                border: Border.all(color: context.themeColors.bgBase, width: 2),
               ),
             ),
           ),

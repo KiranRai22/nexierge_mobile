@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/dashboard_view.dart';
 
@@ -54,7 +53,7 @@ class DashboardStatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
-    final c = context.appColors;
+    final c = context.themeColors;
     final breakdownText = <String>[
       if (breakdown.universal > 0)
         s.dashboardBreakdownUniversal(breakdown.universal),
@@ -164,42 +163,41 @@ class StatNoteCard extends StatelessWidget {
     switch (tone) {
       case StatNoteTone.neutral:
         return _TonePalette(
-          accent: c.fgSubtle,
+          accent: c.tagNeutralIcon,
           number: c.fgBase,
-          footer: c.fgSubtle,
+          footer: c.fgMuted,
         );
       case StatNoteTone.purple:
-        // Brand purple — kept on the legacy palette so it stays consistent
-        // across light/dark.
-        return const _TonePalette(
-          accent: ColorPalette.opsPurpleDark,
-          number: ColorPalette.opsPurpleDark,
-          footer: ColorPalette.opsPurpleDark,
+        // Brand purple — matches React tag-purple colors
+        return _TonePalette(
+          accent: c.tagPurpleIcon,
+          number: c.tagPurpleText,
+          footer: c.tagPurpleIcon,
         );
       case StatNoteTone.red:
         return _TonePalette(
-          accent: c.tagRedText,
+          accent: c.tagRedIcon,
           number: c.tagRedText,
-          footer: c.tagRedText,
+          footer: c.tagRedIcon,
         );
       case StatNoteTone.orange:
         return _TonePalette(
-          accent: c.tagOrangeText,
+          accent: c.tagOrangeIcon,
           number: c.tagOrangeText,
-          footer: c.tagOrangeText,
+          footer: c.tagOrangeIcon,
         );
       case StatNoteTone.blue:
         return _TonePalette(
-          accent: c.tagBlueText,
+          accent: c.tagBlueIcon,
           number: c.tagBlueText,
-          footer: c.tagBlueText,
+          footer: c.tagBlueIcon,
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final p = _palette(c);
     final isLarge = size == StatNoteSize.large;
     final radius = BorderRadius.circular(16);
@@ -214,6 +212,18 @@ class StatNoteCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: radius,
             border: Border.all(color: c.borderBase, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: c.borderBase.withValues(alpha: 0.04),
+                offset: const Offset(0, 1),
+                blurRadius: 2,
+              ),
+              BoxShadow(
+                color: c.borderBase.withValues(alpha: 0.04),
+                offset: const Offset(0, 0),
+                blurRadius: 1,
+              ),
+            ],
           ),
           padding: EdgeInsets.all(isLarge ? 18 : 14),
           child: Semantics(
@@ -225,8 +235,7 @@ class StatNoteCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Tinted badge pill — accent colour at 20% alpha so the
-                    // hue reads through but the surface stays calm.
+                    // Tinted badge pill — matches React bg-[rgb(var(--tag-*-bg))]
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -238,7 +247,7 @@ class StatNoteCard extends StatelessWidget {
                       ),
                       child: Text(
                         badgeLabel.toUpperCase(),
-                        style: TypographyManager.kpiLabel.copyWith(
+                        style: TypographyManager.textCaption.copyWith(
                           color: c.fgBase,
                         ),
                       ),
@@ -247,19 +256,33 @@ class StatNoteCard extends StatelessWidget {
                     Text(
                       '$value',
                       style: isLarge
-                          ? TypographyManager.kpiHeroCount.copyWith(
+                          ? TypographyManager.headlineLarge.copyWith(
                               color: p.number,
+                              fontWeight: FontWeight.w700,
                             )
                           : TypographyManager.headlineMedium.copyWith(
                               color: p.number,
                               fontWeight: FontWeight.w600,
-                              height: 1.15,
                             ),
                     ),
-                    Divider(color: p.accent, thickness: .05),
+                    // Dotted divider — matches React reference
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 1,
+                        child: CustomPaint(
+                          painter: _DottedLinePainter(
+                            color: c.fgMuted.withValues(alpha: 0.5),
+                            dashWidth: 2.0,
+                            gap: 3.0,
+                          ),
+                        ),
+                      ),
+                    ),
                     Text(
                       footer,
-                      style: TypographyManager.bodySmall.copyWith(
+                      style: TypographyManager.textMeta.copyWith(
                         color: p.footer,
                       ),
                       maxLines: 1,
@@ -288,4 +311,38 @@ class _TonePalette {
     required this.number,
     required this.footer,
   });
+}
+
+class _DottedLinePainter extends CustomPainter {
+  final Color color;
+  final double dashWidth;
+  final double gap;
+
+  _DottedLinePainter({
+    required this.color,
+    required this.dashWidth,
+    required this.gap,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final y = size.height / 2;
+    double x = 0;
+    final total = size.width;
+    while (x < total) {
+      final candidate = x + dashWidth;
+      final end = candidate > total ? total : candidate;
+      canvas.drawLine(Offset(x, y), Offset(end, y), paint);
+      x += dashWidth + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/i18n/app_locale.dart';
 import 'core/i18n/locale_controller.dart';
+import 'core/network/api_client.dart';
 import 'core/services/device_token_service.dart';
 import 'core/services/firebase_service.dart';
 import 'core/services/notification_service.dart';
-import 'core/theme/theme_manager.dart';
+import 'core/theme/unified_theme_manager.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'core/utils/string_manager.dart';
 import 'features/auth/presentation/providers/auth_session_controller.dart';
@@ -42,7 +43,19 @@ Future<void> main() async {
     '[DeviceToken] Saved to preferences: ${token != null ? 'present' : 'null'}',
   );
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        // Wire bearer token into authed Dio. Reads from AuthSessionController
+        // so any login/logout/refresh propagates to all authed requests.
+        authTokenProviderOverride.overrideWith(
+          (ref) =>
+              ref.watch(authSessionControllerProvider).valueOrNull?.authToken,
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerWidget {
@@ -58,8 +71,8 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       title: StringManager.appName,
       debugShowCheckedModeBanner: false,
-      theme: ThemeManager.lightTheme,
-      darkTheme: ThemeManager.darkTheme,
+      theme: UnifiedThemeManager.lightTheme,
+      darkTheme: UnifiedThemeManager.darkTheme,
       themeMode: mode,
       // i18n. `null` locale = follow device. Always pass the full delegate
       // bundle so Material/Cupertino widgets localize too.

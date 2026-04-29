@@ -6,6 +6,8 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../auth/presentation/providers/auth_session_controller.dart';
+import '../../../auth/presentation/providers/user_profile_controller.dart'
+    as auth_ctrl;
 
 /// Full-width destructive CTA at the bottom of the profile screen. Confirms
 /// before signing out, then clears the auth session — the FCM device token
@@ -52,6 +54,12 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
 
     setState(() => _busy = true);
     try {
+      // Clear cached profile from SharedPreferences so the next user starts
+      // fresh. Must happen before clearing the session so the controller can
+      // still read its providers during teardown.
+      await ref
+          .read(auth_ctrl.userProfileControllerProvider.notifier)
+          .clearProfile();
       await ref.read(authSessionControllerProvider.notifier).clear();
       // Root widget reactively swaps to LoginScreen — no Navigator call.
     } finally {

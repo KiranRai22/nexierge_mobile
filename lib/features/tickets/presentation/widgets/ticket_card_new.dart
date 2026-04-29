@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../domain/models/ticket.dart';
@@ -19,7 +19,7 @@ class TicketCardNew extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Semantics(
       button: true,
       label: '${ticket.code} ${ticket.title}',
@@ -171,7 +171,7 @@ class _TicketKindChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final s = context.l10n;
 
     final Color bg;
@@ -217,7 +217,7 @@ class _ActionButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final s = context.l10n;
 
     final String label;
@@ -269,7 +269,7 @@ class _MetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final s = context.l10n;
 
     return Row(

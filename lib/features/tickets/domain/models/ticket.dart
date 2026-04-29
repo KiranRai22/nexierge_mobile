@@ -6,6 +6,15 @@ enum TicketStatus { incoming, accepted, inProgress, done, cancelled }
 /// What category of ticket this is. Drives the chip colour on the card.
 enum TicketKind { universal, catalog, manual }
 
+/// Priority bucket. Drives the trailing pill in the detail header
+/// (P1 red, P2 orange, P3 neutral). Stored as enum so the label is
+/// resolved at render time and stays locale-independent.
+enum TicketPriority { p1, p2, p3 }
+
+/// Where the ticket originated — guest call, in-app catalog, walk-in, etc.
+/// Domain enum so display labels stay locale-aware.
+enum TicketSource { guestApp, frontDesk, phone, walkIn, system }
+
 /// A single requested item line inside a ticket (e.g. *Towels · Bath ×2*).
 class RequestItem {
   final String id;
@@ -42,11 +51,7 @@ class Guest {
   final String displayName;
   final String? statusLine; // e.g. "Check-out tomorrow"
 
-  const Guest({
-    required this.id,
-    required this.displayName,
-    this.statusLine,
-  });
+  const Guest({required this.id, required this.displayName, this.statusLine});
 }
 
 /// Domain ticket model. Immutable; mutations go through the repository.
@@ -62,6 +67,8 @@ class Ticket {
   final List<RequestItem> items;
   final String? note;
   final String? assigneeName;
+  final TicketPriority priority;
+  final TicketSource? source;
 
   /// Source-of-truth timestamps. UI computes "X minutes ago" from them.
   final DateTime createdAt;
@@ -85,6 +92,8 @@ class Ticket {
     this.acceptedAt,
     this.doneAt,
     this.eta,
+    this.priority = TicketPriority.p2,
+    this.source,
   });
 
   bool get isOverdue {
@@ -103,6 +112,8 @@ class Ticket {
     DateTime? acceptedAt,
     DateTime? doneAt,
     DateTime? eta,
+    TicketPriority? priority,
+    TicketSource? source,
   }) {
     return Ticket(
       id: id,
@@ -120,6 +131,8 @@ class Ticket {
       acceptedAt: acceptedAt ?? this.acceptedAt,
       doneAt: doneAt ?? this.doneAt,
       eta: eta ?? this.eta,
+      priority: priority ?? this.priority,
+      source: source ?? this.source,
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../dashboard/presentation/screens/dashboard_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
-import '../../../tickets/presentation/screens/tickets_screen.dart';
+import '../../../tickets/presentation/screens/tickets_screen_new.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'create_router.dart';
 import '../widgets/center_fab.dart';
@@ -50,11 +50,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         index: _stackIndex,
         children: [
           DashboardScreen(onSwitchTab: _onSelect),
-          const TicketsScreen(),
+          const TicketsScreenNew(),
           const ProfileScreen(),
         ],
       ),
-      floatingActionButton: CenterFab(onPressed: _onFabPressed),
+      floatingActionButton: _current == ShellTab.dashboard
+          ? CenterFab(onPressed: _onFabPressed)
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: AppBottomNav(current: _current, onSelect: _onSelect),
     );

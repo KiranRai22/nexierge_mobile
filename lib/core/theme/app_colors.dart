@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 /// **Why a `ThemeExtension`?**
 /// Flutter's `Theme.of(context)` already tracks light/dark/system. Adding
 /// our tokens as a `ThemeExtension` means widgets simply read
-/// `context.appColors.bgBase` and the right value is returned for the
+/// `context.themeColors.bgBase` and the right value is returned for the
 /// current theme — no explicit `if (isDark)` checks anywhere in widgets.
 /// Per `docs/04_BASE_LAYER_RULES.md` (no hardcoded colours, no duplicate
 /// styles) and `docs/07_STATE_AND_LIFECYCLE_RULES.md` (theme is persistent
@@ -679,7 +679,7 @@ class AppColors extends ThemeExtension<AppColors> {
   }
 }
 
-/// Convenience accessor: `context.appColors.bgBase`. Reads the active
+/// Convenience accessor: `context.themeColors.bgBase`. Reads the active
 /// `AppColors` extension from the current `ThemeData`. Throws (in debug)
 /// if the extension wasn't installed by `ThemeManager` — that's the
 /// signal that the theme wasn't built via this project's ThemeManager.

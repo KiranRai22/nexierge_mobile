@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/user_profile_repository.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../data/repositories/user_profile_repository.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../../core/services/user_profile_service.dart';
 
 /// UI state for user profile operations
 class UserProfileState {
@@ -130,7 +133,12 @@ class UserProfileController extends StateNotifier<UserProfileState> {
 
 // Providers
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
-  throw UnimplementedError('UserProfileRepository not implemented');
+  final dioClient = ref.watch(dioClientProvider);
+  final profileService = UserProfileService.instance;
+  return UserProfileRepositoryImpl(
+    dioClient: dioClient,
+    profileService: profileService,
+  );
 });
 
 final userProfileControllerProvider =

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -19,7 +19,7 @@ class ProfileThemeCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = context.l10n;
-    final c = context.appColors;
+    final c = context.themeColors;
     final mode =
         ref.watch(themeModeControllerProvider).valueOrNull ?? ThemeMode.system;
 
@@ -65,7 +65,7 @@ class _ThemeSegmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
-    final c = context.appColors;
+    final c = context.themeColors;
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -112,7 +112,7 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Expanded(
       child: Material(
         // Brand purple selected state — intentionally NOT theme-aware.

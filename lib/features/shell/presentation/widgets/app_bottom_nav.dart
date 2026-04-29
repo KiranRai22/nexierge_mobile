@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Bottom navigation tab identifier shared between the shell and router.
@@ -23,8 +23,9 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.themeColors;
     return Material(
-      color: ColorPalette.bottomNavSurface,
+      color: c.bgComponent,
       elevation: 8,
       child: SafeArea(
         top: false,
@@ -33,18 +34,21 @@ class AppBottomNav extends StatelessWidget {
           child: Row(
             children: [
               _slot(
+                context,
                 ShellTab.dashboard,
                 Icons.grid_view_rounded,
                 Icons.grid_view_rounded,
                 s.navDashboard,
               ),
               _slot(
+                context,
                 ShellTab.tickets,
                 Icons.assignment_outlined,
                 Icons.assignment,
                 s.navTickets,
               ),
               _slot(
+                context,
                 ShellTab.profile,
                 Icons.account_circle_outlined,
                 Icons.account_circle,
@@ -58,15 +62,15 @@ class AppBottomNav extends StatelessWidget {
   }
 
   Expanded _slot(
+    BuildContext context,
     ShellTab tab,
     IconData inactive,
     IconData active,
     String label,
   ) {
+    final c = context.themeColors;
     final isActive = current == tab;
-    final color = isActive
-        ? ColorPalette.bottomNavActive
-        : ColorPalette.bottomNavInactive;
+    final color = isActive ? c.tagPurpleIcon : c.fgMuted;
     return Expanded(
       child: InkResponse(
         onTap: () => onSelect(tab),
@@ -84,8 +88,7 @@ class AppBottomNav extends StatelessWidget {
                 label,
                 style: TypographyManager.labelSmall.copyWith(
                   color: color,
-                  fontWeight:
-                      isActive ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ],

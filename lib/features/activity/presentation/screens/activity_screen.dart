@@ -40,6 +40,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final scope = ref.watch(ticketScopeProvider);
     final filter = ref.watch(activityFilterProvider);
     final deptFilter = ref.watch(departmentFilterProvider);
+    final session = ref.watch(operatorSessionProvider);
 
     return Container(
       color: ColorPalette.opsSurface,
@@ -51,18 +52,17 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: AppTopBar(
-                avatarInitials: 'F',
+                avatarInitials: session.displayName.isEmpty
+                    ? '?'
+                    : session.displayName[0].toUpperCase(),
                 hasUnreadNotifications: true,
-                onThemeToggle: () => ref
-                    .read(themeModeControllerProvider.notifier)
-                    .toggle(),
+                onThemeToggle: () =>
+                    ref.read(themeModeControllerProvider.notifier).toggle(),
                 onLanguageTap: () => LanguagePickerSheet.show(context),
-                onNotifications: () => ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                  SnackBar(
-                    content: Text(s.comingSoonNotifications),
-                  ),
-                ),
+                onNotifications: () =>
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(s.comingSoonNotifications)),
+                    ),
               ),
             ),
             Padding(
@@ -142,7 +142,8 @@ class _ActivityList extends StatelessWidget {
           event: item.event!,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => TicketDetailScreen(ticketId: item.event!.ticketId),
+              builder: (_) =>
+                  TicketDetailScreen(ticketId: item.event!.ticketId),
             ),
           ),
         );

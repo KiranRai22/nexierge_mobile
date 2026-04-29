@@ -53,6 +53,26 @@ Dio buildDio({String? authToken, String? Function()? tokenProvider}) {
 /// variant (`authedDioProvider`) once the session is wired in.
 final dioProvider = Provider<Dio>((ref) => buildDio());
 
+/// Token-aware [Dio]. Reads bearer token from the active auth session.
+/// Use for any authenticated endpoint (dashboard, tickets, profile…).
+/// Rebuilds when the session changes — interceptors stay current.
+final authedDioProvider = Provider<Dio>((ref) {
+  // Lazy import boundary: read via dynamic ref so we keep `core` from
+  // taking a hard dep on `features/auth`. The provider id is resolved at
+  // runtime via the riverpod graph.
+  final session = ref.watch(_authTokenProvider);
+  return buildDio(authToken: session);
+});
+
+/// Internal accessor — overridden in `main.dart` after auth feature loads
+/// to point at the real session token. Default returns null (unauth).
+final _authTokenProvider = Provider<String?>((ref) => null);
+
+/// Public override hook so the auth feature can wire the token without
+/// `core` importing `features/auth`. Call from a `ProviderScope` override:
+///   `authTokenProviderOverride.overrideWith((ref) => ref.watch(...).token)`
+final authTokenProviderOverride = _authTokenProvider;
+
 /// Translates a [DioException] into the project's `AppException`. Keeps
 /// HTTP semantics out of repositories and UI.
 AppException mapDioError(DioException error) {

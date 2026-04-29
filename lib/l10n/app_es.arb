@@ -310,6 +310,8 @@
   "profileFieldEmail": "Correo",
   "profileFieldEmployeeCode": "Código de empleado",
   "profileFieldRole": "Rol",
+  "profileFieldPhone": "Teléfono",
+  "profileFieldHotel": "Propiedad",
   "profileFieldDepartments": "Departamentos",
   "profileFieldStatus": "Estado",
   "profileFieldEmptyValue": "—",
@@ -340,5 +342,102 @@
   "profileAvatarSheetUploadTitle": "Elegir de la galería",
   "profileAvatarSheetUploadSubtitle": "Selecciona una foto existente de tu dispositivo.",
   "profileAvatarSheetCameraTitle": "Tomar foto",
-  "profileAvatarSheetCameraSubtitle": "Usa tu cámara para tomar una nueva foto."
+  "profileAvatarSheetCameraSubtitle": "Usa tu cámara para tomar una nueva foto.",
+
+  "notificationsTitle": "Notificaciones",
+  "notificationsUnread": "{count, plural, =0{Sin no leídas} =1{1 sin leer} other{{count} sin leer}}",
+  "@notificationsUnread": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "notificationsTotal": "{count} en total",
+  "@notificationsTotal": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "notificationsMarkAllRead": "Marcar todo como leído",
+  "notificationsEmpty": "Estás al día",
+  "notificationsEmptyHint": "La nueva actividad aparecerá aquí.",
+  "notificationsItemNewTicket": "Nuevo ticket recibido",
+
+  "relativeJustNow": "ahora mismo",
+  "relativeMinutesAgo": "hace {minutes} min",
+  "@relativeMinutesAgo": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "relativeHoursAgo": "hace {hours} h",
+  "@relativeHoursAgo": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "relativeDaysAgo": "hace {days} d",
+  "@relativeDaysAgo": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+
+  "ticketKindUniversal": "Universal",
+  "ticketKindCatalog": "Catálogo",
+  "ticketKindManual": "Manual",
+
+  "filterNewestFirst": "Más reciente primero",
+  "filterOldestFirst": "Más antiguo primero",
+  "filterThisWeek": "Esta semana",
+  "filterThisMonth": "Este mes",
+
+  "ticketTabDetails": "Detalles",
+  "ticketTabActivity": "Actividad",
+  "ticketSectionGuestRoom": "HUÉSPED Y HABITACIÓN",
+  "ticketSectionInformation": "INFORMACIÓN DEL TICKET",
+  "ticketFieldGuest": "Huésped",
+  "ticketFieldRoom": "Habitación",
+  "ticketFieldRoomType": "Tipo de habitación",
+  "ticketFieldDepartment": "Departamento",
+  "ticketFieldConversation": "Conversación",
+  "ticketFieldStatus": "Estado",
+  "ticketFieldTicketType": "Tipo de ticket",
+  "ticketFieldSource": "Origen",
+  "ticketRoomNumber": "#{number}",
+  "@ticketRoomNumber": {
+    "placeholders": {
+      "number": { "type": "String", "example": "309" }
+    }
+  },
+  "ticketPriorityP1": "P1",
+  "ticketPriorityP2": "P2",
+  "ticketPriorityP3": "P3",
+  "ticketStatusBadgeAccepted": "ACEPTADO",
+  "ticketStatusBadgeIncoming": "ENTRANTE",
+  "ticketStatusBadgeInProgress": "EN CURSO",
+  "ticketStatusBadgeDone": "HECHO",
+  "ticketStatusBadgeCancelled": "CANCELADO",
+  "ticketSourceGuestApp": "App del huésped",
+  "ticketSourceFrontDesk": "Recepción",
+  "ticketSourcePhone": "Teléfono",
+  "ticketSourceWalkIn": "Sin cita",
+  "ticketSourceSystem": "Sistema",
+  "ticketElapsed": "{elapsed} transcurridos",
+  "@ticketElapsed": {
+    "placeholders": {
+      "elapsed": { "type": "String", "example": "8h 30m 12s" }
+    }
+  },
+  "ticketActionStartWork": "Comenzar",
+  "ticketActionPause": "Pausar",
+  "ticketActionResume": "Reanudar",
+  "ticketActionComplete": "Completar",
+  "ticketActionChangeDue": "Cambiar plazo",
+  "ticketActionCancel": "Cancelar",
+  "ticketActionReset": "Restablecer",
+  "ticketActivityCreated": "Ticket creado",
+  "ticketActivityStatusChange": "{from} → {to}",
+  "@ticketActivityStatusChange": {
+    "placeholders": {
+      "from": { "type": "String", "example": "New" },
+      "to": { "type": "String", "example": "Accepted" }
+    }
+  },
+  "ticketActivityBadgeAcknowledged": "Reconocido",
+  "ticketActivityBadgeCreated": "Creado",
+  "ticketActivityBadgeDone": "Hecho",
+  "ticketActivityBadgeCancelled": "Cancelado",
+  "ticketActivityBadgeNote": "Nota",
+  "ticketActivityBadgeReassigned": "Reasignado",
+  "ticketActivityBadgeOverdue": "Vencido"
 }

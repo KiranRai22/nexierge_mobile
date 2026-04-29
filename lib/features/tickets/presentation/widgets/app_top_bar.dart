@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Shared top bar used by Dashboard / Tickets / Activity. Mirrors the React
@@ -13,6 +13,7 @@ import '../../../../core/theme/typography_manager.dart';
 /// dashboard hides it (matching `Dashboard.tsx`); other screens keep it.
 class AppTopBar extends StatelessWidget {
   final String avatarInitials;
+  final String? avatarImageUrl;
   final bool hasUnreadNotifications;
 
   /// Drives the theme-toggle glyph: `true` shows a Sun (tap → go light),
@@ -26,6 +27,7 @@ class AppTopBar extends StatelessWidget {
   const AppTopBar({
     super.key,
     required this.avatarInitials,
+    this.avatarImageUrl,
     this.hasUnreadNotifications = false,
     this.isDarkMode = false,
     this.onThemeToggle,
@@ -37,12 +39,16 @@ class AppTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
-    final c = context.appColors;
+    final c = context.themeColors;
     return SizedBox(
       height: 56,
       child: Row(
         children: [
-          _Avatar(initials: avatarInitials, onTap: onAvatarTap),
+          _Avatar(
+            initials: avatarInitials,
+            imageUrl: avatarImageUrl,
+            onTap: onAvatarTap,
+          ),
           const Spacer(),
           IconButton(
             tooltip: s.tooltipToggleTheme,
@@ -72,12 +78,13 @@ class AppTopBar extends StatelessWidget {
 
 class _Avatar extends StatelessWidget {
   final String initials;
+  final String? imageUrl;
   final VoidCallback? onTap;
-  const _Avatar({required this.initials, this.onTap});
+  const _Avatar({required this.initials, this.imageUrl, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -88,14 +95,36 @@ class _Avatar extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: c.borderBase),
         ),
-        alignment: Alignment.center,
-        child: Text(
-          initials,
-          style: TypographyManager.labelSmall.copyWith(
-            color: c.fgBase,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
-          ),
+        child: ClipOval(
+          child: imageUrl != null
+              ? Image.network(
+                  imageUrl!,
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback to initials on error
+                    return _buildInitials(c);
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return _buildInitials(c);
+                  },
+                )
+              : _buildInitials(c),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInitials(AppColors c) {
+    return Center(
+      child: Text(
+        initials,
+        style: TypographyManager.labelSmall.copyWith(
+          color: c.fgBase,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
         ),
       ),
     );
@@ -106,15 +135,11 @@ class _BellIcon extends StatelessWidget {
   final bool hasUnread;
   final String tooltip;
   final VoidCallback? onTap;
-  const _BellIcon({
-    required this.hasUnread,
-    required this.tooltip,
-    this.onTap,
-  });
+  const _BellIcon({required this.hasUnread, required this.tooltip, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -123,7 +148,8 @@ class _BellIcon extends StatelessWidget {
           onPressed: onTap,
           icon: Icon(LucideIcons.bell, color: c.fgBase, size: 20),
         ),
-        if (hasUnread) const Positioned(right: 10, top: 10, child: _UnreadDot()),
+        if (hasUnread)
+          const Positioned(right: 10, top: 10, child: _UnreadDot()),
       ],
     );
   }
@@ -134,7 +160,7 @@ class _UnreadDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Container(
       width: 8,
       height: 8,

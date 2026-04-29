@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../../auth/domain/entities/user_profile.dart';
@@ -61,7 +61,7 @@ class _ProfileScreenOldState extends ConsumerState<ProfileScreenOld> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
 
     return Container(
       color: c.bgSubtle,
@@ -80,7 +80,7 @@ class _ProfileScreenOldState extends ConsumerState<ProfileScreenOld> {
 class _ProfileShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final c = context.appColors;
+    final c = context.themeColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

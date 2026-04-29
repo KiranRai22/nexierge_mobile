@@ -23,6 +23,8 @@ class MockUserProfileRepository implements UserProfileRepository {
       role: 'Manager',
       departments: const ['Housekeeping', 'Frontdesk', 'Maintenance'],
       status: UserStatus.active,
+      lang: 'en',
+      theme: 'light',
     );
   }
 }

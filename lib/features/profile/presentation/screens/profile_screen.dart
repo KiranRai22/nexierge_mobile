@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/user_profile.dart';
@@ -14,22 +14,23 @@ import '../widgets/profile_logout_button.dart';
 import '../widgets/profile_theme_card.dart';
 
 /// Profile tab. Renders the avatar header, account/work info sections, the
-/// language preference, and the logout CTA. Mirrors the design captured in
-/// the conversion plan screenshots — see also `docs/05_UI_IMPLEMENTATION_RULES.md`
-/// for the spacing / palette discipline this screen follows.
+/// language preference, and the logout CTA. All data comes from the real
+/// `me_user` API via [userProfileControllerProvider], which caches the
+/// response in SharedPreferences so the screen loads instantly on warm
+/// starts and survives offline sessions.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   void _showAvatarComingSoon(BuildContext context) {
     final s = context.l10n;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(s.profileChangeAvatarComingSoon)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(s.profileChangeAvatarComingSoon)));
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.appColors;
+    final c = context.themeColors;
     final asyncProfile = ref.watch(userProfileControllerProvider);
 
     return Container(
@@ -70,8 +71,7 @@ class _ProfileBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Pinned: the avatar block stays anchored while the info sections
-        // scroll underneath it.
+        // Pinned avatar block — stays anchored while info sections scroll.
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: ProfileHeaderCard(
@@ -83,6 +83,7 @@ class _ProfileBody extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
             children: [
+              // ── Account Information ────────────────────────────────────
               ProfileInfoSection(
                 title: s.profileSectionAccountInformation,
                 rows: [
@@ -94,6 +95,11 @@ class _ProfileBody extends StatelessWidget {
                     label: s.profileFieldEmail,
                     value: profile.email,
                   ),
+                  if (profile.phone != null && profile.phone!.isNotEmpty)
+                    ProfileInfoRow(
+                      label: s.profileFieldPhone,
+                      value: profile.phone!,
+                    ),
                   ProfileInfoRow(
                     label: s.profileFieldEmployeeCode,
                     value: profile.employeeCode ?? s.profileFieldEmptyValue,
@@ -105,12 +111,22 @@ class _ProfileBody extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
+
+              // ── Work Information ───────────────────────────────────────
               ProfileInfoSection(
                 title: s.profileSectionWorkInformation,
                 rows: [
+                  if (profile.hotelName != null &&
+                      profile.hotelName!.isNotEmpty)
+                    ProfileInfoRow(
+                      label: s.profileFieldHotel,
+                      value: profile.hotelName!,
+                    ),
                   ProfileInfoRow(
                     label: s.profileFieldDepartments,
-                    value: profile.departments.join(', '),
+                    value: profile.departments.isNotEmpty
+                        ? profile.departments.join(', ')
+                        : s.profileFieldEmptyValue,
                   ),
                   ProfileInfoRow(
                     label: s.profileFieldStatus,
@@ -119,13 +135,15 @@ class _ProfileBody extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
+
+              // ── Preferences ────────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                 child: Builder(
                   builder: (context) => Text(
                     s.profileSectionPreferences.toUpperCase(),
                     style: TypographyManager.kpiLabel.copyWith(
-                      color: context.appColors.fgSubtle,
+                      color: context.themeColors.fgSubtle,
                       letterSpacing: 0.6,
                     ),
                   ),
