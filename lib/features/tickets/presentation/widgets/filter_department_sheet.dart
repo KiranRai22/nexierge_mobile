@@ -68,7 +68,6 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final c = context.themeColors;
     return Padding(
       padding: EdgeInsets.only(bottom: viewInsets),
       child: SafeArea(
@@ -89,6 +88,7 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
   }
 }
 
+// ignore: unused_element
 class _Handle extends StatelessWidget {
   const _Handle();
   @override
@@ -246,7 +246,6 @@ class _Footer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.l10n;
     final c = context.themeColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),

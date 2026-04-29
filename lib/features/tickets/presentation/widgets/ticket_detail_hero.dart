@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nexierge/l10n/generated/app_localizations.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
@@ -89,12 +88,12 @@ class TicketDetailHero extends StatelessWidget {
         border: Border.all(color: c.borderBase),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -116,8 +115,8 @@ class TicketDetailHero extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      _getGradientColor(c).withOpacity(0.12),
-                      _getGradientColor(c).withOpacity(0),
+                      _getGradientColor(c).withValues(alpha: 0.12),
+                      _getGradientColor(c).withValues(alpha: 0),
                     ],
                   ),
                 ),
@@ -149,7 +148,7 @@ class TicketDetailHero extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: _getTypeBg(c),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: _getTypeFg(c).withOpacity(0.3)),
+                          border: Border.all(color: _getTypeFg(c).withValues(alpha: 0.3)),
                         ),
                         child: Text(
                           _getTypeLabel(s),

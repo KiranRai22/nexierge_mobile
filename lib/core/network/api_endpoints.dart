@@ -46,8 +46,11 @@ abstract class APIEndpoints {
 
   // Dashboard
   static const String dashboardHotelDetails =
-      '$baseUrl/dashboard/hotel_details';
-  static const String dashboardNumbers = '$baseUrl/dashboard/numbers';
+      '$_host/api:bAt3sLZU/dashboard/hotel_details';
+  static const String dashboardNumbers =
+      '$_host/api:bAt3sLZU/dashboard/numbers';
+  static const String dashboardNeedsAttention =
+      '$_host/api:bAt3sLZU/dashboard/needs_attention';
 
   // FCM
   static const String fcmUpdate = '$baseUrl/fcm_update';

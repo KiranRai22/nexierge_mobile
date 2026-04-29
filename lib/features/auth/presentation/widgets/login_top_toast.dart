@@ -36,7 +36,7 @@ class LoginTopToast {
               border: Border.all(color: palette.border, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: palette.shadow.withOpacity(0.2),
+                  color: palette.shadow.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -123,9 +123,9 @@ _ToastPalette _palette(ToastSeverity severity) {
 /// Extension to map old severity to new
 extension ToastSeverityMapping on Enum {
   ToastSeverity? get asToastSeverity {
-    if (this.toString().contains('error')) return ToastSeverity.error;
-    if (this.toString().contains('info')) return ToastSeverity.info;
-    if (this.toString().contains('success')) return ToastSeverity.success;
+    if (toString().contains('error')) return ToastSeverity.error;
+    if (toString().contains('info')) return ToastSeverity.info;
+    if (toString().contains('success')) return ToastSeverity.success;
     return null;
   }
 }

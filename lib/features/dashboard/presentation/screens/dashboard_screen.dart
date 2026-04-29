@@ -3,20 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
-import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../../../notifications/presentation/providers/notification_inbox_controller.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
 import '../../../shell/presentation/widgets/app_bottom_nav.dart';
 import '../../../tickets/domain/models/department.dart';
-import '../../../tickets/domain/models/ticket.dart';
 import '../../../tickets/presentation/providers/session_providers.dart';
 import '../../../tickets/presentation/screens/ticket_detail_screen.dart';
 import '../../../tickets/presentation/widgets/app_top_bar.dart';
+import '../providers/dashboard_bootstrap_controller.dart';
 import '../providers/dashboard_counts_controller.dart';
 import '../providers/dashboard_view.dart';
+import '../providers/needs_attention_controller.dart';
 import '../widgets/dashboard_greeting.dart';
 import '../widgets/dashboard_stats_grid.dart';
-import '../widgets/needs_attention_list.dart';
+import '../widgets/needs_attention_api_list.dart';
 
 /// Operator dashboard. Mirrors `docs/ai_prompts/Dashboard.tsx`:
 /// header (avatar + theme + bell) → greeting → 2×2 stats grid (Needs
@@ -41,20 +41,12 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Future<void> _refresh(WidgetRef ref) async {
-    // Refresh both API counts, user profile, and the local attention projection in parallel.
+    // Refresh API counts and needs attention in parallel.
+    // User profile is managed by bootstrap and doesn't need refresh here.
     await Future.wait<void>([
       ref.read(dashboardCountsControllerProvider.notifier).refresh(),
-      ref.read(userProfileControllerProvider.notifier).refreshProfile(),
-      Future<void>(() => ref.invalidate(dashboardViewProvider)),
+      ref.read(needsAttentionControllerProvider.notifier).refresh(),
     ]);
-  }
-
-  void _openTicket(BuildContext context, Ticket ticket) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TicketDetailScreen(ticketId: ticket.id),
-      ),
-    );
   }
 
   bool _resolveDark(BuildContext context, ThemeMode? mode) {
@@ -72,9 +64,10 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(operatorSessionProvider);
-    final userProfile = ref.watch(userProfileProvider);
+    final userProfile = ref.watch(bootstrapUserProfileProvider);
     final asyncCounts = ref.watch(dashboardCountsControllerProvider);
     final asyncView = ref.watch(dashboardViewProvider);
+    final asyncNeedsAttention = ref.watch(needsAttentionControllerProvider);
     final inboxUnread = ref.watch(
       notificationInboxControllerProvider.select((v) => v.unreadCount),
     );
@@ -82,14 +75,7 @@ class DashboardScreen extends ConsumerWidget {
     final isDark = _resolveDark(context, themeMode);
     final c = context.themeColors;
 
-    // Load user profile if not already loaded
-    if (userProfile == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(userProfileControllerProvider.notifier).loadCachedProfile();
-      });
-    }
-
-    // Use user profile data if available, fallback to session data
+    // Use user profile from bootstrap data, fallback to session data
     final displayName = userProfile?.firstName != null
         ? '${userProfile!.firstName} ${userProfile.lastName}'
         : session.displayName;
@@ -170,7 +156,7 @@ class DashboardScreen extends ConsumerWidget {
                         // mock projection until the backend exposes it.
                         child: asyncCounts.when(
                           data: (counts) => DashboardStatsGrid(
-                            incoming: counts.incomingCount,
+                            incoming: counts.needsAcknowledgmentCount,
                             accepted: counts.notStartedCount,
                             inProgress: counts.inProgressCount,
                             overdue: counts.overdueCount,
@@ -196,15 +182,22 @@ class DashboardScreen extends ConsumerWidget {
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                       sliver: SliverToBoxAdapter(
-                        child: asyncView.when(
-                          data: (v) => NeedsAttentionList(
-                            items: v.needsAttention,
-                            onItemTap: (item) =>
-                                _openTicket(context, item.ticket),
+                        child: asyncNeedsAttention.when(
+                          data: (items) => NeedsAttentionApiList(
+                            items: items,
+                            isLoading: false,
                             onViewAll: () => onSwitchTab(ShellTab.tickets),
                           ),
-                          loading: () => const SizedBox.shrink(),
-                          error: (_, _) => const SizedBox.shrink(),
+                          loading: () => NeedsAttentionApiList(
+                            items: const [],
+                            isLoading: true,
+                            onViewAll: () => onSwitchTab(ShellTab.tickets),
+                          ),
+                          error: (_, _) => NeedsAttentionApiList(
+                            items: const [],
+                            isLoading: false,
+                            onViewAll: () => onSwitchTab(ShellTab.tickets),
+                          ),
                         ),
                       ),
                     ),

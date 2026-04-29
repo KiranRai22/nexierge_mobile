@@ -120,7 +120,7 @@ class _DepartmentSwitcherBodyState
                       border: Border.all(
                         color: isSelected
                             ? c.tagBlueIcon
-                            : c.borderBase.withOpacity(0.5),
+                            : c.borderBase.withValues(alpha: 0.5),
                         width: isSelected ? 1.5 : 0.5,
                       ),
                     ),

@@ -11,35 +11,35 @@
 /// All counts are non-negative ints. Strings that fail to parse default to 0
 /// so the UI never crashes on a malformed payload.
 class DashboardCounts {
-  final int incomingCount;
+  final int needsAcknowledgmentCount;
   final int inProgressCount;
   final int overdueCount;
   final int notStartedCount;
 
   const DashboardCounts({
-    required this.incomingCount,
+    required this.needsAcknowledgmentCount,
     required this.inProgressCount,
     required this.overdueCount,
     required this.notStartedCount,
   });
 
   static const empty = DashboardCounts(
-    incomingCount: 0,
+    needsAcknowledgmentCount: 0,
     inProgressCount: 0,
     overdueCount: 0,
     notStartedCount: 0,
   );
 
-  bool get hasUnread => incomingCount > 0 || overdueCount > 0;
+  bool get hasUnread => needsAcknowledgmentCount > 0 || overdueCount > 0;
 
   DashboardCounts copyWith({
-    int? incomingCount,
+    int? needsAcknowledgmentCount,
     int? inProgressCount,
     int? overdueCount,
     int? notStartedCount,
   }) {
     return DashboardCounts(
-      incomingCount: incomingCount ?? this.incomingCount,
+      needsAcknowledgmentCount: needsAcknowledgmentCount ?? this.needsAcknowledgmentCount,
       inProgressCount: inProgressCount ?? this.inProgressCount,
       overdueCount: overdueCount ?? this.overdueCount,
       notStartedCount: notStartedCount ?? this.notStartedCount,

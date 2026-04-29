@@ -219,6 +219,7 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
   }
 }
 
+// ignore: unused_element
 class _Greeting extends StatelessWidget {
   final String name;
   const _Greeting({required this.name});
@@ -310,8 +311,9 @@ class _TicketsList extends StatelessWidget {
       itemBuilder: (context, raw) {
         var i = raw;
         for (final s in sections) {
-          if (i == 0)
+          if (i == 0) {
             return _SectionHeader(title: s.title, count: s.tickets.length);
+          }
           i -= 1;
           if (i < s.tickets.length) {
             return Padding(

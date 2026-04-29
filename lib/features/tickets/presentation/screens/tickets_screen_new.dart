@@ -18,7 +18,6 @@ import '../widgets/tickets_main_tabs.dart';
 import '../widgets/tickets_filter_chips.dart';
 import '../widgets/filter_department_sheet.dart';
 import '../widgets/accept_sheet.dart';
-import '../widgets/department_switcher.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
 import 'ticket_detail_screen.dart';
 

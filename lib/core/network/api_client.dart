@@ -57,11 +57,8 @@ final dioProvider = Provider<Dio>((ref) => buildDio());
 /// Use for any authenticated endpoint (dashboard, tickets, profile…).
 /// Rebuilds when the session changes — interceptors stay current.
 final authedDioProvider = Provider<Dio>((ref) {
-  // Lazy import boundary: read via dynamic ref so we keep `core` from
-  // taking a hard dep on `features/auth`. The provider id is resolved at
-  // runtime via the riverpod graph.
-  final session = ref.watch(_authTokenProvider);
-  return buildDio(authToken: session);
+  // Use tokenProvider callback to get fresh token on each request
+  return buildDio(tokenProvider: () => ref.read(_authTokenProvider));
 });
 
 /// Internal accessor — overridden in `main.dart` after auth feature loads

@@ -87,7 +87,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final state = ref.read(loginControllerProvider);
     if (state.isSubmitting) return false;
 
-    final s = AppLocalizations.of(context)!;
+    final s = AppLocalizations.of(context);
     final mode = state.mode;
 
     // Check if fields pass validation

@@ -180,6 +180,7 @@ class TicketCard extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _CardBody extends StatelessWidget {
   final Ticket ticket;
   const _CardBody({required this.ticket});

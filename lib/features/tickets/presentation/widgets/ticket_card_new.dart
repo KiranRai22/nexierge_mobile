@@ -5,10 +5,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../../core/utils/date_utils.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
-import '../providers/ticket_detail_controller.dart';
 
 /// Ticket card matching image design with dot indicator, timer, inner card.
 /// Used by [TicketsScreenNew].

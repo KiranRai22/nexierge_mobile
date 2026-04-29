@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -176,7 +175,6 @@ class _AcceptSheetBodyState extends ConsumerState<_AcceptSheetBody> {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final s = context.l10n;
 
     return SafeArea(
       top: false,
@@ -323,7 +321,7 @@ class _TimeChip extends StatelessWidget {
             Text(
               secondary,
               style: TypographyManager.bodySmall.copyWith(
-                color: selected ? Colors.white.withOpacity(0.8) : c.fgMuted,
+                color: selected ? Colors.white.withValues(alpha: 0.8) : c.fgMuted,
               ),
             ),
           ],
@@ -413,7 +411,7 @@ class _CustomTimeChipState extends State<_CustomTimeChip> {
                   ? '${_selectedTime!.hour}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
                   : 'Custom',
               style: TypographyManager.bodySmall.copyWith(
-                color: hasSelection ? Colors.white.withOpacity(0.8) : c.fgMuted,
+                color: hasSelection ? Colors.white.withValues(alpha: 0.8) : c.fgMuted,
               ),
             ),
           ],
@@ -497,12 +495,12 @@ class _ConfirmButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: c.tagPurpleIcon.withOpacity(0.35),
+              color: c.tagPurpleIcon.withValues(alpha: .35),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: c.tagPurpleIcon.withOpacity(0.2),
+              color: c.tagPurpleIcon.withValues(alpha: 0.2),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -536,7 +534,7 @@ class _ConfirmButton extends StatelessWidget {
             Text(
               timeLabel,
               style: TypographyManager.bodyLarge.copyWith(
-                color: c.fgOnColor.withOpacity(0.9),
+                color: c.fgOnColor.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w500,
               ),
             ),

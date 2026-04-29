@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../domain/entities/user_profile.dart';
 import '../providers/user_profile_controller.dart';
 
 /// Reusable profile avatar widget that shows profile image when available,
@@ -66,7 +64,9 @@ class ProfileAvatar extends ConsumerWidget {
 
     final profile = profileState.profile!;
     final profileImageUrl = profile.pictureProfile?.url;
-    final initials = '${profile.firstName[0]}${profile.lastName[0]}';
+    final first = profile.firstName.isNotEmpty ? profile.firstName[0] : '';
+    final last = profile.lastName.isNotEmpty ? profile.lastName[0] : '';
+    final initials = '$first$last'.isNotEmpty ? '$first$last' : '?';
 
     return GestureDetector(
       onTap: onTap,

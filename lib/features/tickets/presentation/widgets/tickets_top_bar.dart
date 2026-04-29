@@ -34,7 +34,6 @@ class TicketsTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
-    final c = context.themeColors;
     return SizedBox(
       height: 56,
       child: Row(

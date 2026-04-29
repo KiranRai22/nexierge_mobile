@@ -11,8 +11,12 @@ import 'core/services/notification_service.dart';
 import 'core/theme/unified_theme_manager.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'core/utils/string_manager.dart';
+import 'features/auth/domain/entities/auth_session.dart';
 import 'features/auth/presentation/providers/auth_session_controller.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/dashboard/domain/entities/dashboard_bootstrap_state.dart';
+import 'features/dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
+import 'features/dashboard/presentation/screens/dashboard_shimmer_screen.dart';
 import 'features/shell/presentation/screens/home_shell.dart';
 import 'l10n/generated/app_localizations.dart';
 
@@ -68,6 +72,33 @@ class MyApp extends ConsumerWidget {
     final appLocale =
         ref.watch(localeControllerProvider).valueOrNull ?? AppLocale.system;
     final session = ref.watch(authSessionControllerProvider);
+    final bootstrap = ref.watch(dashboardBootstrapControllerProvider);
+
+    // Listen for session changes and trigger bootstrap when authenticated
+    ref.listen(authSessionControllerProvider, (prev, next) {
+      final prevSession = prev?.valueOrNull;
+      final nextSession = next.valueOrNull;
+
+      // When session changes from null to authenticated, trigger bootstrap
+      if (prevSession == null && nextSession != null) {
+        final userId = nextSession.user?.id;
+        debugPrint(
+          '[MyApp] New session detected, triggering bootstrap with userId: $userId',
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref
+              .read(dashboardBootstrapControllerProvider.notifier)
+              .runBootstrap(hotelUserId: userId);
+        });
+      }
+
+      // When session is cleared (logout), clear bootstrap data
+      if (prevSession != null && nextSession == null) {
+        debugPrint('[MyApp] Session cleared, resetting bootstrap...');
+        ref.read(dashboardBootstrapControllerProvider.notifier).clearCache();
+      }
+    });
+
     return MaterialApp(
       title: StringManager.appName,
       debugShowCheckedModeBanner: false,
@@ -79,15 +110,37 @@ class MyApp extends ConsumerWidget {
       locale: appLocale.toLocale(),
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      // Cold-start: AsyncLoading while we read secure storage. Then route
-      // to HomeShell if a stored session was found (auto-login), else to
-      // LoginScreen. Errors during hydration also fall back to login —
-      // a corrupt blob is treated as "no session" by the storage layer.
-      home: session.when(
-        loading: () => const _AuthBootstrapSplash(),
-        error: (_, _) => const LoginScreen(),
-        data: (s) => s == null ? const LoginScreen() : const HomeShell(),
-      ),
+      // Routing logic:
+      // 1. Loading → Splash screen
+      // 2. No session → Login
+      // 3. Session + Bootstrap loading → Shimmer
+      // 4. Session + Bootstrap complete → HomeShell
+      home: _resolveHome(session, bootstrap),
+    );
+  }
+
+  Widget _resolveHome(
+    AsyncValue<AuthSession?> session,
+    AsyncValue<DashboardBootstrapState> bootstrap,
+  ) {
+    return session.when(
+      loading: () => const _AuthBootstrapSplash(),
+      error: (_, _) => const LoginScreen(),
+      data: (s) {
+        if (s == null) return const LoginScreen();
+
+        // Has session - check bootstrap status
+        return bootstrap.when(
+          loading: () => const DashboardShimmerScreen(),
+          error: (_, __) => const DashboardShimmerScreen(), // Retry via UI
+          data: (state) {
+            if (state.isComplete) {
+              return const HomeShell();
+            }
+            return const DashboardShimmerScreen();
+          },
+        );
+      },
     );
   }
 }

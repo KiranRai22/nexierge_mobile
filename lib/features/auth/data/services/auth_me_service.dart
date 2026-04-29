@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../dtos/user_profile_dto.dart';
 
@@ -100,3 +102,9 @@ class AuthMeService {
     }
   }
 }
+
+/// Riverpod provider for AuthMeService
+final authMeServiceProvider = Provider<AuthMeService>((ref) {
+  final dio = ref.watch(authedDioProvider);
+  return AuthMeService(dio);
+});

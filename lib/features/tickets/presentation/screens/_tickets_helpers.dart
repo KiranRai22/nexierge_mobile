@@ -6,7 +6,7 @@ class TicketsFilterChip extends StatelessWidget {
   final String label;
   final int count;
   final bool selected;
-  const TicketsFilterChip({
+  const TicketsFilterChip({super.key, 
     required this.label,
     required this.count,
     this.selected = false,

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/user_profile_service.dart';
 import 'api_client.dart';
 
 /// Dio client wrapper for authenticated requests
@@ -21,13 +20,14 @@ class DioClient {
   }
 }
 
-/// Provider for DioClient. Builds a single Dio instance whose
-/// interceptor pulls the latest bearer token from [UserProfileService]
-/// (SharedPreferences) on every request. This avoids a riverpod cycle
-/// between auth session, profile controller, and dio.
+/// Provider for DioClient. Token is read via [authTokenProviderOverride]
+/// which is overridden in main.dart to return the live session token from
+/// [AuthSessionController] (secure storage). This is the single source of
+/// truth and avoids the stale-token bug caused by [UserProfileService]'s
+/// SharedPreferences cache never being populated after login.
 final dioClientProvider = Provider<DioClient>((ref) {
   final dio = buildDio(
-    tokenProvider: () => UserProfileService.instance.getCachedAuthToken(),
+    tokenProvider: () => ref.read(authTokenProviderOverride),
   );
   return DioClient(dio);
 });

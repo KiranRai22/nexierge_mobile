@@ -5,6 +5,7 @@ import '../../../../core/error/error_handler.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/datasources/dashboard_remote_data_source.dart';
 import '../../domain/entities/dashboard_counts.dart';
+import '../../domain/entities/needs_attention_item.dart';
 
 abstract class DashboardRepository {
   Future<HotelDetailsDto> fetchHotelDetails({String? hotelUserId});
@@ -13,6 +14,11 @@ abstract class DashboardRepository {
   /// Fetch + map dashboard KPI counts. UI / providers consume this domain
   /// model; the raw DTO never leaves the data layer.
   Future<DashboardCounts> fetchCounts({String? hotelUserId});
+
+  /// Fetch needs attention items from API.
+  Future<List<NeedsAttentionItem>> fetchNeedsAttention({
+    required String hotelId,
+  });
 }
 
 class _DashboardRepositoryImpl implements DashboardRepository {
@@ -45,11 +51,44 @@ class _DashboardRepositoryImpl implements DashboardRepository {
   Future<DashboardCounts> fetchCounts({String? hotelUserId}) async {
     final dto = await fetchNumbers(hotelUserId: hotelUserId);
     return DashboardCounts(
-      incomingCount: _toInt(dto.pending),
-      inProgressCount: _toInt(dto.tickets),
-      overdueCount: _toInt(dto.dueToday),
-      notStartedCount: 0,
+      needsAcknowledgmentCount: _toInt(dto.needsAcknowledgement),
+      inProgressCount: _toInt(dto.inprogress),
+      overdueCount: _toInt(dto.overdue),
+      notStartedCount: _toInt(dto.notStarted),
     );
+  }
+
+  @override
+  Future<List<NeedsAttentionItem>> fetchNeedsAttention({
+    required String hotelId,
+  }) async {
+    try {
+      final dtos = await _remote.getNeedsAttention(hotelId: hotelId);
+      return dtos
+          .map(
+            (dto) => NeedsAttentionItem(
+              id: dto.id,
+              createdAt: dto.createdAt,
+              departmentId: dto.departmentId,
+              status: dto.status,
+              dueAt: dto.dueAt,
+              room: dto.room,
+              guestName: dto.guestName,
+              acknowledgedAt: dto.acknowledgedAt,
+              department: DepartmentInfo(
+                name: dto.department.name,
+                mobileIcon: dto.department.mobileIcon,
+                icon: IconInfo(url: dto.department.icon.url),
+              ),
+              onbRoomNumber: dto.onbRoomNumber,
+            ),
+          )
+          .toList();
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
   }
 
   /// Defensive parse — backend ships numeric counts as strings. Null /

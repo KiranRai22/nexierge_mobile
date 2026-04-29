@@ -1,19 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
-import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
-import '../../../auth/domain/entities/user_profile.dart';
-import '../../../auth/presentation/providers/user_profile_controller.dart';
-import '../../data/services/image_picker_service.dart';
-import '../widgets/change_profile_picture_sheet.dart';
-import '../widgets/profile_header_card.dart';
-import '../widgets/profile_info_section.dart';
-import '../widgets/profile_language_card.dart';
-import '../widgets/profile_logout_button.dart';
-import '../widgets/profile_theme_card.dart';
 
 /// Profile tab — old version kept for reference. See profile_screen.dart for
 /// the current implementation.
@@ -25,40 +14,6 @@ class ProfileScreenOld extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenOldState extends ConsumerState<ProfileScreenOld> {
-  // Track expanded sections
-  bool _accountInfoExpanded = true;
-  bool _workInfoExpanded = true;
-  bool _preferencesExpanded = true;
-
-  /// Opens the bottom sheet, picks + compresses the image, then hands
-  /// off to the controller. Snackbar feedback is rendered here so the
-  /// data layer never touches `BuildContext`.
-  Future<void> _onChangeAvatar(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final source = await ChangeProfilePictureSheet.show(context);
-    if (source == null) return;
-
-    final picker = ImagePickerService();
-    try {
-      final file = await picker.pickAndCompress(source);
-      if (file == null) return;
-
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Uploading avatar…')),
-      );
-
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Avatar updated')),
-      );
-    } catch (_) {
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Avatar update failed')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
