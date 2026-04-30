@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 enum CreateChoice { universal, catalog, manual }
@@ -24,10 +24,11 @@ class CreateNewSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.themeColors;
     return Container(
-      decoration: const BoxDecoration(
-        color: ColorPalette.opsSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -41,21 +42,21 @@ class CreateNewSheet extends StatelessWidget {
             _Option(
               choice: CreateChoice.universal,
               icon: Icons.bolt_outlined,
-              tint: ColorPalette.chipUniversalBg,
+              tint: c.tagBlueBg,
               title: s.createUniversalTitle,
               description: s.createUniversalDesc,
             ),
             _Option(
               choice: CreateChoice.catalog,
               icon: Icons.receipt_long_outlined,
-              tint: ColorPalette.chipCatalogBg,
+              tint: c.tagGreenBg,
               title: s.createCatalogTitle,
               description: s.createCatalogDesc,
             ),
             _Option(
               choice: CreateChoice.manual,
               icon: Icons.assignment_outlined,
-              tint: ColorPalette.chipManualBg,
+              tint: c.tagOrangeBg,
               title: s.createManualTitle,
               description: s.createManualDesc,
             ),
@@ -73,6 +74,7 @@ class _SheetHandle extends StatelessWidget {
   const _SheetHandle();
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
       child: Center(
@@ -80,7 +82,7 @@ class _SheetHandle extends StatelessWidget {
           width: 40,
           height: 4,
           decoration: BoxDecoration(
-            color: ColorPalette.opsBorder,
+            color: c.borderBase,
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -94,6 +96,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.themeColors;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
       child: Row(
@@ -107,13 +110,14 @@ class _Header extends StatelessWidget {
                   s.createNewTitle,
                   style: TypographyManager.titleLarge.copyWith(
                     fontWeight: FontWeight.w700,
+                    color: c.fgBase,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   s.createNewSubtitle,
                   style: TypographyManager.bodyMedium.copyWith(
-                    color: ColorPalette.textSecondary,
+                    color: c.fgSubtle,
                   ),
                 ),
               ],
@@ -122,8 +126,7 @@ class _Header extends StatelessWidget {
           IconButton(
             tooltip: s.cancel,
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.close,
-                color: ColorPalette.textSecondary),
+            icon: Icon(Icons.close, color: c.fgMuted),
           ),
         ],
       ),
@@ -148,38 +151,57 @@ class _Option extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => Navigator.of(context).pop(choice),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: tint,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 22, color: ColorPalette.textPrimary),
+    final c = context.themeColors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.of(context).pop(choice),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: c.borderBase),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TypographyManager.cardTitle),
-                  const SizedBox(height: 2),
-                  Text(
-                    description,
-                    style: TypographyManager.cardMeta,
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: tint,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                ],
-              ),
+                  child: Icon(icon, size: 22, color: c.fgBase),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TypographyManager.cardTitle.copyWith(
+                          color: c.fgBase,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        description,
+                        style: TypographyManager.cardMeta.copyWith(
+                          color: c.fgSubtle,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox.square(dimension: 10),
+                Icon(Icons.more_horiz, color: c.fgMuted),
+              ],
             ),
-            const Icon(Icons.chevron_right,
-                color: ColorPalette.textSecondary),
-          ],
+          ),
         ),
       ),
     );
@@ -190,19 +212,17 @@ class _HintFooter extends StatelessWidget {
   const _HintFooter();
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          const Icon(Icons.info_outline,
-              size: 16, color: ColorPalette.textSecondary),
+          Icon(Icons.info_outline, size: 16, color: c.fgMuted),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               context.l10n.createHint,
-              style: TypographyManager.bodySmall.copyWith(
-                color: ColorPalette.textSecondary,
-              ),
+              style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
             ),
           ),
         ],

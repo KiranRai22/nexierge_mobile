@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -52,7 +53,12 @@ class AppTopBar extends StatelessWidget {
           const Spacer(),
           IconButton(
             tooltip: s.tooltipToggleTheme,
-            onPressed: onThemeToggle,
+            onPressed: onThemeToggle == null
+                ? null
+                : () async {
+                    await SoundManager.instance.play(SoundCategory.preference);
+                    onThemeToggle!();
+                  },
             icon: Icon(
               isDarkMode ? LucideIcons.sun : LucideIcons.moon,
               color: c.fgBase,
@@ -62,7 +68,10 @@ class AppTopBar extends StatelessWidget {
           if (onLanguageTap != null)
             IconButton(
               tooltip: s.tooltipLanguage,
-              onPressed: onLanguageTap,
+              onPressed: () async {
+                await SoundManager.instance.play(SoundCategory.preference);
+                onLanguageTap!();
+              },
               icon: Icon(Icons.language_outlined, color: c.fgBase),
             ),
           _BellIcon(
@@ -86,7 +95,12 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () async {
+              await SoundManager.instance.play(SoundCategory.button);
+              onTap!();
+            },
       child: Container(
         width: 36,
         height: 36,

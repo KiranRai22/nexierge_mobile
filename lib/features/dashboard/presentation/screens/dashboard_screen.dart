@@ -164,6 +164,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 onThemeToggle: () =>
                     ref.read(themeModeControllerProvider.notifier).toggle(),
                 onNotifications: () => _openNotifications(context),
+                onAvatarTap: () => widget.onSwitchTab(ShellTab.profile),
               ),
             ),
 

@@ -52,5 +52,11 @@
 		<string>We use notifications to keep you informed about important updates.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- App Transport Security - Allow Firebase connections -->
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+		</dict>
 	</dict>
 </plist>

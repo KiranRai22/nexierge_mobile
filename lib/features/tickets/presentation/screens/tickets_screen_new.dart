@@ -6,6 +6,7 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../shell/presentation/widgets/app_bottom_nav.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
@@ -23,7 +24,9 @@ import 'ticket_detail_screen.dart';
 
 /// Updated tickets screen matching the provided design
 class TicketsScreenNew extends ConsumerStatefulWidget {
-  const TicketsScreenNew({super.key});
+  final ValueChanged<ShellTab> onSwitchTab;
+
+  const TicketsScreenNew({super.key, required this.onSwitchTab});
 
   @override
   ConsumerState<TicketsScreenNew> createState() => _TicketsScreenNewState();
@@ -125,6 +128,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
                 onNotifications: () => _openNotifications(context),
                 onSearchToggle: _toggleSearch,
                 isSearchVisible: _isSearchVisible,
+                onAvatarTap: () => widget.onSwitchTab(ShellTab.profile),
               ),
             ),
 

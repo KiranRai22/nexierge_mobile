@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/i18n/app_locale.dart';
 import 'core/i18n/locale_controller.dart';
 import 'core/network/api_client.dart';
+import 'core/providers/sound_preferences_provider.dart';
 import 'core/services/device_token_service.dart';
 import 'core/services/firebase_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/sound_manager.dart';
 import 'core/theme/unified_theme_manager.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'core/utils/string_manager.dart';
@@ -35,11 +37,22 @@ Future<void> main() async {
   // FCM + local notifications bootstrap
   await NotificationService.instance.initialize();
 
+  // Initialize sound manager for UI sounds
+  await SoundManager.instance.initialize();
+
   // Retrieve and persist device token to shared_preferences.
   // This token is used during login to enable push notifications.
   // Validated in background: if null/unavailable, login still proceeds
   // but push features are disabled until token is available.
-  final token = await NotificationService.instance.getFCMToken();
+  // Wrapped in timeout to prevent network hangs from blocking startup.
+  String? token;
+  try {
+    token = await NotificationService.instance.getFCMToken().timeout(
+      const Duration(seconds: 5),
+    );
+  } catch (e) {
+    debugPrint('[DeviceToken] Failed to fetch: $e');
+  }
   if (token != null) {
     await DeviceTokenService.saveToken(token);
   }
@@ -73,6 +86,10 @@ class MyApp extends ConsumerWidget {
         ref.watch(localeControllerProvider).valueOrNull ?? AppLocale.system;
     final session = ref.watch(authSessionControllerProvider);
     final bootstrap = ref.watch(dashboardBootstrapControllerProvider);
+    final soundEnabled = ref.watch(soundPreferencesProvider);
+
+    // Sync sound manager with preferences
+    SoundManager.instance.setEnabled(soundEnabled);
 
     // Listen for session changes and trigger bootstrap when authenticated
     ref.listen(authSessionControllerProvider, (prev, next) {

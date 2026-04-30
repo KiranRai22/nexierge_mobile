@@ -52,8 +52,28 @@ abstract class AppDateUtils {
   }
 
   /// Short clock used by the ETA sheet `Ready by 1:40 AM` line.
-  static String clock(DateTime when) =>
-      DateFormat('h:mm a').format(when);
+  static String clock(DateTime when) => DateFormat('h:mm a').format(when);
+
+  /// Convert milliseconds since epoch to relative time ago string.
+  /// Handles both seconds and milliseconds timestamps automatically.
+  static String timeAgo(int millisecondsSinceEpoch) {
+    // Auto-detect if timestamp is in seconds (10 digits) or milliseconds (13 digits)
+    final ms = millisecondsSinceEpoch.toString().length <= 10
+        ? millisecondsSinceEpoch * 1000
+        : millisecondsSinceEpoch;
+    final dt = DateTime.fromMillisecondsSinceEpoch(ms);
+    return relative(dt);
+  }
+
+  /// Convert milliseconds to formatted date string.
+  /// Format: `Jan 15, 2024, 2:30 PM`
+  static String formatMillis(int millisecondsSinceEpoch) {
+    final ms = millisecondsSinceEpoch.toString().length <= 10
+        ? millisecondsSinceEpoch * 1000
+        : millisecondsSinceEpoch;
+    final dt = DateTime.fromMillisecondsSinceEpoch(ms);
+    return DateFormat('MMM d, yyyy, h:mm a').format(dt);
+  }
 }
 
 enum DayBucket { today, yesterday, older }

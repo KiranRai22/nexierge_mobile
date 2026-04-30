@@ -79,6 +79,9 @@ dependencies:
   flutter_image_compress: ^2.3.0
   json_annotation: ^4.11.0
 
+  # Audio playback for UI sounds
+  audioplayers: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -136,6 +139,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/media/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

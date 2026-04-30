@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
+import '../../../../../core/utils/date_utils.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../domain/entities/ticket_detail.dart';
 
@@ -192,7 +193,7 @@ class _TimelineRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _formatTimestamp(event.createdAt),
+                    AppDateUtils.timeAgo(event.createdAt),
                     style: TypographyManager.textMeta.copyWith(
                       color: c.fgMuted,
                     ),
@@ -269,29 +270,5 @@ class _TimelineRow extends StatelessWidget {
       }
     } catch (_) {}
     return c.tagBlueIcon;
-  }
-
-  String _formatTimestamp(int timestamp) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final hour24 = dt.hour;
-    final isPm = hour24 >= 12;
-    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final ampm = isPm ? 'PM' : 'AM';
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}, $hour12:$minute $ampm';
   }
 }

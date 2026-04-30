@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -73,7 +74,10 @@ class AppBottomNav extends StatelessWidget {
     final color = isActive ? c.tagPurpleIcon : c.fgMuted;
     return Expanded(
       child: InkResponse(
-        onTap: () => onSelect(tab),
+        onTap: () async {
+          await SoundManager.instance.play(SoundCategory.navigation);
+          onSelect(tab);
+        },
         radius: 36,
         child: Semantics(
           label: label,

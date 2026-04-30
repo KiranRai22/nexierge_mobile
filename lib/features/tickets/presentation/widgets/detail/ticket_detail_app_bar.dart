@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/services/sound_manager.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
@@ -99,7 +100,10 @@ class _CircleIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final btn = InkWell(
-      onTap: onTap,
+      onTap: () async {
+        await SoundManager.instance.play(SoundCategory.back);
+        onTap();
+      },
       customBorder: const CircleBorder(),
       child: Container(
         width: 36,

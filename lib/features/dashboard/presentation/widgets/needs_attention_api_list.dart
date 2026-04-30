@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/utils/date_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/needs_attention_item.dart';
 
@@ -180,14 +182,11 @@ class _AttentionRow extends StatelessWidget {
   }
 
   String _pillLabel(AppLocalizations s) {
-    final now = DateTime.now();
-    final created = DateTime.fromMillisecondsSinceEpoch(item.createdAt);
-    final minutes = now.difference(created).inMinutes;
     switch (item.status) {
       case 'ACCEPTED':
         return s.dashboardNotStartedPill;
       case 'NEW':
-        return s.dashboardWaitingPill(minutes);
+        return 'Waiting ${AppDateUtils.timeAgo(item.createdAt)}';
       default:
         return item.status;
     }
@@ -211,7 +210,10 @@ class _AttentionRow extends StatelessWidget {
       color: c.bgBase,
       borderRadius: radius,
       child: InkWell(
-        onTap: onTap,
+        onTap: () async {
+          await SoundManager.instance.play(SoundCategory.card);
+          onTap();
+        },
         borderRadius: radius,
         child: Container(
           decoration: BoxDecoration(

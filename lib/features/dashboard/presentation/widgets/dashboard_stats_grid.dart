@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/dashboard_view.dart';
@@ -206,7 +207,12 @@ class StatNoteCard extends StatelessWidget {
       color: c.bgBase,
       borderRadius: radius,
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap == null
+            ? null
+            : () async {
+                await SoundManager.instance.play(SoundCategory.card);
+                onTap?.call();
+              },
         borderRadius: radius,
         child: Container(
           decoration: BoxDecoration(

@@ -50,7 +50,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         index: _stackIndex,
         children: [
           DashboardScreen(onSwitchTab: _onSelect),
-          const TicketsScreenNew(),
+          TicketsScreenNew(onSwitchTab: _onSelect),
           const ProfileScreen(),
         ],
       ),

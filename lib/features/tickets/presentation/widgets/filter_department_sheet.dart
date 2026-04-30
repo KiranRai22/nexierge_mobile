@@ -16,7 +16,7 @@ class FilterDepartmentSheet {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: c.bgSubtle,
+      backgroundColor: c.bgBase,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -180,6 +180,12 @@ class _DeptList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
+                _CustomCheckbox(
+                  isChecked: isOn,
+                  activeColor: c.tagPurpleIcon,
+                  inactiveColor: c.borderBase,
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     d.label(s),
@@ -188,11 +194,6 @@ class _DeptList extends StatelessWidget {
                       fontSize: 16,
                     ),
                   ),
-                ),
-                _CustomCheckbox(
-                  isChecked: isOn,
-                  activeColor: c.tagPurpleIcon,
-                  inactiveColor: c.borderBase,
                 ),
               ],
             ),
@@ -251,29 +252,37 @@ class _Footer extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
         children: [
-          TextButton(
-            onPressed: onClear,
-            child: Text(
-              'Clear',
-              style: TypographyManager.bodyMedium.copyWith(color: c.fgMuted),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: onClear,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: c.fgBase,
+                side: BorderSide(color: c.borderBase),
+                minimumSize: const Size.fromHeight(44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text('Clear', style: TypographyManager.bodyMedium),
             ),
           ),
-          const Spacer(),
-          ElevatedButton(
-            onPressed: onApply,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: c.tagPurpleIcon,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(96, 44),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: onApply,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: c.fgBase,
+                foregroundColor: c.bgBase,
+                minimumSize: const Size.fromHeight(44),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            ),
-            child: Text(
-              'Apply',
-              style: TypographyManager.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+              child: Text(
+                'Apply',
+                style: TypographyManager.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),

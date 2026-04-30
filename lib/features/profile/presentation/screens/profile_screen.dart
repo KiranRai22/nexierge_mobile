@@ -13,6 +13,7 @@ import '../widgets/profile_header_card.dart';
 import '../widgets/profile_info_section.dart';
 import '../widgets/profile_language_card.dart';
 import '../widgets/profile_logout_button.dart';
+import '../widgets/profile_sound_card.dart';
 import '../widgets/profile_theme_card.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -244,6 +245,8 @@ class _ProfileBody extends StatelessWidget {
               const ProfileLanguageCard(),
               const SizedBox(height: 12),
               const ProfileThemeCard(),
+              const SizedBox(height: 12),
+              const ProfileSoundCard(),
               const SizedBox(height: 24),
               const ProfileLogoutButton(),
             ],
