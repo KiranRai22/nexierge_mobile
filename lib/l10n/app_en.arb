@@ -283,15 +283,15 @@
 
   "createNewTitle": "Create new",
   "createNewSubtitle": "What kind of ticket are you creating?",
-  "createUniversalTitle": "Universal request",
+  "createUniversalTitle": "Universal",
   "createUniversalDesc": "Towels, pillows, toiletries — quick operational asks",
   "createCatalogTitle": "Catalog",
   "createCatalogDesc": "Room service, spa, bar — anything a guest is paying for",
-  "createManualTitle": "Manual ticket",
+  "createManualTitle": "Manual",
   "createManualDesc": "Complaints, issues, anything that doesn't fit above",
   "createHint": "Not sure? Manual works for anything.",
 
-  "universalHeading": "Universal request",
+  "universalHeading": "Universal",
   "universalSubheading": "Tap what you need",
   "itemTowels": "Towels",
   "itemPillows": "Pillows",
@@ -569,5 +569,124 @@
   "profileFirstName": "First name",
   "profileLastName": "Last name",
   "profileUpdateNameSuccess": "Name updated",
-  "profileUpdateNameFailed": "Failed to update name"
+  "profileUpdateNameFailed": "Failed to update name",
+
+  "createSearchHint": "Search requests...",
+  "createCustomButton": "+ Custom",
+  "createCatalogNavTitle": "Catalog",
+  "createManualNavTitle": "Create ticket",
+  "createCatalogSelectHeading": "Select a catalog",
+  "createCatalogSelectSubheading": "Choose from your hotel's service catalogs",
+  "createCatalogItemCount": "{count} items",
+  "@createCatalogItemCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "catalogRestaurantName": "Hotel Restaurant",
+  "catalogRestaurantDesc": "Full-service hotel kitchen — breakfast, mains, drinks",
+  "catalogRoomServiceName": "Room Service",
+  "catalogRoomServiceDesc": "In-room amenities, late-night essentials",
+
+  "createSummaryLabel": "Summary",
+  "createSummaryHint": "Describe the request...",
+  "createGuestOptionalLabel": "Guest (optional)",
+  "createGuestHint": "Guest name...",
+  "createDepartmentLabel": "Department",
+  "createDepartmentHint": "Select department...",
+  "createSourceLabel": "Source",
+  "createSourceWhatsApp": "WhatsApp",
+  "createSourcePhone": "Phone",
+  "createSourceFrontDesk": "Front Desk",
+  "createSourceInPerson": "In-Person",
+  "createSourceInternal": "Internal",
+  "createNotesOptionalLabel": "Notes (optional)",
+  "createNotesHint": "Any special instructions or context...",
+  "createTicketCta": "Create Ticket",
+  "createRoomLabel": "Room",
+
+  "itemExtraTowels": "Extra towels",
+  "itemExtraPillows": "Extra pillows",
+  "itemToiletriesKit": "Toiletries kit",
+  "itemExtraBlanket": "Extra blanket",
+  "itemRoomCleaning": "Room cleaning",
+  "itemWaterBottles": "Water bottles",
+  "itemIceBucket": "Ice bucket",
+  "itemConciergeHelp": "Concierge help",
+  "itemClimateControl": "Climate control",
+  "itemLightFixture": "Light fixture",
+  "itemPlumbingIssue": "Plumbing issue",
+  "categoryHousekeeping": "Housekeeping",
+  "categoryFnb": "F&B",
+  "categoryFrontDesk": "Front Desk",
+  "categoryMaintenance": "Maintenance",
+
+  "createSelectionBarSelected": "{count, plural, one{1 request selected} other{{count} requests selected}}",
+  "@createSelectionBarSelected": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "createSelectionBarClearAll": "Clear all",
+  "createContinueCta": "Continue · {count, plural, one{1 item} other{{count} items}}",
+  "@createContinueCta": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "createTicketHeading": "Create ticket",
+  "createSummaryCardTitle": "{requests, plural, one{1 REQUEST} other{{requests} REQUESTS}} · {items, plural, one{1 ITEM} other{{items} ITEMS}}",
+  "@createSummaryCardTitle": {
+    "placeholders": {
+      "requests": { "type": "int" },
+      "items": { "type": "int" }
+    }
+  },
+  "createSummaryEdit": "Edit",
+  "createDepartmentAuto": "AUTO",
+  "createTicketRoomRequiredHint": "Select a room to continue",
+
+  "catalogSearchHintNamed": "Search {name}…",
+  "@catalogSearchHintNamed": {
+    "placeholders": { "name": { "type": "String", "example": "Hotel Restaurant" } }
+  },
+  "catalogAvailableSection": "AVAILABLE",
+  "catalogPriceFree": "Free",
+  "catalogCartSubtitle": "{items, plural, one{1 item} other{{items} items}} · {total}",
+  "@catalogCartSubtitle": {
+    "placeholders": {
+      "items": { "type": "int" },
+      "total": { "type": "String", "example": "$14.50" }
+    }
+  },
+  "catalogPrice": "{amount}",
+  "@catalogPrice": {
+    "placeholders": {
+      "amount": { "type": "String", "example": "$14.50" }
+    }
+  },
+  "catalogTagRequired": "REQUIRED",
+  "catalogTagOptional": "OPTIONAL",
+  "catalogItemTotalLabel": "Item total",
+  "catalogAddToOrderCta": "Add to Order",
+  "catalogPickRequiredHint": "Pick a {groupName}",
+  "@catalogPickRequiredHint": {
+    "placeholders": {
+      "groupName": { "type": "String", "example": "with onions" }
+    }
+  },
+  "catalogLineLabel": "#{index} · {summary}",
+  "@catalogLineLabel": {
+    "placeholders": {
+      "index": { "type": "int" },
+      "summary": { "type": "String", "example": "Yes, Agege Bread" }
+    }
+  },
+  "confirmTicketTitle": "Confirm ticket",
+  "confirmTicketRowCatalog": "CATALOG",
+  "confirmTicketRowDepartment": "DEPARTMENT",
+  "confirmTicketRowRoom": "ROOM",
+  "confirmTicketRowGuest": "GUEST",
+  "confirmTicketRowSource": "SOURCE",
+  "confirmTicketRowTotal": "TOTAL",
+  "confirmTicketRowNotes": "NOTES",
+  "confirmTicketItemsHeading": "ITEMS ({count})",
+  "@confirmTicketItemsHeading": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "confirmTicketCta": "Confirm"
 }

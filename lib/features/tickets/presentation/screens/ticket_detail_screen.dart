@@ -291,6 +291,8 @@ class _DetailsTab extends StatelessWidget {
 
   String _sourceLabel(AppLocalizations s, TicketSource src) {
     switch (src) {
+      case TicketSource.whatsApp:
+        return s.createSourceWhatsApp;
       case TicketSource.guestApp:
         return s.ticketSourceGuestApp;
       case TicketSource.frontDesk:

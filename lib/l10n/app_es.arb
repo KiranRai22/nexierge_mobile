@@ -162,15 +162,15 @@
 
   "createNewTitle": "Crear nuevo",
   "createNewSubtitle": "¿Qué tipo de ticket vas a crear?",
-  "createUniversalTitle": "Solicitud universal",
+  "createUniversalTitle": "Universal",
   "createUniversalDesc": "Toallas, almohadas, artículos de aseo — peticiones rápidas",
   "createCatalogTitle": "Catálogo",
   "createCatalogDesc": "Servicio de habitaciones, spa, bar — todo lo que el huésped pague",
-  "createManualTitle": "Ticket manual",
+  "createManualTitle": "Manual",
   "createManualDesc": "Quejas, incidencias, cualquier cosa que no encaje arriba",
   "createHint": "¿No estás seguro? Manual sirve para cualquier caso.",
 
-  "universalHeading": "Solicitud universal",
+  "universalHeading": "Universal",
   "universalSubheading": "Toca lo que necesitas",
   "itemTowels": "Toallas",
   "itemPillows": "Almohadas",
@@ -447,5 +447,120 @@
   "profileFirstName": "Nombre",
   "profileLastName": "Apellido",
   "profileUpdateNameSuccess": "Nombre actualizado",
-  "profileUpdateNameFailed": "Error al actualizar el nombre"
+  "profileUpdateNameFailed": "Error al actualizar el nombre",
+
+  "createSearchHint": "Buscar solicitudes...",
+  "createCustomButton": "+ Personalizado",
+  "createCatalogNavTitle": "Catálogo",
+  "createManualNavTitle": "Crear ticket",
+  "createCatalogSelectHeading": "Seleccionar catálogo",
+  "createCatalogSelectSubheading": "Elige de los catálogos de servicio del hotel",
+  "createCatalogItemCount": "{count} artículos",
+  "@createCatalogItemCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "catalogRestaurantName": "Restaurante del hotel",
+  "catalogRestaurantDesc": "Cocina completa — desayuno, platos principales, bebidas",
+  "catalogRoomServiceName": "Servicio de habitaciones",
+  "catalogRoomServiceDesc": "Amenidades en habitación, esenciales nocturnos",
+
+  "createSummaryLabel": "Resumen",
+  "createSummaryHint": "Describe la solicitud...",
+  "createGuestOptionalLabel": "Huésped (opcional)",
+  "createGuestHint": "Nombre del huésped...",
+  "createDepartmentLabel": "Departamento",
+  "createDepartmentHint": "Seleccionar departamento...",
+  "createSourceLabel": "Origen",
+  "createSourceWhatsApp": "WhatsApp",
+  "createSourcePhone": "Teléfono",
+  "createSourceFrontDesk": "Recepción",
+  "createSourceInPerson": "En persona",
+  "createSourceInternal": "Interno",
+  "createNotesOptionalLabel": "Notas (opcional)",
+  "createNotesHint": "Instrucciones especiales o contexto...",
+  "createTicketCta": "Crear ticket",
+  "createRoomLabel": "Habitación",
+
+  "itemExtraTowels": "Toallas extra",
+  "itemExtraPillows": "Almohadas extra",
+  "itemToiletriesKit": "Kit de aseo",
+  "itemExtraBlanket": "Manta extra",
+  "itemRoomCleaning": "Limpieza de habitación",
+  "itemWaterBottles": "Botellas de agua",
+  "itemIceBucket": "Cubo de hielo",
+  "itemConciergeHelp": "Ayuda de conserjería",
+  "itemClimateControl": "Control de climatización",
+  "itemLightFixture": "Lámpara o luminaria",
+  "itemPlumbingIssue": "Problema de plomería",
+  "categoryHousekeeping": "Limpieza",
+  "categoryFnb": "A&B",
+  "categoryFrontDesk": "Recepción",
+  "categoryMaintenance": "Mantenimiento",
+
+  "createSelectionBarSelected": "{count, plural, one{1 solicitud seleccionada} other{{count} solicitudes seleccionadas}}",
+  "@createSelectionBarSelected": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "createSelectionBarClearAll": "Limpiar todo",
+  "createContinueCta": "Continuar · {count, plural, one{1 artículo} other{{count} artículos}}",
+  "@createContinueCta": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "createTicketHeading": "Crear ticket",
+  "createSummaryCardTitle": "{requests, plural, one{1 SOLICITUD} other{{requests} SOLICITUDES}} · {items, plural, one{1 ARTÍCULO} other{{items} ARTÍCULOS}}",
+  "@createSummaryCardTitle": {
+    "placeholders": {
+      "requests": { "type": "int" },
+      "items": { "type": "int" }
+    }
+  },
+  "createSummaryEdit": "Editar",
+  "createDepartmentAuto": "AUTO",
+  "createTicketRoomRequiredHint": "Selecciona una habitación para continuar",
+
+  "catalogSearchHintNamed": "Buscar {name}…",
+  "@catalogSearchHintNamed": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "catalogAvailableSection": "DISPONIBLE",
+  "catalogPriceFree": "Gratis",
+  "catalogCartSubtitle": "{items, plural, one{1 artículo} other{{items} artículos}} · {total}",
+  "@catalogCartSubtitle": {
+    "placeholders": {
+      "items": { "type": "int" },
+      "total": { "type": "String" }
+    }
+  },
+  "catalogPrice": "{amount}",
+  "@catalogPrice": {
+    "placeholders": { "amount": { "type": "String" } }
+  },
+  "catalogTagRequired": "OBLIGATORIO",
+  "catalogTagOptional": "OPCIONAL",
+  "catalogItemTotalLabel": "Total del artículo",
+  "catalogAddToOrderCta": "Agregar al pedido",
+  "catalogPickRequiredHint": "Selecciona {groupName}",
+  "@catalogPickRequiredHint": {
+    "placeholders": { "groupName": { "type": "String" } }
+  },
+  "catalogLineLabel": "#{index} · {summary}",
+  "@catalogLineLabel": {
+    "placeholders": {
+      "index": { "type": "int" },
+      "summary": { "type": "String" }
+    }
+  },
+  "confirmTicketTitle": "Confirmar ticket",
+  "confirmTicketRowCatalog": "CATÁLOGO",
+  "confirmTicketRowDepartment": "DEPARTAMENTO",
+  "confirmTicketRowRoom": "HABITACIÓN",
+  "confirmTicketRowGuest": "HUÉSPED",
+  "confirmTicketRowSource": "ORIGEN",
+  "confirmTicketRowTotal": "TOTAL",
+  "confirmTicketRowNotes": "NOTAS",
+  "confirmTicketItemsHeading": "ARTÍCULOS ({count})",
+  "@confirmTicketItemsHeading": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "confirmTicketCta": "Confirmar"
 }

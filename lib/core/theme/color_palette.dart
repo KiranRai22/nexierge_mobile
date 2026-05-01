@@ -20,6 +20,9 @@ abstract class ColorPalette {
   // Semantic
   static const Color error = Color(0xFFEA4335);
   static const Color success = Color(0xFF34A853);
+  static const Color successTint = Color(0xFFD8F4E2);
+  static const Color successBorder = Color(0xFF34A853);
+  static const Color successText = Color(0xFF1B7A3A);
   static const Color warning = Color(0xFFFBBC04);
   static const Color info = Color(0xFF1A73E8);
 
