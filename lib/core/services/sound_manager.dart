@@ -20,19 +20,19 @@ enum SoundCategory {
 }
 
 /// Centralized sound manager for UI interactions.
-/// Handles audio playback with preloading for low latency.
+///
+/// One [AudioPlayer] per [SoundCategory] preloaded at init in
+/// [PlayerMode.lowLatency] (SoundPool on Android). Replays via [AudioPlayer.resume]
+/// so we never re-issue `setSource` or `stop` on the hot path — this avoids the
+/// `MediaPlayer` state-machine races that surface as `MEDIA_ERROR_UNKNOWN {what:1}`.
 class SoundManager {
   SoundManager._();
 
   static final SoundManager instance = SoundManager._();
 
-  final AudioPlayer _player = AudioPlayer();
-  bool _isInitialized = false;
-  bool _isEnabled = true;
-
-  /// Audio file paths for each sound category
-  /// Note: AssetSource automatically adds 'assets/' prefix, so paths are relative to assets folder
-  final Map<SoundCategory, String> _soundPaths = {
+  /// Audio file paths for each sound category. Paths are relative to the
+  /// `assets/` folder; [AssetSource] adds the prefix internally.
+  static const Map<SoundCategory, String> _soundPaths = {
     SoundCategory.button: 'media/button1.mp3',
     SoundCategory.back: 'media/button2.mp3',
     SoundCategory.navigation: 'media/button3.mp3',
@@ -40,70 +40,53 @@ class SoundManager {
     SoundCategory.preference: 'media/button5.mp3',
   };
 
-  /// Initialize the sound manager
+  final Map<SoundCategory, AudioPlayer> _players = {};
+  bool _isInitialized = false;
+  bool _isEnabled = true;
+
+  /// Preload every sound into its own low-latency player. Idempotent.
   Future<void> initialize() async {
     if (_isInitialized) return;
+    _isInitialized = true;
 
-    try {
-      // Set player mode for low latency
-      await _player.setReleaseMode(ReleaseMode.release);
-
-      _isInitialized = true;
-      debugPrint('SoundManager: Initialization complete');
-    } catch (e) {
-      // Log error but don't crash - sounds are optional
-      debugPrint('SoundManager initialization error: $e');
+    for (final entry in _soundPaths.entries) {
+      try {
+        final player = AudioPlayer()
+          ..setReleaseMode(ReleaseMode.stop);
+        await player.setPlayerMode(PlayerMode.lowLatency);
+        await player.setSource(AssetSource(entry.value));
+        _players[entry.key] = player;
+      } catch (e) {
+        debugPrint('SoundManager: failed to preload ${entry.key} (${entry.value}): $e');
+      }
     }
+    debugPrint('SoundManager: initialized ${_players.length}/${_soundPaths.length} sounds');
   }
 
-  /// Enable or disable sound playback
-  void setEnabled(bool enabled) {
-    _isEnabled = enabled;
-  }
+  void setEnabled(bool enabled) => _isEnabled = enabled;
 
-  /// Check if sounds are enabled
   bool get isEnabled => _isEnabled;
 
-  /// Play a sound for the given category
-  /// Returns immediately for low latency, sound plays asynchronously
+  /// Play the sound for [category]. Fire-and-forget; never throws.
   Future<void> play(SoundCategory category) async {
-    debugPrint(
-      'SoundManager: play called for $category, enabled: $_isEnabled, initialized: $_isInitialized',
-    );
+    if (!_isEnabled) return;
+    if (!_isInitialized) await initialize();
 
-    if (!_isEnabled) {
-      debugPrint('SoundManager: Sounds are disabled, skipping playback');
-      return;
-    }
-
-    if (!_isInitialized) {
-      debugPrint('SoundManager: Not initialized, initializing now');
-      // Try to initialize on first play if not already done
-      await initialize();
-    }
-
-    final path = _soundPaths[category];
-    if (path == null) {
-      debugPrint('SoundManager: No sound path found for $category');
-      return;
-    }
+    final player = _players[category];
+    if (player == null) return;
 
     try {
-      debugPrint('SoundManager: Playing $path');
-      // Stop any currently playing sound to prevent overlap
-      await _player.stop();
-
-      // Play the sound
-      await _player.play(AssetSource(path));
-      debugPrint('SoundManager: Playback started');
+      await player.resume();
     } catch (e) {
-      debugPrint('SoundManager play error for $category: $e');
+      debugPrint('SoundManager: play error for $category: $e');
     }
   }
 
-  /// Dispose resources
-  void dispose() {
-    _player.dispose();
+  Future<void> dispose() async {
+    for (final player in _players.values) {
+      await player.dispose();
+    }
+    _players.clear();
     _isInitialized = false;
   }
 }

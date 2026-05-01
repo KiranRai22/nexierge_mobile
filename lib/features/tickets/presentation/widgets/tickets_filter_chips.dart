@@ -26,13 +26,13 @@ class TicketsFilterChips extends StatelessWidget {
     final filters = _getFiltersForTab(s, selectedTab);
 
     return SizedBox(
-      height: 40,
+      height: 32,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: filters.map((filter) {
           final isSelected = selectedFilter == filter.key;
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 6),
             child: _FilterChip(
               label: filter.label,
               isSelected: isSelected,
@@ -99,7 +99,7 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: isSelected ? c.tagPurpleBg : c.bgSubtle,
           borderRadius: BorderRadius.circular(999),
@@ -109,7 +109,8 @@ class _FilterChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: TypographyManager.tabText.copyWith(
+          style: TypographyManager.labelSmall.copyWith(
+            fontSize: 12,
             color: isSelected ? c.tagPurpleText : c.fgBase,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),

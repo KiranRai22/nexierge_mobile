@@ -70,7 +70,17 @@ class MockTicketsRepository
       kind: draft.kind,
       status: TicketStatus.incoming,
       department: draft.department,
-      room: MockSeed.rooms.firstWhere((r) => r.id == draft.roomId),
+      room: MockSeed.rooms.firstWhere(
+        (r) => r.id == draft.roomId,
+        // Room id from the API form-options doesn't exist in the mock seed.
+        // Use a stub so the mock store can still construct a Ticket. The
+        // backend create endpoint will replace this code path entirely.
+        orElse: () => Room(
+          id: draft.roomId,
+          number: draft.roomId,
+          floor: 0,
+        ),
+      ),
       items: draft.items,
       note: draft.note,
       createdAt: now,

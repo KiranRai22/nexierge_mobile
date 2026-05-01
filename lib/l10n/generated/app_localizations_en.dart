@@ -734,6 +734,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get filterActionClear => 'Clear';
+
+  @override
+  String get filterActionApply => 'Apply';
+
+  @override
+  String get filterActionSelectAll => 'Select All';
+
+  @override
   String get filterSelectAll => 'Select all';
 
   @override
@@ -1226,6 +1235,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createDepartmentHint => 'Select department...';
+
+  @override
+  String get createDepartmentSheetTitle => 'Select department';
 
   @override
   String get createSourceLabel => 'Source';

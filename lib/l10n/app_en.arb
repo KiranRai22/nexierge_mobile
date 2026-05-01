@@ -336,6 +336,9 @@
   "filterTitle": "Filter by department",
   "filterSubtitleAll": "Showing all departments",
   "filterSubtitleSome": "{count, plural, one{Showing 1 department} other{Showing {count} departments}}",
+  "filterActionClear": "Clear",
+  "filterActionApply": "Apply",
+  "filterActionSelectAll": "Select All",
   "@filterSubtitleSome": {
     "placeholders": {
       "count": { "type": "int" }
@@ -592,6 +595,7 @@
   "createGuestHint": "Guest name...",
   "createDepartmentLabel": "Department",
   "createDepartmentHint": "Select department...",
+  "createDepartmentSheetTitle": "Select department",
   "createSourceLabel": "Source",
   "createSourceWhatsApp": "WhatsApp",
   "createSourcePhone": "Phone",

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../domain/repositories/tickets_repository.dart';
@@ -11,7 +12,7 @@ class ManualDraftState {
   final String summary;
   final String? selectedRoomId;
   final String guestName;
-  final Department? department;
+  final HotelDepartment? department;
   final TicketSource? source;
   final String notes;
   final bool submitting;
@@ -38,7 +39,7 @@ class ManualDraftState {
     String? selectedRoomId,
     bool clearRoom = false,
     String? guestName,
-    Department? department,
+    HotelDepartment? department,
     TicketSource? source,
     bool clearSource = false,
     String? notes,
@@ -46,7 +47,8 @@ class ManualDraftState {
   }) {
     return ManualDraftState(
       summary: summary ?? this.summary,
-      selectedRoomId: clearRoom ? null : (selectedRoomId ?? this.selectedRoomId),
+      selectedRoomId:
+          clearRoom ? null : (selectedRoomId ?? this.selectedRoomId),
       guestName: guestName ?? this.guestName,
       department: department ?? this.department,
       source: clearSource ? null : (source ?? this.source),
@@ -64,7 +66,8 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
   void selectRoom(String id) => state = state.copyWith(selectedRoomId: id);
   void clearRoom() => state = state.copyWith(clearRoom: true);
   void setGuestName(String v) => state = state.copyWith(guestName: v);
-  void setDepartment(Department d) => state = state.copyWith(department: d);
+  void setDepartment(HotelDepartment d) =>
+      state = state.copyWith(department: d);
   void setSource(TicketSource s) => state = state.copyWith(source: s);
   void setNotes(String v) => state = state.copyWith(notes: v);
 
@@ -73,16 +76,21 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
     state = state.copyWith(submitting: true);
     try {
       final repo = ref.read(ticketsRepositoryProvider);
+      // Map API HotelDepartment back to the legacy enum so the mock store
+      // (which still types department as Department) accepts the draft.
+      // Backend create endpoint will use department.id directly when wired.
+      final fallback = state.department!.known ?? Department.housekeeping;
       final ticket = await repo.create(
         NewTicketDraft(
           title: state.summary.trim(),
           kind: TicketKind.manual,
-          department: state.department!,
+          department: fallback,
           roomId: state.selectedRoomId!,
           items: const [],
           note: state.notes.trim().isEmpty ? null : state.notes.trim(),
           source: state.source,
-          guestName: state.guestName.trim().isEmpty ? null : state.guestName.trim(),
+          guestName:
+              state.guestName.trim().isEmpty ? null : state.guestName.trim(),
         ),
       );
       return ticket.id;

@@ -1418,6 +1418,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{Showing 1 department} other{Showing {count} departments}}'**
   String filterSubtitleSome(int count);
 
+  /// No description provided for @filterActionClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get filterActionClear;
+
+  /// No description provided for @filterActionApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get filterActionApply;
+
+  /// No description provided for @filterActionSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select All'**
+  String get filterActionSelectAll;
+
   /// No description provided for @filterSelectAll.
   ///
   /// In en, this message translates to:
@@ -2281,6 +2299,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select department...'**
   String get createDepartmentHint;
+
+  /// No description provided for @createDepartmentSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select department'**
+  String get createDepartmentSheetTitle;
 
   /// No description provided for @createSourceLabel.
   ///

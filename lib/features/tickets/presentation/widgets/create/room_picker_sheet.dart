@@ -5,7 +5,7 @@ import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/models/ticket.dart';
-import '../../providers/universal_create_controller.dart';
+import '../../providers/ticket_form_options_provider.dart';
 
 /// Bottom sheet for selecting a room. Returns the [Room.id] or null.
 class RoomPickerSheet {
@@ -28,7 +28,7 @@ class _RoomSheetBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final rooms = ref.watch(availableRoomsProvider);
+    final asyncOptions = ref.watch(ticketFormOptionsProvider);
 
     return Padding(
       padding: EdgeInsets.only(bottom: viewInsets),
@@ -41,27 +41,88 @@ class _RoomSheetBody extends ConsumerWidget {
               const _Handle(),
               const _Header(),
               Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    mainAxisExtent: 52,
+                child: asyncOptions.when(
+                  data: (options) => _RoomGrid(
+                    rooms: options.rooms,
+                    onPick: (id) => Navigator.of(context).pop(id),
                   ),
-                  itemCount: rooms.length,
-                  itemBuilder: (_, i) {
-                    final r = rooms[i];
-                    return _RoomCell(
-                      room: r,
-                      onTap: () => Navigator.of(context).pop(r.id),
-                    );
-                  },
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  ),
+                  error: (e, _) => _ErrorView(
+                    message: e.toString(),
+                    onRetry: () => ref.invalidate(ticketFormOptionsProvider),
+                  ),
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoomGrid extends StatelessWidget {
+  final List<Room> rooms;
+  final ValueChanged<String> onPick;
+  const _RoomGrid({required this.rooms, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    if (rooms.isEmpty) {
+      return Center(
+        child: Text(
+          context.l10n.emptyState,
+          style: TypographyManager.bodyMedium.copyWith(
+            color: ColorPalette.textSecondary,
+          ),
+        ),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        mainAxisExtent: 52,
+      ),
+      itemCount: rooms.length,
+      itemBuilder: (_, i) {
+        final r = rooms[i];
+        return _RoomCell(room: r, onTap: () => onPick(r.id));
+      },
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorView({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TypographyManager.bodySmall.copyWith(
+                color: ColorPalette.error,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: Text(context.l10n.retry),
+            ),
+          ],
         ),
       ),
     );

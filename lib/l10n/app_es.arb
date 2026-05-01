@@ -470,6 +470,7 @@
   "createGuestHint": "Nombre del huésped...",
   "createDepartmentLabel": "Departamento",
   "createDepartmentHint": "Seleccionar departamento...",
+  "createDepartmentSheetTitle": "Seleccionar departamento",
   "createSourceLabel": "Origen",
   "createSourceWhatsApp": "WhatsApp",
   "createSourcePhone": "Teléfono",

@@ -5,8 +5,10 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/department.dart';
 import '../providers/session_providers.dart';
+import '../providers/ticket_form_options_provider.dart';
 
 /// Modal bottom sheet for choosing departments. Mirrors the prototype's
 /// list-of-checkboxes pattern. Apply / Clear at the bottom.
@@ -46,17 +48,26 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
     return s.filterSubtitleSome(_draft.length);
   }
 
-  void _toggle(Department d) {
+  void _toggle(HotelDepartment dept) {
+    final enumValue = dept.known;
+    if (enumValue == null) return; // Skip if no mapping
+
     setState(() {
-      if (_draft.contains(d)) {
-        _draft.remove(d);
+      if (_draft.contains(enumValue)) {
+        _draft.remove(enumValue);
       } else {
-        _draft.add(d);
+        _draft.add(enumValue);
       }
     });
   }
 
-  void _selectAll() => setState(() => _draft = Department.values.toSet());
+  void _selectAll(List<HotelDepartment> apiDepts) {
+    final allEnums = apiDepts
+        .map((d) => d.known)
+        .whereType<Department>()
+        .toSet();
+    setState(() => _draft = allEnums);
+  }
 
   void _clear() => setState(() => _draft = {});
 
@@ -79,8 +90,12 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
               subtitle: _subtitle(context.l10n),
               onClose: () => Navigator.of(context).pop(),
             ),
-            _DeptList(selected: _draft, onToggle: _toggle),
-            _Footer(onSelectAll: _selectAll, onClear: _clear, onApply: _apply),
+            _DeptList(
+              selected: _draft,
+              onToggle: _toggle,
+              onSelectAll: _selectAll,
+            ),
+            _Footer(onClear: _clear, onApply: _apply),
           ],
         ),
       ),
@@ -157,49 +172,99 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _DeptList extends StatelessWidget {
+class _DeptList extends ConsumerWidget {
   final Set<Department> selected;
-  final ValueChanged<Department> onToggle;
-  const _DeptList({required this.selected, required this.onToggle});
+  final ValueChanged<HotelDepartment> onToggle;
+  final ValueChanged<List<HotelDepartment>> onSelectAll;
+
+  const _DeptList({
+    required this.selected,
+    required this.onToggle,
+    required this.onSelectAll,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final s = context.l10n;
     final c = context.themeColors;
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      itemCount: Department.values.length,
-      itemBuilder: (context, i) {
-        final d = Department.values[i];
-        final isOn = selected.contains(d);
-        return InkWell(
-          onTap: () => onToggle(d),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                _CustomCheckbox(
-                  isChecked: isOn,
-                  activeColor: c.tagPurpleIcon,
-                  inactiveColor: c.borderBase,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    d.label(s),
-                    style: TypographyManager.bodyMedium.copyWith(
-                      color: c.fgBase,
-                      fontSize: 16,
-                    ),
+    final asyncDepts = ref.watch(apiDepartmentsAsyncProvider);
+
+    return asyncDepts.when(
+      data: (depts) {
+        // Only show departments that can be mapped to enum for filtering
+        final selectableDepts = depts.where((d) => d.known != null).toList();
+
+        if (selectableDepts.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              s.emptyState,
+              style: TypographyManager.bodyMedium.copyWith(color: c.fgSubtle),
+            ),
+          );
+        }
+        return Flexible(
+          child: ListView.builder(
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            itemCount: selectableDepts.length,
+            itemBuilder: (context, i) {
+              final dept = selectableDepts[i];
+              final enumValue = dept.known!;
+              final isOn = selected.contains(enumValue);
+
+              return InkWell(
+                onTap: () => onToggle(dept),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Row(
+                    children: [
+                      _CustomCheckbox(
+                        isChecked: isOn,
+                        activeColor: c.tagPurpleIcon,
+                        inactiveColor: c.borderBase,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          dept.name,
+                          style: TypographyManager.bodyMedium.copyWith(
+                            color: c.fgBase,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      if (i == selectableDepts.length - 1)
+                        TextButton(
+                          onPressed: () => onSelectAll(selectableDepts),
+                          child: Text(s.filterActionSelectAll),
+                        ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            e.toString(),
+            style: TypographyManager.bodyMedium.copyWith(color: c.fgError),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -236,14 +301,9 @@ class _CustomCheckbox extends StatelessWidget {
 }
 
 class _Footer extends StatelessWidget {
-  final VoidCallback onSelectAll;
   final VoidCallback onClear;
   final VoidCallback onApply;
-  const _Footer({
-    required this.onSelectAll,
-    required this.onClear,
-    required this.onApply,
-  });
+  const _Footer({required this.onClear, required this.onApply});
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +323,10 @@ class _Footer extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Text('Clear', style: TypographyManager.bodyMedium),
+              child: Text(
+                context.l10n.filterActionClear,
+                style: TypographyManager.bodyMedium,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -271,15 +334,13 @@ class _Footer extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onApply,
               style: ElevatedButton.styleFrom(
-                backgroundColor: c.fgBase,
-                foregroundColor: c.bgBase,
                 minimumSize: const Size.fromHeight(44),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Text(
-                'Apply',
+                context.l10n.filterActionApply,
                 style: TypographyManager.bodyMedium.copyWith(
                   fontWeight: FontWeight.w600,
                 ),

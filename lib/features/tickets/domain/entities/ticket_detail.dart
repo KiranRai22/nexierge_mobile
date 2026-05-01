@@ -57,31 +57,34 @@ class TicketDetail {
   factory TicketDetail.fromJson(Map<String, dynamic> json) {
     final ticket = json['ticket'] as Map<String, dynamic>;
     final eventsList = json['events'] as List? ?? [];
+    String s(String key) => (ticket[key] as String?) ?? '';
+    int i(String key) => (ticket[key] as num?)?.toInt() ?? 0;
+    bool b(String key) => (ticket[key] as bool?) ?? false;
     return TicketDetail(
-      id: ticket['id'] as String,
-      createdAt: ticket['created_at'] as int,
-      hotelId: ticket['hotel_id'] as String,
-      departmentId: ticket['department_id'] as String,
+      id: s('id'),
+      createdAt: i('created_at'),
+      hotelId: s('hotel_id'),
+      departmentId: s('department_id'),
       assignedToUserId: ticket['assigned_to_user_id'] as String?,
-      createdByAi: ticket['created_by_ai'] as bool,
-      type: ticket['type'] as String,
-      status: ticket['status'] as String,
-      category: ticket['category'] as String,
-      priority: ticket['priority'] as String,
-      issueSummary: ticket['issue_summary'] as String,
-      issueDetails: ticket['issue_details'] as String,
-      isIncident: ticket['is_incident'] as bool,
-      incidentNotes: ticket['incident_notes'] as String,
-      room: ticket['room'] as String,
-      guestName: ticket['guest_name'] as String,
+      createdByAi: b('created_by_ai'),
+      type: s('type'),
+      status: s('status'),
+      category: s('category'),
+      priority: s('priority'),
+      issueSummary: s('issue_summary'),
+      issueDetails: s('issue_details'),
+      isIncident: b('is_incident'),
+      incidentNotes: s('incident_notes'),
+      room: s('room'),
+      guestName: s('guest_name'),
       acknowledgedByUserId: ticket['acknowledged_by_user_id'] as String?,
-      acknowledgedAt: ticket['acknowledged_at'] as int,
-      resolutionCode: ticket['resolution_code'] as String,
-      resolutionNotes: ticket['resolution_notes'] as String,
-      source: ticket['source'] as String,
-      onbRoomNumber: ticket['onb_room_number'] as String,
-      mobileIcon: ticket['mobile_icon'] as String,
-      createdTime: ticket['created_time'] as String,
+      acknowledgedAt: i('acknowledged_at'),
+      resolutionCode: s('resolution_code'),
+      resolutionNotes: s('resolution_notes'),
+      source: s('source'),
+      onbRoomNumber: s('onb_room_number'),
+      mobileIcon: s('mobile_icon'),
+      createdTime: s('created_time'),
       events: eventsList
           .map((e) => TicketEvent.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -115,17 +118,18 @@ class TicketEvent {
   });
 
   factory TicketEvent.fromJson(Map<String, dynamic> json) {
+    String s(String key) => (json[key] as String?) ?? '';
     return TicketEvent(
-      createdAt: json['created_at'] as int,
-      eventType: json['event_type'] as String,
-      fromStatus: json['from_status'] as String,
-      toStatus: json['to_status'] as String,
-      notes: json['notes'] as String,
-      eventBy: json['event_by'] as String,
-      firstName: json['first_name'] as String,
-      lastName: json['last_name'] as String,
-      color: json['color'] as String,
-      emoji: json['emoji'] as String,
+      createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
+      eventType: s('event_type'),
+      fromStatus: s('from_status'),
+      toStatus: s('to_status'),
+      notes: s('notes'),
+      eventBy: s('event_by'),
+      firstName: s('first_name'),
+      lastName: s('last_name'),
+      color: s('color'),
+      emoji: s('emoji'),
     );
   }
 }

@@ -5,7 +5,9 @@ import '../../../../core/theme/color_palette.dart';
 import '../../../dashboard/presentation/screens/dashboard_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../tickets/presentation/providers/my_tickets_notifier.dart';
+import '../../../tickets/presentation/providers/tickets_main_tab_provider.dart';
 import '../../../tickets/presentation/screens/tickets_screen_new.dart';
+import '../../../tickets/presentation/widgets/tickets_main_tabs.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'create_router.dart';
 import '../widgets/center_fab.dart';
@@ -44,7 +46,15 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     ref.read(ticketsTabActiveProvider.notifier).state = tab == ShellTab.tickets;
   }
 
-  Future<void> _onFabPressed() => CreateRouter.openCreate(context, ref);
+  Future<void> _onFabPressed() async {
+    final submitted = await CreateRouter.openCreate(context, ref);
+    if (!mounted || !submitted) return;
+    setState(() => _current = ShellTab.tickets);
+    ref.read(ticketsTabActiveProvider.notifier).state = true;
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
+    // Pull latest from server.
+    ref.read(myTicketsNotifierProvider.notifier).refresh();
+  }
 
   @override
   Widget build(BuildContext context) {

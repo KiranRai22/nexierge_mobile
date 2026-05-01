@@ -7,6 +7,9 @@ import '../../../../core/network/api_client.dart';
 abstract class TicketRemoteDataSource {
   Future<TicketDetailDto> getTicketDetails({required String ticketId});
   Future<List<MyTicketDto>> getMyTickets({required String hotelId});
+  Future<TicketFormOptionsDto> getDepartmentsAndRooms({
+    required String hotelId,
+  });
 }
 
 class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
@@ -20,6 +23,17 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
       data: {'ticket_id': ticketId},
     );
     return TicketDetailDto.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  @override
+  Future<TicketFormOptionsDto> getDepartmentsAndRooms({
+    required String hotelId,
+  }) async {
+    final res = await _dio.get(
+      APIEndpoints.ticketsAddGetDepartmentsAndRooms,
+      queryParameters: {'hotel_id': hotelId},
+    );
+    return TicketFormOptionsDto.fromJson(res.data as Map<String, dynamic>);
   }
 
   @override
@@ -53,6 +67,54 @@ final ticketRemoteDataSourceProvider = Provider<TicketRemoteDataSource>((ref) {
   final dio = ref.watch(authedDioProvider);
   return _TicketRemoteDataSourceImpl(dio);
 });
+
+class TicketFormOptionsDto {
+  final List<DepartmentDto> departments;
+  final List<RoomLiteDto> rooms;
+
+  TicketFormOptionsDto({required this.departments, required this.rooms});
+
+  factory TicketFormOptionsDto.fromJson(Map<String, dynamic> json) {
+    return TicketFormOptionsDto(
+      departments: ((json['departments'] as List?) ?? const [])
+          .map((e) => DepartmentDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      rooms: ((json['rooms'] as List?) ?? const [])
+          .map((e) => RoomLiteDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class DepartmentDto {
+  final String id;
+  final String name;
+
+  DepartmentDto({required this.id, required this.name});
+
+  factory DepartmentDto.fromJson(Map<String, dynamic> json) {
+    return DepartmentDto(
+      id: (json['department_id'] as String?) ??
+          (json['id'] as String?) ??
+          '',
+      name: (json['name'] as String?) ?? '',
+    );
+  }
+}
+
+class RoomLiteDto {
+  final String id;
+  final String onbRoomNumber;
+
+  RoomLiteDto({required this.id, required this.onbRoomNumber});
+
+  factory RoomLiteDto.fromJson(Map<String, dynamic> json) {
+    return RoomLiteDto(
+      id: (json['id'] as String?) ?? '',
+      onbRoomNumber: (json['onb_room_number'] as String?) ?? '',
+    );
+  }
+}
 
 class TicketDetailDto {
   final Map<String, dynamic> ticket;
@@ -125,30 +187,33 @@ class MyTicketDto {
   });
 
   factory MyTicketDto.fromJson(Map<String, dynamic> json) {
+    String s(String key) => (json[key] as String?) ?? '';
+    int i(String key) => (json[key] as num?)?.toInt() ?? 0;
+    bool b(String key) => (json[key] as bool?) ?? false;
     return MyTicketDto(
-      id: json['id'] as String,
-      createdAt: json['created_at'] as int,
-      hotelId: json['hotel_id'] as String,
-      departmentId: json['department_id'] as String,
+      id: s('id'),
+      createdAt: i('created_at'),
+      hotelId: s('hotel_id'),
+      departmentId: s('department_id'),
       assignedToUserId: json['assigned_to_user_id'] as String?,
-      createdByUserId: json['created_by_user_id'] as String,
-      createdByAi: json['created_by_ai'] as bool,
-      type: json['type'] as String,
-      status: json['status'] as String,
-      dueAt: json['due_at'] as int,
-      category: json['category'] as String,
-      priority: json['priority'] as String,
-      issueSummary: json['issue_summary'] as String,
-      issueDetails: json['issue_details'] as String,
-      isIncident: json['is_incident'] as bool,
-      incidentNotes: json['incident_notes'] as String,
-      room: json['room'] as String,
-      guestName: json['guest_name'] as String,
+      createdByUserId: s('created_by_user_id'),
+      createdByAi: b('created_by_ai'),
+      type: s('type'),
+      status: s('status'),
+      dueAt: i('due_at'),
+      category: s('category'),
+      priority: s('priority'),
+      issueSummary: s('issue_summary'),
+      issueDetails: s('issue_details'),
+      isIncident: b('is_incident'),
+      incidentNotes: s('incident_notes'),
+      room: s('room'),
+      guestName: s('guest_name'),
       acknowledgedByUserId: json['acknowledged_by_user_id'] as String?,
-      acknowledgedAt: json['acknowledged_at'] as int,
-      resolutionCode: json['resolution_code'] as String,
-      resolutionNotes: json['resolution_notes'] as String,
-      confirmedAt: json['confirmed_at'] as int,
+      acknowledgedAt: i('acknowledged_at'),
+      resolutionCode: s('resolution_code'),
+      resolutionNotes: s('resolution_notes'),
+      confirmedAt: i('confirmed_at'),
       closedAt: json['closed_at'] as String?,
       roomDetails: json['room_details'] as Map<String, dynamic>?,
     );

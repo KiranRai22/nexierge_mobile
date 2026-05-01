@@ -8,8 +8,7 @@ import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../domain/models/catalog.dart';
 import '../../../domain/models/ticket.dart';
 import '../../providers/catalog_create_controller.dart';
-import '../../providers/universal_create_controller.dart' show
-    availableRoomsProvider;
+import '../../providers/ticket_form_options_provider.dart';
 import '../../screens/create_screen.dart' show formatMoney;
 
 /// Confirm Ticket bottom sheet shown before submission.
@@ -39,7 +38,7 @@ class _ConfirmBody extends ConsumerWidget {
     final catalog = draft.catalog;
     if (catalog == null) return const SizedBox.shrink();
 
-    final rooms = ref.watch(availableRoomsProvider);
+    final rooms = ref.watch(apiRoomsProvider);
     final room = draft.selectedRoomId == null
         ? null
         : rooms.firstWhere(

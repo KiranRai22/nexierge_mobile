@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nexierge/core/theme/unified_theme_manager.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
@@ -7,12 +8,15 @@ import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
+import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/catalog.dart';
 import '../providers/catalog_create_controller.dart';
 import '../providers/manual_create_controller.dart';
+import '../providers/ticket_form_options_provider.dart';
 import '../providers/universal_create_controller.dart';
 import '../widgets/create/catalog_customizer_sheet.dart';
 import '../widgets/create/confirm_ticket_sheet.dart';
+import '../widgets/create/department_picker_sheet.dart';
 import '../widgets/create/room_picker_sheet.dart';
 
 /// Initial tab shown when opening the create flow.
@@ -87,18 +91,21 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    // Pre-warm rooms+departments fetch on entry so the room picker / dept
+    // dropdown have data ready by the time the user reaches them.
+    ref.watch(ticketFormOptionsProvider);
     final universalStep = ref.watch(
       universalDraftControllerProvider.select((d) => d.step),
     );
     final catalogDraft = ref.watch(catalogDraftControllerProvider);
-    final showCustom = _tabs.index == 0 &&
-        universalStep == UniversalStep.selectItems;
+    final showCustom =
+        _tabs.index == 0 && universalStep == UniversalStep.selectItems;
     final isUniversalDetails =
         _tabs.index == 0 && universalStep == UniversalStep.fillDetails;
-    final isCatalogDetails = _tabs.index == 1 &&
-        catalogDraft.step == CatalogStep.fillDetails;
-    final isCatalogItems = _tabs.index == 1 &&
-        catalogDraft.step == CatalogStep.selectItems;
+    final isCatalogDetails =
+        _tabs.index == 1 && catalogDraft.step == CatalogStep.fillDetails;
+    final isCatalogItems =
+        _tabs.index == 1 && catalogDraft.step == CatalogStep.selectItems;
 
     return Scaffold(
       backgroundColor: ColorPalette.opsSurface,
@@ -932,7 +939,7 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
         .read(universalDraftControllerProvider.notifier)
         .submit();
     if (id == null || !mounted) return;
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(true);
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(context.l10n.createSuccessToast)));
@@ -943,7 +950,7 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
     final s = context.l10n;
     final draft = ref.watch(universalDraftControllerProvider);
     final ctl = ref.read(universalDraftControllerProvider.notifier);
-    final rooms = ref.watch(availableRoomsProvider);
+    final rooms = ref.watch(apiRoomsProvider);
     final selectedRoom = draft.selectedRoomId == null
         ? null
         : rooms.firstWhere(
@@ -1387,12 +1394,15 @@ class _CatalogTabBody extends ConsumerWidget {
       transitionBuilder: (child, anim) =>
           FadeTransition(opacity: anim, child: child),
       child: switch (step) {
-        CatalogStep.selectCatalog =>
-          const _CatalogStepSelect(key: ValueKey('cat-select')),
-        CatalogStep.selectItems =>
-          const _CatalogStepItems(key: ValueKey('cat-items')),
-        CatalogStep.fillDetails =>
-          const _CatalogStepDetailsPlaceholder(key: ValueKey('cat-details')),
+        CatalogStep.selectCatalog => const _CatalogStepSelect(
+          key: ValueKey('cat-select'),
+        ),
+        CatalogStep.selectItems => const _CatalogStepItems(
+          key: ValueKey('cat-items'),
+        ),
+        CatalogStep.fillDetails => const _CatalogStepDetailsPlaceholder(
+          key: ValueKey('cat-details'),
+        ),
       },
     );
   }
@@ -1544,7 +1554,9 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
   Future<void> _onAddOptionedItem(CatalogItem item) async {
     final result = await CatalogCustomizerSheet.show(context, item: item);
     if (result == null) return;
-    ref.read(catalogDraftControllerProvider.notifier).addLine(
+    ref
+        .read(catalogDraftControllerProvider.notifier)
+        .addLine(
           item: item,
           quantity: result.quantity,
           selectedOptions: result.selectedOptions,
@@ -1563,7 +1575,9 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
       ),
     );
     if (result == null) return;
-    ref.read(catalogDraftControllerProvider.notifier).editLine(
+    ref
+        .read(catalogDraftControllerProvider.notifier)
+        .editLine(
           lineId: line.id,
           quantity: result.quantity,
           selectedOptions: result.selectedOptions,
@@ -1575,9 +1589,11 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
     if (_query.isEmpty) return all;
     final q = _query.toLowerCase();
     return all
-        .where((i) =>
-            i.name.toLowerCase().contains(q) ||
-            i.description.toLowerCase().contains(q))
+        .where(
+          (i) =>
+              i.name.toLowerCase().contains(q) ||
+              i.description.toLowerCase().contains(q),
+        )
         .toList(growable: false);
   }
 
@@ -1605,14 +1621,20 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
             style: TypographyManager.bodyMedium,
             decoration: InputDecoration(
               hintText: s.catalogSearchHintNamed(catalog.name),
-              hintStyle: TypographyManager.bodyMedium
-                  .copyWith(color: ColorPalette.textSecondary),
-              prefixIcon: const Icon(Icons.search_rounded,
-                  size: 20, color: ColorPalette.textSecondary),
+              hintStyle: TypographyManager.bodyMedium.copyWith(
+                color: ColorPalette.textSecondary,
+              ),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: ColorPalette.textSecondary,
+              ),
               filled: true,
               fillColor: ColorPalette.opsSurfaceSubtle,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: ColorPalette.opsBorder),
@@ -1704,8 +1726,9 @@ class _CatalogMenuCard extends StatelessWidget {
     final qty = draft.quantityFor(item.id);
     final lines = draft.linesFor(item.id);
     final selected = qty > 0;
-    final priceLabel =
-        item.basePrice == 0 ? s.catalogPriceFree : formatMoney(item.basePrice);
+    final priceLabel = item.basePrice == 0
+        ? s.catalogPriceFree
+        : formatMoney(item.basePrice);
     final showLines = item.hasOptions && lines.isNotEmpty;
 
     return Container(
@@ -1788,8 +1811,7 @@ class _CatalogMenuCard extends StatelessWidget {
           if (showLines) ...[
             const SizedBox(height: 10),
             for (int i = 0; i < lines.length; i++) ...[
-              if (i == 0)
-                Divider(height: 1, color: ColorPalette.opsPurple),
+              if (i == 0) Divider(height: 1, color: ColorPalette.opsPurple),
               Padding(
                 padding: const EdgeInsets.only(top: 8, bottom: 4),
                 child: _CartLineRow(
@@ -1958,11 +1980,7 @@ class _CircleAddButton extends StatelessWidget {
         child: const SizedBox(
           width: 36,
           height: 36,
-          child: Icon(
-            Icons.add_rounded,
-            size: 20,
-            color: ColorPalette.white,
-          ),
+          child: Icon(Icons.add_rounded, size: 20, color: ColorPalette.white),
         ),
       ),
     );
@@ -2170,13 +2188,12 @@ class _CatalogStepDetailsState
   Future<void> _submit() async {
     final confirmed = await ConfirmTicketSheet.show(context);
     if (confirmed != true || !mounted) return;
-    final id =
-        await ref.read(catalogDraftControllerProvider.notifier).submit();
+    final id = await ref.read(catalogDraftControllerProvider.notifier).submit();
     if (id == null || !mounted) return;
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.createSuccessToast)),
-    );
+    Navigator.of(context).pop(true);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.createSuccessToast)));
   }
 
   @override
@@ -2187,7 +2204,7 @@ class _CatalogStepDetailsState
     final catalog = draft.catalog;
     if (catalog == null) return const SizedBox.shrink();
 
-    final rooms = ref.watch(availableRoomsProvider);
+    final rooms = ref.watch(apiRoomsProvider);
     final selectedRoom = draft.selectedRoomId == null
         ? null
         : rooms.firstWhere(
@@ -2202,10 +2219,7 @@ class _CatalogStepDetailsState
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             children: [
-              _CatalogSummaryCard(
-                draft: draft,
-                onEdit: ctl.backToItems,
-              ),
+              _CatalogSummaryCard(draft: draft, onEdit: ctl.backToItems),
               const SizedBox(height: 16),
 
               // Room + Guest row
@@ -2220,19 +2234,16 @@ class _CatalogStepDetailsState
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
-                            final picked =
-                                await RoomPickerSheet.show(context);
+                            final picked = await RoomPickerSheet.show(context);
                             if (picked != null) ctl.selectRoom(picked);
                           },
                           child: Container(
                             height: 48,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
                               color: ColorPalette.opsSurfaceSubtle,
                               borderRadius: BorderRadius.circular(10),
-                              border:
-                                  Border.all(color: ColorPalette.opsBorder),
+                              border: Border.all(color: ColorPalette.opsBorder),
                             ),
                             child: Row(
                               children: [
@@ -2243,17 +2254,19 @@ class _CatalogStepDetailsState
                                         : s.roomPickerTitle,
                                     style: TypographyManager.bodyMedium
                                         .copyWith(
-                                      color: selectedRoom != null
-                                          ? ColorPalette.textPrimary
-                                          : ColorPalette.textSecondary,
-                                    ),
+                                          color: selectedRoom != null
+                                              ? ColorPalette.textPrimary
+                                              : ColorPalette.textSecondary,
+                                        ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const Icon(Icons.chevron_right_rounded,
-                                    size: 16,
-                                    color: ColorPalette.textSecondary),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 16,
+                                  color: ColorPalette.textSecondary,
+                                ),
                               ],
                             ),
                           ),
@@ -2266,8 +2279,10 @@ class _CatalogStepDetailsState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _FieldLabel(s.createGuestOptionalLabel,
-                            required: false),
+                        _FieldLabel(
+                          s.createGuestOptionalLabel,
+                          required: false,
+                        ),
                         const SizedBox(height: 6),
                         TextField(
                           controller: _guestCtl,
@@ -2275,9 +2290,11 @@ class _CatalogStepDetailsState
                           style: TypographyManager.bodyMedium,
                           decoration: _catalogInput(
                             hint: s.createGuestHint,
-                            prefixIcon: const Icon(Icons.person_outline,
-                                size: 18,
-                                color: ColorPalette.textSecondary),
+                            prefixIcon: const Icon(
+                              Icons.person_outline,
+                              size: 18,
+                              color: ColorPalette.textSecondary,
+                            ),
                           ),
                         ),
                       ],
@@ -2296,10 +2313,7 @@ class _CatalogStepDetailsState
               // Source chips
               _FieldLabel(s.createSourceLabel, required: true),
               const SizedBox(height: 8),
-              _SourceChips(
-                selected: draft.source,
-                onSelect: ctl.setSource,
-              ),
+              _SourceChips(selected: draft.source, onSelect: ctl.setSource),
               const SizedBox(height: 16),
 
               // Notes
@@ -2329,13 +2343,13 @@ class _CatalogStepDetailsState
 InputDecoration _catalogInput({required String hint, Widget? prefixIcon}) {
   return InputDecoration(
     hintText: hint,
-    hintStyle: TypographyManager.bodyMedium
-        .copyWith(color: ColorPalette.textSecondary),
+    hintStyle: TypographyManager.bodyMedium.copyWith(
+      color: ColorPalette.textSecondary,
+    ),
     prefixIcon: prefixIcon,
     filled: true,
     fillColor: ColorPalette.opsSurfaceSubtle,
-    contentPadding:
-        const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
       borderSide: BorderSide(color: ColorPalette.opsBorder),
@@ -2393,8 +2407,10 @@ class _CatalogSummaryCard extends StatelessWidget {
                     border: Border.all(color: ColorPalette.opsBorder),
                   ),
                   alignment: Alignment.center,
-                  child: Text(catalog.emoji,
-                      style: const TextStyle(fontSize: 16)),
+                  child: Text(
+                    catalog.emoji,
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -2434,8 +2450,11 @@ class _CatalogSummaryCard extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded,
-                          size: 16, color: ColorPalette.opsPurpleDark),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: ColorPalette.opsPurpleDark,
+                      ),
                     ],
                   ),
                 ),
@@ -2581,10 +2600,12 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorPalette.opsPurple,
                 foregroundColor: ColorPalette.white,
-                disabledBackgroundColor:
-                    ColorPalette.opsPurple.withValues(alpha: 0.4),
-                disabledForegroundColor:
-                    ColorPalette.white.withValues(alpha: 0.85),
+                disabledBackgroundColor: ColorPalette.opsPurple.withValues(
+                  alpha: 0.4,
+                ),
+                disabledForegroundColor: ColorPalette.white.withValues(
+                  alpha: 0.85,
+                ),
                 minimumSize: const Size.fromHeight(50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -2599,8 +2620,9 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.4,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(ColorPalette.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          ColorPalette.white,
+                        ),
                       ),
                     )
                   : Text(s.createTicketCta),
@@ -2648,7 +2670,7 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
   Future<void> _submit() async {
     final id = await ref.read(manualDraftControllerProvider.notifier).submit();
     if (id == null || !mounted) return;
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(true);
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(context.l10n.createSuccessToast)));
@@ -2659,7 +2681,7 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
     final s = context.l10n;
     final draft = ref.watch(manualDraftControllerProvider);
     final ctl = ref.read(manualDraftControllerProvider.notifier);
-    final rooms = ref.watch(availableRoomsProvider);
+    final rooms = ref.watch(apiRoomsProvider);
     final selectedRoom = draft.selectedRoomId == null
         ? null
         : rooms.firstWhere(
@@ -2769,10 +2791,10 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
               ),
               const SizedBox(height: 16),
 
-              // Department dropdown
+              // Department picker
               _FieldLabel(s.createDepartmentLabel, required: true),
               const SizedBox(height: 6),
-              _DepartmentDropdown(
+              _DepartmentField(
                 value: draft.department,
                 onChanged: ctl.setDepartment,
                 hint: s.createDepartmentHint,
@@ -2859,51 +2881,64 @@ class _FieldLabel extends StatelessWidget {
   }
 }
 
-class _DepartmentDropdown extends StatelessWidget {
-  final Department? value;
-  final ValueChanged<Department> onChanged;
+class _DepartmentField extends ConsumerWidget {
+  final HotelDepartment? value;
+  final ValueChanged<HotelDepartment> onChanged;
   final String hint;
-  const _DepartmentDropdown({
+  const _DepartmentField({
     required this.value,
     required this.onChanged,
     required this.hint,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final s = context.l10n;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: ColorPalette.opsSurfaceSubtle,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ColorPalette.opsBorder),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<Department>(
-          value: value,
-          isExpanded: true,
-          hint: Text(
-            hint,
-            style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.textSecondary,
-            ),
-          ),
-          style: TypographyManager.bodyMedium.copyWith(
-            color: ColorPalette.textPrimary,
-          ),
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: ColorPalette.textSecondary,
-          ),
-          dropdownColor: ColorPalette.opsSurface,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.themeColors;
+    final asyncOptions = ref.watch(ticketFormOptionsProvider);
+    final depts = asyncOptions.maybeWhen(
+      data: (o) => o.departments,
+      orElse: () => const <HotelDepartment>[],
+    );
+    final isLoading = asyncOptions.isLoading && depts.isEmpty;
+
+    return GestureDetector(
+      onTap: isLoading
+          ? null
+          : () async {
+              final pickedId = await DepartmentPickerSheet.show(context);
+              if (pickedId != null) {
+                final picked = depts.firstWhere((d) => d.id == pickedId);
+                onChanged(picked);
+              }
+            },
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: c.bgField,
           borderRadius: BorderRadius.circular(10),
-          items: Department.values
-              .map((d) => DropdownMenuItem(value: d, child: Text(d.label(s))))
-              .toList(),
-          onChanged: (d) {
-            if (d != null) onChanged(d);
-          },
+          border: Border.all(color: c.borderBase),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                value?.name ?? (isLoading ? '${context.l10n.loading} ' : hint),
+                style: TypographyManager.bodyMedium.copyWith(
+                  color: value != null ? c.fgBase : c.fgSubtle,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(Icons.chevron_right_rounded, color: c.fgMuted, size: 18),
+          ],
         ),
       ),
     );

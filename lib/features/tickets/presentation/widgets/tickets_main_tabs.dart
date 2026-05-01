@@ -24,11 +24,11 @@ class TicketsMainTabs extends StatelessWidget {
     final s = context.l10n;
 
     return Container(
-      height: 44,
-      padding: const EdgeInsets.all(4),
+      height: 40,
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: c.bgSubtle,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: TicketsMainTab.values.map((tab) {
@@ -80,23 +80,12 @@ class _TabItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
+      child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
           color: isSelected ? c.bgComponent : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -109,17 +98,28 @@ class _TabItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TypographyManager.tabText.copyWith(
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 12,
                   color: isSelected ? c.fgBase : c.fgMuted,
                 ),
               ),
             ),
             if (count > 0) ...[
-              const SizedBox(width: 6),
-              Text(
-                count.toString(),
-                style: TypographyManager.labelSmall.copyWith(
-                  color: isSelected ? c.fgMuted : c.fgDisabled,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 4),
+              Container(
+                width: 18,
+                height: 18,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isSelected ? c.tagPurpleBg : c.borderBase,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  count > 99 ? '99+' : count.toString(),
+                  style: TypographyManager.labelSmall.copyWith(
+                    fontSize: 9,
+                    color: isSelected ? c.tagPurpleText : c.fgMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],

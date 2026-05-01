@@ -7,7 +7,6 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../shell/presentation/widgets/app_bottom_nav.dart';
-import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../providers/my_tickets_list_controller.dart';
@@ -134,13 +133,20 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
               ),
             ),
 
-            // Title row: Department Switcher + filter button
+            // Title row: All Tickets + filter button
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Row(
                 children: [
-                  // Department title (switcher ready when multi-dept support added)
-                  _DepartmentTitle(dept: session.homeDepartment),
+                  // Title should always be "All Tickets"
+                  Text(
+                    context.l10n.navTickets,
+                    style: TypographyManager.headlineSmall.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 24,
+                      color: c.fgBase,
+                    ),
+                  ),
                   const Spacer(),
                   // Funnel filter button in circle
                   Semantics(
@@ -189,7 +195,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
 
             // Filter chips based on selected main tab
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
               child: TicketsFilterChips(
                 selectedTab: mainTab,
                 selectedFilter: selectedFilter,
@@ -234,27 +240,6 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
       return const _LoadingList();
     }
     return _TicketsList(view: view, mainTab: mainTab);
-  }
-}
-
-class _DepartmentTitle extends StatelessWidget {
-  final Department dept;
-
-  const _DepartmentTitle({required this.dept});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    final s = context.l10n;
-
-    return Text(
-      dept.label(s),
-      style: TypographyManager.headlineSmall.copyWith(
-        fontWeight: FontWeight.w800,
-        fontSize: 24,
-        color: c.fgBase,
-      ),
-    );
   }
 }
 
