@@ -606,7 +606,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createNewSubtitle => 'What kind of ticket are you creating?';
 
   @override
-  String get createUniversalTitle => 'Universal request';
+  String get createUniversalTitle => 'Universal';
 
   @override
   String get createUniversalDesc =>
@@ -620,7 +620,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Room service, spa, bar — anything a guest is paying for';
 
   @override
-  String get createManualTitle => 'Manual ticket';
+  String get createManualTitle => 'Manual';
 
   @override
   String get createManualDesc =>
@@ -630,7 +630,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createHint => 'Not sure? Manual works for anything.';
 
   @override
-  String get universalHeading => 'Universal request';
+  String get universalHeading => 'Universal';
 
   @override
   String get universalSubheading => 'Tap what you need';
@@ -1170,4 +1170,270 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileUpdateNameFailed => 'Failed to update name';
+
+  @override
+  String get createSearchHint => 'Search requests...';
+
+  @override
+  String get createCustomButton => '+ Custom';
+
+  @override
+  String get createCatalogNavTitle => 'Catalog';
+
+  @override
+  String get createManualNavTitle => 'Create ticket';
+
+  @override
+  String get createCatalogSelectHeading => 'Select a catalog';
+
+  @override
+  String get createCatalogSelectSubheading =>
+      'Choose from your hotel\'s service catalogs';
+
+  @override
+  String createCatalogItemCount(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get catalogRestaurantName => 'Hotel Restaurant';
+
+  @override
+  String get catalogRestaurantDesc =>
+      'Full-service hotel kitchen — breakfast, mains, drinks';
+
+  @override
+  String get catalogRoomServiceName => 'Room Service';
+
+  @override
+  String get catalogRoomServiceDesc =>
+      'In-room amenities, late-night essentials';
+
+  @override
+  String get createSummaryLabel => 'Summary';
+
+  @override
+  String get createSummaryHint => 'Describe the request...';
+
+  @override
+  String get createGuestOptionalLabel => 'Guest (optional)';
+
+  @override
+  String get createGuestHint => 'Guest name...';
+
+  @override
+  String get createDepartmentLabel => 'Department';
+
+  @override
+  String get createDepartmentHint => 'Select department...';
+
+  @override
+  String get createSourceLabel => 'Source';
+
+  @override
+  String get createSourceWhatsApp => 'WhatsApp';
+
+  @override
+  String get createSourcePhone => 'Phone';
+
+  @override
+  String get createSourceFrontDesk => 'Front Desk';
+
+  @override
+  String get createSourceInPerson => 'In-Person';
+
+  @override
+  String get createSourceInternal => 'Internal';
+
+  @override
+  String get createNotesOptionalLabel => 'Notes (optional)';
+
+  @override
+  String get createNotesHint => 'Any special instructions or context...';
+
+  @override
+  String get createTicketCta => 'Create Ticket';
+
+  @override
+  String get createRoomLabel => 'Room';
+
+  @override
+  String get itemExtraTowels => 'Extra towels';
+
+  @override
+  String get itemExtraPillows => 'Extra pillows';
+
+  @override
+  String get itemToiletriesKit => 'Toiletries kit';
+
+  @override
+  String get itemExtraBlanket => 'Extra blanket';
+
+  @override
+  String get itemRoomCleaning => 'Room cleaning';
+
+  @override
+  String get itemWaterBottles => 'Water bottles';
+
+  @override
+  String get itemIceBucket => 'Ice bucket';
+
+  @override
+  String get itemConciergeHelp => 'Concierge help';
+
+  @override
+  String get itemClimateControl => 'Climate control';
+
+  @override
+  String get itemLightFixture => 'Light fixture';
+
+  @override
+  String get itemPlumbingIssue => 'Plumbing issue';
+
+  @override
+  String get categoryHousekeeping => 'Housekeeping';
+
+  @override
+  String get categoryFnb => 'F&B';
+
+  @override
+  String get categoryFrontDesk => 'Front Desk';
+
+  @override
+  String get categoryMaintenance => 'Maintenance';
+
+  @override
+  String createSelectionBarSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count requests selected',
+      one: '1 request selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get createSelectionBarClearAll => 'Clear all';
+
+  @override
+  String createContinueCta(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return 'Continue · $_temp0';
+  }
+
+  @override
+  String get createTicketHeading => 'Create ticket';
+
+  @override
+  String createSummaryCardTitle(int requests, int items) {
+    String _temp0 = intl.Intl.pluralLogic(
+      requests,
+      locale: localeName,
+      other: '$requests REQUESTS',
+      one: '1 REQUEST',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items ITEMS',
+      one: '1 ITEM',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get createSummaryEdit => 'Edit';
+
+  @override
+  String get createDepartmentAuto => 'AUTO';
+
+  @override
+  String get createTicketRoomRequiredHint => 'Select a room to continue';
+
+  @override
+  String catalogSearchHintNamed(String name) {
+    return 'Search $name…';
+  }
+
+  @override
+  String get catalogAvailableSection => 'AVAILABLE';
+
+  @override
+  String get catalogPriceFree => 'Free';
+
+  @override
+  String catalogCartSubtitle(int items, String total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      items,
+      locale: localeName,
+      other: '$items items',
+      one: '1 item',
+    );
+    return '$_temp0 · $total';
+  }
+
+  @override
+  String catalogPrice(String amount) {
+    return '$amount';
+  }
+
+  @override
+  String get catalogTagRequired => 'REQUIRED';
+
+  @override
+  String get catalogTagOptional => 'OPTIONAL';
+
+  @override
+  String get catalogItemTotalLabel => 'Item total';
+
+  @override
+  String get catalogAddToOrderCta => 'Add to Order';
+
+  @override
+  String catalogPickRequiredHint(String groupName) {
+    return 'Pick a $groupName';
+  }
+
+  @override
+  String catalogLineLabel(int index, String summary) {
+    return '#$index · $summary';
+  }
+
+  @override
+  String get confirmTicketTitle => 'Confirm ticket';
+
+  @override
+  String get confirmTicketRowCatalog => 'CATALOG';
+
+  @override
+  String get confirmTicketRowDepartment => 'DEPARTMENT';
+
+  @override
+  String get confirmTicketRowRoom => 'ROOM';
+
+  @override
+  String get confirmTicketRowGuest => 'GUEST';
+
+  @override
+  String get confirmTicketRowSource => 'SOURCE';
+
+  @override
+  String get confirmTicketRowTotal => 'TOTAL';
+
+  @override
+  String get confirmTicketRowNotes => 'NOTES';
+
+  @override
+  String confirmTicketItemsHeading(int count) {
+    return 'ITEMS ($count)';
+  }
+
+  @override
+  String get confirmTicketCta => 'Confirm';
 }

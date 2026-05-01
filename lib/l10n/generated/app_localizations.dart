@@ -1211,7 +1211,7 @@ abstract class AppLocalizations {
   /// No description provided for @createUniversalTitle.
   ///
   /// In en, this message translates to:
-  /// **'Universal request'**
+  /// **'Universal'**
   String get createUniversalTitle;
 
   /// No description provided for @createUniversalDesc.
@@ -1235,7 +1235,7 @@ abstract class AppLocalizations {
   /// No description provided for @createManualTitle.
   ///
   /// In en, this message translates to:
-  /// **'Manual ticket'**
+  /// **'Manual'**
   String get createManualTitle;
 
   /// No description provided for @createManualDesc.
@@ -1253,7 +1253,7 @@ abstract class AppLocalizations {
   /// No description provided for @universalHeading.
   ///
   /// In en, this message translates to:
-  /// **'Universal request'**
+  /// **'Universal'**
   String get universalHeading;
 
   /// No description provided for @universalSubheading.
@@ -2179,6 +2179,432 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to update name'**
   String get profileUpdateNameFailed;
+
+  /// No description provided for @createSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search requests...'**
+  String get createSearchHint;
+
+  /// No description provided for @createCustomButton.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Custom'**
+  String get createCustomButton;
+
+  /// No description provided for @createCatalogNavTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog'**
+  String get createCatalogNavTitle;
+
+  /// No description provided for @createManualNavTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create ticket'**
+  String get createManualNavTitle;
+
+  /// No description provided for @createCatalogSelectHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a catalog'**
+  String get createCatalogSelectHeading;
+
+  /// No description provided for @createCatalogSelectSubheading.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from your hotel\'s service catalogs'**
+  String get createCatalogSelectSubheading;
+
+  /// No description provided for @createCatalogItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String createCatalogItemCount(int count);
+
+  /// No description provided for @catalogRestaurantName.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotel Restaurant'**
+  String get catalogRestaurantName;
+
+  /// No description provided for @catalogRestaurantDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Full-service hotel kitchen — breakfast, mains, drinks'**
+  String get catalogRestaurantDesc;
+
+  /// No description provided for @catalogRoomServiceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Room Service'**
+  String get catalogRoomServiceName;
+
+  /// No description provided for @catalogRoomServiceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'In-room amenities, late-night essentials'**
+  String get catalogRoomServiceDesc;
+
+  /// No description provided for @createSummaryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get createSummaryLabel;
+
+  /// No description provided for @createSummaryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the request...'**
+  String get createSummaryHint;
+
+  /// No description provided for @createGuestOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest (optional)'**
+  String get createGuestOptionalLabel;
+
+  /// No description provided for @createGuestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest name...'**
+  String get createGuestHint;
+
+  /// No description provided for @createDepartmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Department'**
+  String get createDepartmentLabel;
+
+  /// No description provided for @createDepartmentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select department...'**
+  String get createDepartmentHint;
+
+  /// No description provided for @createSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get createSourceLabel;
+
+  /// No description provided for @createSourceWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp'**
+  String get createSourceWhatsApp;
+
+  /// No description provided for @createSourcePhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get createSourcePhone;
+
+  /// No description provided for @createSourceFrontDesk.
+  ///
+  /// In en, this message translates to:
+  /// **'Front Desk'**
+  String get createSourceFrontDesk;
+
+  /// No description provided for @createSourceInPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'In-Person'**
+  String get createSourceInPerson;
+
+  /// No description provided for @createSourceInternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Internal'**
+  String get createSourceInternal;
+
+  /// No description provided for @createNotesOptionalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes (optional)'**
+  String get createNotesOptionalLabel;
+
+  /// No description provided for @createNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Any special instructions or context...'**
+  String get createNotesHint;
+
+  /// No description provided for @createTicketCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Ticket'**
+  String get createTicketCta;
+
+  /// No description provided for @createRoomLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get createRoomLabel;
+
+  /// No description provided for @itemExtraTowels.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra towels'**
+  String get itemExtraTowels;
+
+  /// No description provided for @itemExtraPillows.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra pillows'**
+  String get itemExtraPillows;
+
+  /// No description provided for @itemToiletriesKit.
+  ///
+  /// In en, this message translates to:
+  /// **'Toiletries kit'**
+  String get itemToiletriesKit;
+
+  /// No description provided for @itemExtraBlanket.
+  ///
+  /// In en, this message translates to:
+  /// **'Extra blanket'**
+  String get itemExtraBlanket;
+
+  /// No description provided for @itemRoomCleaning.
+  ///
+  /// In en, this message translates to:
+  /// **'Room cleaning'**
+  String get itemRoomCleaning;
+
+  /// No description provided for @itemWaterBottles.
+  ///
+  /// In en, this message translates to:
+  /// **'Water bottles'**
+  String get itemWaterBottles;
+
+  /// No description provided for @itemIceBucket.
+  ///
+  /// In en, this message translates to:
+  /// **'Ice bucket'**
+  String get itemIceBucket;
+
+  /// No description provided for @itemConciergeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Concierge help'**
+  String get itemConciergeHelp;
+
+  /// No description provided for @itemClimateControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Climate control'**
+  String get itemClimateControl;
+
+  /// No description provided for @itemLightFixture.
+  ///
+  /// In en, this message translates to:
+  /// **'Light fixture'**
+  String get itemLightFixture;
+
+  /// No description provided for @itemPlumbingIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Plumbing issue'**
+  String get itemPlumbingIssue;
+
+  /// No description provided for @categoryHousekeeping.
+  ///
+  /// In en, this message translates to:
+  /// **'Housekeeping'**
+  String get categoryHousekeeping;
+
+  /// No description provided for @categoryFnb.
+  ///
+  /// In en, this message translates to:
+  /// **'F&B'**
+  String get categoryFnb;
+
+  /// No description provided for @categoryFrontDesk.
+  ///
+  /// In en, this message translates to:
+  /// **'Front Desk'**
+  String get categoryFrontDesk;
+
+  /// No description provided for @categoryMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Maintenance'**
+  String get categoryMaintenance;
+
+  /// No description provided for @createSelectionBarSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 request selected} other{{count} requests selected}}'**
+  String createSelectionBarSelected(int count);
+
+  /// No description provided for @createSelectionBarClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get createSelectionBarClearAll;
+
+  /// No description provided for @createContinueCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue · {count, plural, one{1 item} other{{count} items}}'**
+  String createContinueCta(int count);
+
+  /// No description provided for @createTicketHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Create ticket'**
+  String get createTicketHeading;
+
+  /// No description provided for @createSummaryCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{requests, plural, one{1 REQUEST} other{{requests} REQUESTS}} · {items, plural, one{1 ITEM} other{{items} ITEMS}}'**
+  String createSummaryCardTitle(int requests, int items);
+
+  /// No description provided for @createSummaryEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get createSummaryEdit;
+
+  /// No description provided for @createDepartmentAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'AUTO'**
+  String get createDepartmentAuto;
+
+  /// No description provided for @createTicketRoomRequiredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a room to continue'**
+  String get createTicketRoomRequiredHint;
+
+  /// No description provided for @catalogSearchHintNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Search {name}…'**
+  String catalogSearchHintNamed(String name);
+
+  /// No description provided for @catalogAvailableSection.
+  ///
+  /// In en, this message translates to:
+  /// **'AVAILABLE'**
+  String get catalogAvailableSection;
+
+  /// No description provided for @catalogPriceFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get catalogPriceFree;
+
+  /// No description provided for @catalogCartSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{items, plural, one{1 item} other{{items} items}} · {total}'**
+  String catalogCartSubtitle(int items, String total);
+
+  /// No description provided for @catalogPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount}'**
+  String catalogPrice(String amount);
+
+  /// No description provided for @catalogTagRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'REQUIRED'**
+  String get catalogTagRequired;
+
+  /// No description provided for @catalogTagOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'OPTIONAL'**
+  String get catalogTagOptional;
+
+  /// No description provided for @catalogItemTotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item total'**
+  String get catalogItemTotalLabel;
+
+  /// No description provided for @catalogAddToOrderCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Order'**
+  String get catalogAddToOrderCta;
+
+  /// No description provided for @catalogPickRequiredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a {groupName}'**
+  String catalogPickRequiredHint(String groupName);
+
+  /// No description provided for @catalogLineLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'#{index} · {summary}'**
+  String catalogLineLabel(int index, String summary);
+
+  /// No description provided for @confirmTicketTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm ticket'**
+  String get confirmTicketTitle;
+
+  /// No description provided for @confirmTicketRowCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'CATALOG'**
+  String get confirmTicketRowCatalog;
+
+  /// No description provided for @confirmTicketRowDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'DEPARTMENT'**
+  String get confirmTicketRowDepartment;
+
+  /// No description provided for @confirmTicketRowRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'ROOM'**
+  String get confirmTicketRowRoom;
+
+  /// No description provided for @confirmTicketRowGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'GUEST'**
+  String get confirmTicketRowGuest;
+
+  /// No description provided for @confirmTicketRowSource.
+  ///
+  /// In en, this message translates to:
+  /// **'SOURCE'**
+  String get confirmTicketRowSource;
+
+  /// No description provided for @confirmTicketRowTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'TOTAL'**
+  String get confirmTicketRowTotal;
+
+  /// No description provided for @confirmTicketRowNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'NOTES'**
+  String get confirmTicketRowNotes;
+
+  /// No description provided for @confirmTicketItemsHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'ITEMS ({count})'**
+  String confirmTicketItemsHeading(int count);
+
+  /// No description provided for @confirmTicketCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmTicketCta;
 }
 
 class _AppLocalizationsDelegate

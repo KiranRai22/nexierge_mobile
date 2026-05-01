@@ -13,20 +13,41 @@ enum TicketPriority { p1, p2, p3 }
 
 /// Where the ticket originated — guest call, in-app catalog, walk-in, etc.
 /// Domain enum so display labels stay locale-aware.
-enum TicketSource { guestApp, frontDesk, phone, walkIn, system }
+enum TicketSource { whatsApp, guestApp, frontDesk, phone, walkIn, system }
 
 /// A single requested item line inside a ticket (e.g. *Towels · Bath ×2*).
+/// Catalog lines additionally carry pricing + option summary.
 class RequestItem {
   final String id;
   final String title;
   final String subtitle;
   final int quantity;
 
+  /// Per-unit price (catalog lines). 0 for free items / non-priced flows.
+  final double unitPrice;
+
+  /// Total for this line (unitPrice × quantity). 0 if not priced.
+  final double lineTotal;
+
+  /// Human-readable summary of options, e.g. "Yes, Agege Bread".
+  final String? optionsSummary;
+
+  /// Display index inside its catalog group (#1, #2…). Null for non-catalog.
+  final int? lineIndex;
+
+  /// Emoji for catalog item rendering. Optional.
+  final String? emoji;
+
   const RequestItem({
     required this.id,
     required this.title,
     required this.subtitle,
     required this.quantity,
+    this.unitPrice = 0,
+    this.lineTotal = 0,
+    this.optionsSummary,
+    this.lineIndex,
+    this.emoji,
   });
 }
 

@@ -10,6 +10,17 @@ class NewTicketDraft {
   final String roomId;
   final List<RequestItem> items;
   final String? note;
+  final TicketSource? source;
+  final String? guestName;
+
+  /// Catalog id this draft was built from (catalog flow only).
+  final String? catalogId;
+
+  /// Catalog display name (snapshot at submit time).
+  final String? catalogName;
+
+  /// Total price (sum of item line totals). 0 for non-priced flows.
+  final double total;
 
   const NewTicketDraft({
     required this.title,
@@ -18,6 +29,11 @@ class NewTicketDraft {
     required this.roomId,
     required this.items,
     this.note,
+    this.source,
+    this.guestName,
+    this.catalogId,
+    this.catalogName,
+    this.total = 0,
   });
 }
 
