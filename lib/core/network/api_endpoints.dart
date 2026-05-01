@@ -67,6 +67,8 @@ abstract class APIEndpoints {
 
   // Tickets
   static const String ticketsDetails = '$_host/api:bAt3sLZU/tickets/details';
+  static const String ticketsGetMyTickets =
+      '$_host/api:bAt3sLZU/tickets/get_my_tickets';
 
   // Staff
   static const String staffGetAllHousekeeping =

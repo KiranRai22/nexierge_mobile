@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../dashboard/presentation/screens/dashboard_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../tickets/presentation/providers/my_tickets_notifier.dart';
 import '../../../tickets/presentation/screens/tickets_screen_new.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'create_router.dart';
@@ -38,6 +39,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   void _onSelect(ShellTab tab) {
     if (tab == _current) return;
     setState(() => _current = tab);
+
+    // Track tickets tab active state for API fetching
+    ref.read(ticketsTabActiveProvider.notifier).state = tab == ShellTab.tickets;
   }
 
   Future<void> _onFabPressed() => CreateRouter.openCreate(context, ref);

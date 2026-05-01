@@ -10,6 +10,8 @@ import '../../../shell/presentation/widgets/app_bottom_nav.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
+import '../providers/my_tickets_list_controller.dart';
+import '../providers/my_tickets_notifier.dart';
 import '../providers/session_providers.dart';
 import '../providers/tickets_list_controller.dart';
 import '../providers/tickets_main_tab_provider.dart';
@@ -64,7 +66,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   Future<void> _refresh() async {
     await Future<void>.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
-    ref.invalidate(ticketsListProvider);
+    await ref.read(myTicketsNotifierProvider.notifier).refresh();
   }
 
   void _toggleSearch() {
@@ -81,7 +83,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   Widget build(BuildContext context) {
     final mainTab = ref.watch(ticketsMainTabProvider);
     final selectedFilter = ref.watch(ticketsFilterProvider);
-    final asyncList = ref.watch(ticketsListProvider);
+    final asyncList = ref.watch(myTicketsListProvider);
     final userProfile = ref.watch(userProfileProvider);
     final session = ref.watch(operatorSessionProvider);
     final themeMode =
@@ -91,7 +93,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
     final c = context.themeColors;
 
     // Calculate counts for each main tab
-    final counts = _calculateTabCounts(asyncList.valueOrNull);
+    final counts = _calculateTabCounts(asyncList);
 
     // Use user profile data if available, fallback to session data
     final displayName = userProfile?.firstName != null
@@ -201,11 +203,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
               child: RefreshIndicator(
                 onRefresh: _refresh,
                 color: c.tagPurpleIcon,
-                child: asyncList.when(
-                  data: (v) => _TicketsList(view: v, mainTab: mainTab),
-                  loading: () => const _LoadingList(),
-                  error: (e, st) => _ErrorView(error: e.toString()),
-                ),
+                child: _buildList(asyncList, mainTab),
               ),
             ),
           ],
@@ -229,6 +227,13 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
 
   void _showFilterSheet(BuildContext context) {
     FilterDepartmentSheet.show(context);
+  }
+
+  Widget _buildList(TicketsListView? view, TicketsMainTab mainTab) {
+    if (view == null) {
+      return const _LoadingList();
+    }
+    return _TicketsList(view: view, mainTab: mainTab);
   }
 }
 
