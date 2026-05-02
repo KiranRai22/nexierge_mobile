@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_endpoints.dart';
@@ -9,6 +10,9 @@ abstract class TicketRemoteDataSource {
   Future<List<MyTicketDto>> getMyTickets({required String hotelId});
   Future<TicketFormOptionsDto> getDepartmentsAndRooms({
     required String hotelId,
+  });
+  Future<CreateManualTicketResponseDto> createManualTicket({
+    required CreateManualTicketRequestDto request,
   });
 }
 
@@ -61,6 +65,21 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
         .map((e) => MyTicketDto.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  @override
+  Future<CreateManualTicketResponseDto> createManualTicket({
+    required CreateManualTicketRequestDto request,
+  }) async {
+    final payload = request.toJson();
+    debugPrint('[TicketRemoteDataSource] createManualTicket payload: $payload');
+    final res = await _dio.post(APIEndpoints.ticketsManual, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] createManualTicket response: ${res.data}',
+    );
+    return CreateManualTicketResponseDto.fromJson(
+      res.data as Map<String, dynamic>,
+    );
+  }
 }
 
 final ticketRemoteDataSourceProvider = Provider<TicketRemoteDataSource>((ref) {
@@ -94,9 +113,7 @@ class DepartmentDto {
 
   factory DepartmentDto.fromJson(Map<String, dynamic> json) {
     return DepartmentDto(
-      id: (json['department_id'] as String?) ??
-          (json['id'] as String?) ??
-          '',
+      id: (json['department_id'] as String?) ?? (json['id'] as String?) ?? '',
       name: (json['name'] as String?) ?? '',
     );
   }
@@ -216,6 +233,64 @@ class MyTicketDto {
       confirmedAt: i('confirmed_at'),
       closedAt: json['closed_at'] as String?,
       roomDetails: json['room_details'] as Map<String, dynamic>?,
+    );
+  }
+}
+
+/// Request DTO for POST /tickets/manual
+class CreateManualTicketRequestDto {
+  final String? hotelId;
+  final bool createdByAi;
+  final String? departmentId;
+  final String? guestStayId;
+  final String? contactId;
+  final String? hotelDepartmentId;
+  final String summary;
+  final String details;
+
+  CreateManualTicketRequestDto({
+    this.hotelId,
+    this.createdByAi = false,
+    this.departmentId,
+    this.guestStayId,
+    this.contactId,
+    this.hotelDepartmentId,
+    required this.summary,
+    required this.details,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'hotel_id': hotelId,
+      'created_by_ai': createdByAi,
+      'department_id': departmentId,
+      'guest_stay_id': guestStayId,
+      'contact_id': contactId,
+      'hotel_department_id': hotelDepartmentId,
+      'summary': summary,
+      'details': details,
+    };
+  }
+}
+
+/// Response DTO for POST /tickets/manual
+/// Returns created ticket ID and success flag.
+class CreateManualTicketResponseDto {
+  final String? ticketId;
+  final bool success;
+  final String? message;
+
+  CreateManualTicketResponseDto({
+    this.ticketId,
+    required this.success,
+    this.message,
+  });
+
+  factory CreateManualTicketResponseDto.fromJson(Map<String, dynamic> json) {
+    return CreateManualTicketResponseDto(
+      ticketId: json['ticket_id'] as String? ?? json['id'] as String?,
+      success: (json['success'] as bool?) ?? true,
+      message: json['message'] as String?,
     );
   }
 }

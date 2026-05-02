@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nexierge/core/theme/unified_theme_manager.dart';
 
+import '../../../../core/error/error_handler.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../domain/entities/ticket_form_options.dart';
@@ -940,9 +942,7 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
         .submit();
     if (id == null || !mounted) return;
     Navigator.of(context).pop(true);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.createSuccessToast)));
+    context.showSuccess(context.l10n.createSuccessToast);
   }
 
   @override
@@ -2191,9 +2191,7 @@ class _CatalogStepDetailsState
     final id = await ref.read(catalogDraftControllerProvider.notifier).submit();
     if (id == null || !mounted) return;
     Navigator.of(context).pop(true);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.createSuccessToast)));
+    context.showSuccess(context.l10n.createSuccessToast);
   }
 
   @override
@@ -2668,12 +2666,23 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
   }
 
   Future<void> _submit() async {
-    final id = await ref.read(manualDraftControllerProvider.notifier).submit();
-    if (id == null || !mounted) return;
-    Navigator.of(context).pop(true);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.createSuccessToast)));
+    try {
+      final id = await ref
+          .read(manualDraftControllerProvider.notifier)
+          .submit();
+      if (id == null || !mounted) {
+        context.showFailure(context.l10n.serverError);
+        return;
+      }
+      Navigator.of(context).pop(true);
+      context.showSuccess(context.l10n.createSuccessToast);
+    } on AppException catch (e) {
+      if (!mounted) return;
+      context.showFailure(e.localizedMessage(context.l10n));
+    } catch (e) {
+      if (!mounted) return;
+      context.showFailure(context.l10n.unknownError);
+    }
   }
 
   @override

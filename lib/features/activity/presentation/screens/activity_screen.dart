@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/language_picker_sheet.dart';
 import '../../../../core/theme/color_palette.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/date_utils.dart';
@@ -60,9 +61,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                     ref.read(themeModeControllerProvider.notifier).toggle(),
                 onLanguageTap: () => LanguagePickerSheet.show(context),
                 onNotifications: () =>
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(s.comingSoonNotifications)),
-                    ),
+                    context.showInfo(s.comingSoonNotifications),
               ),
             ),
             Padding(

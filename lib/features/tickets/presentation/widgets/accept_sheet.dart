@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../shared/widgets/app_toast.dart';
 
 /// Result data when accepting a ticket with ETA selection
 class AcceptETAResult {
@@ -124,7 +125,11 @@ class _AcceptSheetBodyState extends ConsumerState<_AcceptSheetBody> {
     final h24 = int.parse(parts[0]);
     final m = int.parse(parts[1]);
     final period = h24 >= 12 ? 'PM' : 'AM';
-    final h12 = h24 > 12 ? h24 - 12 : h24 == 0 ? 12 : h24;
+    final h12 = h24 > 12
+        ? h24 - 12
+        : h24 == 0
+        ? 12
+        : h24;
     return '$h12:${m.toString().padLeft(2, '0')} $period';
   }
 
@@ -157,8 +162,8 @@ class _AcceptSheetBodyState extends ConsumerState<_AcceptSheetBody> {
       mode: _isLater
           ? 'later'
           : _customTime != null
-              ? 'custom'
-              : 'preset',
+          ? 'custom'
+          : 'preset',
       minutesFromNow: _isLater || _customTime != null ? null : _selectedMinutes,
       customTime: _customTime,
       readyByLabel: _readyByLabel,
@@ -305,9 +310,7 @@ class _TimeChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? c.tagPurpleIcon : c.bgBase,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? c.tagPurpleIcon : c.borderBase,
-          ),
+          border: Border.all(color: selected ? c.tagPurpleIcon : c.borderBase),
         ),
         child: Column(
           children: [
@@ -321,7 +324,9 @@ class _TimeChip extends StatelessWidget {
             Text(
               secondary,
               style: TypographyManager.bodySmall.copyWith(
-                color: selected ? Colors.white.withValues(alpha: 0.8) : c.fgMuted,
+                color: selected
+                    ? Colors.white.withValues(alpha: 0.8)
+                    : c.fgMuted,
               ),
             ),
           ],
@@ -368,9 +373,7 @@ class _CustomTimeChipState extends State<_CustomTimeChip> {
 
       if (pickedMinutes <= nowMinutes) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please pick a time in the future')),
-          );
+          context.showWarning('Please pick a time in the future');
         }
         return;
       }
@@ -411,7 +414,9 @@ class _CustomTimeChipState extends State<_CustomTimeChip> {
                   ? '${_selectedTime!.hour}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
                   : 'Custom',
               style: TypographyManager.bodySmall.copyWith(
-                color: hasSelection ? Colors.white.withValues(alpha: 0.8) : c.fgMuted,
+                color: hasSelection
+                    ? Colors.white.withValues(alpha: 0.8)
+                    : c.fgMuted,
               ),
             ),
           ],
@@ -448,9 +453,7 @@ class _NotificationPreview extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TypographyManager.bodySmall.copyWith(
-                    color: c.fgMuted,
-                  ),
+                  style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
                 ),
                 Text(
                   value,
@@ -515,9 +518,7 @@ class _ConfirmButton extends StatelessWidget {
                 height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    c.fgOnColor,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(c.fgOnColor),
                 ),
               )
             else

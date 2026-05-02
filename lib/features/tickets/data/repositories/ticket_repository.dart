@@ -13,6 +13,19 @@ abstract class TicketRepository {
   Future<TicketDetail> fetchTicketDetails({required String ticketId});
   Future<List<MyTicket>> fetchMyTickets({required String hotelId});
   Future<TicketFormOptions> fetchTicketFormOptions({required String hotelId});
+
+  /// Create manual ticket via API.
+  /// Returns created ticket ID on success.
+  Future<String> createManualTicket({
+    required String hotelId,
+    required String summary,
+    required String details,
+    String? departmentId,
+    String? guestStayId,
+    String? contactId,
+    String? hotelDepartmentId,
+    bool createdByAi = false,
+  });
 }
 
 class _TicketRepositoryImpl implements TicketRepository {
@@ -74,12 +87,11 @@ class _TicketRepositoryImpl implements TicketRepository {
                       id: (dto.roomDetails!['id'] as String?) ?? '',
                       onbRoomNumber:
                           (dto.roomDetails!['onb_room_number'] as String?) ??
-                              '',
-                      floorId:
-                          (dto.roomDetails!['floor_id'] as String?) ?? '',
+                          '',
+                      floorId: (dto.roomDetails!['floor_id'] as String?) ?? '',
                       onbRoomTypeId:
                           (dto.roomDetails!['onb_room_type_id'] as String?) ??
-                              '',
+                          '',
                     )
                   : null,
             ),
@@ -105,9 +117,7 @@ class _TicketRepositoryImpl implements TicketRepository {
       final uniqueRooms = <Room>[];
       for (final r in dto.rooms) {
         if (!seenRoomNumbers.add(r.onbRoomNumber)) continue;
-        uniqueRooms.add(
-          Room(id: r.id, number: r.onbRoomNumber, floor: 0),
-        );
+        uniqueRooms.add(Room(id: r.id, number: r.onbRoomNumber, floor: 0));
       }
       // Sort by room number ascending — numeric when both sides parse,
       // alphabetical otherwise (so e.g. "101" < "102" < "1A" works).
@@ -124,13 +134,44 @@ class _TicketRepositoryImpl implements TicketRepository {
       final uniqueDepartments = <HotelDepartment>[];
       for (final d in dto.departments) {
         if (!seenDeptIds.add(d.id)) continue;
-        uniqueDepartments
-            .add(HotelDepartment.fromName(id: d.id, name: d.name));
+        uniqueDepartments.add(HotelDepartment.fromName(id: d.id, name: d.name));
       }
       return TicketFormOptions(
         departments: uniqueDepartments,
         rooms: uniqueRooms,
       );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<String> createManualTicket({
+    required String hotelId,
+    required String summary,
+    required String details,
+    String? departmentId,
+    String? guestStayId,
+    String? contactId,
+    String? hotelDepartmentId,
+    bool createdByAi = false,
+  }) async {
+    try {
+      final dto = await _remote.createManualTicket(
+        request: CreateManualTicketRequestDto(
+          hotelId: hotelId,
+          summary: summary,
+          details: details,
+          departmentId: departmentId,
+          guestStayId: guestStayId,
+          contactId: contactId,
+          hotelDepartmentId: hotelDepartmentId,
+          createdByAi: createdByAi,
+        ),
+      );
+      return dto.ticketId ?? '';
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/color_palette.dart';
 import '../theme/typography_manager.dart';
+import '../../shared/widgets/app_toast.dart';
 import 'app_locale.dart';
 import 'l10n_extension.dart';
 import 'locale_controller.dart';
@@ -47,8 +48,7 @@ class _LanguageSheetBodyState extends ConsumerState<_LanguageSheetBody> {
   @override
   void initState() {
     super.initState();
-    _draft =
-        ref.read(localeControllerProvider).valueOrNull ?? AppLocale.system;
+    _draft = ref.read(localeControllerProvider).valueOrNull ?? AppLocale.system;
   }
 
   void _select(AppLocale locale) {
@@ -58,19 +58,13 @@ class _LanguageSheetBodyState extends ConsumerState<_LanguageSheetBody> {
 
   Future<void> _apply() async {
     final notifier = ref.read(localeControllerProvider.notifier);
-    final messenger = ScaffoldMessenger.of(context);
     final toastText = context.l10n.languageChangedToast;
     final navigator = Navigator.of(context);
 
     await notifier.set(_draft);
     if (!mounted) return;
     navigator.pop();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(toastText),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    context.showInfo(toastText);
   }
 
   @override
@@ -161,8 +155,7 @@ class _LocaleList extends StatelessWidget {
         return InkWell(
           onTap: () => onSelect(locale),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 Icon(

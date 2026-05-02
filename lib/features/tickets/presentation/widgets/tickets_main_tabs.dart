@@ -27,7 +27,7 @@ class TicketsMainTabs extends StatelessWidget {
       height: 40,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: c.bgSubtle,
+        color: c.borderBase,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -40,6 +40,7 @@ class TicketsMainTabs extends StatelessWidget {
               count: count,
               isSelected: isSelected,
               onTap: () => onChanged(tab),
+              colors: c,
             ),
           );
         }).toList(),
@@ -66,64 +67,70 @@ class _TabItem extends StatelessWidget {
   final int count;
   final bool isSelected;
   final VoidCallback onTap;
+  final AppColors colors;
 
   const _TabItem({
     required this.label,
     required this.count,
     required this.isSelected,
     required this.onTap,
+    required this.colors,
   });
 
   @override
   Widget build(BuildContext context) {
-    final c = context.themeColors;
+    final c = colors;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? c.bgComponent : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TypographyManager.tabText.copyWith(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  fontSize: 12,
-                  color: isSelected ? c.fgBase : c.fgMuted,
-                ),
-              ),
-            ),
-            if (count > 0) ...[
-              const SizedBox(width: 4),
-              Container(
-                width: 18,
-                height: 18,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isSelected ? c.tagPurpleBg : c.borderBase,
-                  shape: BoxShape.circle,
-                ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: isSelected
+              ? BoxDecoration(
+                  color: c.bgBase,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: c.borderBase),
+                )
+              : null,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
                 child: Text(
-                  count > 99 ? '99+' : count.toString(),
-                  style: TypographyManager.labelSmall.copyWith(
-                    fontSize: 9,
-                    color: isSelected ? c.tagPurpleText : c.fgMuted,
-                    fontWeight: FontWeight.w600,
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TypographyManager.tabText.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 12,
+                    color: isSelected ? c.fgBase : c.fgMuted,
                   ),
                 ),
               ),
+              if (count > 0) ...[
+                const SizedBox(width: 4),
+                Container(
+                  width: 18,
+                  height: 18,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected ? c.tagPurpleBg : c.bgSubtle,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    count > 99 ? '99+' : count.toString(),
+                    style: TypographyManager.labelSmall.copyWith(
+                      fontSize: 9,
+                      color: isSelected ? c.tagPurpleText : c.fgMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

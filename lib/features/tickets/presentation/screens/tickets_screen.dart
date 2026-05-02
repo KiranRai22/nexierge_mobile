@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/language_picker_sheet.dart';
 import '../../../../core/theme/color_palette.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../domain/models/ticket.dart';
@@ -43,9 +44,7 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
   }
 
   void _showNotificationsHint(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.comingSoonNotifications)),
-    );
+    context.showInfo(context.l10n.comingSoonNotifications);
   }
 
   Future<void> _refresh() async {
@@ -142,9 +141,17 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: asyncList.when(
                 data: (v) {
-                  final allCount = v.incomingNow.length + v.inProgress.length + v.completedToday.length + v.scheduled.length;
-                  final acceptedCount = v.inProgress.where((t) => t.status == TicketStatus.accepted).length;
-                  final inProgressCount = v.inProgress.where((t) => t.status == TicketStatus.inProgress).length;
+                  final allCount =
+                      v.incomingNow.length +
+                      v.inProgress.length +
+                      v.completedToday.length +
+                      v.scheduled.length;
+                  final acceptedCount = v.inProgress
+                      .where((t) => t.status == TicketStatus.accepted)
+                      .length;
+                  final inProgressCount = v.inProgress
+                      .where((t) => t.status == TicketStatus.inProgress)
+                      .length;
                   final overdueCount = v.kpiOverdue;
                   return SizedBox(
                     height: 40,

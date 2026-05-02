@@ -5,6 +5,7 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../data/services/image_picker_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../providers/user_profile_controller.dart';
@@ -40,7 +41,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (file == null || !mounted) return;
 
     setState(() => _uploadingAvatar = true);
-    final messenger = ScaffoldMessenger.of(context);
     final s = context.l10n;
 
     try {
@@ -48,17 +48,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           .read(userProfileControllerProvider.notifier)
           .updateAvatar(file);
       if (!mounted) return;
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              success
-                  ? s.profileUpdateAvatarSuccess
-                  : s.profileUpdateAvatarFailed,
-            ),
-          ),
-        );
+      if (success) {
+        context.showSuccess(s.profileUpdateAvatarSuccess);
+      } else {
+        context.showFailure(s.profileUpdateAvatarFailed);
+      }
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
@@ -86,7 +80,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (firstName.trim().isEmpty) return;
 
     setState(() => _updatingName = true);
-    final messenger = ScaffoldMessenger.of(context);
     final s = context.l10n;
 
     try {
@@ -94,15 +87,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           .read(userProfileControllerProvider.notifier)
           .updateName(firstName.trim(), lastName.trim());
       if (!mounted) return;
-      messenger
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              success ? s.profileUpdateNameSuccess : s.profileUpdateNameFailed,
-            ),
-          ),
-        );
+      if (success) {
+        context.showSuccess(s.profileUpdateNameSuccess);
+      } else {
+        context.showFailure(s.profileUpdateNameFailed);
+      }
     } finally {
       if (mounted) setState(() => _updatingName = false);
     }

@@ -26,7 +26,7 @@ class TicketsFilterChips extends StatelessWidget {
     final filters = _getFiltersForTab(s, selectedTab);
 
     return SizedBox(
-      height: 32,
+      height: 27,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: filters.map((filter) {
@@ -59,6 +59,7 @@ class TicketsFilterChips extends StatelessWidget {
           _FilterOption('all', s.activityTypeAll),
           _FilterOption('accepted', s.statusAccepted),
           _FilterOption('inprogress', s.statusInProgress),
+          _FilterOption('done', s.statusDone),
         ];
       case TicketsMainTab.scheduled:
         return [
@@ -99,7 +100,7 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
         decoration: BoxDecoration(
           color: isSelected ? c.tagPurpleBg : c.bgSubtle,
           borderRadius: BorderRadius.circular(999),

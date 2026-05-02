@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
+import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
-import '../../domain/repositories/tickets_repository.dart';
-import 'repository_providers.dart';
 
 @immutable
 class ManualDraftState {
@@ -47,8 +47,9 @@ class ManualDraftState {
   }) {
     return ManualDraftState(
       summary: summary ?? this.summary,
-      selectedRoomId:
-          clearRoom ? null : (selectedRoomId ?? this.selectedRoomId),
+      selectedRoomId: clearRoom
+          ? null
+          : (selectedRoomId ?? this.selectedRoomId),
       guestName: guestName ?? this.guestName,
       department: department ?? this.department,
       source: clearSource ? null : (source ?? this.source),
@@ -73,27 +74,28 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
 
   Future<String?> submit() async {
     if (!state.canSubmit) return null;
+
+    // Get hotelId from dashboard bootstrap
+    final bootstrap = ref
+        .read(dashboardBootstrapControllerProvider)
+        .valueOrNull;
+    final hotelId = bootstrap?.userProfile?.hotelDetails.hotel.id;
+    if (hotelId == null || hotelId.isEmpty) {
+      debugPrint('[ManualDraftController] No hotelId from bootstrap');
+      return null;
+    }
+
     state = state.copyWith(submitting: true);
     try {
-      final repo = ref.read(ticketsRepositoryProvider);
-      // Map API HotelDepartment back to the legacy enum so the mock store
-      // (which still types department as Department) accepts the draft.
-      // Backend create endpoint will use department.id directly when wired.
-      final fallback = state.department!.known ?? Department.housekeeping;
-      final ticket = await repo.create(
-        NewTicketDraft(
-          title: state.summary.trim(),
-          kind: TicketKind.manual,
-          department: fallback,
-          roomId: state.selectedRoomId!,
-          items: const [],
-          note: state.notes.trim().isEmpty ? null : state.notes.trim(),
-          source: state.source,
-          guestName:
-              state.guestName.trim().isEmpty ? null : state.guestName.trim(),
-        ),
+      final repo = ref.read(ticketRepositoryProvider);
+      final ticketId = await repo.createManualTicket(
+        hotelId: hotelId,
+        summary: state.summary.trim(),
+        details: state.notes.trim(),
+        departmentId: state.department?.id,
+        guestStayId: state.selectedRoomId,
       );
-      return ticket.id;
+      return ticketId;
     } finally {
       if (ref.exists(manualDraftControllerProvider)) {
         state = state.copyWith(submitting: false);
@@ -104,5 +106,5 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
 
 final manualDraftControllerProvider =
     AutoDisposeNotifierProvider<ManualDraftController, ManualDraftState>(
-  ManualDraftController.new,
-);
+      ManualDraftController.new,
+    );

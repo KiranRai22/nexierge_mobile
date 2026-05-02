@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
+import '../../../../../shared/widgets/app_toast.dart';
 import '../../../domain/models/ticket.dart';
 import '../../providers/ticket_detail_controller.dart';
 import 'eta_bottom_sheet.dart';
@@ -71,10 +72,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   void _onReset() {
     // Soft reset: hide for now; backend wiring lands when status reset is
     // exposed by the repository. Avoids dead UI by giving feedback.
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.comingSoonNotifications)),
-    );
+    context.showInfo(context.l10n.comingSoonNotifications);
   }
 
   @override
