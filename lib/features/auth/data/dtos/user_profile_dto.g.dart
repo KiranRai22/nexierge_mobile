@@ -2,10 +2,14 @@
 
 part of 'user_profile_dto.dart';
 
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
 UserProfileDto _$UserProfileDtoFromJson(Map<String, dynamic> json) =>
     UserProfileDto(
       id: json['id'] as String,
-      createdAt: json['created_at'] as int,
+      createdAt: (json['created_at'] as num).toInt(),
       firstName: json['first_name'] as String,
       lastName: json['last_name'] as String,
       employeeCode: json['employee_code'] as String,
@@ -15,15 +19,20 @@ UserProfileDto _$UserProfileDtoFromJson(Map<String, dynamic> json) =>
       pictureProfile: json['picture_profile'] == null
           ? null
           : PictureProfileDto.fromJson(
-              json['picture_profile'] as Map<String, dynamic>),
+              json['picture_profile'] as Map<String, dynamic>,
+            ),
       userSettings: UserSettingsDto.fromJson(
-          json['user_settings'] as Map<String, dynamic>),
+        json['user_settings'] as Map<String, dynamic>,
+      ),
       hotelDetails: HotelDetailsDto.fromJson(
-          json['hotel_details'] as Map<String, dynamic>),
+        json['hotel_details'] as Map<String, dynamic>,
+      ),
       userHotelStatus: UserHotelStatusDto.fromJson(
-          json['user_hotel_status'] as Map<String, dynamic>),
+        json['user_hotel_status'] as Map<String, dynamic>,
+      ),
       accessControl: AccessControlDto.fromJson(
-          json['access_control'] as Map<String, dynamic>),
+        json['access_control'] as Map<String, dynamic>,
+      ),
     );
 
 Map<String, dynamic> _$UserProfileDtoToJson(UserProfileDto instance) =>
@@ -47,9 +56,7 @@ PictureProfileDto _$PictureProfileDtoFromJson(Map<String, dynamic> json) =>
     PictureProfileDto(url: json['url'] as String);
 
 Map<String, dynamic> _$PictureProfileDtoToJson(PictureProfileDto instance) =>
-    <String, dynamic>{
-      'url': instance.url,
-    };
+    <String, dynamic>{'url': instance.url};
 
 UserSettingsDto _$UserSettingsDtoFromJson(Map<String, dynamic> json) =>
     UserSettingsDto(
@@ -69,7 +76,8 @@ HotelDetailsDto _$HotelDetailsDtoFromJson(Map<String, dynamic> json) =>
     HotelDetailsDto(
       hotel: HotelDto.fromJson(json['hotel'] as Map<String, dynamic>),
       subscriptionDetails: SubscriptionDetailsDto.fromJson(
-          json['subscription_details'] as Map<String, dynamic>),
+        json['subscription_details'] as Map<String, dynamic>,
+      ),
     );
 
 Map<String, dynamic> _$HotelDetailsDtoToJson(HotelDetailsDto instance) =>
@@ -79,56 +87,56 @@ Map<String, dynamic> _$HotelDetailsDtoToJson(HotelDetailsDto instance) =>
     };
 
 HotelDto _$HotelDtoFromJson(Map<String, dynamic> json) => HotelDto(
-      id: json['id'] as String,
-      businessEmail: json['business_email'] as String,
-      name: json['name'] as String,
-      country: json['country'] as String,
-      timezone: json['timezone'] as String,
-      language: json['language'] as String,
-      status: json['status'] as String,
-      createdByUserId: json['created_by_user_id'] as String,
-      createdAt: json['created_at'] as int,
-      city: json['city'] as String,
-      street: json['street'] as String,
-      websiteUrl: json['website_url'] as String?,
-      businessPhoneNumber: json['business_phone_number'] as String?,
-      onboardingInitiated: json['onboarding_initiated'] as bool,
-    );
+  id: json['id'] as String,
+  businessEmail: json['business_email'] as String,
+  name: json['name'] as String,
+  country: json['country'] as String,
+  timezone: json['timezone'] as String,
+  language: json['language'] as String,
+  status: json['status'] as String,
+  createdByUserId: json['created_by_user_id'] as String,
+  createdAt: (json['created_at'] as num).toInt(),
+  city: json['city'] as String,
+  street: json['street'] as String,
+  websiteUrl: json['website_url'] as String?,
+  businessPhoneNumber: json['business_phone_number'] as String?,
+  onboardingInitiated: json['onboarding_initiated'] as bool,
+);
 
 Map<String, dynamic> _$HotelDtoToJson(HotelDto instance) => <String, dynamic>{
-      'id': instance.id,
-      'business_email': instance.businessEmail,
-      'name': instance.name,
-      'country': instance.country,
-      'timezone': instance.timezone,
-      'language': instance.language,
-      'status': instance.status,
-      'created_by_user_id': instance.createdByUserId,
-      'created_at': instance.createdAt,
-      'city': instance.city,
-      'street': instance.street,
-      'website_url': instance.websiteUrl,
-      'business_phone_number': instance.businessPhoneNumber,
-      'onboarding_initiated': instance.onboardingInitiated,
-    };
+  'id': instance.id,
+  'business_email': instance.businessEmail,
+  'name': instance.name,
+  'country': instance.country,
+  'timezone': instance.timezone,
+  'language': instance.language,
+  'status': instance.status,
+  'created_by_user_id': instance.createdByUserId,
+  'created_at': instance.createdAt,
+  'city': instance.city,
+  'street': instance.street,
+  'website_url': instance.websiteUrl,
+  'business_phone_number': instance.businessPhoneNumber,
+  'onboarding_initiated': instance.onboardingInitiated,
+};
 
 SubscriptionDetailsDto _$SubscriptionDetailsDtoFromJson(
-        Map<String, dynamic> json) =>
-    SubscriptionDetailsDto(
-      subscriptionActive: json['subscription_active'] as bool,
-      plan: json['plan'] as String,
-      subscriptionStartDate: json['subscription_start_date'] as int,
-      subscriptionEndDate: json['subscription_end_date'] as int,
-    );
+  Map<String, dynamic> json,
+) => SubscriptionDetailsDto(
+  subscriptionActive: json['subscription_active'] as bool,
+  plan: json['plan'] as String,
+  subscriptionStartDate: (json['subscription_start_date'] as num).toInt(),
+  subscriptionEndDate: (json['subscription_end_date'] as num).toInt(),
+);
 
 Map<String, dynamic> _$SubscriptionDetailsDtoToJson(
-        SubscriptionDetailsDto instance) =>
-    <String, dynamic>{
-      'subscription_active': instance.subscriptionActive,
-      'plan': instance.plan,
-      'subscription_start_date': instance.subscriptionStartDate,
-      'subscription_end_date': instance.subscriptionEndDate,
-    };
+  SubscriptionDetailsDto instance,
+) => <String, dynamic>{
+  'subscription_active': instance.subscriptionActive,
+  'plan': instance.plan,
+  'subscription_start_date': instance.subscriptionStartDate,
+  'subscription_end_date': instance.subscriptionEndDate,
+};
 
 UserHotelStatusDto _$UserHotelStatusDtoFromJson(Map<String, dynamic> json) =>
     UserHotelStatusDto(
@@ -138,17 +146,18 @@ UserHotelStatusDto _$UserHotelStatusDtoFromJson(Map<String, dynamic> json) =>
       hierarchyRole: json['hierarchy_role'] as String,
       status: json['status'] as String,
       scheduleType: json['schedule_type'] as String,
-      weeklyHours: json['weekly_hours'] as int,
+      weeklyHours: (json['weekly_hours'] as num).toInt(),
       invitedByUserId: json['invited_by_user_id'] as String?,
-      createdAt: json['created_at'] as int,
+      createdAt: (json['created_at'] as num).toInt(),
       scheduleActive: json['schedule_active'] as bool,
-      scheduleUpdatedAt: json['schedule_updated_at'] as int,
+      scheduleUpdatedAt: (json['schedule_updated_at'] as num).toInt(),
       scheduleUpdatedBy: json['schedule_updated_by'] as String,
-      lastLoginAt: json['last_login_at'] as int?,
+      lastLoginAt: (json['last_login_at'] as num?)?.toInt(),
       verifiedBusinessEmail: json['verified_business_email'] as String?,
       verifiedBusinessEmailStatus:
           json['verified_business_email_status'] as String?,
-      verifiedBusinessEmailAt: json['verified_business_email_at'] as int?,
+      verifiedBusinessEmailAt: (json['verified_business_email_at'] as num?)
+          ?.toInt(),
       securityGroupEligible: json['security_group_eligible'] as bool,
       notesInternal: json['notes_internal'] as String,
       isPrimaryContact: json['is_primary_contact'] as bool,
@@ -202,26 +211,26 @@ Map<String, dynamic> _$AccessControlDtoToJson(AccessControlDto instance) =>
     };
 
 LoginDto _$LoginDtoFromJson(Map<String, dynamic> json) => LoginDto(
-      interfaceAccess: json['interface_access'] as String,
-      loginIdentifierType: json['login_identifier_type'] as String,
-      authMethod: json['auth_method'] as String,
-      status: json['status'] as String,
-    );
+  interfaceAccess: json['interface_access'] as String,
+  loginIdentifierType: json['login_identifier_type'] as String,
+  authMethod: json['auth_method'] as String,
+  status: json['status'] as String,
+);
 
 Map<String, dynamic> _$LoginDtoToJson(LoginDto instance) => <String, dynamic>{
-      'interface_access': instance.interfaceAccess,
-      'login_identifier_type': instance.loginIdentifierType,
-      'auth_method': instance.authMethod,
-      'status': instance.status,
-    };
+  'interface_access': instance.interfaceAccess,
+  'login_identifier_type': instance.loginIdentifierType,
+  'auth_method': instance.authMethod,
+  'status': instance.status,
+};
 
 HubAccessDto _$HubAccessDtoFromJson(Map<String, dynamic> json) => HubAccessDto(
-      hubCode: json['hub_code'] as String,
-      hubRole: json['hub_role'] as String?,
-    );
+  hubCode: json['hub_code'] as String,
+  hubRole: json['hubRole'] as String?,
+);
 
 Map<String, dynamic> _$HubAccessDtoToJson(HubAccessDto instance) =>
     <String, dynamic>{
       'hub_code': instance.hubCode,
-      'hub_role': instance.hubRole,
+      'hubRole': instance.hubRole,
     };

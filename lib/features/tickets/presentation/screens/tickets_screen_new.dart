@@ -19,9 +19,11 @@ import '../widgets/tickets_top_bar.dart';
 import '../widgets/tickets_main_tabs.dart';
 import '../widgets/tickets_filter_chips.dart';
 import '../widgets/filter_department_sheet.dart';
-import '../widgets/accept_sheet.dart';
+import '../widgets/acknowledge_ticket_bottom_sheet.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
 import 'ticket_detail_screen.dart';
+import '../../../shell/presentation/widgets/center_fab.dart';
+import '../../../shell/presentation/screens/create_router.dart';
 
 /// Updated tickets screen matching the provided design
 class TicketsScreenNew extends ConsumerStatefulWidget {
@@ -110,9 +112,17 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
     })();
     final profilePictureUrl = userProfile?.pictureProfile?.url;
 
-    return Container(
-      color: c.bgBase,
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: c.bgBase,
+      floatingActionButton: CenterFab(
+        onPressed: () async {
+          final submitted = await CreateRouter.openCreate(context, ref);
+          if (submitted && mounted) {
+            widget.onSwitchTab(ShellTab.tickets);
+          }
+        },
+      ),
+      body: SafeArea(
         bottom: false,
         child: Column(
           children: [
@@ -338,28 +348,16 @@ class _TicketsList extends StatelessWidget {
   }
 
   Future<void> _showAcceptSheet(BuildContext context, Ticket ticket) async {
-    final result = await AcceptSheet.show(
+    final result = await AcknowledgeTicketBottomSheet.show(
       context: context,
       ticketCode: ticket.code,
       ticketTitle: ticket.title,
-      ticketType: _mapTicketKind(ticket.kind),
       hasGuest: ticket.guest != null,
     );
 
     if (result != null && context.mounted) {
       // TODO: Call accept ticket API with ETA result
-      // result.mode, result.minutesFromNow, result.customTime
-    }
-  }
-
-  TicketAcceptType _mapTicketKind(TicketKind kind) {
-    switch (kind) {
-      case TicketKind.universal:
-        return TicketAcceptType.universal;
-      case TicketKind.catalog:
-        return TicketAcceptType.paid;
-      case TicketKind.manual:
-        return TicketAcceptType.manual;
+      // result.mode, result.minutesFromNow, result.customDateTime
     }
   }
 }

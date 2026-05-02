@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../domain/repositories/tickets_repository.dart';
+import '../../../auth/presentation/providers/user_profile_controller.dart';
+import '../../data/services/universal_request_service.dart';
+import '../../data/dtos/universal_request_order_dto.dart';
 import 'repository_providers.dart';
 import 'session_providers.dart';
 
@@ -266,12 +269,51 @@ class UniversalDraftController
       final repo = ref.read(ticketsRepositoryProvider);
       // Operator session retained for potential future fallbacks.
       ref.read(operatorSessionProvider);
+      
+      // Create ticket first
       final ticket = await repo.create(_buildDraft());
+      
+      // Also create universal request order
+      await _createUniversalOrder();
+      
       return ticket.id;
     } finally {
       if (ref.exists(universalDraftControllerProvider)) {
         state = state.copyWith(submitting: false);
       }
+    }
+  }
+
+  /// Create universal request order API call
+  Future<void> _createUniversalOrder() async {
+    final userProfile = ref.read(userProfileProvider);
+    if (userProfile == null) {
+      print('[UniversalDraftController] User profile not available for order creation');
+      return;
+    }
+
+    final universalRequestService = ref.read(universalRequestServiceProvider);
+    
+    // Build order items from picks
+    final orderItems = state.picks.values.map((pick) => OrderItemDto(
+      activeUniversalRequestId: pick.item.id,
+      guestNotes: state.note.trim().isEmpty ? '' : state.note.trim(),
+      price: 0.0, // Price not available in current UI
+      quantity: pick.quantity,
+      itemName: pick.item.title,
+    )).toList();
+
+    try {
+      await universalRequestService.createOrder(
+        guestStayId: 'placeholder-guest-stay-id', // TODO: Get actual guest stay ID
+        contactId: userProfile.id,
+        hotelId: userProfile.userHotelStatus.hotelId,
+        orderItems: orderItems,
+      );
+      print('[UniversalDraftController] Universal order created successfully');
+    } catch (e) {
+      print('[UniversalDraftController] Failed to create universal order: $e');
+      // Don't throw - ticket creation should succeed even if order fails
     }
   }
 

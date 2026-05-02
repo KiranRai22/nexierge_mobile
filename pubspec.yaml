@@ -77,11 +77,12 @@ dependencies:
 
   # Image compression for avatar uploads
   flutter_image_compress: ^2.3.0
-  json_annotation: ^4.11.0
+  json_annotation: ^4.9.0
 
   # Audio playback for UI sounds
   audioplayers: ^6.1.0
-
+  
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -94,6 +95,7 @@ dev_dependencies:
   # Riverpod code generation
   riverpod_generator: ^2.6.4
   build_runner: ^2.4.13
+  json_serializable: ^6.9.0
 
   # Riverpod lint rules (requires custom_lint)
   riverpod_lint: ^2.6.3

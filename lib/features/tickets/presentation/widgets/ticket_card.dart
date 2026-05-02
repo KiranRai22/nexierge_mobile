@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
@@ -6,6 +7,7 @@ import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/models/ticket.dart';
+import 'start_work_confirmation_bottom_sheet.dart';
 
 /// Card used in the dashboard list. Left coloured stripe encodes status,
 /// title + meta + chips + footer follow the prototype.
@@ -136,7 +138,7 @@ class TicketCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () => _showStartWorkConfirmation(context),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: ColorPalette.chipCatalogFg,
                               shape: RoundedRectangleBorder(
@@ -176,6 +178,21 @@ class TicketCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showStartWorkConfirmation(BuildContext context) {
+    showStartWorkConfirmation(
+      context: context,
+      onCancel: () {
+        // Handle cancel action if needed
+        print('Start work cancelled for ticket: ${ticket.id}');
+      },
+      onStartWork: () {
+        // Handle start work action
+        print('Start work confirmed for ticket: ${ticket.id}');
+        // TODO: Implement actual start work logic
+      },
     );
   }
 }
