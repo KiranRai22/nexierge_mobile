@@ -6,7 +6,6 @@ import '../../../../core/error/error_handler.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
@@ -14,7 +13,9 @@ import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/catalog.dart';
 import '../providers/catalog_create_controller.dart';
 import '../providers/manual_create_controller.dart';
+import '../providers/checked_in_guest_stays_provider.dart';
 import '../providers/ticket_form_options_provider.dart';
+import '../providers/universal_catalog_provider.dart';
 import '../providers/universal_create_controller.dart';
 import '../widgets/create/catalog_customizer_sheet.dart';
 import '../widgets/create/confirm_ticket_sheet.dart';
@@ -426,6 +427,7 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
     final s = context.l10n;
     final draft = ref.watch(universalDraftControllerProvider);
     final ctl = ref.read(universalDraftControllerProvider.notifier);
+    final catalogAsync = ref.watch(universalCatalogProvider);
 
     final hasPicks = draft.picks.isNotEmpty;
 
@@ -481,34 +483,50 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
           ),
         ),
         Divider(height: 1, thickness: 1, color: ColorPalette.opsBorder),
-        // Item list with category sections
+        // Item list with department sections — dynamic from API.
         SizedBox.square(dimension: 10),
         Expanded(
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(16, 0, 16, hasPicks ? 96 : 24),
-            children: [
-              if (_query.isEmpty) ...[
-                for (final cat in UniversalCategory.values)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: _CategorySection(
-                      label: _categoryLabel(s, cat),
-                      items: UniversalCatalog.byCategory(cat),
+          child: catalogAsync.when(
+            loading: () =>
+                const Center(child: CircularProgressIndicator()),
+            error: (err, _) => _CatalogLoadError(
+              onRetry: () => refreshUniversalCatalog(ref),
+            ),
+            data: (catalog) => RefreshIndicator(
+              onRefresh: () => refreshUniversalCatalog(ref),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding:
+                    EdgeInsets.fromLTRB(16, 0, 16, hasPicks ? 96 : 24),
+                children: [
+                  if (_query.isEmpty) ...[
+                    for (final dept in catalog.departments)
+                      if (dept.items.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _CategorySection(
+                            label: dept.name,
+                            items: dept.items,
+                            draft: draft,
+                            onToggle: ctl.togglePick,
+                            onQuantity: ctl.setQuantity,
+                          ),
+                        ),
+                    if (catalog.isEmpty) _CatalogEmpty(),
+                  ] else ...[
+                    _CategorySection(
+                      label: '',
+                      items: catalog.search(_query),
                       draft: draft,
                       onToggle: ctl.togglePick,
                       onQuantity: ctl.setQuantity,
                     ),
-                  ),
-              ] else
-                _CategorySection(
-                  label: '',
-                  items: UniversalCatalog.search(_query),
-                  draft: draft,
-                  onToggle: ctl.togglePick,
-                  onQuantity: ctl.setQuantity,
-                ),
-            ],
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
 
@@ -518,18 +536,52 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
       ],
     );
   }
+}
 
-  String _categoryLabel(AppLocalizations s, UniversalCategory cat) {
-    switch (cat) {
-      case UniversalCategory.housekeeping:
-        return s.categoryHousekeeping;
-      case UniversalCategory.fnb:
-        return s.categoryFnb;
-      case UniversalCategory.frontDesk:
-        return s.categoryFrontDesk;
-      case UniversalCategory.maintenance:
-        return s.categoryMaintenance;
-    }
+class _CatalogLoadError extends StatelessWidget {
+  final Future<void> Function() onRetry;
+  const _CatalogLoadError({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              s.universalCatalogLoadError,
+              style: TypographyManager.titleSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => onRetry(),
+              child: Text(s.retry),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CatalogEmpty extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
+      child: Center(
+        child: Text(
+          s.emptyState,
+          style: TypographyManager.bodyMedium,
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
   }
 }
 
@@ -671,48 +723,11 @@ class _CategorySection extends StatelessWidget {
   }
 }
 
+/// Item titles now arrive locale-resolved from the API (PRESET picks the
+/// matching `name_i18n[locale]`; CUSTOM ships only one name). The screen
+/// just renders `item.title`.
 String _localizedItemTitle(BuildContext context, UniversalItem item) {
-  final s = context.l10n;
-  switch (item.id) {
-    case 'u_extra_towels':
-      return s.itemExtraTowels;
-    case 'u_extra_pillows':
-      return s.itemExtraPillows;
-    case 'u_toiletries_kit':
-      return s.itemToiletriesKit;
-    case 'u_extra_blanket':
-      return s.itemExtraBlanket;
-    case 'u_room_cleaning':
-      return s.itemRoomCleaning;
-    case 'u_water_bottles':
-      return s.itemWaterBottles;
-    case 'u_ice_bucket':
-      return s.itemIceBucket;
-    case 'u_concierge_help':
-      return s.itemConciergeHelp;
-    case 'u_climate_control':
-      return s.itemClimateControl;
-    case 'u_light_fixture':
-      return s.itemLightFixture;
-    case 'u_plumbing_issue':
-      return s.itemPlumbingIssue;
-    default:
-      return item.title;
-  }
-}
-
-String _localizedCategory(BuildContext context, UniversalCategory cat) {
-  final s = context.l10n;
-  switch (cat) {
-    case UniversalCategory.housekeeping:
-      return s.categoryHousekeeping;
-    case UniversalCategory.fnb:
-      return s.categoryFnb;
-    case UniversalCategory.frontDesk:
-      return s.categoryFrontDesk;
-    case UniversalCategory.maintenance:
-      return s.categoryMaintenance;
-  }
+  return item.title;
 }
 
 class _UniversalItemTile extends StatelessWidget {
@@ -796,7 +811,7 @@ class _UniversalItemTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _localizedCategory(context, item.category),
+                        item.departmentName,
                         textAlign: TextAlign.center,
                         style: TypographyManager.bodySmall,
                         maxLines: 1,
@@ -950,13 +965,15 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
     final s = context.l10n;
     final draft = ref.watch(universalDraftControllerProvider);
     final ctl = ref.read(universalDraftControllerProvider.notifier);
-    final rooms = ref.watch(apiRoomsProvider);
-    final selectedRoom = draft.selectedRoomId == null
-        ? null
-        : rooms.firstWhere(
-            (r) => r.id == draft.selectedRoomId,
-            orElse: () => rooms.first,
-          );
+    // Same pattern as the manual form: keep the guest field reactive to the
+    // controller so picking a room repopulates the textbox (or clears it
+    // when the picked stay has no name on file).
+    if (_guestCtl.text != draft.guestName) {
+      _guestCtl.value = TextEditingValue(
+        text: draft.guestName,
+        selection: TextSelection.collapsed(offset: draft.guestName.length),
+      );
+    }
 
     return Column(
       children: [
@@ -979,7 +996,8 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
-                            final picked = await RoomPickerSheet.show(context);
+                            final picked =
+                                await RoomPickerSheet.showCheckedIn(context);
                             if (picked != null) ctl.selectRoom(picked);
                           },
                           child: Container(
@@ -994,12 +1012,14 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    selectedRoom != null
-                                        ? s.roomNumber(selectedRoom.number)
+                                    draft.selectedRoomNumber != null
+                                        ? s.roomNumber(
+                                            draft.selectedRoomNumber!)
                                         : s.roomPickerTitle,
                                     style: TypographyManager.bodyMedium
                                         .copyWith(
-                                          color: selectedRoom != null
+                                          color: draft.selectedRoomNumber !=
+                                                  null
                                               ? ColorPalette.textPrimary
                                               : ColorPalette.textSecondary,
                                         ),
@@ -2202,13 +2222,12 @@ class _CatalogStepDetailsState
     final catalog = draft.catalog;
     if (catalog == null) return const SizedBox.shrink();
 
-    final rooms = ref.watch(apiRoomsProvider);
-    final selectedRoom = draft.selectedRoomId == null
+    // selectedRoomId now stores the picked checked-in stay's guest_stay_id.
+    // Look up the display row from the checked-in stays provider so we can
+    // render the room number; no rooms come from the form-options API now.
+    final selectedStay = draft.selectedRoomId == null
         ? null
-        : rooms.firstWhere(
-            (r) => r.id == draft.selectedRoomId,
-            orElse: () => rooms.first,
-          );
+        : ref.watch(checkedInStayByIdProvider(draft.selectedRoomId!));
 
     return Column(
       children: [
@@ -2232,7 +2251,8 @@ class _CatalogStepDetailsState
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
-                            final picked = await RoomPickerSheet.show(context);
+                            final picked =
+                                await RoomPickerSheet.showCheckedIn(context);
                             if (picked != null) ctl.selectRoom(picked);
                           },
                           child: Container(
@@ -2247,12 +2267,12 @@ class _CatalogStepDetailsState
                               children: [
                                 Expanded(
                                   child: Text(
-                                    selectedRoom != null
-                                        ? s.roomNumber(selectedRoom.number)
+                                    selectedStay != null
+                                        ? s.roomNumber(selectedStay.roomNumber)
                                         : s.roomPickerTitle,
                                     style: TypographyManager.bodyMedium
                                         .copyWith(
-                                          color: selectedRoom != null
+                                          color: selectedStay != null
                                               ? ColorPalette.textPrimary
                                               : ColorPalette.textSecondary,
                                         ),
@@ -2690,13 +2710,14 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
     final s = context.l10n;
     final draft = ref.watch(manualDraftControllerProvider);
     final ctl = ref.read(manualDraftControllerProvider.notifier);
-    final rooms = ref.watch(apiRoomsProvider);
-    final selectedRoom = draft.selectedRoomId == null
-        ? null
-        : rooms.firstWhere(
-            (r) => r.id == draft.selectedRoomId,
-            orElse: () => rooms.first,
-          );
+    // Keep the read-only guest field synced with the auto-populated name
+    // sourced from the picked checked-in stay.
+    if (_guestCtl.text != draft.guestName) {
+      _guestCtl.value = TextEditingValue(
+        text: draft.guestName,
+        selection: TextSelection.collapsed(offset: draft.guestName.length),
+      );
+    }
 
     return Column(
       children: [
@@ -2730,8 +2751,9 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
-                            final picked = await RoomPickerSheet.show(context);
-                            if (picked != null) ctl.selectRoom(picked);
+                            final picked =
+                                await RoomPickerSheet.showCheckedIn(context);
+                            if (picked != null) ctl.selectGuestStay(picked);
                           },
                           child: Container(
                             height: 48,
@@ -2745,12 +2767,12 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    selectedRoom != null
-                                        ? s.roomNumber(selectedRoom.number)
+                                    draft.selectedRoomNumber != null
+                                        ? s.roomNumber(draft.selectedRoomNumber!)
                                         : s.roomPickerTitle,
                                     style: TypographyManager.bodyMedium
                                         .copyWith(
-                                          color: selectedRoom != null
+                                          color: draft.selectedRoomNumber != null
                                               ? ColorPalette.textPrimary
                                               : ColorPalette.textSecondary,
                                         ),
@@ -2782,7 +2804,7 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                         const SizedBox(height: 6),
                         TextField(
                           controller: _guestCtl,
-                          onChanged: ctl.setGuestName,
+                          readOnly: true,
                           style: TypographyManager.bodyMedium,
                           decoration: _inputDecoration(
                             hint: s.createGuestHint,

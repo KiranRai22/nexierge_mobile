@@ -434,6 +434,12 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get retry;
 
+  /// No description provided for @universalCatalogLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load services. Pull to refresh or tap retry.'**
+  String get universalCatalogLoadError;
+
   /// No description provided for @back.
   ///
   /// In en, this message translates to:

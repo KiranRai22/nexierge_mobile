@@ -3,137 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
+import '../../domain/models/universal_catalog.dart';
 import '../../domain/repositories/tickets_repository.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../../data/services/universal_request_service.dart';
 import '../../data/dtos/universal_request_order_dto.dart';
+import 'checked_in_guest_stays_provider.dart';
 import 'repository_providers.dart';
 import 'session_providers.dart';
 
-/// Category key constants.
-enum UniversalCategory { housekeeping, fnb, frontDesk, maintenance }
-
-extension UniversalCategoryX on UniversalCategory {
-  /// Department auto-routed for this category.
-  Department get autoDepartment {
-    switch (this) {
-      case UniversalCategory.housekeeping:
-        return Department.housekeeping;
-      case UniversalCategory.fnb:
-        return Department.fnb;
-      case UniversalCategory.frontDesk:
-        return Department.frontDesk;
-      case UniversalCategory.maintenance:
-        return Department.maintenance;
-    }
-  }
-}
+/// Re-export the dynamic catalog item so existing widget imports of this
+/// file keep compiling without each one needing to add a second import.
+export '../../domain/models/universal_catalog.dart' show UniversalItem;
 
 /// Step in the 2-step Universal create wizard.
 enum UniversalStep { selectItems, fillDetails }
-
-/// Catalog of canned items organized by category.
-class UniversalCatalog {
-  static const List<UniversalItem> items = [
-    UniversalItem(
-      id: 'u_extra_towels',
-      emoji: '🧺',
-      category: UniversalCategory.housekeeping,
-    ),
-    UniversalItem(
-      id: 'u_extra_pillows',
-      emoji: '🛏️',
-      category: UniversalCategory.housekeeping,
-    ),
-    UniversalItem(
-      id: 'u_toiletries_kit',
-      emoji: '🧴',
-      category: UniversalCategory.housekeeping,
-    ),
-    UniversalItem(
-      id: 'u_extra_blanket',
-      emoji: '🛌',
-      category: UniversalCategory.housekeeping,
-    ),
-    UniversalItem(
-      id: 'u_room_cleaning',
-      emoji: '🪣',
-      category: UniversalCategory.housekeeping,
-    ),
-    UniversalItem(
-      id: 'u_water_bottles',
-      emoji: '💧',
-      category: UniversalCategory.fnb,
-    ),
-    UniversalItem(
-      id: 'u_ice_bucket',
-      emoji: '🧊',
-      category: UniversalCategory.fnb,
-    ),
-    UniversalItem(
-      id: 'u_concierge_help',
-      emoji: '🛎️',
-      category: UniversalCategory.frontDesk,
-    ),
-    UniversalItem(
-      id: 'u_climate_control',
-      emoji: '🌡️',
-      category: UniversalCategory.frontDesk,
-    ),
-    UniversalItem(
-      id: 'u_light_fixture',
-      emoji: '💡',
-      category: UniversalCategory.maintenance,
-    ),
-    UniversalItem(
-      id: 'u_plumbing_issue',
-      emoji: '🚰',
-      category: UniversalCategory.maintenance,
-    ),
-  ];
-
-  static List<UniversalItem> byCategory(UniversalCategory cat) =>
-      items.where((i) => i.category == cat).toList();
-
-  static List<UniversalItem> search(String query) {
-    if (query.isEmpty) return items;
-    final q = query.toLowerCase();
-    return items.where((i) => i.id.replaceAll('_', ' ').contains(q)).toList();
-  }
-}
-
-/// Catalog item — purely a UI shape.
-@immutable
-class UniversalItem {
-  final String id;
-  final String emoji;
-  final UniversalCategory category;
-
-  const UniversalItem({
-    required this.id,
-    required this.emoji,
-    required this.category,
-  });
-
-  /// Human-readable title derived from id (e.g. u_extra_towels → "Extra towels").
-  String get title {
-    final slug = id.replaceFirst('u_', '').replaceAll('_', ' ');
-    return '${slug[0].toUpperCase()}${slug.substring(1)}';
-  }
-
-  String get subtitle {
-    switch (category) {
-      case UniversalCategory.housekeeping:
-        return 'Housekeeping';
-      case UniversalCategory.fnb:
-        return 'F&B';
-      case UniversalCategory.frontDesk:
-        return 'Front Desk';
-      case UniversalCategory.maintenance:
-        return 'Maintenance';
-    }
-  }
-}
 
 /// One picked line in the draft (item + quantity).
 @immutable
@@ -151,7 +35,15 @@ class PickedLine {
 class UniversalDraftState {
   final UniversalStep step;
   final Map<String, PickedLine> picks; // keyed by item id
+  /// guest_stay_id of the picked checked-in stay. Field name retained for
+  /// state-shape stability with earlier versions of this controller.
   final String? selectedRoomId;
+  /// contact_id of the guest on the picked stay. Used as the order's
+  /// contact when posting `/universal_requests/order/create`.
+  final String? contactId;
+  /// Display room number from the picked stay (e.g. "204"). Rendered in
+  /// the room field on the details step.
+  final String? selectedRoomNumber;
   final String guestName;
   final TicketSource? source;
   final String note;
@@ -161,6 +53,8 @@ class UniversalDraftState {
     this.step = UniversalStep.selectItems,
     this.picks = const {},
     this.selectedRoomId,
+    this.contactId,
+    this.selectedRoomNumber,
     this.guestName = '',
     this.source,
     this.note = '',
@@ -182,17 +76,26 @@ class UniversalDraftState {
   int get totalUnits =>
       picks.values.fold<int>(0, (acc, p) => acc + p.quantity);
 
-  /// Auto-routed department inferred from the first picked item's category.
-  /// Falls back to housekeeping if no items.
+  /// Auto-routed department inferred from the first picked item's
+  /// backend department. Falls back to housekeeping when no items.
   Department get autoDepartment {
     if (picks.isEmpty) return Department.housekeeping;
-    return picks.values.first.item.category.autoDepartment;
+    return picks.values.first.item.department;
+  }
+
+  /// Backend uuid for the auto-routed department. Used when posting the
+  /// universal request order so the server routes to the right team.
+  String? get autoDepartmentId {
+    if (picks.isEmpty) return null;
+    return picks.values.first.item.departmentId;
   }
 
   UniversalDraftState copyWith({
     UniversalStep? step,
     Map<String, PickedLine>? picks,
     String? selectedRoomId,
+    String? contactId,
+    String? selectedRoomNumber,
     bool clearRoom = false,
     String? guestName,
     TicketSource? source,
@@ -205,7 +108,11 @@ class UniversalDraftState {
       picks: picks ?? this.picks,
       selectedRoomId:
           clearRoom ? null : (selectedRoomId ?? this.selectedRoomId),
-      guestName: guestName ?? this.guestName,
+      contactId: clearRoom ? null : (contactId ?? this.contactId),
+      selectedRoomNumber: clearRoom
+          ? null
+          : (selectedRoomNumber ?? this.selectedRoomNumber),
+      guestName: clearRoom ? '' : (guestName ?? this.guestName),
       source: clearSource ? null : (source ?? this.source),
       note: note ?? this.note,
       submitting: submitting ?? this.submitting,
@@ -242,8 +149,28 @@ class UniversalDraftController
     state = state.copyWith(picks: const {});
   }
 
-  void selectRoom(String roomId) =>
-      state = state.copyWith(selectedRoomId: roomId);
+  /// Picker returns the `guest_stay_id`. Same flow as
+  /// `ManualDraftController.selectGuestStay`: look up the row, stamp
+  /// guest_stay_id + contact_id + room number + guest name in one shot.
+  ///
+  /// If the picked stay has no name on file, [guestName] is intentionally
+  /// blanked rather than left at its previous value — the operator can
+  /// still type one in by hand.
+  void selectRoom(String guestStayId) {
+    final stay = ref.read(checkedInStayByIdProvider(guestStayId));
+    if (stay == null) {
+      debugPrint(
+        '[UniversalDraftController] selectRoom: no stay row for $guestStayId',
+      );
+      return;
+    }
+    state = state.copyWith(
+      selectedRoomId: stay.guestStayId,
+      contactId: stay.contactId,
+      selectedRoomNumber: stay.roomNumber,
+      guestName: stay.fullName,
+    );
+  }
 
   void clearRoom() => state = state.copyWith(clearRoom: true);
 
@@ -267,15 +194,11 @@ class UniversalDraftController
     state = state.copyWith(submitting: true);
     try {
       final repo = ref.read(ticketsRepositoryProvider);
-      // Operator session retained for potential future fallbacks.
       ref.read(operatorSessionProvider);
-      
-      // Create ticket first
+
       final ticket = await repo.create(_buildDraft());
-      
-      // Also create universal request order
       await _createUniversalOrder();
-      
+
       return ticket.id;
     } finally {
       if (ref.exists(universalDraftControllerProvider)) {
@@ -284,36 +207,32 @@ class UniversalDraftController
     }
   }
 
-  /// Create universal request order API call
   Future<void> _createUniversalOrder() async {
     final userProfile = ref.read(userProfileProvider);
-    if (userProfile == null) {
-      print('[UniversalDraftController] User profile not available for order creation');
-      return;
-    }
+    if (userProfile == null) return;
 
     final universalRequestService = ref.read(universalRequestServiceProvider);
-    
-    // Build order items from picks
-    final orderItems = state.picks.values.map((pick) => OrderItemDto(
-      activeUniversalRequestId: pick.item.id,
-      guestNotes: state.note.trim().isEmpty ? '' : state.note.trim(),
-      price: 0.0, // Price not available in current UI
-      quantity: pick.quantity,
-      itemName: pick.item.title,
-    )).toList();
+
+    final orderItems = state.picks.values
+        .map((pick) => OrderItemDto(
+              activeUniversalRequestId: pick.item.id,
+              guestNotes: state.note.trim(),
+              price: 0.0,
+              quantity: pick.quantity,
+              itemName: pick.item.title,
+            ))
+        .toList();
 
     try {
       await universalRequestService.createOrder(
-        guestStayId: 'placeholder-guest-stay-id', // TODO: Get actual guest stay ID
-        contactId: userProfile.id,
+        guestStayId: state.selectedRoomId ?? '',
+        contactId: state.contactId ?? userProfile.id,
         hotelId: userProfile.userHotelStatus.hotelId,
         orderItems: orderItems,
       );
-      print('[UniversalDraftController] Universal order created successfully');
-    } catch (e) {
-      print('[UniversalDraftController] Failed to create universal order: $e');
-      // Don't throw - ticket creation should succeed even if order fails
+    } catch (_) {
+      // Ticket creation must succeed even if order POST fails — the local
+      // ticket is the source of truth for the operator.
     }
   }
 
@@ -327,7 +246,7 @@ class UniversalDraftController
         RequestItem(
           id: p.item.id,
           title: p.item.title,
-          subtitle: p.item.subtitle,
+          subtitle: p.item.departmentName,
           quantity: p.quantity,
         ),
     ];

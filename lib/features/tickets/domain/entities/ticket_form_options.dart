@@ -1,11 +1,17 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/department.dart';
-import '../models/ticket.dart';
 
-/// A department returned by the form-options API. Identity is the server id;
-/// [known] is a best-effort match to the legacy [Department] enum so existing
-/// code paths keep working.
+/// A department returned by `/tickets/add/get_departnents_and_rooms`.
+///
+/// [id] holds the server `department_id` — the value sent back on every
+/// payload that needs a department. The wrapping record id is intentionally
+/// ignored. [name] is the display label and the value used for any
+/// name-based comparison or fallback.
+///
+/// [known] is a best-effort match to the legacy [Department] enum and
+/// exists only so screens still backed by mock data keep working until they
+/// move to the API entity.
 @immutable
 class HotelDepartment {
   final String id;
@@ -41,20 +47,25 @@ class HotelDepartment {
     }
     return null;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HotelDepartment && other.id == id);
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
-/// Bundle of room + department options used to populate the create-ticket
-/// form. Cached per hotel for the duration of the create flow.
+/// Department options used by the create-ticket form and the filter sheet.
+///
+/// Rooms are NOT carried here — the create flow sources rooms from the
+/// checked-in guest stays endpoint, and the filter sheet doesn't need them.
 @immutable
 class TicketFormOptions {
   final List<HotelDepartment> departments;
-  final List<Room> rooms;
 
-  const TicketFormOptions({
-    required this.departments,
-    required this.rooms,
-  });
+  const TicketFormOptions({required this.departments});
 
-  static const empty =
-      TicketFormOptions(departments: [], rooms: []);
+  static const empty = TicketFormOptions(departments: []);
 }

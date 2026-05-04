@@ -4,14 +4,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/ticket_form_options.dart';
-import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
+import 'checked_in_guest_stays_provider.dart';
+import 'my_tickets_notifier.dart';
 
 @immutable
 class ManualDraftState {
   final String summary;
-  final String? selectedRoomId;
+
+  /// Display-only room number (e.g. "8"). Drives the room chip in the form.
+  final String? selectedRoomNumber;
+
+  /// `guest_stay_id` — wire field, taken from the checked-in stay row.
+  final String? guestStayId;
+
+  /// Primary contact for the picked stay. Sent as `contact_id`.
+  final String? contactId;
+
+  /// Auto-populated from the picked stay's `contact_details.full_name`.
   final String guestName;
+
   final HotelDepartment? department;
   final TicketSource? source;
   final String notes;
@@ -19,7 +31,9 @@ class ManualDraftState {
 
   const ManualDraftState({
     this.summary = '',
-    this.selectedRoomId,
+    this.selectedRoomNumber,
+    this.guestStayId,
+    this.contactId,
     this.guestName = '',
     this.department,
     this.source,
@@ -29,14 +43,17 @@ class ManualDraftState {
 
   bool get canSubmit =>
       summary.trim().isNotEmpty &&
-      selectedRoomId != null &&
+      guestStayId != null &&
+      contactId != null &&
       department != null &&
       source != null &&
       !submitting;
 
   ManualDraftState copyWith({
     String? summary,
-    String? selectedRoomId,
+    String? selectedRoomNumber,
+    String? guestStayId,
+    String? contactId,
     bool clearRoom = false,
     String? guestName,
     HotelDepartment? department,
@@ -47,10 +64,12 @@ class ManualDraftState {
   }) {
     return ManualDraftState(
       summary: summary ?? this.summary,
-      selectedRoomId: clearRoom
+      selectedRoomNumber: clearRoom
           ? null
-          : (selectedRoomId ?? this.selectedRoomId),
-      guestName: guestName ?? this.guestName,
+          : (selectedRoomNumber ?? this.selectedRoomNumber),
+      guestStayId: clearRoom ? null : (guestStayId ?? this.guestStayId),
+      contactId: clearRoom ? null : (contactId ?? this.contactId),
+      guestName: clearRoom ? '' : (guestName ?? this.guestName),
       department: department ?? this.department,
       source: clearSource ? null : (source ?? this.source),
       notes: notes ?? this.notes,
@@ -64,9 +83,27 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
   ManualDraftState build() => const ManualDraftState();
 
   void setSummary(String v) => state = state.copyWith(summary: v);
-  void selectRoom(String id) => state = state.copyWith(selectedRoomId: id);
+
+  /// Picker returns the `guest_stay_id`; we look up the row to also stamp
+  /// the matching contact + display number + guest name in one shot.
+  void selectGuestStay(String guestStayId) {
+    final stay = ref.read(checkedInStayByIdProvider(guestStayId));
+    if (stay == null) {
+      debugPrint(
+        '[ManualDraftController] selectGuestStay: no row for $guestStayId',
+      );
+      return;
+    }
+    state = state.copyWith(
+      guestStayId: stay.guestStayId,
+      contactId: stay.contactId,
+      selectedRoomNumber: stay.roomNumber,
+      guestName: stay.fullName,
+    );
+  }
+
   void clearRoom() => state = state.copyWith(clearRoom: true);
-  void setGuestName(String v) => state = state.copyWith(guestName: v);
+
   void setDepartment(HotelDepartment d) =>
       state = state.copyWith(department: d);
   void setSource(TicketSource s) => state = state.copyWith(source: s);
@@ -75,7 +112,6 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
   Future<String?> submit() async {
     if (!state.canSubmit) return null;
 
-    // Get hotelId from dashboard bootstrap
     final bootstrap = ref
         .read(dashboardBootstrapControllerProvider)
         .valueOrNull;
@@ -93,8 +129,18 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
         summary: state.summary.trim(),
         details: state.notes.trim(),
         departmentId: state.department?.id,
-        guestStayId: state.selectedRoomId,
+        guestStayId: state.guestStayId,
+        contactId: state.contactId,
+        source: state.source?.name,
       );
+
+      // Realtime usually pushes the new ticket within a moment, but
+      // refresh as a safety net so the Incoming/Today lists never miss
+      // a just-created ticket if the WS frame is delayed or dropped.
+      // Fire-and-forget — submit() shouldn't block on the refresh.
+      // ignore: discarded_futures
+      ref.read(myTicketsNotifierProvider.notifier).refresh();
+
       return ticketId;
     } finally {
       if (ref.exists(manualDraftControllerProvider)) {

@@ -9,6 +9,8 @@ import 'core/providers/sound_preferences_provider.dart';
 import 'core/services/device_token_service.dart';
 import 'core/services/firebase_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/realtime/xano_notification_channel.dart';
+import 'core/services/realtime/xano_socket_lifecycle.dart';
 import 'core/services/sound_manager.dart';
 import 'core/theme/unified_theme_manager.dart';
 import 'core/theme/theme_mode_controller.dart';
@@ -87,6 +89,13 @@ class MyApp extends ConsumerWidget {
     final session = ref.watch(authSessionControllerProvider);
     final bootstrap = ref.watch(dashboardBootstrapControllerProvider);
     final soundEnabled = ref.watch(soundPreferencesProvider);
+
+    // Realtime socket: connects after login, disconnects on logout.
+    // Reconnect on transport drops handled inside the service.
+    ref.watch(xanoSocketLifecycleProvider);
+
+    // Auto-join notification channel when socket connects
+    ref.watch(xanoNotificationChannelProvider);
 
     // Sync sound manager with preferences
     SoundManager.instance.setEnabled(soundEnabled);

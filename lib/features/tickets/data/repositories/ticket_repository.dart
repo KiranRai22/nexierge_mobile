@@ -5,9 +5,9 @@ import '../../../../core/error/error_handler.dart';
 import '../../../../core/network/api_client.dart';
 import '../../data/datasources/ticket_remote_data_source.dart';
 import '../../domain/entities/my_ticket.dart';
+import '../../domain/entities/service_catalog.dart';
 import '../../domain/entities/ticket_detail.dart';
 import '../../domain/entities/ticket_form_options.dart';
-import '../../domain/models/ticket.dart';
 
 abstract class TicketRepository {
   Future<TicketDetail> fetchTicketDetails({required String ticketId});
@@ -23,9 +23,12 @@ abstract class TicketRepository {
     String? departmentId,
     String? guestStayId,
     String? contactId,
-    String? hotelDepartmentId,
+    String? source,
     bool createdByAi = false,
   });
+
+  /// Get all service catalogs for a hotel
+  Future<List<ServiceCatalog>> fetchServiceCatalogs({required String hotelId});
 }
 
 class _TicketRepositoryImpl implements TicketRepository {
@@ -110,36 +113,17 @@ class _TicketRepositoryImpl implements TicketRepository {
   }) async {
     try {
       final dto = await _remote.getDepartmentsAndRooms(hotelId: hotelId);
-      // Dedupe rooms by visible number — API can return multiple rows with
-      // the same `onb_room_number` (e.g. across floors); the picker only
-      // needs one entry per number. Keep the first occurrence.
-      final seenRoomNumbers = <String>{};
-      final uniqueRooms = <Room>[];
-      for (final r in dto.rooms) {
-        if (!seenRoomNumbers.add(r.onbRoomNumber)) continue;
-        uniqueRooms.add(Room(id: r.id, number: r.onbRoomNumber, floor: 0));
-      }
-      // Sort by room number ascending — numeric when both sides parse,
-      // alphabetical otherwise (so e.g. "101" < "102" < "1A" works).
-      uniqueRooms.sort((a, b) {
-        final na = int.tryParse(a.number);
-        final nb = int.tryParse(b.number);
-        if (na != null && nb != null) return na.compareTo(nb);
-        if (na != null) return -1;
-        if (nb != null) return 1;
-        return a.number.compareTo(b.number);
-      });
-      // Same defensive dedupe for departments by id.
+      // Dedupe departments by department_id; skip rows missing the id since
+      // they cannot be sent back to the server. `id` (the record id) is not
+      // considered — the backend expects department_id.
       final seenDeptIds = <String>{};
       final uniqueDepartments = <HotelDepartment>[];
       for (final d in dto.departments) {
+        if (d.id.isEmpty) continue;
         if (!seenDeptIds.add(d.id)) continue;
         uniqueDepartments.add(HotelDepartment.fromName(id: d.id, name: d.name));
       }
-      return TicketFormOptions(
-        departments: uniqueDepartments,
-        rooms: uniqueRooms,
-      );
+      return TicketFormOptions(departments: uniqueDepartments);
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {
@@ -155,7 +139,7 @@ class _TicketRepositoryImpl implements TicketRepository {
     String? departmentId,
     String? guestStayId,
     String? contactId,
-    String? hotelDepartmentId,
+    String? source,
     bool createdByAi = false,
   }) async {
     try {
@@ -167,11 +151,25 @@ class _TicketRepositoryImpl implements TicketRepository {
           departmentId: departmentId,
           guestStayId: guestStayId,
           contactId: contactId,
-          hotelDepartmentId: hotelDepartmentId,
+          source: source,
           createdByAi: createdByAi,
         ),
       );
       return dto.ticketId ?? '';
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<List<ServiceCatalog>> fetchServiceCatalogs({
+    required String hotelId,
+  }) async {
+    try {
+      final dtos = await _remote.getServiceCatalogs(hotelId: hotelId);
+      return dtos.map((dto) => ServiceCatalog.fromDto(dto)).toList();
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {

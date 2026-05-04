@@ -15,6 +15,38 @@ class UniversalRequestService {
   static const String _endpoint =
       '${APIEndpoints.baseUrl}/api:dYUIxfaq/universal_requests/order/create';
 
+  static const String _allByHotelEndpoint =
+      '${APIEndpoints.baseUrl}/api:dYUIxfaq/universal_requests/all';
+
+  /// Fetch the full universal catalog (departments + their requests) for
+  /// the given hotel. Returns the raw decoded list straight from the API
+  /// so the cache can persist the canonical payload — locale resolution
+  /// happens later in the provider.
+  Future<List<dynamic>> fetchCatalogByHotel(String hotelId) async {
+    final url = '$_allByHotelEndpoint/$hotelId';
+    try {
+      final response = await _dio.get(
+        url,
+        options: Options(
+          headers: {'accept': 'application/json'},
+        ),
+      );
+      final status = response.statusCode ?? 0;
+      if (status < 200 || status >= 300) {
+        throw Exception('Catalog fetch failed: $status');
+      }
+      final data = response.data;
+      if (data is List) return data;
+      if (data is String) {
+        final decoded = jsonDecode(data);
+        if (decoded is List) return decoded;
+      }
+      throw Exception('Unexpected catalog response format');
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    }
+  }
+
   /// Create a universal request order
   Future<UniversalRequestOrderResponseDto> createOrder({
     required String guestStayId,

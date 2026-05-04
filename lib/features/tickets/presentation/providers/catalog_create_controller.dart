@@ -5,6 +5,7 @@ import '../../data/repositories/catalog_seed.dart';
 import '../../domain/models/catalog.dart';
 import '../../domain/models/ticket.dart';
 import '../../domain/repositories/tickets_repository.dart';
+import 'checked_in_guest_stays_provider.dart';
 import 'repository_providers.dart';
 
 /// Three-step Catalog create flow:
@@ -203,8 +204,17 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
   void clearCart() => state = state.copyWith(cart: const []);
 
   // ── Form fields ───────────────────────────────────────────────────────────
-  void selectRoom(String roomId) =>
-      state = state.copyWith(selectedRoomId: roomId);
+  /// Picker now returns `guest_stay_id` (sourced from checked-in stays),
+  /// not a room id. We keep the field name `selectedRoomId` for state shape
+  /// stability; semantically it's the guest_stay_id. Also auto-fills the
+  /// guest name from the resolved stay so the operator can still edit it.
+  void selectRoom(String guestStayId) {
+    final stay = ref.read(checkedInStayByIdProvider(guestStayId));
+    state = state.copyWith(
+      selectedRoomId: guestStayId,
+      guestName: stay?.fullName ?? state.guestName,
+    );
+  }
   void clearRoom() => state = state.copyWith(clearRoom: true);
   void setGuestName(String v) => state = state.copyWith(guestName: v);
   void setSource(TicketSource s) => state = state.copyWith(source: s);

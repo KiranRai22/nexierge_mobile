@@ -5,6 +5,7 @@ import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import 'my_tickets_notifier.dart';
 import 'tickets_list_controller.dart';
+import 'tickets_main_tab_provider.dart';
 
 /// Simplified Ticket mapping from MyTicket for UI display.
 /// This is a lightweight adapter - full Ticket model is kept for detail view.
@@ -72,26 +73,26 @@ extension TicketsListViewEmpty on TicketsListView {
   );
 }
 
-/// Transforms MyTicket API data to TicketsListView for UI compatibility.
-/// This adapter allows the existing UI to work with the new API structure.
-final myTicketsListProvider = Provider.autoDispose<TicketsListView?>((ref) {
+/// Transforms MyTicket realtime state into TicketsListView for UI compatibility.
+///
+/// Today-bucket fields (`inProgress`, `completedToday`) are scoped to
+/// tickets whose status changed today — see `MyTicketsState.todayAccepted`
+/// and friends. Tickets in those statuses but unchanged today fall out of
+/// the Today view.
+final myTicketsListProvider = Provider<TicketsListView?>((ref) {
   final asyncState = ref.watch(myTicketsNotifierProvider);
 
   return asyncState.when(
     data: (state) {
-      if (state.all.isEmpty && state.isLoading) {
-        return null; // Loading state
-      }
+      if (state.all.isEmpty && state.isLoading) return null;
 
-      final tickets = state.all;
-
-      // Map API status to UI categories
-      final incomingNow = tickets.where((t) => t.isIncoming).toList();
-      final inProgress = tickets
-          .where((t) => t.isAccepted || t.isInProgress)
-          .toList();
-      final completedToday = tickets.where((t) => t.isDone).toList();
-      final scheduled = tickets.where((t) {
+      final incomingNow = state.incoming;
+      final todayInProgressBucket = [
+        ...state.todayAccepted,
+        ...state.todayInProgress,
+      ];
+      final completedToday = state.todayDone;
+      final scheduled = state.all.where((t) {
         if (t.dueAt == 0) return false;
         final dueDate = DateTime.fromMillisecondsSinceEpoch(t.dueAt);
         final tomorrow = DateTime.now().add(const Duration(days: 1));
@@ -100,7 +101,7 @@ final myTicketsListProvider = Provider.autoDispose<TicketsListView?>((ref) {
 
       return TicketsListView(
         incomingNow: incomingNow.map(_mapToTicket).toList(),
-        inProgress: inProgress.map(_mapToTicket).toList(),
+        inProgress: todayInProgressBucket.map(_mapToTicket).toList(),
         completedToday: completedToday.map(_mapToTicket).toList(),
         scheduled: scheduled.map(_mapToTicket).toList(),
         kpiIncoming: state.incomingCount,
@@ -110,5 +111,30 @@ final myTicketsListProvider = Provider.autoDispose<TicketsListView?>((ref) {
     },
     loading: () => null,
     error: (_, __) => TicketsListViewEmpty.empty(),
+  );
+});
+
+/// State-layer "Today" tab list. Reads the realtime ticket state plus the
+/// active filter chip and returns the filtered today bucket. Widgets
+/// don't switch on the filter key — they just render whatever the
+/// provider gives them.
+final todayTicketsProvider = Provider<List<Ticket>>((ref) {
+  final asyncState = ref.watch(myTicketsNotifierProvider);
+  final filter = ref.watch(ticketsFilterProvider);
+  return asyncState.maybeWhen(
+    data: (state) =>
+        state.todayFiltered(filter).map(_mapToTicket).toList(),
+    orElse: () => const [],
+  );
+});
+
+/// State-layer "Incoming" tab list. Equivalent to `state.incoming` mapped
+/// for the UI. Exposed as a dedicated provider so the screen never
+/// re-derives it.
+final incomingTicketsProvider = Provider<List<Ticket>>((ref) {
+  final asyncState = ref.watch(myTicketsNotifierProvider);
+  return asyncState.maybeWhen(
+    data: (state) => state.incoming.map(_mapToTicket).toList(),
+    orElse: () => const [],
   );
 });

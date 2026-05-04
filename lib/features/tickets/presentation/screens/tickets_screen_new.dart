@@ -233,11 +233,13 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
       return {for (var tab in TicketsMainTab.values) tab: 0};
     }
 
+    final state = ref.read(myTicketsNotifierProvider).valueOrNull;
     return {
-      TicketsMainTab.incoming: view.incomingNow.length,
-      TicketsMainTab.today: view.inProgress.length + view.completedToday.length,
+      TicketsMainTab.incoming: state?.incomingCount ?? view.incomingNow.length,
+      TicketsMainTab.today: state?.todayAllCount ??
+          (view.inProgress.length + view.completedToday.length),
       TicketsMainTab.scheduled: view.scheduled.length,
-      TicketsMainTab.done: view.completedToday.length,
+      TicketsMainTab.done: state?.todayDoneCount ?? view.completedToday.length,
     };
   }
 
@@ -246,10 +248,94 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   }
 
   Widget _buildList(TicketsListView? view, TicketsMainTab mainTab) {
+    // Realtime-driven tabs read straight from state-layer providers so
+    // websocket upserts repaint without rebuilding the parent screen.
+    if (mainTab == TicketsMainTab.incoming) {
+      return const _IncomingTabList();
+    }
+    if (mainTab == TicketsMainTab.today) {
+      return const _TodayTabList();
+    }
     if (view == null) {
       return const _LoadingList();
     }
     return _TicketsList(view: view, mainTab: mainTab);
+  }
+}
+
+/// Builds an `onAccept` handler matching the existing AcceptSheet contract.
+VoidCallback _acceptHandler(BuildContext context, Ticket ticket) {
+  return () async {
+    await AcknowledgeTicketBottomSheet.show(
+      context: context,
+      ticketCode: ticket.code,
+      ticketTitle: ticket.title,
+      hasGuest: ticket.guest != null,
+    );
+  };
+}
+
+VoidCallback _openHandler(BuildContext context, Ticket ticket) {
+  return () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TicketDetailScreen(ticketId: ticket.id),
+        ),
+      );
+}
+
+class _TodayTabList extends ConsumerWidget {
+  const _TodayTabList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tickets = ref.watch(todayTicketsProvider);
+    if (tickets.isEmpty) return const _EmptyView();
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+      itemCount: tickets.length,
+      itemBuilder: (context, index) {
+        final ticket = tickets[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: TicketCardNew(
+            ticket: ticket,
+            onTap: _openHandler(context, ticket),
+            onAccept: _acceptHandler(context, ticket),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _IncomingTabList extends ConsumerWidget {
+  const _IncomingTabList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tickets = ref.watch(incomingTicketsProvider);
+    if (tickets.isEmpty) return const _EmptyView();
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+      itemCount: tickets.length,
+      itemBuilder: (context, index) {
+        final ticket = tickets[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: TicketCardNew(
+            ticket: ticket,
+            onTap: _openHandler(context, ticket),
+            onAccept: _acceptHandler(context, ticket),
+          ),
+        );
+      },
+    );
   }
 }
 

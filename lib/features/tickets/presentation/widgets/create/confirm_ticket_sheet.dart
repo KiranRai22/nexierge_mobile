@@ -8,7 +8,7 @@ import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../domain/models/catalog.dart';
 import '../../../domain/models/ticket.dart';
 import '../../providers/catalog_create_controller.dart';
-import '../../providers/ticket_form_options_provider.dart';
+import '../../providers/checked_in_guest_stays_provider.dart';
 import '../../screens/create_screen.dart' show formatMoney;
 
 /// Confirm Ticket bottom sheet shown before submission.
@@ -38,13 +38,12 @@ class _ConfirmBody extends ConsumerWidget {
     final catalog = draft.catalog;
     if (catalog == null) return const SizedBox.shrink();
 
-    final rooms = ref.watch(apiRoomsProvider);
-    final room = draft.selectedRoomId == null
+    // selectedRoomId now stores the picked checked-in stay's guest_stay_id
+    // (was: room id from the legacy form-options API). Look up the display
+    // room number from the checked-in stays cache.
+    final stay = draft.selectedRoomId == null
         ? null
-        : rooms.firstWhere(
-            (r) => r.id == draft.selectedRoomId,
-            orElse: () => rooms.first,
-          );
+        : ref.watch(checkedInStayByIdProvider(draft.selectedRoomId!));
     final guest = draft.guestName.trim();
     final note = draft.note.trim();
 
@@ -56,7 +55,7 @@ class _ConfirmBody extends ConsumerWidget {
       ),
       _SummaryRow.inline(
         s.confirmTicketRowRoom,
-        room == null ? '—' : s.roomNumber(room.number),
+        stay == null ? '—' : s.roomNumber(stay.roomNumber),
       ),
       if (guest.isNotEmpty) _SummaryRow.inline(s.confirmTicketRowGuest, guest),
       _SummaryRow.inline(

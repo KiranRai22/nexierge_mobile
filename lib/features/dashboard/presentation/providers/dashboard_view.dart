@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../tickets/domain/entities/ticket_form_options.dart';
 import '../../../tickets/domain/models/department.dart';
 import '../../../tickets/domain/models/ticket.dart';
 import '../../../tickets/presentation/providers/repository_providers.dart';
@@ -91,14 +92,18 @@ List<Ticket> _applyScope(
   List<Ticket> all,
   TicketScope scope,
   Department home,
-  Set<Department> filter,
+  Set<HotelDepartment> filter,
 ) {
   Iterable<Ticket> out = all;
   if (scope == TicketScope.myDept) {
     out = out.where((t) => t.department == home);
   }
   if (filter.isNotEmpty) {
-    out = out.where((t) => filter.contains(t.department));
+    // Mock Tickets carry the legacy [Department] enum, so we match via the
+    // picked HotelDepartment's `known` mapping until tickets move to API.
+    final knownEnums =
+        filter.map((d) => d.known).whereType<Department>().toSet();
+    out = out.where((t) => knownEnums.contains(t.department));
   }
   return out.toList(growable: false);
 }

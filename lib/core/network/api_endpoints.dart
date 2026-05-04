@@ -73,6 +73,14 @@ abstract class APIEndpoints {
       '$_host/api:bAt3sLZU/tickets/add/get_departnents_and_rooms';
   static const String ticketsManual = '$_host/api:t_TeioyT/tickets/manual';
 
+  // Service Catalogs
+  static const String serviceCatalogsAll =
+      '$_host/api:u0I0pXR9/service_catalogs/catalogs/all';
+
+  // Guest stay
+  static const String guestStayCheckedIn =
+      '$_host/api:bAt3sLZU/guest_stay/checked_in';
+
   // Staff
   static const String staffGetAllHousekeeping =
       '$baseUrl/staff/get_all_housekeeping';

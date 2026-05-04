@@ -20,12 +20,36 @@ class _DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
 
   @override
   Future<HotelDetailsDto> getHotelDetails({String? hotelUserId}) async {
-    final res = await _dio.get(
-      APIEndpoints.dashboardHotelDetails,
-      queryParameters: {'hotel_user_id': hotelUserId ?? ''},
-    );
-    final data = res.data as Map<String, dynamic>;
-    return HotelDetailsDto.fromJson(data);
+    try {
+      final res = await _dio.get(
+        APIEndpoints.dashboardHotelDetails,
+        queryParameters: {'hotel_user_id': hotelUserId ?? ''},
+      );
+
+      final Map<String, dynamic> data;
+      if (res.data is Map<String, dynamic>) {
+        data = res.data as Map<String, dynamic>;
+      } else if (res.data is String && (res.data as String).isNotEmpty) {
+        try {
+          data = jsonDecode(res.data as String) as Map<String, dynamic>;
+        } catch (_) {
+          throw Exception('Failed to parse hotel details response');
+        }
+      } else {
+        // Backend can return null/empty when the user has no hotel context.
+        // Treat as an empty payload rather than crashing the bootstrap.
+        debugPrint(
+          '[DashboardRemoteDataSource] Hotel details: empty/null response '
+          '(${res.data?.runtimeType}); returning empty DTO',
+        );
+        return HotelDetailsDto();
+      }
+
+      return HotelDetailsDto.fromJson(data);
+    } catch (e) {
+      debugPrint('[DashboardRemoteDataSource] Hotel details API failed: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -180,19 +204,22 @@ class NeedsAttentionDto {
   });
 
   factory NeedsAttentionDto.fromJson(Map<String, dynamic> json) {
+    String s(String k) => (json[k] as String?) ?? '';
+    int i(String k) => (json[k] as num?)?.toInt() ?? 0;
+    final dept = json['_department'];
     return NeedsAttentionDto(
-      id: json['id'] as String,
-      createdAt: json['created_at'] as int,
-      departmentId: json['department_id'] as String,
-      status: json['status'] as String,
-      dueAt: json['due_at'] as int,
-      room: json['room'] as String,
-      guestName: json['guest_name'] as String,
-      acknowledgedAt: json['acknowledged_at'] as int,
-      department: DepartmentInfoDto.fromJson(
-        json['_department'] as Map<String, dynamic>,
-      ),
-      onbRoomNumber: json['onb_room_number'] as String,
+      id: s('id'),
+      createdAt: i('created_at'),
+      departmentId: s('department_id'),
+      status: s('status'),
+      dueAt: i('due_at'),
+      room: s('room'),
+      guestName: s('guest_name'),
+      acknowledgedAt: i('acknowledged_at'),
+      department: dept is Map<String, dynamic>
+          ? DepartmentInfoDto.fromJson(dept)
+          : DepartmentInfoDto.empty(),
+      onbRoomNumber: s('onb_room_number'),
     );
   }
 }
@@ -208,11 +235,20 @@ class DepartmentInfoDto {
     required this.icon,
   });
 
+  factory DepartmentInfoDto.empty() => DepartmentInfoDto(
+        name: '',
+        mobileIcon: '',
+        icon: IconInfoDto.empty(),
+      );
+
   factory DepartmentInfoDto.fromJson(Map<String, dynamic> json) {
+    final icon = json['icon'];
     return DepartmentInfoDto(
-      name: json['name'] as String,
-      mobileIcon: json['mobile_icon'] as String,
-      icon: IconInfoDto.fromJson(json['icon'] as Map<String, dynamic>),
+      name: (json['name'] as String?) ?? '',
+      mobileIcon: (json['mobile_icon'] as String?) ?? '',
+      icon: icon is Map<String, dynamic>
+          ? IconInfoDto.fromJson(icon)
+          : IconInfoDto.empty(),
     );
   }
 }
@@ -222,7 +258,9 @@ class IconInfoDto {
 
   IconInfoDto({required this.url});
 
+  factory IconInfoDto.empty() => IconInfoDto(url: '');
+
   factory IconInfoDto.fromJson(Map<String, dynamic> json) {
-    return IconInfoDto(url: json['url'] as String);
+    return IconInfoDto(url: (json['url'] as String?) ?? '');
   }
 }

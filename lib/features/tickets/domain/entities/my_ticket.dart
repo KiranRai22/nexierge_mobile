@@ -88,41 +88,124 @@ class RoomDetails {
   });
 }
 
+/// Best-effort timestamp for "when did this ticket reach its current status".
+///
+/// The backend doesn't ship a dedicated `status_changed_at` field, so we
+/// infer from whichever timestamp the model already carries:
+///
+/// - DONE        → confirmedAt → acknowledgedAt → createdAt
+/// - IN_PROGRESS → acknowledgedAt → createdAt
+/// - ACCEPTED    → acknowledgedAt → createdAt
+/// - NEW (other) → createdAt
+///
+/// Realtime events override this with [DateTime.now] at the moment the
+/// event is observed (see [MyTicketsState.statusChangedAt]).
+int defaultStatusChangedAt(MyTicket t) {
+  switch (t.status.toUpperCase()) {
+    case 'DONE':
+      if (t.confirmedAt > 0) return t.confirmedAt;
+      if (t.acknowledgedAt > 0) return t.acknowledgedAt;
+      return t.createdAt;
+    case 'IN_PROGRESS':
+    case 'ACCEPTED':
+      if (t.acknowledgedAt > 0) return t.acknowledgedAt;
+      return t.createdAt;
+    default:
+      return t.createdAt;
+  }
+}
+
 /// State holder for my tickets with counts.
 class MyTicketsState {
   final List<MyTicket> all;
   final bool isLoading;
   final String? error;
 
+  /// Realtime overrides for `status_changed_at`. Populated whenever a
+  /// realtime upsert is observed — keyed by ticket id, value is the
+  /// `DateTime.now().millisecondsSinceEpoch` at the time of the event.
+  final Map<String, int> statusChangedAt;
+
   const MyTicketsState({
     this.all = const [],
     this.isLoading = false,
     this.error,
+    this.statusChangedAt = const {},
   });
 
   MyTicketsState copyWith({
     List<MyTicket>? all,
     bool? isLoading,
     String? error,
+    Map<String, int>? statusChangedAt,
   }) {
     return MyTicketsState(
       all: all ?? this.all,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      statusChangedAt: statusChangedAt ?? this.statusChangedAt,
     );
   }
 
-  // Counts by status
-  int get incomingCount => all.where((t) => t.isIncoming).length;
+  // ───────────────────────── helpers ─────────────────────────
+
+  int statusChangedAtFor(MyTicket t) =>
+      statusChangedAt[t.id] ?? defaultStatusChangedAt(t);
+
+  bool _isToday(int epochMs) {
+    if (epochMs <= 0) return false;
+    final dt = DateTime.fromMillisecondsSinceEpoch(epochMs).toLocal();
+    final now = DateTime.now();
+    return dt.year == now.year && dt.month == now.month && dt.day == now.day;
+  }
+
+  bool _changedToday(MyTicket t) => _isToday(statusChangedAtFor(t));
+
+  // ───────────────────────── Incoming ─────────────────────────
+
+  /// Newly received tickets that haven't been accepted yet.
+  List<MyTicket> get incoming => all.where((t) => t.isIncoming).toList();
+  int get incomingCount => incoming.length;
+
+  // ───────────────────────── Today (status changed today) ──────────────────
+
+  /// All tickets whose latest status transition happened today.
+  List<MyTicket> get todayAll => all.where(_changedToday).toList();
+  List<MyTicket> get todayAccepted =>
+      all.where((t) => t.isAccepted && _changedToday(t)).toList();
+  List<MyTicket> get todayInProgress =>
+      all.where((t) => t.isInProgress && _changedToday(t)).toList();
+  List<MyTicket> get todayDone =>
+      all.where((t) => t.isDone && _changedToday(t)).toList();
+
+  int get todayAllCount => todayAll.length;
+  int get todayAcceptedCount => todayAccepted.length;
+  int get todayInProgressCount => todayInProgress.length;
+  int get todayDoneCount => todayDone.length;
+
+  // ───────────────────────── legacy aggregate counts ──────────────────────
+  // Retained for callers that still display global "across all dates"
+  // counts (KPIs, dashboard cards) — these don't filter by today.
+
   int get acceptedCount => all.where((t) => t.isAccepted).length;
   int get inProgressCount => all.where((t) => t.isInProgress).length;
   int get doneCount => all.where((t) => t.isDone).length;
   int get overdueCount => all.where((t) => t.isOverdue).length;
 
-  // Filtered lists
-  List<MyTicket> get incoming => all.where((t) => t.isIncoming).toList();
-  List<MyTicket> get today => all.where((t) => !t.isIncoming).toList();
-  List<MyTicket> get todayAccepted => all.where((t) => t.isAccepted).toList();
-  List<MyTicket> get todayInProgress => all.where((t) => t.isInProgress).toList();
-  List<MyTicket> get todayDone => all.where((t) => t.isDone).toList();
+  /// Resolves the filter key emitted by [TicketsFilterChips] to the
+  /// appropriate today-bucket. `null` / `'all'` returns every today ticket.
+  List<MyTicket> todayFiltered(String? filterKey) {
+    switch (filterKey) {
+      case 'accepted':
+        return todayAccepted;
+      case 'inprogress':
+        return todayInProgress;
+      case 'done':
+        return todayDone;
+      case 'all':
+      case null:
+      default:
+        return todayAll;
+    }
+  }
 }

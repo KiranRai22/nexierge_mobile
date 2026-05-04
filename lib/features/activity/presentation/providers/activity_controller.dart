@@ -52,13 +52,17 @@ final activityFeedProvider =
   final filter = ref.watch(activityFilterProvider);
 
   return repo.watchEvents().map((events) {
+    // Activity events still carry the legacy [Department] enum; map the
+    // picked HotelDepartments to enums via `known` until the activity feed
+    // moves to API-backed tickets.
+    final knownEnums = dept.map((d) => d.known).whereType<Object>().toSet();
     return events.where((e) {
       if (!filter.matches(e.type)) return false;
       if (scope == TicketScope.myDept &&
           e.department != session.homeDepartment) {
         return false;
       }
-      if (dept.isNotEmpty && !dept.contains(e.department)) return false;
+      if (dept.isNotEmpty && !knownEnums.contains(e.department)) return false;
       return true;
     }).toList(growable: false);
   });

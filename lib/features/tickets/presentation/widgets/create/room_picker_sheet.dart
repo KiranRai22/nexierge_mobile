@@ -4,12 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
-import '../../../domain/models/ticket.dart';
-import '../../providers/ticket_form_options_provider.dart';
+import '../../../domain/entities/checked_in_guest_stay.dart';
+import '../../providers/checked_in_guest_stays_provider.dart';
 
-/// Bottom sheet for selecting a room. Returns the [Room.id] or null.
+/// Bottom sheet for selecting a room.
+///
+/// Sourced from `checkedInGuestStaysProvider` — only rooms with a currently
+/// checked-in guest are shown. Returns the row's `guest_stay_id` so callers
+/// can look up the contact + guest name in one shot.
 class RoomPickerSheet {
-  static Future<String?> show(BuildContext context) {
+  static Future<String?> showCheckedIn(BuildContext context) {
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -17,18 +21,18 @@ class RoomPickerSheet {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => const _RoomSheetBody(),
+      builder: (_) => const _CheckedInRoomSheetBody(),
     );
   }
 }
 
-class _RoomSheetBody extends ConsumerWidget {
-  const _RoomSheetBody();
+class _CheckedInRoomSheetBody extends ConsumerWidget {
+  const _CheckedInRoomSheetBody();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final asyncOptions = ref.watch(ticketFormOptionsProvider);
+    final async = ref.watch(checkedInGuestStaysProvider);
 
     return Padding(
       padding: EdgeInsets.only(bottom: viewInsets),
@@ -41,17 +45,19 @@ class _RoomSheetBody extends ConsumerWidget {
               const _Handle(),
               const _Header(),
               Expanded(
-                child: asyncOptions.when(
-                  data: (options) => _RoomGrid(
-                    rooms: options.rooms,
-                    onPick: (id) => Navigator.of(context).pop(id),
+                child: async.when(
+                  data: (stays) => _CheckedInGrid(
+                    stays: stays,
+                    onPick: (guestStayId) =>
+                        Navigator.of(context).pop(guestStayId),
                   ),
                   loading: () => const Center(
                     child: CircularProgressIndicator(strokeWidth: 2.4),
                   ),
                   error: (e, _) => _ErrorView(
                     message: e.toString(),
-                    onRetry: () => ref.invalidate(ticketFormOptionsProvider),
+                    onRetry: () =>
+                        ref.invalidate(checkedInGuestStaysProvider),
                   ),
                 ),
               ),
@@ -63,14 +69,14 @@ class _RoomSheetBody extends ConsumerWidget {
   }
 }
 
-class _RoomGrid extends StatelessWidget {
-  final List<Room> rooms;
+class _CheckedInGrid extends StatelessWidget {
+  final List<CheckedInGuestStay> stays;
   final ValueChanged<String> onPick;
-  const _RoomGrid({required this.rooms, required this.onPick});
+  const _CheckedInGrid({required this.stays, required this.onPick});
 
   @override
   Widget build(BuildContext context) {
-    if (rooms.isEmpty) {
+    if (stays.isEmpty) {
       return Center(
         child: Text(
           context.l10n.emptyState,
@@ -88,10 +94,13 @@ class _RoomGrid extends StatelessWidget {
         mainAxisSpacing: 12,
         mainAxisExtent: 52,
       ),
-      itemCount: rooms.length,
+      itemCount: stays.length,
       itemBuilder: (_, i) {
-        final r = rooms[i];
-        return _RoomCell(room: r, onTap: () => onPick(r.id));
+        final s = stays[i];
+        return _RoomCell(
+          label: s.roomNumber,
+          onTap: () => onPick(s.guestStayId),
+        );
       },
     );
   }
@@ -173,15 +182,15 @@ class _Header extends StatelessWidget {
 }
 
 class _RoomCell extends StatelessWidget {
-  final Room room;
+  final String label;
   final VoidCallback onTap;
-  const _RoomCell({required this.room, required this.onTap});
+  const _RoomCell({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: context.l10n.roomNumber(room.number),
+      label: context.l10n.roomNumber(label),
       child: Material(
         color: ColorPalette.opsSurface,
         borderRadius: BorderRadius.circular(12),
@@ -195,7 +204,7 @@ class _RoomCell extends StatelessWidget {
               border: Border.all(color: ColorPalette.opsBorder),
             ),
             child: Text(
-              room.number,
+              label,
               style: TypographyManager.titleSmall.copyWith(
                 fontWeight: FontWeight.w700,
               ),

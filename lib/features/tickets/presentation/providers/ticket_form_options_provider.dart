@@ -4,14 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/ticket_form_options.dart';
-import '../../domain/models/ticket.dart';
 
-/// Shared async fetch of room + department options.
+/// Shared async fetch of department options.
 ///
-/// Backed by `/tickets/add/get_departnents_and_rooms` API. Uses keepAlive
-/// so data persists across screens (create flow, tickets filter, etc).
-/// Auto-refreshes when hotel changes (via bootstrap watch).
-/// Call invalidate() to force refresh.
+/// Backed by `/tickets/add/get_departnents_and_rooms` API; the `rooms`
+/// half of the response is intentionally ignored — rooms are sourced from
+/// `checkedInGuestStaysProvider` instead. Uses keepAlive so data persists
+/// across screens (create flow, tickets filter, etc). Auto-refreshes when
+/// hotel changes (via bootstrap watch). Call invalidate() to force refresh.
 final ticketFormOptionsProvider = FutureProvider<TicketFormOptions>((
   ref,
 ) async {
@@ -25,17 +25,9 @@ final ticketFormOptionsProvider = FutureProvider<TicketFormOptions>((
   final repo = ref.read(ticketRepositoryProvider);
   final result = await repo.fetchTicketFormOptions(hotelId: hotelId);
   debugPrint(
-    '[ticketFormOptionsProvider] Loaded ${result.departments.length} depts, ${result.rooms.length} rooms',
+    '[ticketFormOptionsProvider] Loaded ${result.departments.length} depts',
   );
   return result;
-});
-
-/// Convenience: just the rooms slice (loading/error fall back to empty list).
-/// Keeps provider alive via ticketFormOptionsProvider cache.
-final apiRoomsProvider = Provider<List<Room>>((ref) {
-  return ref
-      .watch(ticketFormOptionsProvider)
-      .maybeWhen(data: (o) => o.rooms, orElse: () => const []);
 });
 
 /// Convenience: just the departments slice.

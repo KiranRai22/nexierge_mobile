@@ -14,6 +14,9 @@ abstract class TicketRemoteDataSource {
   Future<CreateManualTicketResponseDto> createManualTicket({
     required CreateManualTicketRequestDto request,
   });
+
+  /// Get all service catalogs for a hotel
+  Future<List<ServiceCatalogDto>> getServiceCatalogs({required String hotelId});
 }
 
 class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
@@ -80,6 +83,19 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
       res.data as Map<String, dynamic>,
     );
   }
+
+  @override
+  Future<List<ServiceCatalogDto>> getServiceCatalogs({
+    required String hotelId,
+  }) async {
+    final url = '${APIEndpoints.serviceCatalogsAll}/$hotelId';
+    debugPrint('[TicketRemoteDataSource] getServiceCatalogs: $url');
+    final res = await _dio.get(url);
+    final list = res.data as List<dynamic>;
+    return list
+        .map((e) => ServiceCatalogDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }
 
 final ticketRemoteDataSourceProvider = Provider<TicketRemoteDataSource>((ref) {
@@ -87,25 +103,28 @@ final ticketRemoteDataSourceProvider = Provider<TicketRemoteDataSource>((ref) {
   return _TicketRemoteDataSourceImpl(dio);
 });
 
+/// Wraps the `/tickets/add/get_departnents_and_rooms` response.
+///
+/// We intentionally ignore the `rooms` array the server returns — rooms now
+/// come from `checkedInGuestStaysProvider`. Only departments are persisted.
 class TicketFormOptionsDto {
   final List<DepartmentDto> departments;
-  final List<RoomLiteDto> rooms;
 
-  TicketFormOptionsDto({required this.departments, required this.rooms});
+  TicketFormOptionsDto({required this.departments});
 
   factory TicketFormOptionsDto.fromJson(Map<String, dynamic> json) {
     return TicketFormOptionsDto(
       departments: ((json['departments'] as List?) ?? const [])
           .map((e) => DepartmentDto.fromJson(e as Map<String, dynamic>))
           .toList(),
-      rooms: ((json['rooms'] as List?) ?? const [])
-          .map((e) => RoomLiteDto.fromJson(e as Map<String, dynamic>))
-          .toList(),
     );
   }
 }
 
 class DepartmentDto {
+  /// Server-issued `department_id` — the canonical id we send back on every
+  /// payload. The wrapping `id` (the record/row id) is intentionally not
+  /// read; per the API contract it is not the value the backend expects.
   final String id;
   final String name;
 
@@ -113,22 +132,8 @@ class DepartmentDto {
 
   factory DepartmentDto.fromJson(Map<String, dynamic> json) {
     return DepartmentDto(
-      id: (json['department_id'] as String?) ?? (json['id'] as String?) ?? '',
+      id: (json['department_id'] as String?) ?? '',
       name: (json['name'] as String?) ?? '',
-    );
-  }
-}
-
-class RoomLiteDto {
-  final String id;
-  final String onbRoomNumber;
-
-  RoomLiteDto({required this.id, required this.onbRoomNumber});
-
-  factory RoomLiteDto.fromJson(Map<String, dynamic> json) {
-    return RoomLiteDto(
-      id: (json['id'] as String?) ?? '',
-      onbRoomNumber: (json['onb_room_number'] as String?) ?? '',
     );
   }
 }
@@ -244,9 +249,12 @@ class CreateManualTicketRequestDto {
   final String? departmentId;
   final String? guestStayId;
   final String? contactId;
-  final String? hotelDepartmentId;
   final String summary;
   final String details;
+
+  /// Origin of the ticket (e.g. whatsApp, frontDesk). Wire format: camelCase
+  /// `TicketSource.name`. Omitted from the payload when null.
+  final String? source;
 
   CreateManualTicketRequestDto({
     this.hotelId,
@@ -254,22 +262,23 @@ class CreateManualTicketRequestDto {
     this.departmentId,
     this.guestStayId,
     this.contactId,
-    this.hotelDepartmentId,
+    this.source,
     required this.summary,
     required this.details,
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final map = <String, dynamic>{
       'hotel_id': hotelId,
       'created_by_ai': createdByAi,
       'department_id': departmentId,
       'guest_stay_id': guestStayId,
       'contact_id': contactId,
-      'hotel_department_id': hotelDepartmentId,
       'summary': summary,
       'details': details,
     };
+    if (source != null) map['source'] = source;
+    return map;
   }
 }
 
@@ -291,6 +300,64 @@ class CreateManualTicketResponseDto {
       ticketId: json['ticket_id'] as String? ?? json['id'] as String?,
       success: (json['success'] as bool?) ?? true,
       message: json['message'] as String?,
+    );
+  }
+}
+
+/// Logo info for service catalog
+class ServiceCatalogLogoDto {
+  final String? url;
+  final String? name;
+  final String? mime;
+
+  ServiceCatalogLogoDto({this.url, this.name, this.mime});
+
+  factory ServiceCatalogLogoDto.fromJson(Map<String, dynamic> json) {
+    return ServiceCatalogLogoDto(
+      url: json['url'] as String?,
+      name: json['name'] as String?,
+      mime: json['mime'] as String?,
+    );
+  }
+}
+
+/// Service Catalog DTO from API
+class ServiceCatalogDto {
+  final String id;
+  final String name;
+  final String? description;
+  final bool isEnabled;
+  final String? brandColor;
+  final ServiceCatalogLogoDto? logo;
+  final int categories;
+  final int items;
+  final int sections;
+
+  ServiceCatalogDto({
+    required this.id,
+    required this.name,
+    this.description,
+    this.isEnabled = true,
+    this.brandColor,
+    this.logo,
+    this.categories = 0,
+    this.items = 0,
+    this.sections = 0,
+  });
+
+  factory ServiceCatalogDto.fromJson(Map<String, dynamic> json) {
+    return ServiceCatalogDto(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      isEnabled: json['is_enabled'] as bool? ?? true,
+      brandColor: json['brand_color'] as String?,
+      logo: json['logo'] != null
+          ? ServiceCatalogLogoDto.fromJson(json['logo'] as Map<String, dynamic>)
+          : null,
+      categories: json['categories'] as int? ?? 0,
+      items: json['items'] as int? ?? 0,
+      sections: json['sections'] as int? ?? 0,
     );
   }
 }

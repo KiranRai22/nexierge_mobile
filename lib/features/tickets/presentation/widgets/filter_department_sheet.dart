@@ -6,7 +6,6 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/ticket_form_options.dart';
-import '../../domain/models/department.dart';
 import '../providers/session_providers.dart';
 import '../providers/ticket_form_options_provider.dart';
 
@@ -35,7 +34,7 @@ class _FilterSheetBody extends ConsumerStatefulWidget {
 }
 
 class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
-  late Set<Department> _draft;
+  late Set<HotelDepartment> _draft;
 
   @override
   void initState() {
@@ -49,24 +48,17 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
   }
 
   void _toggle(HotelDepartment dept) {
-    final enumValue = dept.known;
-    if (enumValue == null) return; // Skip if no mapping
-
     setState(() {
-      if (_draft.contains(enumValue)) {
-        _draft.remove(enumValue);
+      if (_draft.contains(dept)) {
+        _draft.remove(dept);
       } else {
-        _draft.add(enumValue);
+        _draft.add(dept);
       }
     });
   }
 
   void _selectAll(List<HotelDepartment> apiDepts) {
-    final allEnums = apiDepts
-        .map((d) => d.known)
-        .whereType<Department>()
-        .toSet();
-    setState(() => _draft = allEnums);
+    setState(() => _draft = apiDepts.toSet());
   }
 
   void _clear() => setState(() => _draft = {});
@@ -173,7 +165,7 @@ class _Header extends StatelessWidget {
 }
 
 class _DeptList extends ConsumerWidget {
-  final Set<Department> selected;
+  final Set<HotelDepartment> selected;
   final ValueChanged<HotelDepartment> onToggle;
   final ValueChanged<List<HotelDepartment>> onSelectAll;
 
@@ -191,10 +183,9 @@ class _DeptList extends ConsumerWidget {
 
     return asyncDepts.when(
       data: (depts) {
-        // Only show departments that can be mapped to enum for filtering
-        final selectableDepts = depts.where((d) => d.known != null).toList();
-
-        if (selectableDepts.isEmpty) {
+        // Show every department surfaced by the API; selection key is
+        // department_id (carried inside the HotelDepartment).
+        if (depts.isEmpty) {
           return Padding(
             padding: const EdgeInsets.all(20),
             child: Text(
@@ -207,11 +198,10 @@ class _DeptList extends ConsumerWidget {
           child: ListView.builder(
             shrinkWrap: true,
             padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: selectableDepts.length,
+            itemCount: depts.length,
             itemBuilder: (context, i) {
-              final dept = selectableDepts[i];
-              final enumValue = dept.known!;
-              final isOn = selected.contains(enumValue);
+              final dept = depts[i];
+              final isOn = selected.contains(dept);
 
               return InkWell(
                 onTap: () => onToggle(dept),
@@ -237,9 +227,9 @@ class _DeptList extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      if (i == selectableDepts.length - 1)
+                      if (i == depts.length - 1)
                         TextButton(
-                          onPressed: () => onSelectAll(selectableDepts),
+                          onPressed: () => onSelectAll(depts),
                           child: Text(s.filterActionSelectAll),
                         ),
                     ],

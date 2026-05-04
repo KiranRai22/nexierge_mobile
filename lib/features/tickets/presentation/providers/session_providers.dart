@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/department.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
 
@@ -54,7 +55,11 @@ final ticketScopeProvider = StateProvider<TicketScope>(
   (ref) => TicketScope.myDept,
 );
 
-/// Department-filter selection — shared between Tickets and Activity.
-final departmentFilterProvider = StateProvider<Set<Department>>(
+/// Department-filter selection — shared between Tickets, Activity, and the
+/// dashboard. Each entry is a [HotelDepartment] (server `department_id` +
+/// display name); equality is by `department_id`. Consumers that compare
+/// against the legacy [Department] enum (mock-backed Ticket lists) use
+/// `HotelDepartment.known`.
+final departmentFilterProvider = StateProvider<Set<HotelDepartment>>(
   (ref) => const {},
 );
