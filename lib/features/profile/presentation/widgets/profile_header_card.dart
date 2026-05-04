@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -139,27 +138,30 @@ class _Avatar extends StatelessWidget {
                     ),
                   )
                 : avatarUrl != null && avatarUrl!.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: avatarUrl!,
+                    ? Image.network(
+                        avatarUrl!,
                         width: 96,
                         height: 96,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) =>
+                        errorBuilder: (_, __, ___) =>
                             _InitialsDisc(initials: initials),
-                        placeholder: (_, __) => Container(
-                          width: 96,
-                          height: 96,
-                          color: ColorPalette.opsPurple,
-                          alignment: Alignment.center,
-                          child: const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                        loadingBuilder: (_, child, progress) {
+                          if (progress == null) return child;
+                          return Container(
+                            width: 96,
+                            height: 96,
+                            color: ColorPalette.opsPurple,
+                            alignment: Alignment.center,
+                            child: const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       )
                     : _InitialsDisc(initials: initials),
           ),

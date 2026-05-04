@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -100,13 +99,19 @@ class _Avatar extends StatelessWidget {
         ),
         child: ClipOval(
           child: imageUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: imageUrl!,
+              ? Image.network(
+                  imageUrl!,
                   width: 36,
                   height: 36,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => _buildInitials(c),
-                  errorWidget: (context, url, error) => _buildInitials(c),
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback to initials on error
+                    return _buildInitials(c);
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return _buildInitials(c);
+                  },
                 )
               : _buildInitials(c),
         ),

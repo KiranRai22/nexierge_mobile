@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -211,12 +210,12 @@ class _CatalogCard extends StatelessWidget {
                 child: catalog.logoUrl != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: catalog.logoUrl!,
+                        child: Image.network(
+                          catalog.logoUrl!,
                           width: 56,
                           height: 56,
                           fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) =>
+                          errorBuilder: (_, __, ___) =>
                               Icon(Icons.store, color: brandColor, size: 28),
                         ),
                       )

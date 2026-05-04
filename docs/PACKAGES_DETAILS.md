@@ -216,14 +216,6 @@ Last updated: 2026-04-26.
 - **Description:** Plugin host that lets third-party packages publish lint rules. MIT.
 - **Why we use it:** Required by `riverpod_lint`.
 
-### `cached_network_image`
-- **Package name:** `cached_network_image`
-- **Version:** `^3.4.1`
-- **Owner:** Rene Floor (Baseflow)
-- **License:** MIT
-- **Description:** Drop-in replacement for `Image.network` that caches remote images on disk and in memory, with placeholder/error builders. MIT, supports Android & iOS (also web/desktop). Active maintenance, recent releases.
-- **Why we use it:** Avoid re-downloading avatars and other remote images on every cold start; reduces bandwidth and improves perceived performance.
-
 ---
 
 ## Fonts
