@@ -31,6 +31,25 @@ abstract class TicketRepository {
   /// (NEW → ACCEPTED → IN_PROGRESS → DONE).
   Future<void> updateTicketStatus({required String ticketId});
 
+  /// Cancels a ticket with a required reason.
+  Future<void> cancelTicket({required String ticketId, required String reason});
+
+  /// Resets a ticket back to NEW status.
+  Future<void> resetTicket({required String ticketId});
+
+  /// Updates the due time with a required reason.
+  Future<void> changeDueTime({
+    required String ticketId,
+    required int newDueAt,
+    required String reason,
+  });
+
+  /// Marks ticket as DONE, optionally with a resolution note.
+  Future<void> markDoneWithNote({
+    required String ticketId,
+    String? resolutionNote,
+  });
+
   /// Get all service catalogs for a hotel
   Future<List<ServiceCatalog>> fetchServiceCatalogs({required String hotelId});
 }
@@ -171,6 +190,67 @@ class _TicketRepositoryImpl implements TicketRepository {
   Future<void> updateTicketStatus({required String ticketId}) async {
     try {
       await _remote.updateTicketStatus(ticketId: ticketId);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> cancelTicket({
+    required String ticketId,
+    required String reason,
+  }) async {
+    try {
+      await _remote.cancelTicket(ticketId: ticketId, reason: reason);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> resetTicket({required String ticketId}) async {
+    try {
+      await _remote.resetTicket(ticketId: ticketId);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> changeDueTime({
+    required String ticketId,
+    required int newDueAt,
+    required String reason,
+  }) async {
+    try {
+      await _remote.changeDueTime(
+        ticketId: ticketId,
+        newDueAt: newDueAt,
+        reason: reason,
+      );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> markDoneWithNote({
+    required String ticketId,
+    String? resolutionNote,
+  }) async {
+    try {
+      await _remote.markDoneWithNote(
+        ticketId: ticketId,
+        resolutionNote: resolutionNote,
+      );
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {

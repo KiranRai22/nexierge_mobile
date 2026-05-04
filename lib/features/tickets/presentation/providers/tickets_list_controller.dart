@@ -5,6 +5,7 @@ import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import 'repository_providers.dart';
 import 'session_providers.dart';
+import 'tickets_schedule_clock.dart';
 
 /// Sub-tab on the dashboard.
 enum TicketsSubTab { incoming, today, scheduled, done }
@@ -54,6 +55,10 @@ final ticketsListProvider =
   final query = ref.watch(ticketsSearchQueryProvider).trim().toLowerCase();
   final dept = ref.watch(departmentFilterProvider);
   final session = ref.watch(operatorSessionProvider);
+  // Re-emit when the date boundary may have shifted (hourly + on app
+  // resume) so a ticket whose `eta` just rolled into "today" auto-promotes
+  // out of the Scheduled bucket without a backend refetch.
+  ref.watch(ticketsScheduleClockProvider);
 
   return repo.watchAll().map((all) {
     final scoped = _applyScope(all, scope, session.homeDepartment, dept);

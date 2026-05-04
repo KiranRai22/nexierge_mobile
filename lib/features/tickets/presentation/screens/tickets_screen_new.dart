@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -20,10 +21,13 @@ import '../widgets/tickets_main_tabs.dart';
 import '../widgets/tickets_filter_chips.dart';
 import '../widgets/filter_department_sheet.dart';
 import '../widgets/acknowledge_ticket_bottom_sheet.dart';
+import '../widgets/mark_done_bottom_sheet.dart';
+import '../widgets/start_work_confirmation_bottom_sheet.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
 import 'ticket_detail_screen.dart';
 import '../../../shell/presentation/widgets/center_fab.dart';
 import '../../../shell/presentation/screens/create_router.dart';
+import '../../data/repositories/ticket_repository.dart';
 
 /// Updated tickets screen matching the provided design
 class TicketsScreenNew extends ConsumerStatefulWidget {
@@ -148,9 +152,8 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Row(
                 children: [
-                  // Title should always be "All Tickets"
                   Text(
-                    context.l10n.navTickets,
+                    '${context.l10n.activityTypeAll} ${context.l10n.navTickets}',
                     style: TypographyManager.headlineSmall.copyWith(
                       fontWeight: FontWeight.w800,
                       fontSize: 24,
@@ -283,6 +286,55 @@ VoidCallback _openHandler(BuildContext context, Ticket ticket) {
       );
 }
 
+Future<void> _startWorkHandler(
+  BuildContext context,
+  WidgetRef ref,
+  Ticket ticket,
+) async {
+  final etaLabel = () {
+    final eta = ticket.eta;
+    if (eta == null) return '—';
+    final diff = eta.difference(DateTime.now());
+    if (diff.isNegative) return '—';
+    if (diff.inDays > 0) return '${diff.inDays}d';
+    if (diff.inHours > 0) return '${diff.inHours}h';
+    return '${diff.inMinutes}m';
+  }();
+
+  final confirmed = await showStartWorkConfirmation(
+    context: context,
+    etaLabel: etaLabel,
+  );
+  if (confirmed != true || !context.mounted) return;
+
+  try {
+    await ref
+        .read(ticketRepositoryProvider)
+        .updateTicketStatus(ticketId: ticket.id);
+    ref.read(myTicketsNotifierProvider.notifier).refresh();
+  } catch (e) {
+    if (context.mounted) context.showFailure(e.toString());
+  }
+}
+
+Future<void> _markDoneHandler(
+  BuildContext context,
+  WidgetRef ref,
+  Ticket ticket,
+) async {
+  final note = await MarkDoneBottomSheet.show(context);
+  if (note == null || !context.mounted) return;
+
+  try {
+    await ref
+        .read(ticketRepositoryProvider)
+        .markDoneWithNote(ticketId: ticket.id, resolutionNote: note);
+    ref.read(myTicketsNotifierProvider.notifier).refresh();
+  } catch (e) {
+    if (context.mounted) context.showFailure(e.toString());
+  }
+}
+
 class _TodayTabList extends ConsumerWidget {
   const _TodayTabList();
 
@@ -305,6 +357,8 @@ class _TodayTabList extends ConsumerWidget {
               ticket: ticket,
               onTap: _openHandler(context, ticket),
               onAccept: _acceptHandler(context, ticket),
+              onStartWork: () => _startWorkHandler(context, ref, ticket),
+              onMarkDone: () => _markDoneHandler(context, ref, ticket),
             ),
           ),
         );
@@ -318,7 +372,13 @@ class _IncomingTabList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tickets = ref.watch(incomingTicketsProvider);
+    final raw = ref.watch(incomingTicketsProvider);
+    final filter = ref.watch(ticketsFilterProvider);
+    final tickets = [...raw]..sort(
+        (a, b) => filter == 'oldest'
+            ? a.createdAt.compareTo(b.createdAt)
+            : b.createdAt.compareTo(a.createdAt),
+      );
     if (tickets.isEmpty) return const _EmptyView();
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(

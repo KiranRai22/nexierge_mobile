@@ -457,6 +457,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ticketActionReset => 'Reset';
 
   @override
+  String get ticketActionFailedAccept => 'Couldn\'t accept ticket. Reverted.';
+
+  @override
+  String get ticketActionFailedStartWork => 'Couldn\'t start work. Reverted.';
+
+  @override
+  String get ticketActionFailedMarkDone => 'Couldn\'t mark as done. Reverted.';
+
+  @override
   String get ticketActivityCreated => 'Ticket created';
 
   @override

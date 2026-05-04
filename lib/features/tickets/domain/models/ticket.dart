@@ -97,6 +97,10 @@ class Ticket {
   final DateTime? doneAt;
   final DateTime? eta;
 
+  /// When IN_PROGRESS started — used for the elapsed work timer.
+  /// Populated from statusChangedAt override when available, else acknowledgedAt.
+  final DateTime? workStartedAt;
+
   const Ticket({
     required this.id,
     required this.code,
@@ -113,6 +117,7 @@ class Ticket {
     this.acceptedAt,
     this.doneAt,
     this.eta,
+    this.workStartedAt,
     this.priority = TicketPriority.p2,
     this.source,
   });
@@ -133,6 +138,7 @@ class Ticket {
     DateTime? acceptedAt,
     DateTime? doneAt,
     DateTime? eta,
+    DateTime? workStartedAt,
     TicketPriority? priority,
     TicketSource? source,
   }) {
@@ -152,6 +158,7 @@ class Ticket {
       acceptedAt: acceptedAt ?? this.acceptedAt,
       doneAt: doneAt ?? this.doneAt,
       eta: eta ?? this.eta,
+      workStartedAt: workStartedAt ?? this.workStartedAt,
       priority: priority ?? this.priority,
       source: source ?? this.source,
     );

@@ -126,11 +126,17 @@ class MyTicketsState {
   /// `DateTime.now().millisecondsSinceEpoch` at the time of the event.
   final Map<String, int> statusChangedAt;
 
+  /// Tickets that arrived via realtime within the last 3 seconds. Used to
+  /// drive the slide-in + background flash on the card. Cleared by a
+  /// notifier-side timer.
+  final Set<String> freshlyArrivedIds;
+
   const MyTicketsState({
     this.all = const [],
     this.isLoading = false,
     this.error,
     this.statusChangedAt = const {},
+    this.freshlyArrivedIds = const {},
   });
 
   MyTicketsState copyWith({
@@ -138,12 +144,14 @@ class MyTicketsState {
     bool? isLoading,
     String? error,
     Map<String, int>? statusChangedAt,
+    Set<String>? freshlyArrivedIds,
   }) {
     return MyTicketsState(
       all: all ?? this.all,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       statusChangedAt: statusChangedAt ?? this.statusChangedAt,
+      freshlyArrivedIds: freshlyArrivedIds ?? this.freshlyArrivedIds,
     );
   }
 
@@ -178,10 +186,14 @@ class MyTicketsState {
   List<MyTicket> get todayDone =>
       all.where((t) => t.isDone && _changedToday(t)).toList();
 
+  List<MyTicket> get todayOverdue =>
+      all.where((t) => t.isInProgress && t.isOverdue && _changedToday(t)).toList();
+
   int get todayAllCount => todayAll.length;
   int get todayAcceptedCount => todayAccepted.length;
   int get todayInProgressCount => todayInProgress.length;
   int get todayDoneCount => todayDone.length;
+  int get todayOverdueCount => todayOverdue.length;
 
   // ───────────────────────── legacy aggregate counts ──────────────────────
   // Retained for callers that still display global "across all dates"
@@ -200,6 +212,8 @@ class MyTicketsState {
         return todayAccepted;
       case 'inprogress':
         return todayInProgress;
+      case 'overdue':
+        return todayOverdue;
       case 'done':
         return todayDone;
       case 'all':

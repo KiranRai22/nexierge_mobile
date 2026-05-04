@@ -9,7 +9,16 @@ import 'tickets_main_tab_provider.dart';
 
 /// Simplified Ticket mapping from MyTicket for UI display.
 /// This is a lightweight adapter - full Ticket model is kept for detail view.
-Ticket _mapToTicket(MyTicket t) {
+/// [workStartedEpoch] is the statusChangedAt override for IN_PROGRESS tickets.
+Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
+  DateTime? workStartedAt;
+  if (t.isInProgress) {
+    if (workStartedEpoch != null) {
+      workStartedAt = DateTime.fromMillisecondsSinceEpoch(workStartedEpoch);
+    } else if (t.acknowledgedAt > 0) {
+      workStartedAt = DateTime.fromMillisecondsSinceEpoch(t.acknowledgedAt);
+    }
+  }
   return Ticket(
     id: t.id,
     code: t.roomDetails?.onbRoomNumber ?? 'N/A',
@@ -27,6 +36,7 @@ Ticket _mapToTicket(MyTicket t) {
         : null,
     createdAt: DateTime.fromMillisecondsSinceEpoch(t.createdAt),
     eta: t.dueAt > 0 ? DateTime.fromMillisecondsSinceEpoch(t.dueAt) : null,
+    workStartedAt: workStartedAt,
     items: [],
     assigneeName: t.assignedToUserId,
   );
@@ -86,24 +96,32 @@ final myTicketsListProvider = Provider<TicketsListView?>((ref) {
     data: (state) {
       if (state.all.isEmpty && state.isLoading) return null;
 
+      final now = DateTime.now();
+      final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
       final incomingNow = state.incoming;
       final todayInProgressBucket = [
         ...state.todayAccepted,
         ...state.todayInProgress,
       ];
       final completedToday = state.todayDone;
+
+      // Schedule: accepted/in-progress tickets with dueAt beyond today.
       final scheduled = state.all.where((t) {
+        if (!t.isAccepted && !t.isInProgress) return false;
         if (t.dueAt == 0) return false;
         final dueDate = DateTime.fromMillisecondsSinceEpoch(t.dueAt);
-        final tomorrow = DateTime.now().add(const Duration(days: 1));
-        return dueDate.isAfter(tomorrow);
+        return dueDate.isAfter(endOfToday);
       }).toList();
 
+      Ticket mapWithWork(MyTicket t) =>
+          _mapToTicket(t, workStartedEpoch: state.statusChangedAt[t.id]);
+
       return TicketsListView(
-        incomingNow: incomingNow.map(_mapToTicket).toList(),
-        inProgress: todayInProgressBucket.map(_mapToTicket).toList(),
-        completedToday: completedToday.map(_mapToTicket).toList(),
-        scheduled: scheduled.map(_mapToTicket).toList(),
+        incomingNow: incomingNow.map(mapWithWork).toList(),
+        inProgress: todayInProgressBucket.map(mapWithWork).toList(),
+        completedToday: completedToday.map(mapWithWork).toList(),
+        scheduled: scheduled.map(mapWithWork).toList(),
         kpiIncoming: state.incomingCount,
         kpiInProgress: state.acceptedCount + state.inProgressCount,
         kpiOverdue: state.overdueCount,
@@ -122,8 +140,8 @@ final todayTicketsProvider = Provider<List<Ticket>>((ref) {
   final asyncState = ref.watch(myTicketsNotifierProvider);
   final filter = ref.watch(ticketsFilterProvider);
   return asyncState.maybeWhen(
-    data: (state) =>
-        state.todayFiltered(filter).map(_mapToTicket).toList(),
+    data: (state) => state.todayFiltered(filter).map((t) =>
+        _mapToTicket(t, workStartedEpoch: state.statusChangedAt[t.id])).toList(),
     orElse: () => const [],
   );
 });
@@ -134,7 +152,8 @@ final todayTicketsProvider = Provider<List<Ticket>>((ref) {
 final incomingTicketsProvider = Provider<List<Ticket>>((ref) {
   final asyncState = ref.watch(myTicketsNotifierProvider);
   return asyncState.maybeWhen(
-    data: (state) => state.incoming.map(_mapToTicket).toList(),
+    data: (state) => state.incoming.map((t) =>
+        _mapToTicket(t, workStartedEpoch: state.statusChangedAt[t.id])).toList(),
     orElse: () => const [],
   );
 });

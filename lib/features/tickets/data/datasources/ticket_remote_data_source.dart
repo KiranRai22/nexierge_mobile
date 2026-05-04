@@ -18,6 +18,25 @@ abstract class TicketRemoteDataSource {
   /// POST /tickets/update_status — advances ticket through state machine.
   Future<void> updateTicketStatus({required String ticketId});
 
+  /// POST /tickets/cancel — cancels ticket with a required reason.
+  Future<void> cancelTicket({required String ticketId, required String reason});
+
+  /// POST /tickets/reset — resets ticket back to NEW status.
+  Future<void> resetTicket({required String ticketId});
+
+  /// POST /tickets/change_due — updates the due time with a required reason.
+  Future<void> changeDueTime({
+    required String ticketId,
+    required int newDueAt,
+    required String reason,
+  });
+
+  /// POST /tickets/update_status with resolution note — advances to DONE.
+  Future<void> markDoneWithNote({
+    required String ticketId,
+    String? resolutionNote,
+  });
+
   /// Get all service catalogs for a hotel
   Future<List<ServiceCatalogDto>> getServiceCatalogs({required String hotelId});
 }
@@ -93,6 +112,60 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     await _dio.post(
       APIEndpoints.ticketsUpdateStatus,
       data: {'ticket_id': ticketId},
+    );
+  }
+
+  @override
+  Future<void> cancelTicket({
+    required String ticketId,
+    required String reason,
+  }) async {
+    debugPrint('[TicketRemoteDataSource] cancelTicket: $ticketId');
+    await _dio.post(
+      APIEndpoints.ticketsCancel,
+      data: {'ticket_id': ticketId, 'reason': reason},
+    );
+  }
+
+  @override
+  Future<void> resetTicket({required String ticketId}) async {
+    debugPrint('[TicketRemoteDataSource] resetTicket: $ticketId');
+    await _dio.post(
+      APIEndpoints.ticketsReset,
+      data: {'ticket_id': ticketId},
+    );
+  }
+
+  @override
+  Future<void> changeDueTime({
+    required String ticketId,
+    required int newDueAt,
+    required String reason,
+  }) async {
+    debugPrint('[TicketRemoteDataSource] changeDueTime: $ticketId');
+    await _dio.post(
+      APIEndpoints.ticketsChangeDue,
+      data: {
+        'ticket_id': ticketId,
+        'due_at': newDueAt,
+        'reason': reason,
+      },
+    );
+  }
+
+  @override
+  Future<void> markDoneWithNote({
+    required String ticketId,
+    String? resolutionNote,
+  }) async {
+    debugPrint('[TicketRemoteDataSource] markDoneWithNote: $ticketId');
+    await _dio.post(
+      APIEndpoints.ticketsUpdateStatus,
+      data: {
+        'ticket_id': ticketId,
+        if (resolutionNote != null && resolutionNote.isNotEmpty)
+          'resolution_notes': resolutionNote,
+      },
     );
   }
 

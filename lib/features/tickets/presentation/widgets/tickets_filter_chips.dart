@@ -36,6 +36,7 @@ class TicketsFilterChips extends StatelessWidget {
             child: _FilterChip(
               label: filter.label,
               isSelected: isSelected,
+              isDanger: filter.isDanger,
               onTap: () => onFilterChanged(isSelected ? null : filter.key),
             ),
           );
@@ -59,6 +60,7 @@ class TicketsFilterChips extends StatelessWidget {
           _FilterOption('all', s.activityTypeAll),
           _FilterOption('accepted', s.statusAccepted),
           _FilterOption('inprogress', s.statusInProgress),
+          _FilterOption('overdue', s.statusOverdue, isDanger: true),
           _FilterOption('done', s.statusDone),
         ];
       case TicketsMainTab.scheduled:
@@ -80,39 +82,49 @@ class TicketsFilterChips extends StatelessWidget {
 class _FilterOption {
   final String key;
   final String label;
-  const _FilterOption(this.key, this.label);
+  final bool isDanger;
+  const _FilterOption(this.key, this.label, {this.isDanger = false});
 }
 
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
+  final bool isDanger;
   final VoidCallback onTap;
 
   const _FilterChip({
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.isDanger = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
+    final bg = isSelected
+        ? (isDanger ? c.tagRedBg : c.tagPurpleBg)
+        : c.bgSubtle;
+    final border = isSelected
+        ? (isDanger ? c.tagRedIcon : c.tagPurpleIcon)
+        : c.borderBase;
+    final fg = isSelected
+        ? (isDanger ? c.tagRedText : c.tagPurpleText)
+        : c.fgBase;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
         decoration: BoxDecoration(
-          color: isSelected ? c.tagPurpleBg : c.bgSubtle,
+          color: bg,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: isSelected ? c.tagPurpleIcon : c.borderBase,
-          ),
+          border: Border.all(color: border),
         ),
         child: Text(
           label,
           style: TypographyManager.labelSmall.copyWith(
             fontSize: 12,
-            color: isSelected ? c.tagPurpleText : c.fgBase,
+            color: fg,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),

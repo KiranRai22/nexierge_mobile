@@ -183,15 +183,15 @@ class TicketCard extends StatelessWidget {
   void _showStartWorkConfirmation(BuildContext context) {
     showStartWorkConfirmation(
       context: context,
-      onCancel: () {
-        // Handle cancel action if needed
-        print('Start work cancelled for ticket: ${ticket.id}');
-      },
-      onStartWork: () {
-        // Handle start work action
-        print('Start work confirmed for ticket: ${ticket.id}');
-        // TODO: Implement actual start work logic
-      },
+      etaLabel: ticket.eta != null
+          ? () {
+              final diff = ticket.eta!.difference(DateTime.now());
+              if (diff.isNegative) return '—';
+              if (diff.inDays > 0) return '${diff.inDays}d';
+              if (diff.inHours > 0) return '${diff.inHours}h';
+              return '${diff.inMinutes}m';
+            }()
+          : '—',
     );
   }
 }

@@ -956,6 +956,24 @@ abstract class AppLocalizations {
   /// **'Reset'**
   String get ticketActionReset;
 
+  /// No description provided for @ticketActionFailedAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t accept ticket. Reverted.'**
+  String get ticketActionFailedAccept;
+
+  /// No description provided for @ticketActionFailedStartWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start work. Reverted.'**
+  String get ticketActionFailedStartWork;
+
+  /// No description provided for @ticketActionFailedMarkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t mark as done. Reverted.'**
+  String get ticketActionFailedMarkDone;
+
   /// No description provided for @ticketActivityCreated.
   ///
   /// In en, this message translates to:

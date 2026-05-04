@@ -21,6 +21,20 @@ class TicketDetailApiController extends AsyncNotifier<TicketDetail> {
     state = const AsyncLoading<TicketDetail>().copyWithPrevious(state);
     state = await AsyncValue.guard(build);
   }
+
+  /// Re-fetches the detail without flipping into a loading state. The
+  /// activity-timeline tab listens for transition pushes from the backend
+  /// and triggers this so the timeline updates without a spinner flash.
+  Future<void> silentRefresh() async {
+    final id = ref.read(ticketIdProvider);
+    if (id == null || id.isEmpty) return;
+    try {
+      final fresh = await _repo.fetchTicketDetails(ticketId: id);
+      state = AsyncData(fresh);
+    } catch (_) {
+      // Keep previous data; the next backend push will retry.
+    }
+  }
 }
 
 final ticketDetailApiControllerProvider =

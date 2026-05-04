@@ -427,6 +427,9 @@
   "ticketActionChangeDue": "Cambiar plazo",
   "ticketActionCancel": "Cancelar",
   "ticketActionReset": "Restablecer",
+  "ticketActionFailedAccept": "No se pudo aceptar el ticket. Revertido.",
+  "ticketActionFailedStartWork": "No se pudo iniciar el trabajo. Revertido.",
+  "ticketActionFailedMarkDone": "No se pudo marcar como hecho. Revertido.",
   "ticketActivityCreated": "Ticket creado",
   "ticketActivityStatusChange": "{from} → {to}",
   "@ticketActivityStatusChange": {

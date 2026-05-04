@@ -7,6 +7,7 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
+import '../providers/my_tickets_notifier.dart';
 
 /// Ticket card matching the image design.
 /// Layout: Title row → Room row → Inner card → Bottom row (tag + button)
@@ -15,53 +16,144 @@ class TicketCardNew extends ConsumerWidget {
   final Ticket ticket;
   final VoidCallback? onTap;
   final VoidCallback? onAccept;
+  final VoidCallback? onStartWork;
+  final VoidCallback? onMarkDone;
 
   const TicketCardNew({
     super.key,
     required this.ticket,
     this.onTap,
     this.onAccept,
+    this.onStartWork,
+    this.onMarkDone,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.themeColors;
-    return Semantics(
-      button: true,
-      label: '${ticket.code} ${ticket.title}',
-      child: Material(
-        color: c.bgBase,
-        borderRadius: BorderRadius.circular(16),
-        clipBehavior: Clip.antiAlias,
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: c.borderBase),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title row: dot + title + timer
-                  _TitleRow(ticket: ticket),
-                  const SizedBox(height: 6),
-                  // Room row: icon + room + department
-                  _RoomRow(ticket: ticket),
-                  const SizedBox(height: 12),
-                  // Inner card with avatar, details
-                  _InnerCard(ticket: ticket),
-                  const SizedBox(height: 12),
-                  // Bottom row: tag (left) + action button (right)
-                  _BottomRow(ticket: ticket, onAccept: onAccept),
-                ],
+    final isFresh = ref.watch(isFreshlyArrivedProvider(ticket.id));
+    return _FreshArrivalWrapper(
+      isFresh: isFresh,
+      baseColor: c.bgBase,
+      highlightColor: c.bgHighlight,
+      builder: (bgColor) => Semantics(
+        button: true,
+        label: '${ticket.code} ${ticket.title}',
+        child: Material(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAlias,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: c.borderBase),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Title row: dot + title + timer
+                    _TitleRow(ticket: ticket),
+                    const SizedBox(height: 6),
+                    // Room row: icon + room + department
+                    _RoomRow(ticket: ticket),
+                    const SizedBox(height: 12),
+                    // Inner card with avatar, details
+                    _InnerCard(ticket: ticket),
+                    const SizedBox(height: 12),
+                    // Bottom row: tag (left) + action button (right)
+                    _BottomRow(
+                      ticket: ticket,
+                      onAccept: onAccept,
+                      onStartWork: onStartWork,
+                      onMarkDone: onMarkDone,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Wraps a card in a one-shot slide-in + background-flash animation when
+/// the ticket arrived via realtime in the last 3 seconds. Both effects run
+/// off a single AnimationController so the card stays cheap. Slide takes
+/// the first 300ms; the bg color decays over the full 3 seconds.
+class _FreshArrivalWrapper extends StatefulWidget {
+  final bool isFresh;
+  final Color baseColor;
+  final Color highlightColor;
+  final Widget Function(Color bgColor) builder;
+
+  const _FreshArrivalWrapper({
+    required this.isFresh,
+    required this.baseColor,
+    required this.highlightColor,
+    required this.builder,
+  });
+
+  @override
+  State<_FreshArrivalWrapper> createState() => _FreshArrivalWrapperState();
+}
+
+class _FreshArrivalWrapperState extends State<_FreshArrivalWrapper>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<Offset> _slide;
+  late final Animation<double> _flash;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3000),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(1, 0),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _ctrl,
+        curve: const Interval(0.0, 0.1, curve: Curves.easeOut),
+      ),
+    );
+    _flash = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+    if (widget.isFresh) {
+      _ctrl.forward();
+    } else {
+      _ctrl.value = 1.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _slide,
+      child: AnimatedBuilder(
+        animation: _flash,
+        builder: (context, _) {
+          final color =
+              Color.lerp(widget.baseColor, widget.highlightColor, _flash.value) ??
+                  widget.baseColor;
+          return widget.builder(color);
+        },
       ),
     );
   }
@@ -73,7 +165,6 @@ class _TitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.themeColors;
     return Row(
       children: [
         // Status dot
@@ -129,42 +220,88 @@ class _StatusDot extends StatelessWidget {
   }
 }
 
-class _TimeDisplay extends StatelessWidget {
+class _TimeDisplay extends StatefulWidget {
   final Ticket ticket;
   const _TimeDisplay({required this.ticket});
 
   @override
+  State<_TimeDisplay> createState() => _TimeDisplayState();
+}
+
+class _TimeDisplayState extends State<_TimeDisplay> {
+  late final Stream<DateTime> _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now());
+  }
+
+  String _formatDuration(Duration diff) {
+    if (diff.inDays > 0) {
+      return '${diff.inDays}d ${diff.inHours % 24}h ${diff.inMinutes % 60}m';
+    }
+    if (diff.inHours > 0) {
+      return '${diff.inHours}h ${diff.inMinutes % 60}m ${diff.inSeconds % 60}s';
+    }
+    return '${diff.inMinutes}m ${diff.inSeconds % 60}s';
+  }
+
+  @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    // Show done time for done tickets, otherwise show timer/age
-    String timeText;
-    if (ticket.status == TicketStatus.done) {
-      timeText = 'Done ${_formatTime(ticket.doneAt)}';
-    } else {
-      timeText = _formatDuration(ticket.createdAt);
+    final t = widget.ticket;
+
+    if (t.status == TicketStatus.done) {
+      final dt = t.doneAt;
+      final label = dt != null
+          ? 'Done ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}'
+          : 'Done';
+      return Text(
+        label,
+        style: TypographyManager.bodySmall.copyWith(
+          color: c.fgMuted,
+          fontWeight: FontWeight.w500,
+        ),
+      );
     }
 
-    return Text(
-      timeText,
-      style: TypographyManager.bodySmall.copyWith(
-        color: c.fgMuted,
-        fontWeight: FontWeight.w500,
-      ),
+    return StreamBuilder<DateTime>(
+      stream: _ticker,
+      builder: (context, _) {
+        final now = DateTime.now();
+        final isOverdue = t.isOverdue;
+        final elapsedFrom = t.workStartedAt ?? t.createdAt;
+        final elapsed = now.difference(elapsedFrom);
+        final label = _formatDuration(elapsed);
+
+        if (isOverdue) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: c.tagRedBg,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '● Overdue $label',
+              style: TypographyManager.bodySmall.copyWith(
+                color: c.tagRedText,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+            ),
+          );
+        }
+
+        return Text(
+          label,
+          style: TypographyManager.bodySmall.copyWith(
+            color: c.fgMuted,
+            fontWeight: FontWeight.w500,
+          ),
+        );
+      },
     );
-  }
-
-  String _formatTime(DateTime? dt) {
-    if (dt == null) return '--:--';
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '$h:$m';
-  }
-
-  String _formatDuration(DateTime createdAt) {
-    final diff = DateTime.now().difference(createdAt);
-    if (diff.inDays > 0) return '${diff.inDays}d ${diff.inHours % 24}h';
-    if (diff.inHours > 0) return '${diff.inHours}h ${diff.inMinutes % 60}m';
-    return '${diff.inMinutes}m';
   }
 }
 
@@ -400,18 +537,27 @@ class _InnerCardContent extends StatelessWidget {
 class _BottomRow extends StatelessWidget {
   final Ticket ticket;
   final VoidCallback? onAccept;
-  const _BottomRow({required this.ticket, this.onAccept});
+  final VoidCallback? onStartWork;
+  final VoidCallback? onMarkDone;
+  const _BottomRow({
+    required this.ticket,
+    this.onAccept,
+    this.onStartWork,
+    this.onMarkDone,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final c = context.themeColors;
     return Row(
       children: [
-        // Type tag on left
         _TypeTag(kind: ticket.kind),
         const Spacer(),
-        // Action button on right
-        _ActionButton(ticket: ticket, onAccept: onAccept),
+        _ActionButton(
+          ticket: ticket,
+          onAccept: onAccept,
+          onStartWork: onStartWork,
+          onMarkDone: onMarkDone,
+        ),
       ],
     );
   }
@@ -456,15 +602,22 @@ class _TypeTag extends StatelessWidget {
 class _ActionButton extends StatelessWidget {
   final Ticket ticket;
   final VoidCallback? onAccept;
-  const _ActionButton({required this.ticket, this.onAccept});
+  final VoidCallback? onStartWork;
+  final VoidCallback? onMarkDone;
+  const _ActionButton({
+    required this.ticket,
+    this.onAccept,
+    this.onStartWork,
+    this.onMarkDone,
+  });
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-
     return switch (ticket.status) {
       TicketStatus.done => _buildDoneBadge(c),
-      TicketStatus.inProgress => _buildStartWorkButton(c),
+      TicketStatus.inProgress => _buildMarkDoneButton(c, onMarkDone),
+      TicketStatus.accepted => _buildStartWorkButton(c, onStartWork),
       _ => _buildAcceptButton(c, onAccept),
     };
   }
@@ -496,26 +649,56 @@ class _ActionButton extends StatelessWidget {
     );
   }
 
-  Widget _buildStartWorkButton(AppColors c) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: c.tagBlueIcon,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(LucideIcons.play, size: 14, color: Colors.white),
-          const SizedBox(width: 4),
-          Text(
-            'Start Work',
-            style: TypographyManager.labelSmall.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
+  Widget _buildStartWorkButton(AppColors c, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: c.tagPurpleIcon,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(LucideIcons.play, size: 14, color: Colors.white),
+            const SizedBox(width: 4),
+            Text(
+              'Start Work',
+              style: TypographyManager.labelSmall.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarkDoneButton(AppColors c, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: c.tagGreenIcon,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(LucideIcons.circleCheck, size: 14, color: Colors.white),
+            const SizedBox(width: 4),
+            Text(
+              'Mark Done',
+              style: TypographyManager.labelSmall.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

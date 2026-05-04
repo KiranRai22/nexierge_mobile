@@ -74,6 +74,12 @@ abstract class APIEndpoints {
   static const String ticketsManual = '$_host/api:t_TeioyT/tickets/manual';
   static const String ticketsUpdateStatus =
       '$_host/api:bAt3sLZU/tickets/update_status';
+  static const String ticketsCancel =
+      '$_host/api:bAt3sLZU/tickets/cancel';
+  static const String ticketsReset =
+      '$_host/api:bAt3sLZU/tickets/reset';
+  static const String ticketsChangeDue =
+      '$_host/api:bAt3sLZU/tickets/change_due';
 
   // Service Catalogs
   static const String serviceCatalogsAll =

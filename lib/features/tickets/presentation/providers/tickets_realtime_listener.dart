@@ -5,6 +5,7 @@ import '../../../../core/services/realtime/xano_notification_channel.dart';
 import '../../../../core/services/realtime/xano_socket_service.dart';
 import '../../data/services/ticket_realtime_event_mapper.dart';
 import 'my_tickets_notifier.dart';
+import 'ticket_detail_api_controller.dart';
 
 /// Subscribes to the Xano realtime socket and feeds ticket events into
 /// [myTicketsNotifierProvider]. Watch this once at the app shell so the
@@ -31,6 +32,13 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
       switch (event) {
         case TicketUpsertEvent(:final ticket):
           notifier.upsertFromRealtime(ticket);
+          // If the user is viewing this ticket's detail, pull the latest
+          // payload so the activity timeline picks up the new transition
+          // entry the backend just emitted.
+          final openId = ref.read(ticketIdProvider);
+          if (openId != null && openId == ticket.id) {
+            ref.read(ticketDetailApiControllerProvider.notifier).silentRefresh();
+          }
         case TicketDeleteEvent(:final ticketId):
           notifier.removeById(ticketId);
       }

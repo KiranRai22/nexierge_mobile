@@ -10,20 +10,24 @@ import '../../../data/repositories/ticket_repository.dart';
 import '../../../domain/entities/my_ticket.dart';
 import '../../../domain/models/ticket.dart';
 import '../../providers/my_tickets_notifier.dart';
-import '../../providers/ticket_detail_controller.dart';
 import '../acknowledge_ticket_bottom_sheet.dart';
-import 'eta_bottom_sheet.dart';
+import '../cancel_ticket_bottom_sheet.dart';
+import '../change_due_time_bottom_sheet.dart';
+import '../mark_done_bottom_sheet.dart';
+import '../reset_acknowledgement_bottom_sheet.dart';
+import '../start_work_confirmation_bottom_sheet.dart';
 
 /// Persistent bottom action bar for the ticket detail screen.
 ///
 /// Layout:
-///   [ ▶ Start Work / Resume / Complete ]   <- primary, full-width, dark
-///   [ Change Due ] [ Cancel ] [ Reset ]    <- secondary outline row
+///   [ ▶ Start Work / ✓ Mark as Done ]   <- primary, full-width, dark
+///   [ Change Due ] [ Cancel ] [ Reset ]  <- secondary outline row
 ///
 /// Primary action label is driven by [Ticket.status]:
-///   - incoming/accepted -> Start Work (Accept & start)
-///   - inProgress        -> Complete   (Mark done)
-///   - done/cancelled    -> hidden
+///   - incoming  -> Accept (opens Acknowledge sheet)
+///   - accepted  -> Start Work
+///   - inProgress -> Mark as Done
+///   - done/cancelled -> hidden
 class TicketActionBar extends ConsumerStatefulWidget {
   final Ticket ticket;
   const TicketActionBar({super.key, required this.ticket});
@@ -45,32 +49,27 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     }
   }
 
+  // ────────── PRIMARY ACTION ──────────
+
   Future<void> _onPrimary() async {
     final t = widget.ticket;
-    if (t.status == TicketStatus.incoming) {
-      await _onAcceptIncoming();
-      return;
+    switch (t.status) {
+      case TicketStatus.incoming:
+        await _onAcceptIncoming();
+      case TicketStatus.accepted:
+        await _onStartWork();
+      case TicketStatus.inProgress:
+        await _onMarkDone();
+      default:
+        break;
     }
-    if (t.status == TicketStatus.inProgress ||
-        t.status == TicketStatus.accepted) {
-      await _withGuard(() => ref.read(ticketActionsProvider).markDone(t.id));
-      return;
-    }
-    final picked = await EtaBottomSheet.show(context, ticketCode: t.code);
-    if (picked == null) return;
-    await _withGuard(
-      () => ref.read(ticketActionsProvider).accept(t.id, picked),
-    );
   }
 
-  /// NEW → ACCEPTED flow.
-  ///
-  /// Opens the Acknowledge sheet (preset/custom due-time), then hits the
-  /// real `/tickets/update_status` endpoint. On success we patch the
-  /// realtime list locally so the ticket leaves Incoming and lands in
-  /// Today immediately — the websocket frame will reconcile shortly after.
+  // ────────── ACCEPT (NEW → ACCEPTED) ──────────
+
   Future<void> _onAcceptIncoming() async {
     final t = widget.ticket;
+    final failureMsg = context.l10n.ticketActionFailedAccept;
     final result = await AcknowledgeTicketBottomSheet.show(
       context: context,
       ticketCode: t.code,
@@ -78,13 +77,123 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       hasGuest: t.guest != null,
     );
     if (result == null) return;
+    await _withGuard(() => _runOptimistic(
+          newStatus: 'ACCEPTED',
+          apiCall: () => ref
+              .read(ticketRepositoryProvider)
+              .updateTicketStatus(ticketId: t.id),
+          failureMessage: failureMsg,
+        ));
+  }
+
+  // ────────── START WORK (ACCEPTED → IN_PROGRESS) ──────────
+
+  Future<void> _onStartWork() async {
+    final t = widget.ticket;
+    final failureMsg = context.l10n.ticketActionFailedStartWork;
+    final confirmed = await showStartWorkConfirmation(
+      context: context,
+      etaLabel: _etaLabel(t),
+    );
+    if (confirmed != true) return;
+    await _withGuard(() => _runOptimistic(
+          newStatus: 'IN_PROGRESS',
+          apiCall: () => ref
+              .read(ticketRepositoryProvider)
+              .updateTicketStatus(ticketId: t.id),
+          failureMessage: failureMsg,
+        ));
+  }
+
+  // ────────── MARK DONE (IN_PROGRESS → DONE) ──────────
+
+  Future<void> _onMarkDone() async {
+    final t = widget.ticket;
+    final failureMsg = context.l10n.ticketActionFailedMarkDone;
+    final note = await MarkDoneBottomSheet.show(context);
+    // null = dismissed, '' or string = confirmed (note is optional)
+    if (note == null) return;
+    await _withGuard(() => _runOptimistic(
+          newStatus: 'DONE',
+          apiCall: () => ref
+              .read(ticketRepositoryProvider)
+              .markDoneWithNote(ticketId: t.id, resolutionNote: note),
+          failureMessage: failureMsg,
+        ));
+  }
+
+  /// Optimistic transition: patch local state, pop the detail screen, then
+  /// fire the API. On failure, restore the snapshot and surface a toast on
+  /// the root overlay (this widget is unmounted by then). Falls back to a
+  /// server-first path when no baseline ticket exists in state.
+  Future<void> _runOptimistic({
+    required String newStatus,
+    required Future<void> Function() apiCall,
+    required String failureMessage,
+  }) async {
+    final t = widget.ticket;
+    final notifier = ref.read(myTicketsNotifierProvider.notifier);
+    final snap = notifier.snapshot();
+    final existing = snap?.all.firstWhere(
+      (x) => x.id == t.id,
+      orElse: () => _emptyTicket(t.id),
+    );
+    if (existing == null || existing.id.isEmpty) {
+      try {
+        await apiCall();
+        notifier.refresh();
+        if (mounted) Navigator.of(context).pop();
+      } catch (_) {
+        if (mounted) context.showFailure(failureMessage);
+      }
+      return;
+    }
+    final rootCtx = Navigator.of(context, rootNavigator: true).context;
+    notifier.upsertFromRealtime(_withStatus(existing, newStatus));
+    Navigator.of(context).pop();
+    try {
+      await apiCall();
+    } catch (_) {
+      if (snap != null) notifier.restore(snap);
+      if (rootCtx.mounted) rootCtx.showFailure(failureMessage);
+    }
+  }
+
+  // ────────── CHANGE DUE ──────────
+
+  Future<void> _onChangeDue() async {
+    final t = widget.ticket;
+    final result = await ChangeDueTimeBottomSheet.show(context);
+    if (result == null) return;
+
+    await _withGuard(() async {
+      try {
+        await ref.read(ticketRepositoryProvider).changeDueTime(
+              ticketId: t.id,
+              newDueAt: result.newDueAt,
+              reason: result.reason,
+            );
+        ref.read(myTicketsNotifierProvider.notifier).refresh();
+      } catch (e) {
+        if (!mounted) return;
+        context.showFailure(e.toString());
+      }
+    });
+  }
+
+  // ────────── CANCEL ──────────
+
+  Future<void> _onCancel() async {
+    final t = widget.ticket;
+    final reason = await CancelTicketBottomSheet.show(context);
+    if (reason == null) return;
 
     await _withGuard(() async {
       try {
         await ref
             .read(ticketRepositoryProvider)
-            .updateTicketStatus(ticketId: t.id);
-        _patchListAccepted(t.id);
+            .cancelTicket(ticketId: t.id, reason: reason);
+        _patchStatus(t.id, 'CANCELLED');
         if (!mounted) return;
         Navigator.of(context).pop();
       } catch (e) {
@@ -94,11 +203,32 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     });
   }
 
-  /// Optimistically transitions the ticket to ACCEPTED in the realtime
-  /// list state. `upsertFromRealtime` stamps `statusChangedAt = now` when
-  /// the status actually changes, so the Today filter picks it up without
-  /// any extra wiring. A fresh fetch is also kicked off as a safety net.
-  void _patchListAccepted(String ticketId) {
+  // ────────── RESET ──────────
+
+  Future<void> _onReset() async {
+    final t = widget.ticket;
+    final confirmed = await ResetAcknowledgementBottomSheet.show(context);
+    if (confirmed != true) return;
+
+    await _withGuard(() async {
+      try {
+        await ref
+            .read(ticketRepositoryProvider)
+            .resetTicket(ticketId: t.id);
+        _patchStatus(t.id, 'NEW');
+        if (!mounted) return;
+        Navigator.of(context).pop();
+      } catch (e) {
+        if (!mounted) return;
+        context.showFailure(e.toString());
+      }
+    });
+  }
+
+  // ────────── HELPERS ──────────
+
+  /// Optimistically patches the ticket status in the realtime list.
+  void _patchStatus(String ticketId, String status) {
     final notifier = ref.read(myTicketsNotifierProvider.notifier);
     final current = ref.read(myTicketsNotifierProvider).valueOrNull;
     final existing = current?.all.firstWhere(
@@ -109,8 +239,18 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       notifier.refresh();
       return;
     }
-    notifier.upsertFromRealtime(_withStatus(existing, 'ACCEPTED'));
+    notifier.upsertFromRealtime(_withStatus(existing, status));
     notifier.refresh();
+  }
+
+  String _etaLabel(Ticket t) {
+    final eta = t.eta;
+    if (eta == null) return '—';
+    final diff = eta.difference(DateTime.now());
+    if (diff.isNegative) return '—';
+    if (diff.inDays > 0) return '${diff.inDays}d';
+    if (diff.inHours > 0) return '${diff.inHours}h';
+    return '${diff.inMinutes}m';
   }
 
   MyTicket _emptyTicket(String id) => MyTicket(
@@ -147,7 +287,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         createdByAi: t.createdByAi,
         type: t.type,
         status: status,
-        dueAt: t.dueAt,
+        dueAt: status == 'NEW' ? 0 : t.dueAt,
         category: t.category,
         priority: t.priority,
         issueSummary: t.issueSummary,
@@ -157,33 +297,19 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         room: t.room,
         guestName: t.guestName,
         acknowledgedByUserId: t.acknowledgedByUserId,
-        acknowledgedAt: DateTime.now().millisecondsSinceEpoch,
+        acknowledgedAt: status == 'ACCEPTED'
+            ? DateTime.now().millisecondsSinceEpoch
+            : t.acknowledgedAt,
         resolutionCode: t.resolutionCode,
         resolutionNotes: t.resolutionNotes,
-        confirmedAt: t.confirmedAt,
+        confirmedAt: status == 'DONE'
+            ? DateTime.now().millisecondsSinceEpoch
+            : t.confirmedAt,
         closedAt: t.closedAt,
         roomDetails: t.roomDetails,
       );
 
-  Future<void> _onCancel() async {
-    await _withGuard(
-      () => ref.read(ticketActionsProvider).cancel(widget.ticket.id),
-    );
-  }
-
-  void _onChangeDue() {
-    // Reuses the ETA picker — extending due time is the same domain action.
-    EtaBottomSheet.show(context, ticketCode: widget.ticket.code).then((d) {
-      if (d == null) return;
-      ref.read(ticketActionsProvider).accept(widget.ticket.id, d);
-    });
-  }
-
-  void _onReset() {
-    // Soft reset: hide for now; backend wiring lands when status reset is
-    // exposed by the repository. Avoids dead UI by giving feedback.
-    context.showInfo(context.l10n.comingSoonNotifications);
-  }
+  // ────────── BUILD ──────────
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +327,10 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       _ => s.ticketActionStartWork,
     };
 
-    final showSecondary = t.status != TicketStatus.incoming;
+    final isIncoming = t.status == TicketStatus.incoming;
+    // Change Due is valid both before and after acceptance; Cancel/Reset
+    // only make sense once the ticket has moved past NEW.
+    final showCancelReset = !isIncoming;
 
     return Material(
       color: c.bgBase,
@@ -230,17 +359,17 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
                 ),
               ),
             ),
-            if (showSecondary) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _SecondaryButton(
-                      icon: LucideIcons.calendarClock,
-                      label: s.ticketActionChangeDue,
-                      onTap: _busy ? null : _onChangeDue,
-                    ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _SecondaryButton(
+                    icon: LucideIcons.calendarClock,
+                    label: s.ticketActionChangeDue,
+                    onTap: _busy ? null : _onChangeDue,
                   ),
+                ),
+                if (showCancelReset) ...[
                   const SizedBox(width: 8),
                   Expanded(
                     child: _SecondaryButton(
@@ -258,8 +387,8 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
                     ),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ],
         ),
       ),

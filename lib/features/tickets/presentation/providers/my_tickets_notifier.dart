@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -75,8 +77,10 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
         MyTicketsState(
           all: [ticket],
           statusChangedAt: {ticket.id: now},
+          freshlyArrivedIds: {ticket.id},
         ),
       );
+      _scheduleFreshClear(ticket.id);
       return;
     }
 
@@ -100,12 +104,47 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
           }
         : current.statusChangedAt;
 
+    // Only mark as freshly arrived on a brand new id; status transitions on
+    // existing tickets shouldn't re-trigger the slide-in animation.
+    final isBrandNew = existing == null;
+    final nextFresh = isBrandNew
+        ? {...current.freshlyArrivedIds, ticket.id}
+        : current.freshlyArrivedIds;
+
     state = AsyncData(
       current.copyWith(
         all: next,
         statusChangedAt: nextStatusChangedAt,
+        freshlyArrivedIds: nextFresh,
       ),
     );
+
+    if (isBrandNew) _scheduleFreshClear(ticket.id);
+  }
+
+  /// Removes [ticketId] from `freshlyArrivedIds` after 3 seconds. Safe if
+  /// the notifier is disposed before the timer fires.
+  void _scheduleFreshClear(String ticketId) {
+    Timer(const Duration(seconds: 3), () {
+      try {
+        final s = state.valueOrNull;
+        if (s == null || !s.freshlyArrivedIds.contains(ticketId)) return;
+        final next = {...s.freshlyArrivedIds}..remove(ticketId);
+        state = AsyncData(s.copyWith(freshlyArrivedIds: next));
+      } catch (_) {
+        // Notifier disposed — drop silently.
+      }
+    });
+  }
+
+  /// Captures the current state for optimistic rollback. Returns null if
+  /// the notifier hasn't loaded yet.
+  MyTicketsState? snapshot() => state.valueOrNull;
+
+  /// Restores a previously captured snapshot. Used after an optimistic
+  /// patch fails on the server so the local list matches reality again.
+  void restore(MyTicketsState previous) {
+    state = AsyncData(previous);
   }
 
   /// Realtime delete. Drops the ticket if present and clears any
@@ -116,15 +155,26 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
     if (!current.all.any((t) => t.id == ticketId)) return;
 
     final nextOverrides = {...current.statusChangedAt}..remove(ticketId);
+    final nextFresh = current.freshlyArrivedIds.contains(ticketId)
+        ? ({...current.freshlyArrivedIds}..remove(ticketId))
+        : current.freshlyArrivedIds;
 
     state = AsyncData(
       current.copyWith(
         all: current.all.where((t) => t.id != ticketId).toList(),
         statusChangedAt: nextOverrides,
+        freshlyArrivedIds: nextFresh,
       ),
     );
   }
 }
+
+/// Whether [ticketId] arrived via realtime within the last 3 seconds.
+/// Drives the slide-in + background flash animation in [TicketCardNew].
+final isFreshlyArrivedProvider = Provider.family<bool, String>((ref, ticketId) {
+  final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
+  return state?.freshlyArrivedIds.contains(ticketId) ?? false;
+});
 
 /// Persistent realtime-aware ticket list. Survives tab switches.
 final myTicketsNotifierProvider =
