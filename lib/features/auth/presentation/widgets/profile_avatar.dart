@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -84,26 +85,21 @@ class ProfileAvatar extends ConsumerWidget {
         ),
         child: ClipOval(
           child: profileImageUrl != null && profileImageUrl.isNotEmpty
-              ? Image.network(
-                  profileImageUrl,
+              ? CachedNetworkImage(
+                  imageUrl: profileImageUrl,
                   width: size,
                   height: size,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return _AvatarPlaceholder(
-                      size: size,
-                      initials: initials,
-                      showBorder: false,
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return _AvatarPlaceholder(
-                      size: size,
-                      initials: initials,
-                      showBorder: false,
-                    );
-                  },
+                  placeholder: (context, url) => _AvatarPlaceholder(
+                    size: size,
+                    initials: initials,
+                    showBorder: false,
+                  ),
+                  errorWidget: (context, url, error) => _AvatarPlaceholder(
+                    size: size,
+                    initials: initials,
+                    showBorder: false,
+                  ),
                 )
               : _AvatarPlaceholder(
                   size: size,

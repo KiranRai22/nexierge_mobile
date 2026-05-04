@@ -37,6 +37,7 @@ class CreateScreen extends ConsumerStatefulWidget {
 class _CreateScreenState extends ConsumerState<CreateScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
+  int _lastTabIndex = 0;
 
   @override
   void initState() {
@@ -46,11 +47,20 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
       vsync: this,
       initialIndex: widget.initialTab.index,
     );
-    _tabs.addListener(() => setState(() {}));
+    _lastTabIndex = _tabs.index;
+    _tabs.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    if (_tabs.indexIsChanging) return;
+    if (_tabs.index == _lastTabIndex) return;
+    _lastTabIndex = _tabs.index;
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _tabs.removeListener(_onTabChanged);
     _tabs.dispose();
     super.dispose();
   }

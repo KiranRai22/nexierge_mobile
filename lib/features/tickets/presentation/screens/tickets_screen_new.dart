@@ -298,12 +298,14 @@ class _TodayTabList extends ConsumerWidget {
       itemCount: tickets.length,
       itemBuilder: (context, index) {
         final ticket = tickets[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: TicketCardNew(
-            ticket: ticket,
-            onTap: _openHandler(context, ticket),
-            onAccept: _acceptHandler(context, ticket),
+        return RepaintBoundary(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: TicketCardNew(
+              ticket: ticket,
+              onTap: _openHandler(context, ticket),
+              onAccept: _acceptHandler(context, ticket),
+            ),
           ),
         );
       },
@@ -326,12 +328,14 @@ class _IncomingTabList extends ConsumerWidget {
       itemCount: tickets.length,
       itemBuilder: (context, index) {
         final ticket = tickets[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: TicketCardNew(
-            ticket: ticket,
-            onTap: _openHandler(context, ticket),
-            onAccept: _acceptHandler(context, ticket),
+        return RepaintBoundary(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: TicketCardNew(
+              ticket: ticket,
+              onTap: _openHandler(context, ticket),
+              onAccept: _acceptHandler(context, ticket),
+            ),
           ),
         );
       },
@@ -397,12 +401,14 @@ class _TicketsList extends StatelessWidget {
       itemCount: tickets.length,
       itemBuilder: (context, index) {
         final ticket = tickets[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: TicketCardNew(
-            ticket: ticket,
-            onTap: () => _openDetail(context, ticket),
-            onAccept: () => _showAcceptSheet(context, ticket),
+        return RepaintBoundary(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: TicketCardNew(
+              ticket: ticket,
+              onTap: () => _openDetail(context, ticket),
+              onAccept: () => _showAcceptSheet(context, ticket),
+            ),
           ),
         );
       },
