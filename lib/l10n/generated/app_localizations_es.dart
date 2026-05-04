@@ -439,6 +439,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ticketActionStartWork => 'Comenzar';
 
   @override
+  String get ticketActionAccept => 'Aceptar ticket';
+
+  @override
   String get ticketActionPause => 'Pausar';
 
   @override

@@ -15,6 +15,9 @@ abstract class TicketRemoteDataSource {
     required CreateManualTicketRequestDto request,
   });
 
+  /// POST /tickets/update_status — advances ticket through state machine.
+  Future<void> updateTicketStatus({required String ticketId});
+
   /// Get all service catalogs for a hotel
   Future<List<ServiceCatalogDto>> getServiceCatalogs({required String hotelId});
 }
@@ -81,6 +84,15 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     );
     return CreateManualTicketResponseDto.fromJson(
       res.data as Map<String, dynamic>,
+    );
+  }
+
+  @override
+  Future<void> updateTicketStatus({required String ticketId}) async {
+    debugPrint('[TicketRemoteDataSource] updateTicketStatus: $ticketId');
+    await _dio.post(
+      APIEndpoints.ticketsUpdateStatus,
+      data: {'ticket_id': ticketId},
     );
   }
 

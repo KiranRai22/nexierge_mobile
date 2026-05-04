@@ -167,6 +167,7 @@
     }
   },
   "ticketActionStartWork": "Start Work",
+  "ticketActionAccept": "Accept Ticket",
   "ticketActionPause": "Pause",
   "ticketActionResume": "Resume",
   "ticketActionComplete": "Complete",

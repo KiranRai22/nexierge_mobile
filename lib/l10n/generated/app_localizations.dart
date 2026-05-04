@@ -914,6 +914,12 @@ abstract class AppLocalizations {
   /// **'Start Work'**
   String get ticketActionStartWork;
 
+  /// No description provided for @ticketActionAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept Ticket'**
+  String get ticketActionAccept;
+
   /// No description provided for @ticketActionPause.
   ///
   /// In en, this message translates to:

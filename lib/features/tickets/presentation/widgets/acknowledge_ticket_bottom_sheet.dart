@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 
 /// Result data when acknowledging a ticket with ETA selection
 class AcknowledgeTicketResult {
@@ -21,7 +21,12 @@ class AcknowledgeTicketResult {
   });
 }
 
-/// Bottom sheet for acknowledging tickets with ETA selection
+/// Bottom sheet for acknowledging tickets with ETA selection.
+///
+/// Theme-tokenised: selected chips use the ops purple tag palette, the
+/// confirm button uses the inverted button color, and the custom-time
+/// row collapses to a compact toggle that expands into a purple info
+/// card when a date is picked.
 class AcknowledgeTicketBottomSheet {
   static Future<AcknowledgeTicketResult?> show({
     required BuildContext context,
@@ -54,29 +59,27 @@ class _AcknowledgeTicketSheetBody extends StatefulWidget {
   });
 
   @override
-  State<_AcknowledgeTicketSheetBody> createState() => _AcknowledgeTicketSheetBodyState();
+  State<_AcknowledgeTicketSheetBody> createState() =>
+      _AcknowledgeTicketSheetBodyState();
 }
 
-class _AcknowledgeTicketSheetBodyState extends State<_AcknowledgeTicketSheetBody> {
+class _AcknowledgeTicketSheetBodyState
+    extends State<_AcknowledgeTicketSheetBody> {
   int _selectedMinutes = 15;
   DateTime? _customDateTime;
   bool _isCustomDateTime = false;
+  bool _customExpanded = false;
   final TextEditingController _noteController = TextEditingController();
   bool _submitting = false;
 
-  final List<Map<String, dynamic>> _presetOptions = [
-    {'minutes': 15, 'label': '+15 min', 'icon': LucideIcons.clock},
-    {'minutes': 30, 'label': '+30 min', 'icon': LucideIcons.clock},
-    {'minutes': 60, 'label': '+1 hour', 'icon': LucideIcons.clock},
-    {'minutes': 180, 'label': '+3 hours', 'icon': LucideIcons.clock},
-    {'minutes': 1440, 'label': '+1 day', 'icon': LucideIcons.calendar},
-    {'minutes': 4320, 'label': '+3 days', 'icon': LucideIcons.calendar},
+  static const List<_PresetOption> _presets = [
+    _PresetOption(minutes: 15, label: '+15 min', icon: LucideIcons.clock),
+    _PresetOption(minutes: 30, label: '+30 min', icon: LucideIcons.clock),
+    _PresetOption(minutes: 60, label: '+1 hour', icon: LucideIcons.clock),
+    _PresetOption(minutes: 180, label: '+3 hours', icon: LucideIcons.clock),
+    _PresetOption(minutes: 1440, label: '+1 day', icon: LucideIcons.calendar),
+    _PresetOption(minutes: 4320, label: '+3 days', icon: LucideIcons.calendar),
   ];
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   String get _readyByLabel {
     if (_isCustomDateTime && _customDateTime != null) {
@@ -96,26 +99,29 @@ class _AcknowledgeTicketSheetBodyState extends State<_AcknowledgeTicketSheetBody
     return '· $_selectedMinutes min';
   }
 
-  String _formatDateTime(DateTime dateTime) {
+  String _formatDateTime(DateTime dt) {
     final now = DateTime.now();
-    final isToday = dateTime.day == now.day && dateTime.month == now.month && dateTime.year == now.year;
-    
-    final time = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    
-    if (isToday) {
-      final period = dateTime.hour >= 12 ? 'PM' : 'AM';
-      final hour12 = dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour == 0 ? 12 : dateTime.hour;
-      return 'Today $hour12:${dateTime.minute.toString().padLeft(2, '0')} $period';
-    }
-    
-    return '${dateTime.day}/${dateTime.month} $time';
+    final isToday =
+        dt.day == now.day && dt.month == now.month && dt.year == now.year;
+    final hour12 = dt.hour > 12
+        ? dt.hour - 12
+        : dt.hour == 0
+            ? 12
+            : dt.hour;
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour >= 12 ? 'PM' : 'AM';
+    if (isToday) return 'Today $hour12:$minute $period';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}, $hour12:$minute $period';
   }
 
   void _selectPreset(int minutes) {
     setState(() {
       _selectedMinutes = minutes;
       _isCustomDateTime = false;
-      _customDateTime = null;
     });
   }
 
@@ -127,57 +133,51 @@ class _AcknowledgeTicketSheetBodyState extends State<_AcknowledgeTicketSheetBody
       firstDate: now.add(const Duration(minutes: 5)),
       lastDate: now.add(const Duration(days: 30)),
     );
-    
     if (selectedDate == null) return;
-    
+    if (!mounted) return;
+
     final selectedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(now.add(const Duration(minutes: 30))),
     );
-    
     if (selectedTime == null) return;
-    
-    final finalDateTime = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      selectedTime.hour,
-      selectedTime.minute,
-    );
-    
+
     setState(() {
-      _customDateTime = finalDateTime;
+      _customDateTime = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
       _isCustomDateTime = true;
+      _customExpanded = true;
     });
   }
 
   Future<void> _handleAcknowledge() async {
     if (_submitting) return;
-
     setState(() => _submitting = true);
-
-    // Simulate network call
-    await Future.delayed(const Duration(milliseconds: 800));
-
     if (!mounted) return;
 
-    final result = AcknowledgeTicketResult(
-      mode: _isCustomDateTime ? 'custom' : 'preset',
-      minutesFromNow: _isCustomDateTime ? null : _selectedMinutes,
-      customDateTime: _customDateTime,
-      readyByLabel: _readyByLabel,
-      buttonLabel: 'Acknowledge $_buttonTimeLabel',
+    Navigator.of(context).pop(
+      AcknowledgeTicketResult(
+        mode: _isCustomDateTime ? 'custom' : 'preset',
+        minutesFromNow: _isCustomDateTime ? null : _selectedMinutes,
+        customDateTime: _customDateTime,
+        readyByLabel: _readyByLabel,
+        buttonLabel: 'Acknowledge $_buttonTimeLabel',
+      ),
     );
-
-    Navigator.of(context).pop(result);
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -185,209 +185,128 @@ class _AcknowledgeTicketSheetBodyState extends State<_AcknowledgeTicketSheetBody
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
           Container(
             width: 40,
             height: 4,
             margin: const EdgeInsets.only(top: 12),
             decoration: BoxDecoration(
-              color: ColorPalette.textSecondary.withOpacity(0.3),
+              color: c.borderBase,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
-          const SizedBox(height: 24),
-          
-          // Title
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'Acknowledge Ticket',
-              style: TypographyManager.headlineSmall.copyWith(
-                fontWeight: FontWeight.w600,
-                color: ColorPalette.textPrimary,
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Subtitle
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              '${widget.ticketCode} · ${widget.ticketTitle}',
-              style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textSecondary,
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Time selection options
+          const SizedBox(height: 20),
+          _Header(c: c),
+          const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Set due time',
-                  style: TypographyManager.bodyMedium.copyWith(
+                  'SET DUE TIME',
+                  style: TypographyManager.textMeta.copyWith(
+                    color: c.fgSubtle,
                     fontWeight: FontWeight.w600,
-                    color: ColorPalette.textPrimary,
+                    letterSpacing: 0.6,
                   ),
                 ),
-                const SizedBox(height: 16),
-                
-                // Preset options grid
+                const SizedBox(height: 12),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 2.5,
+                    childAspectRatio: 2.6,
                   ),
-                  itemCount: _presetOptions.length,
-                  itemBuilder: (context, index) {
-                    final option = _presetOptions[index];
-                    final isSelected = !_isCustomDateTime && _selectedMinutes == option['minutes'];
-                    
-                    return GestureDetector(
-                      onTap: () => _selectPreset(option['minutes']),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isSelected ? ColorPalette.chipCatalogFg : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected ? ColorPalette.chipCatalogFg : ColorPalette.textSecondary.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              option['icon'],
-                              size: 16,
-                              color: isSelected ? Colors.white : ColorPalette.textSecondary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              option['label'],
-                              style: TypographyManager.bodySmall.copyWith(
-                                color: isSelected ? Colors.white : ColorPalette.textSecondary,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                  itemCount: _presets.length,
+                  itemBuilder: (_, i) {
+                    final p = _presets[i];
+                    final isSelected =
+                        !_isCustomDateTime && _selectedMinutes == p.minutes;
+                    return _PresetChip(
+                      option: p,
+                      selected: isSelected,
+                      onTap: () => _selectPreset(p.minutes),
+                      colors: c,
                     );
                   },
                 ),
-                
                 const SizedBox(height: 16),
-                
-                // Custom date/time option
-                GestureDetector(
-                  onTap: _selectCustomDateTime,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _isCustomDateTime ? ColorPalette.chipCatalogFg.withOpacity(0.1) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _isCustomDateTime ? ColorPalette.chipCatalogFg : ColorPalette.textSecondary.withOpacity(0.3),
-                      ),
+                _CustomDateTimeRow(
+                  expanded: _customExpanded,
+                  hasValue: _isCustomDateTime && _customDateTime != null,
+                  onTap: () {
+                    if (!_isCustomDateTime || _customDateTime == null) {
+                      _selectCustomDateTime();
+                    } else {
+                      setState(() => _customExpanded = !_customExpanded);
+                    }
+                  },
+                  colors: c,
+                ),
+                if (_customExpanded &&
+                    _isCustomDateTime &&
+                    _customDateTime != null) ...[
+                  const SizedBox(height: 12),
+                  _DueInfoCard(
+                    label: 'Due ${_formatDateTime(_customDateTime!)}',
+                    onEdit: _selectCustomDateTime,
+                    colors: c,
+                  ),
+                ],
+                const SizedBox(height: 20),
+                Text(
+                  'Note (optional)',
+                  style: TypographyManager.textBodyStrong.copyWith(
+                    color: c.fgBase,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _noteController,
+                  maxLines: 3,
+                  style: TypographyManager.textBody.copyWith(color: c.fgBase),
+                  decoration: InputDecoration(
+                    hintText: 'Add a note about this ticket...',
+                    hintStyle: TypographyManager.textBody.copyWith(
+                      color: c.fgMuted,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              LucideIcons.calendar,
-                              size: 20,
-                              color: _isCustomDateTime ? ColorPalette.chipCatalogFg : ColorPalette.textSecondary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Set custom date/time',
-                              style: TypographyManager.bodyMedium.copyWith(
-                                color: _isCustomDateTime ? ColorPalette.chipCatalogFg : ColorPalette.textSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const Spacer(),
-                            Icon(
-                              LucideIcons.chevronRight,
-                              size: 16,
-                              color: _isCustomDateTime ? ColorPalette.chipCatalogFg : ColorPalette.textSecondary,
-                            ),
-                          ],
-                        ),
-                        if (_customDateTime != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            _formatDateTime(_customDateTime!),
-                            style: TypographyManager.bodySmall.copyWith(
-                              color: ColorPalette.chipCatalogFg,
-                            ),
-                          ),
-                        ],
-                      ],
+                    filled: true,
+                    fillColor: c.bgBase,
+                    contentPadding: const EdgeInsets.all(14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: c.borderBase),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: c.borderBase),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: c.borderInteractive),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          
-          const SizedBox(height: 24),
-          
-          // Note field
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: TextField(
-              controller: _noteController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Note (optional)',
-                hintStyle: TypographyManager.bodyMedium.copyWith(
-                  color: ColorPalette.textSecondary,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: ColorPalette.textSecondary.withOpacity(0.3),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: ColorPalette.chipCatalogFg,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Action buttons
+          const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
-                // Cancel button
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _submitting ? null : () => Navigator.of(context).pop(),
+                    onPressed: _submitting
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: ColorPalette.textSecondary.withOpacity(0.3)),
+                      foregroundColor: c.fgBase,
+                      side: BorderSide(color: c.borderBase),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -395,49 +314,46 @@ class _AcknowledgeTicketSheetBodyState extends State<_AcknowledgeTicketSheetBody
                     ),
                     child: Text(
                       'Cancel',
-                      style: TypographyManager.labelLarge.copyWith(
-                        color: ColorPalette.textSecondary,
-                        fontWeight: FontWeight.w600,
+                      style: TypographyManager.textBodyStrong.copyWith(
+                        color: c.fgBase,
                       ),
                     ),
                   ),
                 ),
-                
-                const SizedBox(width: 16),
-                
-                // Acknowledge button
+                const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _submitting ? null : _handleAcknowledge,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: ColorPalette.chipCatalogFg,
+                      backgroundColor: c.buttonInverted,
+                      foregroundColor: c.fgOnInverted,
+                      disabledBackgroundColor: c.bgDisabled,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: _submitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
+                              color: c.fgOnInverted,
                             ),
                           )
                         : Text(
                             'Acknowledge',
-                            style: TypographyManager.labelLarge.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
+                            style: TypographyManager.textBodyStrong.copyWith(
+                              color: c.fgOnInverted,
                             ),
                           ),
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
-          
-          const SizedBox(height: 24),
+          SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 24),
         ],
       ),
     );
@@ -447,5 +363,178 @@ class _AcknowledgeTicketSheetBodyState extends State<_AcknowledgeTicketSheetBody
   void dispose() {
     _noteController.dispose();
     super.dispose();
+  }
+}
+
+class _PresetOption {
+  final int minutes;
+  final String label;
+  final IconData icon;
+  const _PresetOption({
+    required this.minutes,
+    required this.label,
+    required this.icon,
+  });
+}
+
+class _Header extends StatelessWidget {
+  final AppColors c;
+  const _Header({required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Acknowledge Ticket',
+              style: TypographyManager.textHeading.copyWith(
+                color: c.fgBase,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Icon(LucideIcons.x, size: 20, color: c.fgSubtle),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  final _PresetOption option;
+  final bool selected;
+  final VoidCallback onTap;
+  final AppColors colors;
+  const _PresetChip({
+    required this.option,
+    required this.selected,
+    required this.onTap,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected ? colors.tagPurpleBg : colors.bgBase;
+    final fg = selected ? colors.tagPurpleText : colors.fgSubtle;
+    final border = selected ? colors.tagPurpleBorder : colors.borderBase;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: border),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(option.icon, size: 14, color: fg),
+            const SizedBox(width: 6),
+            Text(
+              option.label,
+              style: TypographyManager.textLabel.copyWith(
+                color: fg,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomDateTimeRow extends StatelessWidget {
+  final bool expanded;
+  final bool hasValue;
+  final VoidCallback onTap;
+  final AppColors colors;
+  const _CustomDateTimeRow({
+    required this.expanded,
+    required this.hasValue,
+    required this.onTap,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(
+              expanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
+              size: 18,
+              color: colors.fgSubtle,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Set custom date/time',
+              style: TypographyManager.textBodyStrong.copyWith(
+                color: colors.fgBase,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DueInfoCard extends StatelessWidget {
+  final String label;
+  final VoidCallback onEdit;
+  final AppColors colors;
+  const _DueInfoCard({
+    required this.label,
+    required this.onEdit,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onEdit,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: colors.tagPurpleBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.tagPurpleBorder),
+        ),
+        child: Row(
+          children: [
+            Icon(LucideIcons.clock, size: 16, color: colors.tagPurpleText),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: TypographyManager.textBodyStrong.copyWith(
+                  color: colors.tagPurpleText,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

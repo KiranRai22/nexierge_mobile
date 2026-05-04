@@ -72,6 +72,8 @@ abstract class APIEndpoints {
   static const String ticketsAddGetDepartmentsAndRooms =
       '$_host/api:bAt3sLZU/tickets/add/get_departnents_and_rooms';
   static const String ticketsManual = '$_host/api:t_TeioyT/tickets/manual';
+  static const String ticketsUpdateStatus =
+      '$_host/api:bAt3sLZU/tickets/update_status';
 
   // Service Catalogs
   static const String serviceCatalogsAll =

@@ -420,6 +420,7 @@
     }
   },
   "ticketActionStartWork": "Comenzar",
+  "ticketActionAccept": "Aceptar ticket",
   "ticketActionPause": "Pausar",
   "ticketActionResume": "Reanudar",
   "ticketActionComplete": "Completar",

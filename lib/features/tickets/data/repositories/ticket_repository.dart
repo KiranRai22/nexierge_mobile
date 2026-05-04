@@ -27,6 +27,10 @@ abstract class TicketRepository {
     bool createdByAi = false,
   });
 
+  /// Advances a ticket through the backend state machine
+  /// (NEW → ACCEPTED → IN_PROGRESS → DONE).
+  Future<void> updateTicketStatus({required String ticketId});
+
   /// Get all service catalogs for a hotel
   Future<List<ServiceCatalog>> fetchServiceCatalogs({required String hotelId});
 }
@@ -156,6 +160,17 @@ class _TicketRepositoryImpl implements TicketRepository {
         ),
       );
       return dto.ticketId ?? '';
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> updateTicketStatus({required String ticketId}) async {
+    try {
+      await _remote.updateTicketStatus(ticketId: ticketId);
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {

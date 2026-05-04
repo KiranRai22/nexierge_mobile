@@ -6,8 +6,12 @@ import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../shared/widgets/app_toast.dart';
+import '../../../data/repositories/ticket_repository.dart';
+import '../../../domain/entities/my_ticket.dart';
 import '../../../domain/models/ticket.dart';
+import '../../providers/my_tickets_notifier.dart';
 import '../../providers/ticket_detail_controller.dart';
+import '../acknowledge_ticket_bottom_sheet.dart';
 import 'eta_bottom_sheet.dart';
 
 /// Persistent bottom action bar for the ticket detail screen.
@@ -43,6 +47,10 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   Future<void> _onPrimary() async {
     final t = widget.ticket;
+    if (t.status == TicketStatus.incoming) {
+      await _onAcceptIncoming();
+      return;
+    }
     if (t.status == TicketStatus.inProgress ||
         t.status == TicketStatus.accepted) {
       await _withGuard(() => ref.read(ticketActionsProvider).markDone(t.id));
@@ -54,6 +62,108 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       () => ref.read(ticketActionsProvider).accept(t.id, picked),
     );
   }
+
+  /// NEW → ACCEPTED flow.
+  ///
+  /// Opens the Acknowledge sheet (preset/custom due-time), then hits the
+  /// real `/tickets/update_status` endpoint. On success we patch the
+  /// realtime list locally so the ticket leaves Incoming and lands in
+  /// Today immediately — the websocket frame will reconcile shortly after.
+  Future<void> _onAcceptIncoming() async {
+    final t = widget.ticket;
+    final result = await AcknowledgeTicketBottomSheet.show(
+      context: context,
+      ticketCode: t.code,
+      ticketTitle: t.guest?.displayName ?? '',
+      hasGuest: t.guest != null,
+    );
+    if (result == null) return;
+
+    await _withGuard(() async {
+      try {
+        await ref
+            .read(ticketRepositoryProvider)
+            .updateTicketStatus(ticketId: t.id);
+        _patchListAccepted(t.id);
+        if (!mounted) return;
+        Navigator.of(context).pop();
+      } catch (e) {
+        if (!mounted) return;
+        context.showFailure(e.toString());
+      }
+    });
+  }
+
+  /// Optimistically transitions the ticket to ACCEPTED in the realtime
+  /// list state. `upsertFromRealtime` stamps `statusChangedAt = now` when
+  /// the status actually changes, so the Today filter picks it up without
+  /// any extra wiring. A fresh fetch is also kicked off as a safety net.
+  void _patchListAccepted(String ticketId) {
+    final notifier = ref.read(myTicketsNotifierProvider.notifier);
+    final current = ref.read(myTicketsNotifierProvider).valueOrNull;
+    final existing = current?.all.firstWhere(
+      (x) => x.id == ticketId,
+      orElse: () => _emptyTicket(ticketId),
+    );
+    if (existing == null || existing.id.isEmpty) {
+      notifier.refresh();
+      return;
+    }
+    notifier.upsertFromRealtime(_withStatus(existing, 'ACCEPTED'));
+    notifier.refresh();
+  }
+
+  MyTicket _emptyTicket(String id) => MyTicket(
+        id: '',
+        createdAt: 0,
+        hotelId: '',
+        departmentId: '',
+        createdByUserId: '',
+        createdByAi: false,
+        type: '',
+        status: '',
+        dueAt: 0,
+        category: '',
+        priority: '',
+        issueSummary: '',
+        issueDetails: '',
+        isIncident: false,
+        incidentNotes: '',
+        room: '',
+        guestName: '',
+        acknowledgedAt: 0,
+        resolutionCode: '',
+        resolutionNotes: '',
+        confirmedAt: 0,
+      );
+
+  MyTicket _withStatus(MyTicket t, String status) => MyTicket(
+        id: t.id,
+        createdAt: t.createdAt,
+        hotelId: t.hotelId,
+        departmentId: t.departmentId,
+        assignedToUserId: t.assignedToUserId,
+        createdByUserId: t.createdByUserId,
+        createdByAi: t.createdByAi,
+        type: t.type,
+        status: status,
+        dueAt: t.dueAt,
+        category: t.category,
+        priority: t.priority,
+        issueSummary: t.issueSummary,
+        issueDetails: t.issueDetails,
+        isIncident: t.isIncident,
+        incidentNotes: t.incidentNotes,
+        room: t.room,
+        guestName: t.guestName,
+        acknowledgedByUserId: t.acknowledgedByUserId,
+        acknowledgedAt: DateTime.now().millisecondsSinceEpoch,
+        resolutionCode: t.resolutionCode,
+        resolutionNotes: t.resolutionNotes,
+        confirmedAt: t.confirmedAt,
+        closedAt: t.closedAt,
+        roomDetails: t.roomDetails,
+      );
 
   Future<void> _onCancel() async {
     await _withGuard(
@@ -87,7 +197,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     final primaryLabel = switch (t.status) {
       TicketStatus.inProgress => s.ticketActionComplete,
       TicketStatus.accepted => s.ticketActionStartWork,
-      TicketStatus.incoming => s.ticketActionStartWork,
+      TicketStatus.incoming => s.ticketActionAccept,
       _ => s.ticketActionStartWork,
     };
 
