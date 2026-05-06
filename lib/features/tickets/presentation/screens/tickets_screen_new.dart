@@ -244,7 +244,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
 
   Map<TicketsMainTab, int> _calculateTabCounts() {
     int totalFor(TicketsTab tab) {
-      final s = ref.watch(ticketsPagedProvider(specForTab(tab))).valueOrNull;
+      final s = ref.read(ticketsPagedProvider(specForTab(tab))).valueOrNull;
       // Prefer server's itemsTotal; fall back to currently loaded item
       // count while the first page is in flight.
       return s == null ? 0 : (s.itemsTotal > 0 ? s.itemsTotal : s.items.length);
@@ -403,8 +403,13 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
     final order = filter == 'oldest'
         ? TicketsSortOrder.oldestFirst
         : TicketsSortOrder.newestFirst;
-    // ignore: unawaited_futures
-    ref.read(ticketsPagedProvider(spec).notifier).setSortOrder(order);
+
+    // Sync sort order after build to prevent infinite loop
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(ticketsPagedProvider(spec).notifier).setSortOrder(order);
+      }
+    });
 
     return asyncState.when(
       loading: () => const _LoadingList(),

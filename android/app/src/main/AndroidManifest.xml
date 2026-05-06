@@ -7,6 +7,26 @@
         android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission
         android:name="android.permission.VIBRATE"/>
+
+    <!-- Profile-picture flow: camera capture + gallery read.
+         Camera permission is runtime-requested only when the user taps
+         "Take photo". -->
+    <uses-permission
+        android:name="android.permission.CAMERA"/>
+    <!-- Android 13+ (API 33+) split media permissions. -->
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <!-- Android 12 and below — auto-scoped by maxSdkVersion so newer
+         devices don't see this in the runtime list. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+
+    <!-- Camera is optional hardware: keep app installable on
+         tablets/emulators without a rear camera. -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false"/>
     <application
         android:label="nexierge_tm"
         android:name="${applicationName}"

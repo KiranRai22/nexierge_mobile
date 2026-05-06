@@ -1189,6 +1189,28 @@ class AppLocalizationsEs extends AppLocalizations {
       'Error al actualizar la foto de perfil';
 
   @override
+  String get profileAvatarPermissionDeniedCamera =>
+      'Se requiere acceso a la cámara para tomar una foto.';
+
+  @override
+  String get profileAvatarPermissionDeniedGallery =>
+      'Se requiere acceso a la galería para elegir una imagen.';
+
+  @override
+  String get profileAvatarPermissionBlockedTitle => 'Permiso requerido';
+
+  @override
+  String get profileAvatarPermissionBlockedCameraBody =>
+      'El acceso a la cámara está bloqueado. Abre la configuración para activarlo en Nexierge.';
+
+  @override
+  String get profileAvatarPermissionBlockedGalleryBody =>
+      'El acceso a la galería está bloqueado. Abre la configuración para activarlo en Nexierge.';
+
+  @override
+  String get profileAvatarPermissionOpenSettings => 'Abrir configuración';
+
+  @override
   String get profileEditNameTitle => 'Editar nombre';
 
   @override

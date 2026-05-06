@@ -100,7 +100,13 @@ class TicketsPagedNotifier
     _repo = ref.read(ticketRepositoryProvider);
 
     final hotelId = _hotelId();
+    debugPrint(
+      '[TicketsPagedNotifier] build: hotelId=$hotelId, spec=${_spec.statuses}',
+    );
     if (hotelId == null) {
+      debugPrint(
+        '[TicketsPagedNotifier] build: No hotelId, returning empty state',
+      );
       return const TicketsPageState();
     }
 
@@ -112,6 +118,9 @@ class TicketsPagedNotifier
         .read(dashboardBootstrapControllerProvider)
         .valueOrNull;
     final id = bootstrap?.userProfile?.hotelDetails.hotel.id;
+    debugPrint(
+      '[TicketsPagedNotifier] _hotelId: bootstrap=${bootstrap != null}, id=$id',
+    );
     if (id == null || id.isEmpty) return null;
     return id;
   }

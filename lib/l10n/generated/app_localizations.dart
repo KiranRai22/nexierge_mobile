@@ -2192,6 +2192,42 @@ abstract class AppLocalizations {
   /// **'Failed to update profile photo'**
   String get profileUpdateAvatarFailed;
 
+  /// No description provided for @profileAvatarPermissionDeniedCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is required to take a photo.'**
+  String get profileAvatarPermissionDeniedCamera;
+
+  /// No description provided for @profileAvatarPermissionDeniedGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo library access is required to pick an image.'**
+  String get profileAvatarPermissionDeniedGallery;
+
+  /// No description provided for @profileAvatarPermissionBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission required'**
+  String get profileAvatarPermissionBlockedTitle;
+
+  /// No description provided for @profileAvatarPermissionBlockedCameraBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access has been blocked. Open settings to enable it for Nexierge.'**
+  String get profileAvatarPermissionBlockedCameraBody;
+
+  /// No description provided for @profileAvatarPermissionBlockedGalleryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo library access has been blocked. Open settings to enable it for Nexierge.'**
+  String get profileAvatarPermissionBlockedGalleryBody;
+
+  /// No description provided for @profileAvatarPermissionOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get profileAvatarPermissionOpenSettings;
+
   /// No description provided for @profileEditNameTitle.
   ///
   /// In en, this message translates to:

@@ -8,20 +8,31 @@ import 'package:image_picker/image_picker.dart' as ip;
 enum ImageSource$ { gallery, camera }
 
 /// Picks an image from the gallery or camera and compresses it before
-/// returning a `File` ready for multipart upload. Compression is capped
-/// at 80 % quality and 1080 px on the longest edge — plenty for an
-/// avatar, but small enough to keep upload fast on hotel Wi-Fi.
+/// returning a `File` ready for multipart upload. The result is capped
+/// to ~500 KB by iteratively lowering JPEG quality, so uploads stay
+/// fast on hotel Wi-Fi without doubling bytes server-side.
 class ImagePickerService {
   ImagePickerService({ip.ImagePicker? picker})
       : _picker = picker ?? ip.ImagePicker();
 
   final ip.ImagePicker _picker;
 
+  // Picker output upper bound — large enough that the server thumbnail
+  // pipeline still has detail to work with, small enough that a single
+  // compression pass usually lands under [_targetBytes].
   static const int _maxDimension = 1080;
-  static const int _quality = 80;
 
-  /// Pick an image from [source], compress it, and return the compressed
-  /// file. Returns `null` if the user cancelled the picker.
+  // Target file size for the uploaded avatar.
+  static const int _targetBytes = 500 * 1024;
+
+  // Iterative-compression quality ladder. Starts high so a typical
+  // phone-camera JPEG lands at first try; drops fast if the image is
+  // huge (e.g. raw 12 MP capture on a flagship).
+  static const List<int> _qualityLadder = [85, 70, 55, 40, 25];
+
+  /// Pick an image from [source], compress it to ≤500 KB, and return
+  /// the compressed file. Returns `null` if the user cancelled the
+  /// picker.
   Future<File?> pickAndCompress(ImageSource$ source) async {
     final ip.XFile? picked = await _picker.pickImage(
       source: source == ImageSource$.gallery
@@ -33,28 +44,42 @@ class ImagePickerService {
     );
     if (picked == null) return null;
 
-    final originalFile = File(picked.path);
-    return _compress(originalFile);
+    return _compressToTarget(File(picked.path));
   }
 
-  Future<File> _compress(File source) async {
+  Future<File> _compressToTarget(File source) async {
     final dir = source.parent.path;
-    final targetPath =
-        '$dir${Platform.pathSeparator}avatar_'
-        '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final stamp = DateTime.now().millisecondsSinceEpoch;
 
-    final result = await FlutterImageCompress.compressAndGetFile(
-      source.absolute.path,
-      targetPath,
-      quality: _quality,
-      minWidth: _maxDimension,
-      minHeight: _maxDimension,
-      format: CompressFormat.jpeg,
-    );
+    File best = source;
+    int bestSize = await source.length();
 
-    // Compression failed — fall back to the raw picked file which is already
-    // capped to maxWidth/maxHeight by the picker.
-    if (result == null) return source;
-    return File(result.path);
+    for (var i = 0; i < _qualityLadder.length; i++) {
+      final quality = _qualityLadder[i];
+      final targetPath =
+          '$dir${Platform.pathSeparator}avatar_${stamp}_q$quality.jpg';
+
+      final result = await FlutterImageCompress.compressAndGetFile(
+        source.absolute.path,
+        targetPath,
+        quality: quality,
+        minWidth: _maxDimension,
+        minHeight: _maxDimension,
+        format: CompressFormat.jpeg,
+      );
+      if (result == null) continue;
+
+      final out = File(result.path);
+      final size = await out.length();
+
+      if (size < bestSize) {
+        best = out;
+        bestSize = size;
+      }
+      if (size <= _targetBytes) return out;
+    }
+
+    // Could not hit the target — return the smallest variant produced.
+    return best;
   }
 }

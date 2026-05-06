@@ -663,7 +663,7 @@ class _CatalogMenuCard extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 width: 56,
@@ -864,6 +864,8 @@ class _CatalogTrailingControl extends StatelessWidget {
     if (item.hasOptions && quantity > 0) {
       return Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 24,
@@ -907,7 +909,9 @@ class _CircleAddButton extends StatelessWidget {
         child: const SizedBox(
           width: 36,
           height: 36,
-          child: Icon(Icons.add_rounded, size: 20, color: ColorPalette.white),
+          child: Center(
+            child: Icon(Icons.add_rounded, size: 20, color: ColorPalette.white),
+          ),
         ),
       ),
     );

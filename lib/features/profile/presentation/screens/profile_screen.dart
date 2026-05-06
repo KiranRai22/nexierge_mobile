@@ -7,6 +7,7 @@ import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../data/services/image_picker_service.dart';
+import '../../data/services/media_permission_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../providers/user_profile_controller.dart';
 import '../widgets/change_profile_picture_sheet.dart';
@@ -34,6 +35,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final source = await ChangeProfilePictureSheet.show(context);
     if (source == null || !mounted) return;
 
+    final permission = await const MediaPermissionService().ensure(source);
+    if (!mounted) return;
+    switch (permission) {
+      case MediaPermissionResult.granted:
+        break;
+      case MediaPermissionResult.denied:
+        _showPermissionDeniedToast(source);
+        return;
+      case MediaPermissionResult.permanentlyDenied:
+        await _showPermissionBlockedDialog(source);
+        return;
+    }
+
     final picker = ImagePickerService();
     final file = await picker.pickAndCompress(source);
     if (file == null || !mounted) return;
@@ -53,6 +67,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
+    }
+  }
+
+  void _showPermissionDeniedToast(ImageSource$ source) {
+    final s = context.l10n;
+    final msg = source == ImageSource$.camera
+        ? s.profileAvatarPermissionDeniedCamera
+        : s.profileAvatarPermissionDeniedGallery;
+    context.showFailure(msg);
+  }
+
+  Future<void> _showPermissionBlockedDialog(ImageSource$ source) async {
+    final s = context.l10n;
+    final c = context.themeColors;
+    final body = source == ImageSource$.camera
+        ? s.profileAvatarPermissionBlockedCameraBody
+        : s.profileAvatarPermissionBlockedGalleryBody;
+
+    final shouldOpen = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: c.bgBase,
+        title: Text(s.profileAvatarPermissionBlockedTitle),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(s.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(s.profileAvatarPermissionOpenSettings),
+          ),
+        ],
+      ),
+    );
+    if (shouldOpen ?? false) {
+      await const MediaPermissionService().openSettings();
     }
   }
 

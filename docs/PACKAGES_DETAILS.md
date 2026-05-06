@@ -156,6 +156,14 @@ Last updated: 2026-04-26.
 - **Description:** Pure-Dart Flutter binding for the Lucide icon set (~1500 SVG glyphs exposed as `IconData`). No native code; works on Android, iOS, web, desktop. Active maintenance with frequent releases tracking upstream Lucide.
 - **Why we use it:** The HotelOps web prototype uses Lucide icons across the dashboard (`Sun`, `Moon`, `Clock`, `AlertCircle`, `CheckCheck`, `ChevronRight`, `PauseCircle`, `PlayCircle`, `Bell`). Matching the visual identity 1:1 in Flutter requires the same glyph set — Material Icons cannot reproduce Lucide's stroke-style consistently.
 
+### `permission_handler`
+- **Package name:** `permission_handler`
+- **Version:** `^11.3.1`
+- **Owner:** Baseflow
+- **License:** MIT
+- **Description:** Cross-platform runtime permission API. Maps Dart `Permission` enum onto native iOS / Android permission systems, exposes status checks, request flow, and `openAppSettings()` for permanently-denied recovery. MIT license — fully commercial-safe. Active maintenance with frequent releases.
+- **Why we use it:** Profile-picture flow must request camera + photo-library access ONLY when the user taps the corresponding sheet option (per UX requirement). `image_picker` does not give the app a chance to gate access or show a custom denial dialog before the picker activity launches; explicit `permission_handler` checks let us short-circuit when the user has permanently denied access and route them to system settings.
+
 ---
 
 ## Dev dependencies

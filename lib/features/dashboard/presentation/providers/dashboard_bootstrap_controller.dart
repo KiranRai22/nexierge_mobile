@@ -31,16 +31,24 @@ class DashboardBootstrapController
     _dashboardRemote = ref.read(dashboardRemoteDataSourceProvider);
     _dataService = DashboardDataService();
 
+    debugPrint('[DashboardBootstrapController] build: Starting bootstrap');
+
     // Check if we have cached data that's still fresh
     final isComplete = await _dataService.isBootstrapComplete();
     if (isComplete) {
       debugPrint('[DashboardBootstrapController] Using cached bootstrap data');
       final cached = await _loadFromCache();
       if (cached.hasAllData) {
+        debugPrint(
+          '[DashboardBootstrapController] Bootstrap complete from cache',
+        );
         return cached.copyWith(isComplete: true);
       }
     }
 
+    debugPrint(
+      '[DashboardBootstrapController] Bootstrap not complete, returning empty state',
+    );
     // Start with empty state - loading happens via runBootstrap()
     return DashboardBootstrapState.empty;
   }

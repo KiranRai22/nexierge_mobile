@@ -50,6 +50,15 @@
 		<!-- Shown to user when requesting notification permission -->
 		<key>NSUserNotificationUsageDescription</key>
 		<string>We use notifications to keep you informed about important updates.</string>
+		<!-- Camera access — requested only when the user taps "Take photo" in the change-profile-picture sheet -->
+		<key>NSCameraUsageDescription</key>
+		<string>Nexierge needs camera access so you can take a new profile picture.</string>
+		<!-- Photo library read — requested only when the user taps "Upload photo" in the change-profile-picture sheet -->
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Nexierge needs photo library access so you can choose a profile picture.</string>
+		<!-- Photo library add — used if a captured profile picture is later saved back to the library -->
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Nexierge needs permission to save your profile picture to the photo library.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 		<!-- App Transport Security - Allow Firebase connections -->

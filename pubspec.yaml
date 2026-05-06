@@ -78,6 +78,9 @@ dependencies:
 
   # Image compression for avatar uploads
   flutter_image_compress: ^2.3.0
+
+  # Runtime permissions (camera + photo library) for avatar picker
+  permission_handler: ^11.3.1
   json_annotation: ^4.9.0
 
   # Audio playback for UI sounds
