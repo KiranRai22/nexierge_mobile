@@ -28,8 +28,8 @@ class _AuthRepositoryImpl implements AuthRepository {
         ),
         EmployeeCodeCredentials c => await _remote.loginWithCode(
           CodeLoginRequestDto(
-            employeeCode: c.employeeCode,
-            loginCode: c.loginCode,
+            employee_code: c.employeeCode,
+            code: c.loginCode,
             fcm_token: c.fcm_token,
           ),
         ),

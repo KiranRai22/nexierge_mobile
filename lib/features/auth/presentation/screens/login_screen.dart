@@ -151,6 +151,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
   }
 
+  // Real-time validation for employee code
+  void _onEmployeeCodeChanged(String value) {
+    // Convert to uppercase automatically
+    final upperValue = value.toUpperCase();
+    if (_employeeCodeCtrl.text != upperValue) {
+      _employeeCodeCtrl.value = TextEditingValue(
+        text: upperValue,
+        selection: TextSelection.collapsed(offset: upperValue.length),
+      );
+    }
+
+    _clearInlineErrors();
+    final s = context.l10n;
+    final error = LoginValidators.employeeCode(upperValue, s);
+    if (error != null) {
+      setState(() {
+        _identifierError = error;
+      });
+    }
+    ref.read(loginControllerProvider.notifier).clearLastError();
+  }
+
+  // Real-time validation for login code
+  void _onLoginCodeChanged(String value) {
+    _clearInlineErrors();
+    final s = context.l10n;
+    final error = LoginValidators.loginCode(value, s);
+    if (error != null) {
+      setState(() {
+        _secretError = error;
+      });
+    }
+    ref.read(loginControllerProvider.notifier).clearLastError();
+  }
+
   // ---------------------------------------------------------------------------
   // Submit
   // ---------------------------------------------------------------------------
@@ -258,6 +293,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           controller.selectMode(m);
                         },
                         onTogglePassword: controller.togglePasswordVisibility,
+                        onEmployeeCodeChanged: _onEmployeeCodeChanged,
+                        onLoginCodeChanged: _onLoginCodeChanged,
                         onSubmit: _canSubmit ? _onSignInPressed : null,
                       ),
                       const SizedBox(height: 8),
@@ -309,6 +346,8 @@ class _Card extends StatelessWidget {
   final TextEditingController loginCodeCtrl;
   final ValueChanged<LoginMode> onModeChanged;
   final VoidCallback onTogglePassword;
+  final ValueChanged<String> onEmployeeCodeChanged;
+  final ValueChanged<String> onLoginCodeChanged;
   final VoidCallback? onSubmit;
 
   const _Card({
@@ -321,6 +360,8 @@ class _Card extends StatelessWidget {
     required this.loginCodeCtrl,
     required this.onModeChanged,
     required this.onTogglePassword,
+    required this.onEmployeeCodeChanged,
+    required this.onLoginCodeChanged,
     required this.onSubmit,
   });
 
@@ -354,7 +395,7 @@ class _Card extends StatelessWidget {
             mode: state.mode,
             errorText: identifierError,
             autofocus: true,
-            onChanged: (_) {},
+            onChanged: isEmail ? (_) {} : onEmployeeCodeChanged,
             onSubmitted: () => FocusScope.of(context).nextFocus(),
           ),
           const SizedBox(height: 20),
@@ -364,7 +405,7 @@ class _Card extends StatelessWidget {
             obscure: state.obscurePassword,
             errorText: secretError,
             onToggleObscure: onTogglePassword,
-            onChanged: (_) {},
+            onChanged: isEmail ? (_) {} : onLoginCodeChanged,
             onSubmitted: () => onSubmit?.call(),
           ),
           const SizedBox(height: 20),

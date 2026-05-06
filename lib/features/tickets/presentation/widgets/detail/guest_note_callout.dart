@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/theme/card_theme.dart';
 import '../../../../../core/theme/color_palette.dart';
+import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 
 /// Yellow callout used for the guest's freeform note. Stripe + sticky-note
@@ -14,15 +16,10 @@ class GuestNoteCallout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: ColorPalette.noteCalloutBg,
+      decoration: CardDecoration.standard(
+        colors: context.themeColors,
         borderRadius: BorderRadius.circular(12),
-        border: Border(
-          left: BorderSide(
-            color: ColorPalette.noteCalloutAccent,
-            width: 4,
-          ),
-        ),
+        backgroundColor: ColorPalette.noteCalloutBg,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

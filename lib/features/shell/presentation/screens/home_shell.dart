@@ -47,6 +47,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     // The realtime ticket list is no longer gated on the tickets tab being
     // active — it's a persistent, session-scoped notifier.
     ref.read(ticketsTabActiveProvider.notifier).state = tab == ShellTab.tickets;
+
+    // When user selects tickets from bottom nav, always show Today tab with All filter
+    if (tab == ShellTab.tickets) {
+      ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
+      ref.read(ticketsFilterProvider.notifier).state = 'all';
+    }
   }
 
   Future<void> _onFabPressed() async {

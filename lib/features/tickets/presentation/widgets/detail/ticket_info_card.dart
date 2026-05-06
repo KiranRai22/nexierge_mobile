@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/theme/card_theme.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 
@@ -32,10 +33,10 @@ class TicketInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     return Container(
-      decoration: BoxDecoration(
-        color: c.bgSubtle,
+      decoration: CardDecoration.standard(
+        colors: c,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: c.borderBase),
+        backgroundColor: c.bgSubtle,
       ),
       child: Column(children: [for (final row in rows) _Row(row: row)]),
     );

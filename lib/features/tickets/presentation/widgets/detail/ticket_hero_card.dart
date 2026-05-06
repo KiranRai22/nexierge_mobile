@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/theme/card_theme.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/models/department.dart';
@@ -68,10 +69,10 @@ class _TicketHeroCardState extends State<TicketHeroCard> {
     final elapsed = _end.difference(_start);
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: c.bgSubtle,
+      decoration: CardDecoration.standard(
+        colors: c,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: c.borderBase),
+        backgroundColor: c.bgSubtle,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,

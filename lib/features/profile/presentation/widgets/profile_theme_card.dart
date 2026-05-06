@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
@@ -24,10 +25,9 @@ class ProfileThemeCard extends ConsumerWidget {
         ref.watch(themeModeControllerProvider).valueOrNull ?? ThemeMode.system;
 
     return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
+      decoration: CardDecoration.standard(
+        colors: c,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.borderBase),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Column(

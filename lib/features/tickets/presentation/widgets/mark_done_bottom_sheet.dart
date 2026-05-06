@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -35,8 +36,8 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
+      decoration: CardDecoration.subtle(
+        colors: c,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + viewInsets),
@@ -89,7 +90,9 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
             style: TypographyManager.bodyMedium.copyWith(color: c.fgBase),
             decoration: InputDecoration(
               hintText: 'Resolution note (optional)...',
-              hintStyle: TypographyManager.bodyMedium.copyWith(color: c.fgMuted),
+              hintStyle: TypographyManager.bodyMedium.copyWith(
+                color: c.fgMuted,
+              ),
               filled: true,
               fillColor: c.bgSubtle,
               contentPadding: const EdgeInsets.all(14),

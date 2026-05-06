@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -44,9 +46,9 @@ class TicketCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Container(
-            decoration: BoxDecoration(
+            decoration: CardDecoration.standard(
+              colors: context.themeColors,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: ColorPalette.opsBorder),
             ),
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -89,7 +91,10 @@ class TicketCard extends StatelessWidget {
                   // Item preview row (avatar + item title + small subtitle)
                   if (ticket.items.isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: ColorPalette.opsSurfaceSubtle,
                         borderRadius: BorderRadius.circular(12),
@@ -138,17 +143,24 @@ class TicketCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
-                            onPressed: () => _showStartWorkConfirmation(context),
+                            onPressed: () =>
+                                _showStartWorkConfirmation(context),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: ColorPalette.chipCatalogFg,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               minimumSize: const Size(96, 36),
                             ),
-                            icon: const Icon(Icons.play_arrow, size: 16, color: Colors.white),
+                            icon: const Icon(
+                              Icons.play_arrow,
+                              size: 16,
+                              color: Colors.white,
+                            ),
                             label: Text(
                               'Start Work',
                               style: TypographyManager.labelSmall.copyWith(

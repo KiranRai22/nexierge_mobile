@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/dashboard_view.dart';
@@ -215,22 +216,7 @@ class StatNoteCard extends StatelessWidget {
               },
         borderRadius: radius,
         child: Container(
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            border: Border.all(color: c.borderBase, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: c.borderBase.withValues(alpha: 0.04),
-                offset: const Offset(0, 1),
-                blurRadius: 2,
-              ),
-              BoxShadow(
-                color: c.borderBase.withValues(alpha: 0.04),
-                offset: const Offset(0, 0),
-                blurRadius: 1,
-              ),
-            ],
-          ),
+          decoration: CardDecoration.standard(colors: c, borderRadius: radius),
           padding: EdgeInsets.all(isLarge ? 18 : 14),
           child: Semantics(
             label: '$badgeLabel $value',

@@ -35,25 +35,20 @@ class NeedsAttentionApiList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showHeader)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  s.dashboardNeedsAttention,
-                  style: TypographyManager.textHeading.copyWith(
-                    color: c.fgBase,
-                  ),
-                ),
-                if (!isLoading && items.isNotEmpty)
-                  _ViewAllButton(label: s.dashboardViewAll, onTap: onViewAll),
-              ],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                s.dashboardNeedsAttention,
+                style: TypographyManager.textHeading.copyWith(color: c.fgBase),
+              ),
+              if (!isLoading && items.isNotEmpty)
+                _ViewAllButton(label: s.dashboardViewAll, onTap: onViewAll),
+            ],
           ),
         // Needs attention list content
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: isLoading
               ? const _NeedsAttentionShimmer()
               : items.isEmpty

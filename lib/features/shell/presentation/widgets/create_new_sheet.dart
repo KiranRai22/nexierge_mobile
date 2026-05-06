@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -26,8 +27,8 @@ class CreateNewSheet extends StatelessWidget {
     final s = context.l10n;
     final c = context.themeColors;
     return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
+      decoration: CardDecoration.subtle(
+        colors: c,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(

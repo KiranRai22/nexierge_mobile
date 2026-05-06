@@ -2,7 +2,7 @@
 class EmailLoginRequestDto {
   final String email;
   final String password;
-  final String fcm_token; // Optional FCM token for push notifications  
+  final String fcm_token; // Optional FCM token for push notifications
 
   const EmailLoginRequestDto({
     required this.email,
@@ -19,20 +19,20 @@ class EmailLoginRequestDto {
   }
 }
 
-/// JSON shape sent to `POST /auth/login/code_login`.
+/// JSON shape sent to `POST /auth/login/code`.
 class CodeLoginRequestDto {
-  final String employeeCode;
-  final String loginCode;
-  final String fcm_token; // Optional FCM token for push notifications  
+  final String employee_code;
+  final String code;
+  final String fcm_token; // Optional FCM token for push notifications
 
   const CodeLoginRequestDto({
-    required this.employeeCode,
-    required this.loginCode,
+    required this.employee_code,
+    required this.code,
     required this.fcm_token,
   });
 
   Map<String, dynamic> toJson() {
-    final json = {'employee_code': employeeCode, 'login_code': loginCode};
+    final json = {'employee_code': employee_code, 'code': code};
     if (fcm_token.isNotEmpty) {
       json['fcm_token'] = fcm_token;
     }

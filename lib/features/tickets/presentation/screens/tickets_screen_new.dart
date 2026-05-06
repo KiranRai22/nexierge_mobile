@@ -76,6 +76,20 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
     await ref.read(ticketsPagedProvider(specForTab(tab)).notifier).refresh();
   }
 
+  /// Check if a tab has filters available
+  bool _tabHasFilters(TicketsMainTab tab) {
+    switch (tab) {
+      case TicketsMainTab.incoming:
+        return true; // Has newest/oldest filters
+      case TicketsMainTab.today:
+        return true; // Has all/accepted/inprogress/overdue filters
+      case TicketsMainTab.scheduled:
+        return false; // ENHANCEMENT: Filters hidden
+      case TicketsMainTab.done:
+        return false; // ENHANCEMENT: Filters hidden
+    }
+  }
+
   void _toggleSearch() {
     setState(() {
       _isSearchVisible = !_isSearchVisible;
@@ -90,13 +104,19 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   Widget build(BuildContext context) {
     final mainTab = ref.watch(ticketsMainTabProvider);
     final selectedFilter = ref.watch(ticketsFilterProvider);
-    // Selecting the Today tab triggers a fresh page-1 fetch every time the
-    // user lands on it.
+    // Auto-filter logic for tab changes
     ref.listen<TicketsMainTab>(ticketsMainTabProvider, (prev, next) {
+      // Selecting the Today tab triggers a fresh page-1 fetch every time the
+      // user lands on it.
       if (next == TicketsMainTab.today && prev != TicketsMainTab.today) {
         ref
             .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
             .refresh();
+      }
+
+      // When Incoming tab is selected, always apply newest first filter
+      if (next == TicketsMainTab.incoming && prev != TicketsMainTab.incoming) {
+        ref.read(ticketsFilterProvider.notifier).state = 'newest';
       }
     });
     final userProfile = ref.watch(userProfileProvider);
@@ -217,16 +237,17 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
               ),
             ),
 
-            // Filter chips based on selected main tab
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-              child: TicketsFilterChips(
-                selectedTab: mainTab,
-                selectedFilter: selectedFilter,
-                onFilterChanged: (filter) =>
-                    ref.read(ticketsFilterProvider.notifier).state = filter,
+            // Filter chips based on selected main tab - only show if tab has filters
+            if (_tabHasFilters(mainTab))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+                child: TicketsFilterChips(
+                  selectedTab: mainTab,
+                  selectedFilter: selectedFilter,
+                  onFilterChanged: (filter) =>
+                      ref.read(ticketsFilterProvider.notifier).state = filter,
+                ),
               ),
-            ),
 
             // Tickets list
             Expanded(
@@ -431,7 +452,12 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            4,
+            16,
+            120,
+          ), // Combined padding with bottom space for bottom nav
           itemCount: tickets.length + (page.hasMore ? 1 : 0),
           itemBuilder: (context, index) {
             if (index >= tickets.length) {

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../domain/models/department.dart';
@@ -48,9 +49,9 @@ class TicketCardNew extends ConsumerWidget {
           child: GestureDetector(
             onTap: onTap,
             child: Container(
-              decoration: BoxDecoration(
+              decoration: CardDecoration.standard(
+                colors: c,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: c.borderBase),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16),

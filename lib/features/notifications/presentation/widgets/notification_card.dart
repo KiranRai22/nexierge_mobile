@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -31,10 +32,7 @@ class NotificationCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: radius,
         child: Container(
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            border: Border.all(color: c.borderBase, width: 1),
-          ),
+          decoration: CardDecoration.subtle(colors: c, borderRadius: radius),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

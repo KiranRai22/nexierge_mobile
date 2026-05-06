@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../domain/entities/notification_inbox_item.dart';
@@ -49,11 +50,9 @@ class NotificationsSheet extends ConsumerWidget {
       snapSizes: const [0.6, 0.95],
       builder: (context, scrollController) {
         return Container(
-          decoration: BoxDecoration(
-            color: c.bgBase,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(20),
-            ),
+          decoration: CardDecoration.subtle(
+            colors: c,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -120,16 +119,12 @@ class _Header extends ConsumerWidget {
               children: [
                 Text(
                   s.notificationsTitle,
-                  style: TypographyManager.textTitle.copyWith(
-                    color: c.fgBase,
-                  ),
+                  style: TypographyManager.textTitle.copyWith(color: c.fgBase),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   s.notificationsUnread(unread),
-                  style: TypographyManager.textMeta.copyWith(
-                    color: c.fgMuted,
-                  ),
+                  style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
                 ),
               ],
             ),
@@ -167,9 +162,7 @@ class _ActionsRow extends ConsumerWidget {
               child: Text(
                 s.notificationsMarkAllRead,
                 style: TypographyManager.textLabel.copyWith(
-                  color: state.unreadCount == 0
-                      ? c.fgSubtle
-                      : c.tagPurpleIcon,
+                  color: state.unreadCount == 0 ? c.fgSubtle : c.tagPurpleIcon,
                 ),
               ),
             ),

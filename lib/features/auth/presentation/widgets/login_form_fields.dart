@@ -257,7 +257,9 @@ class SecretField extends StatelessWidget {
         hint: isEmail ? '' : s.loginCodeHint,
         prefixIcon: isEmail ? Icons.lock_outline : Icons.key_outlined,
         obscureText: obscure,
-        keyboardType: TextInputType.visiblePassword,
+        keyboardType: isEmail
+            ? TextInputType.visiblePassword
+            : TextInputType.number,
         textInputAction: TextInputAction.done,
         autofillHint: isEmail
             ? AutofillHints.password

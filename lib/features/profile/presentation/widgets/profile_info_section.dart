@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -68,10 +69,9 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
           ),
         ),
         Container(
-          decoration: BoxDecoration(
-            color: c.bgBase,
+          decoration: CardDecoration.subtle(
+            colors: c,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: c.borderBase),
           ),
           child: Column(
             children: [

@@ -206,12 +206,29 @@ class _ProfileBody extends StatefulWidget {
 
 class _ProfileBodyState extends State<_ProfileBody> {
   final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0;
+  static const double _shrinkThreshold = 50;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
+
+  void _onScroll() {
+    setState(() {
+      _scrollOffset = _scrollController.offset.clamp(0, _shrinkThreshold);
+    });
+  }
+
+  double get _shrinkProgress => (_scrollOffset / _shrinkThreshold).clamp(0, 1);
 
   @override
   Widget build(BuildContext context) {
@@ -220,7 +237,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
           child: ProfileHeaderCardAnimated(
             profile: widget.profile,
             uploadingAvatar: widget.uploadingAvatar,
@@ -233,7 +250,14 @@ class _ProfileBodyState extends State<_ProfileBody> {
         Expanded(
           child: ListView(
             controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(16, 40, 16, 96),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16 +
+                  (_shrinkProgress *
+                      20), // Dynamic top padding when card shrinks
+              16,
+              120,
+            ), // Increased bottom padding for bottom nav
             children: [
               ProfileInfoSection(
                 title: s.profileSectionAccountInformation,

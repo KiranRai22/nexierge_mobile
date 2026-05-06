@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/services/sound_manager.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -101,9 +102,9 @@ class _CompactStatCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          decoration: BoxDecoration(
+          decoration: CardDecoration.standard(
+            colors: c,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: c.borderBase, width: 1),
           ),
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Column(

@@ -9,6 +9,8 @@ import '../../../notifications/presentation/widgets/notifications_sheet.dart';
 import '../../../shell/presentation/widgets/app_bottom_nav.dart';
 import '../../../tickets/domain/models/department.dart';
 import '../../../tickets/presentation/providers/session_providers.dart';
+import '../../../tickets/presentation/providers/tickets_main_tab_provider.dart';
+import '../../../tickets/presentation/widgets/tickets_main_tabs.dart';
 import '../../../tickets/presentation/screens/ticket_detail_screen.dart';
 import '../../../tickets/presentation/widgets/app_top_bar.dart';
 import '../providers/dashboard_bootstrap_controller.dart';
@@ -95,6 +97,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ref.read(dashboardCountsControllerProvider.notifier).refresh(),
       ref.read(needsAttentionControllerProvider.notifier).refresh(),
     ]);
+  }
+
+  // Navigation functions for dashboard cards
+  void _navigateToNeedsAcknowledgment() {
+    // Navigate to tickets page and select incoming tab
+    widget.onSwitchTab(ShellTab.tickets);
+    // Set the main tab to incoming
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.incoming;
+  }
+
+  void _navigateToInProgress() {
+    // Navigate to tickets page, select today tab and inprogress filter
+    widget.onSwitchTab(ShellTab.tickets);
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
+    ref.read(ticketsFilterProvider.notifier).state = 'inprogress';
+  }
+
+  void _navigateToOverdue() {
+    // Navigate to tickets page, select today tab and overdue filter
+    widget.onSwitchTab(ShellTab.tickets);
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
+    ref.read(ticketsFilterProvider.notifier).state = 'overdue';
+  }
+
+  void _navigateToNotStarted() {
+    // Navigate to tickets page, select today tab and accepted filter
+    widget.onSwitchTab(ShellTab.tickets);
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
+    ref.read(ticketsFilterProvider.notifier).state = 'accepted';
   }
 
   bool _resolveDark(BuildContext context, ThemeMode? mode) {
@@ -203,14 +234,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           accepted: counts.notStartedCount,
                           inProgress: counts.inProgressCount,
                           overdue: counts.overdueCount,
-                          onTapIncoming: () =>
-                              widget.onSwitchTab(ShellTab.tickets),
-                          onTapInProgress: () =>
-                              widget.onSwitchTab(ShellTab.tickets),
-                          onTapOverdue: () =>
-                              widget.onSwitchTab(ShellTab.tickets),
-                          onTapAccepted: () =>
-                              widget.onSwitchTab(ShellTab.tickets),
+                          onTapIncoming: _navigateToNeedsAcknowledgment,
+                          onTapInProgress: _navigateToInProgress,
+                          onTapOverdue: _navigateToOverdue,
+                          onTapAccepted: _navigateToNotStarted,
                         ),
                         loading: () => const SizedBox(height: 48),
                         error: (_, _) => const SizedBox(height: 48),
@@ -281,14 +308,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   manual: 0,
                                 ),
                               ),
-                              onTapIncoming: () =>
-                                  widget.onSwitchTab(ShellTab.tickets),
-                              onTapInProgress: () =>
-                                  widget.onSwitchTab(ShellTab.tickets),
-                              onTapOverdue: () =>
-                                  widget.onSwitchTab(ShellTab.tickets),
-                              onTapAccepted: () =>
-                                  widget.onSwitchTab(ShellTab.tickets),
+                              onTapIncoming: _navigateToNeedsAcknowledgment,
+                              onTapInProgress: _navigateToInProgress,
+                              onTapOverdue: _navigateToOverdue,
+                              onTapAccepted: _navigateToNotStarted,
                             ),
                             loading: () => const _StatsSkeleton(),
                             error: (_, _) => const _StatsSkeleton(),
@@ -300,7 +323,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         16,
                         _isCompact ? 30 : 0,
                         16,
-                        96,
+                        120, // Increased bottom padding for bottom nav
                       ),
                       sliver: SliverToBoxAdapter(
                         child: asyncNeedsAttention.when(

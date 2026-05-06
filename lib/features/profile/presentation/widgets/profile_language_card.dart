@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/app_locale.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/locale_controller.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Settings card with the language title/subtitle on the left and a binary
@@ -16,7 +17,8 @@ class ProfileLanguageCard extends ConsumerStatefulWidget {
   const ProfileLanguageCard({super.key});
 
   @override
-  ConsumerState<ProfileLanguageCard> createState() => _ProfileLanguageCardState();
+  ConsumerState<ProfileLanguageCard> createState() =>
+      _ProfileLanguageCardState();
 }
 
 class _ProfileLanguageCardState extends ConsumerState<ProfileLanguageCard>
@@ -71,10 +73,9 @@ class _ProfileLanguageCardState extends ConsumerState<ProfileLanguageCard>
     final languageCode = selected == AppLocale.spanish ? 'ES' : 'EN';
 
     return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
+      decoration: CardDecoration.standard(
+        colors: c,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.borderBase),
       ),
       child: Column(
         children: [
@@ -98,7 +99,9 @@ class _ProfileLanguageCardState extends ConsumerState<ProfileLanguageCard>
                         const SizedBox(height: 2),
                         Text(
                           s.profileLanguageSubtitle,
-                          style: TypographyManager.bodySmall.copyWith(color: c.fgSubtle),
+                          style: TypographyManager.bodySmall.copyWith(
+                            color: c.fgSubtle,
+                          ),
                         ),
                       ],
                     ],
@@ -137,9 +140,8 @@ class _ProfileLanguageCardState extends ConsumerState<ProfileLanguageCard>
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                     child: _LanguageSegmented(
                       selected: selected,
-                      onChanged: (next) => ref
-                          .read(localeControllerProvider.notifier)
-                          .set(next),
+                      onChanged: (next) =>
+                          ref.read(localeControllerProvider.notifier).set(next),
                     ),
                   )
                 : const SizedBox.shrink(),

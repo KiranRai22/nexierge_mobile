@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -69,10 +70,9 @@ class _ProfileHeaderCardAnimatedState extends State<ProfileHeaderCardAnimated> {
     final avatarNameSpacing = Tween<double>(begin: 16, end: 12).transform(p);
 
     return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
+      decoration: CardDecoration.standard(
+        colors: c,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.borderBase),
       ),
       padding: EdgeInsets.fromLTRB(
         horizontalPadding,

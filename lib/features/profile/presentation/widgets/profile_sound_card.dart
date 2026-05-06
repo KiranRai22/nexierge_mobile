@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers/sound_preferences_provider.dart';
 import '../../../../core/services/sound_manager.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -17,10 +18,9 @@ class ProfileSoundCard extends ConsumerWidget {
     final soundEnabled = ref.watch(soundPreferencesProvider);
 
     return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
+      decoration: CardDecoration.standard(
+        colors: c,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.borderBase),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
@@ -39,7 +39,9 @@ class ProfileSoundCard extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text(
                   'Enable or disable app sound effects and notifications',
-                  style: TypographyManager.bodySmall.copyWith(color: c.fgSubtle),
+                  style: TypographyManager.bodySmall.copyWith(
+                    color: c.fgSubtle,
+                  ),
                 ),
               ],
             ),
@@ -68,10 +70,7 @@ class _SoundToggle extends StatelessWidget {
   final bool soundEnabled;
   final ValueChanged<bool> onChanged;
 
-  const _SoundToggle({
-    required this.soundEnabled,
-    required this.onChanged,
-  });
+  const _SoundToggle({required this.soundEnabled, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {

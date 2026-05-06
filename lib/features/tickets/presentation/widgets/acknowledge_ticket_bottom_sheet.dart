@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 
@@ -106,14 +107,24 @@ class _AcknowledgeTicketSheetBodyState
     final hour12 = dt.hour > 12
         ? dt.hour - 12
         : dt.hour == 0
-            ? 12
-            : dt.hour;
+        ? 12
+        : dt.hour;
     final minute = dt.minute.toString().padLeft(2, '0');
     final period = dt.hour >= 12 ? 'PM' : 'AM';
     if (isToday) return 'Today $hour12:$minute $period';
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}, $hour12:$minute $period';
   }
@@ -175,8 +186,8 @@ class _AcknowledgeTicketSheetBodyState
   Widget build(BuildContext context) {
     final c = context.themeColors;
     return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
+      decoration: CardDecoration.subtle(
+        colors: c,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -214,8 +225,7 @@ class _AcknowledgeTicketSheetBodyState
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,

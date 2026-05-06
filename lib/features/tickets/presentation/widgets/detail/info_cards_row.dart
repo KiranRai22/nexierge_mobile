@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/theme/card_theme.dart';
 import '../../../../../core/theme/color_palette.dart';
+import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/models/ticket.dart';
 
@@ -31,11 +33,7 @@ class InfoCardsRow extends StatelessWidget {
         if (isNarrow) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              cards[0],
-              const SizedBox(height: 8),
-              cards[1],
-            ],
+            children: [cards[0], const SizedBox(height: 8), cards[1]],
           );
         }
         // Wrap in IntrinsicHeight so `crossAxisAlignment: stretch` resolves
@@ -71,10 +69,10 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ColorPalette.opsSurfaceSubtle,
+      decoration: CardDecoration.standard(
+        colors: context.themeColors,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorPalette.opsBorder),
+        backgroundColor: ColorPalette.opsSurfaceSubtle,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

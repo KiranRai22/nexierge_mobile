@@ -61,20 +61,25 @@ class TicketsFilterChips extends StatelessWidget {
           _FilterOption('accepted', s.statusAccepted),
           _FilterOption('inprogress', s.statusInProgress),
           _FilterOption('overdue', s.statusOverdue, isDanger: true),
-          _FilterOption('done', s.statusDone),
         ];
       case TicketsMainTab.scheduled:
-        return [
-          _FilterOption('all', s.activityTypeAll),
-          _FilterOption('today', s.subTabToday),
-          _FilterOption('thisweek', s.filterThisWeek),
-        ];
+        // ENHANCEMENT: Hide filters for scheduled tab for now
+        return [];
+      // Original filters (commented out as enhancement):
+      // return [
+      //   _FilterOption('all', s.activityTypeAll),
+      //   _FilterOption('today', s.subTabToday),
+      //   _FilterOption('thisweek', s.filterThisWeek),
+      // ];
       case TicketsMainTab.done:
-        return [
-          _FilterOption('today', s.subTabToday),
-          _FilterOption('thisweek', s.filterThisWeek),
-          _FilterOption('thismonth', s.filterThisMonth),
-        ];
+        // ENHANCEMENT: Hide filters for done tab for now
+        return [];
+      // Original filters (commented out as enhancement):
+      // return [
+      //   _FilterOption('today', s.subTabToday),
+      //   _FilterOption('thisweek', s.filterThisWeek),
+      //   _FilterOption('thismonth', s.filterThisMonth),
+      // ];
     }
   }
 }
