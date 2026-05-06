@@ -41,8 +41,8 @@ abstract class APIEndpoints {
   // User endpoints (preserved from the previous shape).
   // ---------------------------------------------------------------------------
 
-  static const String profile = '$baseUrl/v1/user/profile';
-  static const String updateProfile = '$baseUrl/v1/user/profile';
+  static const String profile = '$authBaseUrl/auth/me_user';
+  static const String updateProfile = '$_host/api:bAt3sLZU/user/edit';
 
   // Dashboard
   static const String dashboardHotelDetails =
@@ -69,21 +69,24 @@ abstract class APIEndpoints {
   static const String ticketsDetails = '$_host/api:bAt3sLZU/tickets/details';
   static const String ticketsGetMyTickets =
       '$_host/api:bAt3sLZU/tickets/get_my_tickets';
+  static const String ticketsGetAll = '$_host/api:t_TeioyT/tickets/get/all';
   static const String ticketsAddGetDepartmentsAndRooms =
       '$_host/api:bAt3sLZU/tickets/add/get_departnents_and_rooms';
   static const String ticketsManual = '$_host/api:t_TeioyT/tickets/manual';
   static const String ticketsUpdateStatus =
       '$_host/api:bAt3sLZU/tickets/update_status';
-  static const String ticketsCancel =
-      '$_host/api:bAt3sLZU/tickets/cancel';
-  static const String ticketsReset =
-      '$_host/api:bAt3sLZU/tickets/reset';
+  static const String ticketsCancel = '$_host/api:bAt3sLZU/tickets/cancel';
+  static const String ticketsReset = '$_host/api:bAt3sLZU/tickets/reset';
   static const String ticketsChangeDue =
       '$_host/api:bAt3sLZU/tickets/change_due';
 
   // Service Catalogs
   static const String serviceCatalogsAll =
       '$_host/api:u0I0pXR9/service_catalogs/catalogs/all';
+  static const String serviceCatalogItems =
+      '$_host/api:u0I0pXR9/service_catalogs/items';
+  static const String serviceCatalogsCreateOrder =
+      '$_host/api:u0I0pXR9/service_catalogs/user_app/order/create';
 
   // Guest stay
   static const String guestStayCheckedIn =

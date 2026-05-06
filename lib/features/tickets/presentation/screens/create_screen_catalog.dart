@@ -42,44 +42,89 @@ class _CatalogTabBody extends ConsumerWidget {
 class _CatalogStepSelect extends ConsumerWidget {
   const _CatalogStepSelect({super.key});
 
+  /// Map an API [ServiceCatalog] (no items embedded) to the in-app
+  /// [Catalog] domain model that the rest of the create-flow code uses.
+  /// Items are lazy-loaded by the items step via `serviceCatalogItemsProvider`.
+  Catalog _toDomainCatalog(ServiceCatalog sc) {
+    return Catalog(
+      id: sc.id,
+      name: sc.name,
+      description: sc.description ?? '',
+      emoji: '🍽️',
+      department: Department.fnb,
+      items: const [],
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = context.l10n;
-    final catalogs = ref.watch(catalogsProvider);
+    final asyncState = ref.watch(serviceCatalogsNotifierProvider);
     final ctl = ref.read(catalogDraftControllerProvider.notifier);
-    return ListView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-      children: [
-        Text(
-          s.createCatalogSelectHeading,
-          style: TypographyManager.textHeading.copyWith(
-            color: ColorPalette.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          s.createCatalogSelectSubheading,
-          style: TypographyManager.bodyMedium.copyWith(
-            color: ColorPalette.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 20),
-        for (final c in catalogs)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _CatalogSelectorCard(
-              catalog: c,
-              onTap: () => ctl.selectCatalog(c.id),
+
+    return asyncState.when(
+      loading: () => const _CatalogSelectShimmer(),
+      error: (e, _) => _CatalogSelectError(
+        error: e.toString(),
+        onRetry: () =>
+            ref.read(serviceCatalogsNotifierProvider.notifier).refresh(),
+      ),
+      data: (state) {
+        if (state.error != null) {
+          return _CatalogSelectError(
+            error: state.error!,
+            onRetry: () =>
+                ref.read(serviceCatalogsNotifierProvider.notifier).refresh(),
+          );
+        }
+        final catalogs = state.catalogs;
+        if (catalogs.isEmpty) {
+          return _CatalogSelectEmpty(
+            onRefresh: () =>
+                ref.read(serviceCatalogsNotifierProvider.notifier).refresh(),
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () =>
+              ref.read(serviceCatalogsNotifierProvider.notifier).refresh(),
+          child: ListView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
             ),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            children: [
+              Text(
+                s.createCatalogSelectHeading,
+                style: TypographyManager.textHeading.copyWith(
+                  color: ColorPalette.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                s.createCatalogSelectSubheading,
+                style: TypographyManager.bodyMedium.copyWith(
+                  color: ColorPalette.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              for (final sc in catalogs)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _CatalogSelectorCard(
+                    catalog: sc,
+                    onTap: () => ctl.selectCatalog(_toDomainCatalog(sc)),
+                  ),
+                ),
+            ],
           ),
-      ],
+        );
+      },
     );
   }
 }
 
 class _CatalogSelectorCard extends StatelessWidget {
-  final Catalog catalog;
+  final ServiceCatalog catalog;
   final VoidCallback onTap;
   const _CatalogSelectorCard({required this.catalog, required this.onTap});
 
@@ -100,20 +145,7 @@ class _CatalogSelectorCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: ColorPalette.opsSurfaceSubtle,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: ColorPalette.opsBorder),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  catalog.emoji,
-                  style: const TextStyle(fontSize: 22),
-                ),
-              ),
+              _CatalogLogoTile(logoUrl: catalog.logoUrl),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -130,19 +162,28 @@ class _CatalogSelectorCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(catalog.name, style: TypographyManager.cardTitle),
+                        Expanded(
+                          child: Text(
+                            catalog.name,
+                            style: TypographyManager.cardTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       ],
                     ),
+                    if ((catalog.description ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        catalog.description!,
+                        style: TypographyManager.cardMeta,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Text(
-                      catalog.description,
-                      style: TypographyManager.cardMeta,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      s.createCatalogItemCount(catalog.items.length),
+                      s.createCatalogItemCount(catalog.items),
                       style: TypographyManager.bodySmall,
                     ),
                   ],
@@ -156,6 +197,153 @@ class _CatalogSelectorCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CatalogLogoTile extends StatelessWidget {
+  final String? logoUrl;
+  const _CatalogLogoTile({this.logoUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: ColorPalette.opsSurfaceSubtle,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: ColorPalette.opsBorder),
+      ),
+      clipBehavior: Clip.antiAlias,
+      alignment: Alignment.center,
+      child: (logoUrl != null && logoUrl!.isNotEmpty)
+          ? Image.network(
+              logoUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  const Text('🍽️', style: TextStyle(fontSize: 22)),
+            )
+          : const Text('🍽️', style: TextStyle(fontSize: 22)),
+    );
+  }
+}
+
+// ── Loading / empty / error states ────────────────────────────────────────
+
+class _CatalogSelectShimmer extends StatelessWidget {
+  const _CatalogSelectShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: ColorPalette.opsSurfaceSubtle,
+      highlightColor: ColorPalette.opsSurface,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        children: [
+          _shimmerBox(width: 200, height: 22),
+          const SizedBox(height: 8),
+          _shimmerBox(width: 280, height: 14),
+          const SizedBox(height: 20),
+          for (int i = 0; i < 4; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                height: 84,
+                decoration: BoxDecoration(
+                  color: ColorPalette.opsSurfaceSubtle,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _shimmerBox({required double width, required double height}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: ColorPalette.opsSurfaceSubtle,
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+  }
+}
+
+class _CatalogSelectEmpty extends StatelessWidget {
+  final Future<void> Function() onRefresh;
+  const _CatalogSelectEmpty({required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 80, 16, 24),
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 64,
+            color: ColorPalette.textSecondary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No service catalogs available',
+            textAlign: TextAlign.center,
+            style: TypographyManager.bodyLarge.copyWith(
+              color: ColorPalette.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton(
+              onPressed: onRefresh,
+              child: const Text('Refresh'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CatalogSelectError extends StatelessWidget {
+  final String error;
+  final Future<void> Function() onRetry;
+  const _CatalogSelectError({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRetry,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
+        children: [
+          Icon(Icons.error_outline, size: 56, color: ColorPalette.error),
+          const SizedBox(height: 16),
+          Text(
+            error,
+            textAlign: TextAlign.center,
+            style: TypographyManager.bodyMedium.copyWith(
+              color: ColorPalette.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: ElevatedButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -236,7 +424,7 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
       return const SizedBox.shrink();
     }
 
-    final items = _filtered(catalog.items);
+    final asyncItems = ref.watch(serviceCatalogItemsProvider(catalog.id));
     final hasCart = draft.hasCart;
 
     return Column(
@@ -295,29 +483,69 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
 
         // Item list
         Expanded(
-          child: ListView.separated(
-            physics: const BouncingScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(16, 0, 16, hasCart ? 88 : 24),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (_, i) {
-              final item = items[i];
-              return _CatalogMenuCard(
-                item: item,
-                draft: draft,
-                onAdd: () {
-                  if (item.hasOptions) {
-                    _onAddOptionedItem(item);
-                  } else {
-                    ctl.setItemQuantity(item, draft.quantityFor(item.id) + 1);
-                  }
-                },
-                onIncrement: () =>
-                    ctl.setItemQuantity(item, draft.quantityFor(item.id) + 1),
-                onDecrement: () =>
-                    ctl.setItemQuantity(item, draft.quantityFor(item.id) - 1),
-                onEditLine: _onEditLine,
-                onDeleteLine: (l) => ctl.removeLine(l.id),
+          child: asyncItems.when(
+            loading: () => const _CatalogItemsShimmer(),
+            error: (e, _) => _CatalogItemsError(
+              error: e.toString(),
+              onRetry: () =>
+                  ref.invalidate(serviceCatalogItemsProvider(catalog.id)),
+            ),
+            data: (allItems) {
+              final items = _filtered(allItems);
+              if (items.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(
+                      _query.isEmpty
+                          ? 'No items in this catalog yet'
+                          : 'No items match your search',
+                      textAlign: TextAlign.center,
+                      style: TypographyManager.bodyMedium.copyWith(
+                        color: ColorPalette.textSecondary,
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return RefreshIndicator(
+                onRefresh: () async =>
+                    ref.invalidate(serviceCatalogItemsProvider(catalog.id)),
+                child: ListView.separated(
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, hasCart ? 88 : 24),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) {
+                    final item = items[i];
+                    return _CatalogMenuCard(
+                      item: item,
+                      draft: draft,
+                      onAdd: () {
+                        if (item.hasOptions) {
+                          _onAddOptionedItem(item);
+                        } else {
+                          ctl.setItemQuantity(
+                            item,
+                            draft.quantityFor(item.id) + 1,
+                          );
+                        }
+                      },
+                      onIncrement: () => ctl.setItemQuantity(
+                        item,
+                        draft.quantityFor(item.id) + 1,
+                      ),
+                      onDecrement: () => ctl.setItemQuantity(
+                        item,
+                        draft.quantityFor(item.id) - 1,
+                      ),
+                      onEditLine: _onEditLine,
+                      onDeleteLine: (l) => ctl.removeLine(l.id),
+                    );
+                  },
+                ),
               );
             },
           ),
@@ -326,6 +554,64 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
         // Sticky bottom (info bar + Continue) — full version lands in Phase D.
         if (hasCart) _CatalogStickyContinue(draft: draft, ctl: ctl),
       ],
+    );
+  }
+}
+
+// ── Items loading / error shims ──────────────────────────────────────────
+
+class _CatalogItemsShimmer extends StatelessWidget {
+  const _CatalogItemsShimmer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: ColorPalette.opsSurfaceSubtle,
+      highlightColor: ColorPalette.opsSurface,
+      child: ListView.separated(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        itemCount: 6,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (_, __) => Container(
+          height: 92,
+          decoration: BoxDecoration(
+            color: ColorPalette.opsSurfaceSubtle,
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CatalogItemsError extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+  const _CatalogItemsError({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: ColorPalette.error),
+            const SizedBox(height: 12),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: TypographyManager.bodyMedium.copyWith(
+                color: ColorPalette.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -387,8 +673,20 @@ class _CatalogMenuCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: ColorPalette.opsBorder),
                 ),
+                clipBehavior: Clip.antiAlias,
                 alignment: Alignment.center,
-                child: Text(item.emoji, style: const TextStyle(fontSize: 24)),
+                child: (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+                    ? Image.network(
+                        item.imageUrl!,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Text(
+                          item.emoji,
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                      )
+                    : Text(item.emoji, style: const TextStyle(fontSize: 24)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -831,6 +1129,15 @@ class _CatalogStepDetailsState
     final catalog = draft.catalog;
     if (catalog == null) return const SizedBox.shrink();
 
+    // Keep the read-only guest field synced with the auto-populated name
+    // sourced from the picked checked-in stay.
+    if (_guestCtl.text != draft.guestName) {
+      _guestCtl.value = TextEditingValue(
+        text: draft.guestName,
+        selection: TextSelection.collapsed(offset: draft.guestName.length),
+      );
+    }
+
     // selectedRoomId now stores the picked checked-in stay's guest_stay_id.
     // Look up the display row from the checked-in stays provider so we can
     // render the room number; no rooms come from the form-options API now.
@@ -860,8 +1167,9 @@ class _CatalogStepDetailsState
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
-                            final picked =
-                                await RoomPickerSheet.showCheckedIn(context);
+                            final picked = await RoomPickerSheet.showCheckedIn(
+                              context,
+                            );
                             if (picked != null) ctl.selectRoom(picked);
                           },
                           child: Container(
@@ -1260,4 +1568,3 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
     );
   }
 }
-

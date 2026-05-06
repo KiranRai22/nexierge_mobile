@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/my_ticket.dart';
+import 'tickets_paged_notifier.dart';
 
 /// Legacy state-tracking provider used by the shell to know whether the
 /// user is on the Tickets tab. The notifier no longer reads this — the
@@ -54,6 +55,10 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
   }
 
   /// Refresh tickets from API. UI shows the previous data while loading.
+  ///
+  /// Also refreshes all four paged tab providers so callers that fire
+  /// `notifier.refresh()` after a mutation (action bar, manual create,
+  /// home shell bootstrap) bring every tab back in sync with the server.
   Future<void> refresh() async {
     final bootstrap = ref
         .read(dashboardBootstrapControllerProvider)
@@ -61,7 +66,13 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
     final hotelId = bootstrap?.userProfile?.hotelDetails.hotel.id;
     if (hotelId == null || hotelId.isEmpty) return;
     state = const AsyncLoading<MyTicketsState>().copyWithPrevious(state);
-    state = await AsyncValue.guard(() => _fetchTickets(hotelId));
+    final legacy = AsyncValue.guard(() => _fetchTickets(hotelId));
+    final paged = Future.wait<void>([
+      for (final tab in kAllTicketsTabs)
+        ref.read(ticketsPagedProvider(specForTab(tab)).notifier).refresh(),
+    ]);
+    state = await legacy;
+    await paged;
   }
 
   /// Realtime upsert. Replaces an existing ticket by id, or prepends if

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -20,37 +21,12 @@ class ProfileInfoSection extends StatefulWidget {
   State<ProfileInfoSection> createState() => _ProfileInfoSectionState();
 }
 
-class _ProfileInfoSectionState extends State<ProfileInfoSection>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+class _ProfileInfoSectionState extends State<ProfileInfoSection> {
   bool _isExpanded = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-    _controller.value = 1.0; // Start expanded
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   void _toggle() {
     setState(() {
       _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
     });
   }
 
@@ -77,11 +53,14 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection>
                 onTap: _toggle,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  child: AnimatedIcon(
-                    icon: AnimatedIcons.menu_close,
-                    progress: _animation,
-                    size: 20,
-                    color: c.fgSubtle,
+                  child: AnimatedRotation(
+                    turns: _isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      LucideIcons.chevronDown,
+                      size: 20,
+                      color: c.fgSubtle,
+                    ),
                   ),
                 ),
               ),

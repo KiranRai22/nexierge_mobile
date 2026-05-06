@@ -32,6 +32,10 @@ class CatalogItem {
   final double basePrice;
   final List<OptionGroup> optionGroups;
 
+  /// Optional remote image (set when the item is sourced from the API).
+  /// When present, the menu card shows this instead of the emoji tile.
+  final String? imageUrl;
+
   const CatalogItem({
     required this.id,
     required this.name,
@@ -39,6 +43,7 @@ class CatalogItem {
     required this.emoji,
     required this.basePrice,
     this.optionGroups = const [],
+    this.imageUrl,
   });
 
   bool get hasOptions => optionGroups.isNotEmpty;
@@ -71,11 +76,7 @@ class Option {
   final String name;
   final double priceDelta;
 
-  const Option({
-    required this.id,
-    required this.name,
-    this.priceDelta = 0.0,
-  });
+  const Option({required this.id, required this.name, this.priceDelta = 0.0});
 }
 
 /// One configured line in the cart. Each `Add to Order` press appends a
@@ -130,9 +131,9 @@ class CartLine {
     for (final entry in selectedAddOns.entries) {
       final option = _findAddOn(entry.key);
       if (option == null) continue;
-      parts.add(entry.value > 1
-          ? '${option.name} ×${entry.value}'
-          : option.name);
+      parts.add(
+        entry.value > 1 ? '${option.name} ×${entry.value}' : option.name,
+      );
     }
     return parts.join(', ');
   }

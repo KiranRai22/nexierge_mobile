@@ -58,6 +58,7 @@ class UserEditService {
       }
 
       final data = response.data;
+      // Server returns full profile object on success, or "Done" string
       if (data is Map<String, dynamic> && data.containsKey('id')) {
         try {
           return UserProfileDto.fromJson(data);
@@ -66,8 +67,11 @@ class UserEditService {
           return null;
         }
       }
+      // Server returned "Done" or other non-object response — refetch needed
       return null;
-    } catch (_) {
+    } catch (e, st) {
+      print('[UserEditService] uploadProfilePicture error: $e');
+      print('[UserEditService] Stack trace: $st');
       rethrow;
     }
   }
@@ -92,6 +96,7 @@ class UserEditService {
         throw Exception('Name update failed ($status)');
       }
       final data = response.data;
+      // Server returns full profile object on success, or "Done" string
       if (data is Map<String, dynamic> && data.containsKey('id')) {
         try {
           return UserProfileDto.fromJson(data);
@@ -99,8 +104,11 @@ class UserEditService {
           return null;
         }
       }
+      // Server returned "Done" or other non-object response — refetch needed
       return null;
-    } catch (_) {
+    } catch (e, st) {
+      print('[UserEditService] updateName error: $e');
+      print('[UserEditService] Stack trace: $st');
       rethrow;
     }
   }

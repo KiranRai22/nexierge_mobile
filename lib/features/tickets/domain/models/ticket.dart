@@ -1,7 +1,9 @@
 import 'department.dart';
 
 /// Lifecycle of a ticket from open → done. Mirrors the prototype's grouping.
-enum TicketStatus { incoming, accepted, inProgress, done, cancelled }
+/// `scheduled` corresponds to the backend ON_HOLD status — tickets whose
+/// completion is more than a day out and that surface in the Scheduled tab.
+enum TicketStatus { incoming, accepted, inProgress, scheduled, done, cancelled }
 
 /// What category of ticket this is. Drives the chip colour on the card.
 enum TicketKind { universal, catalog, manual }

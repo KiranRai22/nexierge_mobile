@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -117,18 +119,16 @@ class _FreshArrivalWrapperState extends State<_FreshArrivalWrapper>
       vsync: this,
       duration: const Duration(milliseconds: 3000),
     );
-    _slide = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(
+    _slide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(
       CurvedAnimation(
         parent: _ctrl,
         curve: const Interval(0.0, 0.1, curve: Curves.easeOut),
       ),
     );
-    _flash = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
-    );
+    _flash = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     if (widget.isFresh) {
       _ctrl.forward();
     } else {
@@ -150,8 +150,12 @@ class _FreshArrivalWrapperState extends State<_FreshArrivalWrapper>
         animation: _flash,
         builder: (context, _) {
           final color =
-              Color.lerp(widget.baseColor, widget.highlightColor, _flash.value) ??
-                  widget.baseColor;
+              Color.lerp(
+                widget.baseColor,
+                widget.highlightColor,
+                _flash.value,
+              ) ??
+              widget.baseColor;
           return widget.builder(color);
         },
       ),
@@ -229,12 +233,23 @@ class _TimeDisplay extends StatefulWidget {
 }
 
 class _TimeDisplayState extends State<_TimeDisplay> {
-  late final Stream<DateTime> _ticker;
+  Timer? _ticker;
 
   @override
   void initState() {
     super.initState();
-    _ticker = Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now());
+    // Only tick for tickets that need live elapsed time (not Done).
+    if (widget.ticket.status != TicketStatus.done) {
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
   }
 
   String _formatDuration(Duration diff) {
@@ -266,41 +281,36 @@ class _TimeDisplayState extends State<_TimeDisplay> {
       );
     }
 
-    return StreamBuilder<DateTime>(
-      stream: _ticker,
-      builder: (context, _) {
-        final now = DateTime.now();
-        final isOverdue = t.isOverdue;
-        final elapsedFrom = t.workStartedAt ?? t.createdAt;
-        final elapsed = now.difference(elapsedFrom);
-        final label = _formatDuration(elapsed);
+    final now = DateTime.now();
+    final isOverdue = t.isOverdue;
+    final elapsedFrom = t.workStartedAt ?? t.createdAt;
+    final elapsed = now.difference(elapsedFrom);
+    final label = _formatDuration(elapsed);
 
-        if (isOverdue) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: c.tagRedBg,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '● Overdue $label',
-              style: TypographyManager.bodySmall.copyWith(
-                color: c.tagRedText,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
-              ),
-            ),
-          );
-        }
-
-        return Text(
-          label,
+    if (isOverdue) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: c.tagRedBg,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          '● Overdue $label',
           style: TypographyManager.bodySmall.copyWith(
-            color: c.fgMuted,
-            fontWeight: FontWeight.w500,
+            color: c.tagRedText,
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    return Text(
+      label,
+      style: TypographyManager.bodySmall.copyWith(
+        color: c.fgMuted,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 }
@@ -614,12 +624,38 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
+    final s = context.l10n;
     return switch (ticket.status) {
       TicketStatus.done => _buildDoneBadge(c),
       TicketStatus.inProgress => _buildMarkDoneButton(c, onMarkDone),
       TicketStatus.accepted => _buildStartWorkButton(c, onStartWork),
+      TicketStatus.scheduled => _buildScheduledBadge(c, s.subTabScheduled),
       _ => _buildAcceptButton(c, onAccept),
     };
+  }
+
+  Widget _buildScheduledBadge(AppColors c, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: c.tagPurpleBg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LucideIcons.clock, size: 14, color: c.tagPurpleIcon),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TypographyManager.labelSmall.copyWith(
+              color: c.tagPurpleIcon,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildAcceptButton(AppColors c, VoidCallback? onTap) {
@@ -727,4 +763,3 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
-

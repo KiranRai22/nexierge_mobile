@@ -9,9 +9,48 @@ import '../../domain/entities/service_catalog.dart';
 import '../../domain/entities/ticket_detail.dart';
 import '../../domain/entities/ticket_form_options.dart';
 
+/// Page of tickets returned by the paginated `/tickets/get/all` endpoint.
+class TicketsPageResult {
+  final List<MyTicket> items;
+  final int curPage;
+
+  /// `null` when the server has no more pages — infinite scroll uses this
+  /// as the stop signal.
+  final int? nextPage;
+
+  /// Total number of tickets matching the filter on the server (across
+  /// all pages). Drives the tab badge counts.
+  final int itemsTotal;
+
+  /// Resolved `department_id` per ticket, sourced from the nested
+  /// `department.id` block in the response. Keyed by ticket id. Allows
+  /// the UI to preserve department info even though `MyTicket` carries
+  /// only `departmentId` as a string.
+  final Map<String, String> departmentNameById;
+
+  const TicketsPageResult({
+    required this.items,
+    required this.curPage,
+    required this.nextPage,
+    required this.itemsTotal,
+    required this.departmentNameById,
+  });
+
+  bool get hasMore => nextPage != null;
+}
+
 abstract class TicketRepository {
   Future<TicketDetail> fetchTicketDetails({required String ticketId});
   Future<List<MyTicket>> fetchMyTickets({required String hotelId});
+
+  /// Paginated tickets for the new tab-driven UX. Filters by [statuses]
+  /// (server-side `status[]`); pages of [perPage] starting at [page].
+  Future<TicketsPageResult> fetchTicketsPage({
+    required String hotelId,
+    required List<String> statuses,
+    required int page,
+    required int perPage,
+  });
   Future<TicketFormOptions> fetchTicketFormOptions({required String hotelId});
 
   /// Create manual ticket via API.
@@ -50,8 +89,21 @@ abstract class TicketRepository {
     String? resolutionNote,
   });
 
+  /// Submits a catalog (paid) order via
+  /// `POST /service_catalogs/user_app/order/create`. Returns the created
+  /// ticket id (may be empty when the backend doesn't echo one).
+  Future<String> createCatalogOrder({
+    required CreateCatalogOrderRequestDto request,
+  });
+
   /// Get all service catalogs for a hotel
   Future<List<ServiceCatalog>> fetchServiceCatalogs({required String hotelId});
+
+  /// Get all items for a specific service catalog
+  Future<List<ServiceCatalogItemDto>> fetchServiceCatalogItems({
+    required String catalogId,
+    int page,
+  });
 }
 
 class _TicketRepositoryImpl implements TicketRepository {
@@ -66,6 +118,90 @@ class _TicketRepositoryImpl implements TicketRepository {
         'ticket': dto.ticket,
         'events': dto.events,
       });
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<TicketsPageResult> fetchTicketsPage({
+    required String hotelId,
+    required List<String> statuses,
+    required int page,
+    required int perPage,
+  }) async {
+    try {
+      final dto = await _remote.getAllTickets(
+        hotelId: hotelId,
+        statuses: statuses,
+        page: page,
+        perPage: perPage,
+      );
+      final names = <String, String>{};
+      final items = dto.items
+          .map((d) {
+            // Prefer the nested department block — it carries the id and
+            // localized name. Fall back to whatever flat id the server may
+            // also include.
+            final dept = d.department;
+            final deptId =
+                (dept?['id'] as String?) ??
+                (dept?['department_id'] as String?) ??
+                '';
+            final deptName = (dept?['name'] as String?) ?? '';
+            if (deptId.isNotEmpty && deptName.isNotEmpty) {
+              names[d.id] = deptName;
+            }
+            final roomData = d.roomData;
+            final roomDetails = roomData != null
+                ? RoomDetails(
+                    id: (roomData['id'] as String?) ?? '',
+                    onbRoomNumber:
+                        (roomData['onb_room_number'] as String?) ?? '',
+                    floorId: (roomData['floor_id'] as String?) ?? '',
+                    onbRoomTypeId:
+                        (roomData['onb_room_type_id'] as String?) ?? '',
+                  )
+                : null;
+            return MyTicket(
+              id: d.id,
+              createdAt: d.createdAt,
+              lastTransitionAt: d.lastTransitionAt,
+              hotelId: d.hotelId,
+              departmentId: deptId,
+              assignedToUserId: d.assignedToUserId,
+              createdByUserId: d.createdByUserId,
+              createdByAi: d.createdByAi,
+              type: d.type,
+              status: d.status,
+              dueAt: d.dueAt,
+              category: d.category,
+              priority: d.priority,
+              issueSummary: d.issueSummary,
+              issueDetails: d.issueDetails,
+              isIncident: d.isIncident,
+              incidentNotes: d.incidentNotes,
+              room: d.room,
+              guestName: d.guestName,
+              acknowledgedByUserId: d.acknowledgedByUserId,
+              acknowledgedAt: d.acknowledgedAt,
+              resolutionCode: d.resolutionCode,
+              resolutionNotes: d.resolutionNotes,
+              confirmedAt: d.confirmedAt,
+              closedAt: d.closedAt is String ? d.closedAt as String : null,
+              roomDetails: roomDetails,
+            );
+          })
+          .toList(growable: false);
+      return TicketsPageResult(
+        items: items,
+        curPage: dto.curPage,
+        nextPage: dto.nextPage,
+        itemsTotal: dto.itemsTotal,
+        departmentNameById: names,
+      );
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {
@@ -242,6 +378,23 @@ class _TicketRepositoryImpl implements TicketRepository {
   }
 
   @override
+  Future<String> createCatalogOrder({
+    required CreateCatalogOrderRequestDto request,
+  }) async {
+    try {
+      final dto = await _remote.createCatalogOrder(request: request);
+      if (!dto.success) {
+        throw Exception(dto.message ?? 'Catalog order create failed');
+      }
+      return dto.ticketId ?? '';
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
   Future<void> markDoneWithNote({
     required String ticketId,
     String? resolutionNote,
@@ -265,6 +418,23 @@ class _TicketRepositoryImpl implements TicketRepository {
     try {
       final dtos = await _remote.getServiceCatalogs(hotelId: hotelId);
       return dtos.map((dto) => ServiceCatalog.fromDto(dto)).toList();
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<List<ServiceCatalogItemDto>> fetchServiceCatalogItems({
+    required String catalogId,
+    int page = 0,
+  }) async {
+    try {
+      return await _remote.getServiceCatalogItems(
+        catalogId: catalogId,
+        page: page,
+      );
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {

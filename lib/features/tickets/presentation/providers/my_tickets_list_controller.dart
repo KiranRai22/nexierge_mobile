@@ -10,6 +10,9 @@ import 'tickets_main_tab_provider.dart';
 /// Simplified Ticket mapping from MyTicket for UI display.
 /// This is a lightweight adapter - full Ticket model is kept for detail view.
 /// [workStartedEpoch] is the statusChangedAt override for IN_PROGRESS tickets.
+Ticket mapMyTicketToTicket(MyTicket t, {int? workStartedEpoch}) =>
+    _mapToTicket(t, workStartedEpoch: workStartedEpoch);
+
 Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
   DateTime? workStartedAt;
   if (t.isInProgress) {
@@ -19,13 +22,28 @@ Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
       workStartedAt = DateTime.fromMillisecondsSinceEpoch(t.acknowledgedAt);
     }
   }
+
+  // Fix title: avoid "Request Request" duplication
+  final String title;
+  if (t.issueSummary.isNotEmpty) {
+    title = t.issueSummary;
+  } else {
+    final typeLower = t.type.toLowerCase();
+    // If type already contains "request", don't append it again
+    if (typeLower.contains('request')) {
+      title = t.type;
+    } else {
+      title = '${t.type} Request';
+    }
+  }
+
   return Ticket(
     id: t.id,
     code: t.roomDetails?.onbRoomNumber ?? 'N/A',
-    title: t.issueSummary.isNotEmpty ? t.issueSummary : '${t.type} Request',
+    title: title,
     status: _mapStatus(t.status),
     kind: _mapKind(t.type),
-    department: Department.housekeeping,
+    department: _mapDepartment(t.departmentId),
     room: Room(
       id: t.room,
       number: t.roomDetails?.onbRoomNumber ?? 'N/A',
@@ -50,6 +68,10 @@ TicketStatus _mapStatus(String status) {
       return TicketStatus.accepted;
     case 'IN_PROGRESS':
       return TicketStatus.inProgress;
+    case 'ON_HOLD':
+      // ON_HOLD tickets surface in the Scheduled tab and render a
+      // "Scheduled" chip on their cards.
+      return TicketStatus.scheduled;
     case 'DONE':
       return TicketStatus.done;
     case 'CANCELLED':
@@ -68,6 +90,30 @@ TicketKind _mapKind(String type) {
     default:
       return TicketKind.manual;
   }
+}
+
+Department _mapDepartment(String departmentId) {
+  final id = departmentId.toLowerCase();
+  if (id.contains('housekeeping') || id.contains('house')) {
+    return Department.housekeeping;
+  }
+  if (id.contains('maintenance') || id.contains('maint')) {
+    return Department.maintenance;
+  }
+  if (id.contains('room') || id.contains('service')) {
+    return Department.roomService;
+  }
+  if (id.contains('front') || id.contains('desk')) {
+    return Department.frontDesk;
+  }
+  if (id.contains('concierge')) {
+    return Department.concierge;
+  }
+  if (id.contains('f&b') || id.contains('fn') || id.contains('food')) {
+    return Department.fnb;
+  }
+  // Default fallback
+  return Department.housekeeping;
 }
 
 /// Extension to provide empty view
@@ -140,8 +186,12 @@ final todayTicketsProvider = Provider<List<Ticket>>((ref) {
   final asyncState = ref.watch(myTicketsNotifierProvider);
   final filter = ref.watch(ticketsFilterProvider);
   return asyncState.maybeWhen(
-    data: (state) => state.todayFiltered(filter).map((t) =>
-        _mapToTicket(t, workStartedEpoch: state.statusChangedAt[t.id])).toList(),
+    data: (state) => state
+        .todayFiltered(filter)
+        .map(
+          (t) => _mapToTicket(t, workStartedEpoch: state.statusChangedAt[t.id]),
+        )
+        .toList(),
     orElse: () => const [],
   );
 });
@@ -152,8 +202,11 @@ final todayTicketsProvider = Provider<List<Ticket>>((ref) {
 final incomingTicketsProvider = Provider<List<Ticket>>((ref) {
   final asyncState = ref.watch(myTicketsNotifierProvider);
   return asyncState.maybeWhen(
-    data: (state) => state.incoming.map((t) =>
-        _mapToTicket(t, workStartedEpoch: state.statusChangedAt[t.id])).toList(),
+    data: (state) => state.incoming
+        .map(
+          (t) => _mapToTicket(t, workStartedEpoch: state.statusChangedAt[t.id]),
+        )
+        .toList(),
     orElse: () => const [],
   );
 });

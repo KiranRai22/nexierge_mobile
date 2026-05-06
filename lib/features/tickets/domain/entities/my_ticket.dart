@@ -2,6 +2,7 @@
 class MyTicket {
   final String id;
   final int createdAt;
+  final int lastTransitionAt;
   final String hotelId;
   final String departmentId;
   final String? assignedToUserId;
@@ -29,6 +30,7 @@ class MyTicket {
   const MyTicket({
     required this.id,
     required this.createdAt,
+    this.lastTransitionAt = 0,
     required this.hotelId,
     required this.departmentId,
     this.assignedToUserId,
@@ -62,6 +64,9 @@ class MyTicket {
 
   /// Check if ticket is in progress
   bool get isInProgress => status == 'IN_PROGRESS';
+
+  /// Check if ticket is on hold (rendered as "Scheduled" in the UI)
+  bool get isOnHold => status == 'ON_HOLD';
 
   /// Check if ticket is done
   bool get isDone => status == 'DONE';
@@ -101,6 +106,9 @@ class RoomDetails {
 /// Realtime events override this with [DateTime.now] at the moment the
 /// event is observed (see [MyTicketsState.statusChangedAt]).
 int defaultStatusChangedAt(MyTicket t) {
+  // The /tickets/get/all endpoint provides last_transition_at directly, so
+  // prefer it whenever it is populated.
+  if (t.lastTransitionAt > 0) return t.lastTransitionAt;
   switch (t.status.toUpperCase()) {
     case 'DONE':
       if (t.confirmedAt > 0) return t.confirmedAt;
@@ -108,6 +116,7 @@ int defaultStatusChangedAt(MyTicket t) {
       return t.createdAt;
     case 'IN_PROGRESS':
     case 'ACCEPTED':
+    case 'ON_HOLD':
       if (t.acknowledgedAt > 0) return t.acknowledgedAt;
       return t.createdAt;
     default:

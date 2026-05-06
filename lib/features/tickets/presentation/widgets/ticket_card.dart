@@ -23,6 +23,7 @@ class TicketCard extends StatelessWidget {
         return ColorPalette.ticketStripeDone;
       case TicketStatus.inProgress:
       case TicketStatus.accepted:
+      case TicketStatus.scheduled:
         return ColorPalette.ticketStripeInProgress;
       case TicketStatus.cancelled:
         return ColorPalette.statusUnassigned;
@@ -353,6 +354,8 @@ class _StatusBadge extends StatelessWidget {
         return (label: s.statusDone, color: ColorPalette.statusDone);
       case TicketStatus.cancelled:
         return (label: s.statusCancelled, color: ColorPalette.statusUnassigned);
+      case TicketStatus.scheduled:
+        return (label: s.subTabScheduled, color: ColorPalette.statusInProgress);
     }
   }
 

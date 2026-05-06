@@ -10,12 +10,10 @@ import '../../data/services/image_picker_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../providers/user_profile_controller.dart';
 import '../widgets/change_profile_picture_sheet.dart';
-import '../widgets/profile_header_card.dart';
+import '../widgets/profile_header_card_animated.dart';
 import '../widgets/profile_info_section.dart';
-import '../widgets/profile_language_card.dart';
 import '../widgets/profile_logout_button.dart';
-import '../widgets/profile_sound_card.dart';
-import '../widgets/profile_theme_card.dart';
+import '../widgets/profile_preferences_section.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -135,7 +133,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 // ── Body ─────────────────────────────────────────────────────────────────────
 
-class _ProfileBody extends StatelessWidget {
+class _ProfileBody extends StatefulWidget {
   final UserProfile profile;
   final bool uploadingAvatar;
   final bool updatingName;
@@ -151,6 +149,19 @@ class _ProfileBody extends StatelessWidget {
   });
 
   @override
+  State<_ProfileBody> createState() => _ProfileBodyState();
+}
+
+class _ProfileBodyState extends State<_ProfileBody> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final s = context.l10n;
     return Column(
@@ -158,41 +169,45 @@ class _ProfileBody extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: ProfileHeaderCard(
-            profile: profile,
-            uploadingAvatar: uploadingAvatar,
-            updatingName: updatingName,
-            onChangeAvatar: onChangeAvatar,
-            onEditName: onEditName,
+          child: ProfileHeaderCardAnimated(
+            profile: widget.profile,
+            uploadingAvatar: widget.uploadingAvatar,
+            updatingName: widget.updatingName,
+            onChangeAvatar: widget.onChangeAvatar,
+            onEditName: widget.onEditName,
+            scrollController: _scrollController,
           ),
         ),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
+            controller: _scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 40, 16, 96),
             children: [
               ProfileInfoSection(
                 title: s.profileSectionAccountInformation,
                 rows: [
                   ProfileInfoRow(
                     label: s.profileFieldName,
-                    value: profile.fullName,
+                    value: widget.profile.fullName,
                   ),
                   ProfileInfoRow(
                     label: s.profileFieldEmail,
-                    value: profile.email,
+                    value: widget.profile.email,
                   ),
-                  if (profile.phone != null && profile.phone!.isNotEmpty)
+                  if (widget.profile.phone != null &&
+                      widget.profile.phone!.isNotEmpty)
                     ProfileInfoRow(
                       label: s.profileFieldPhone,
-                      value: profile.phone!,
+                      value: widget.profile.phone!,
                     ),
                   ProfileInfoRow(
                     label: s.profileFieldEmployeeCode,
-                    value: profile.employeeCode ?? s.profileFieldEmptyValue,
+                    value:
+                        widget.profile.employeeCode ?? s.profileFieldEmptyValue,
                   ),
                   ProfileInfoRow(
                     label: s.profileFieldRole,
-                    value: profile.role,
+                    value: widget.profile.role,
                   ),
                 ],
               ),
@@ -200,42 +215,26 @@ class _ProfileBody extends StatelessWidget {
               ProfileInfoSection(
                 title: s.profileSectionWorkInformation,
                 rows: [
-                  if (profile.hotelName != null &&
-                      profile.hotelName!.isNotEmpty)
+                  if (widget.profile.hotelName != null &&
+                      widget.profile.hotelName!.isNotEmpty)
                     ProfileInfoRow(
                       label: s.profileFieldHotel,
-                      value: profile.hotelName!,
+                      value: widget.profile.hotelName!,
                     ),
                   ProfileInfoRow(
                     label: s.profileFieldDepartments,
-                    value: profile.departments.isNotEmpty
-                        ? profile.departments.join(', ')
+                    value: widget.profile.departments.isNotEmpty
+                        ? widget.profile.departments.join(', ')
                         : s.profileFieldEmptyValue,
                   ),
                   ProfileInfoRow(
                     label: s.profileFieldStatus,
-                    value: _statusLabel(s, profile.status),
+                    value: _statusLabel(s, widget.profile.status),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-                child: Builder(
-                  builder: (context) => Text(
-                    s.profileSectionPreferences.toUpperCase(),
-                    style: TypographyManager.kpiLabel.copyWith(
-                      color: context.themeColors.fgSubtle,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                ),
-              ),
-              const ProfileLanguageCard(),
-              const SizedBox(height: 12),
-              const ProfileThemeCard(),
-              const SizedBox(height: 12),
-              const ProfileSoundCard(),
+              ProfilePreferencesSection(),
               const SizedBox(height: 24),
               const ProfileLogoutButton(),
             ],

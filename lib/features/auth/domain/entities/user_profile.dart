@@ -49,6 +49,38 @@ class UserProfile {
       _$UserProfileFromJson(json);
 
   Map<String, dynamic> toJson() => _$UserProfileToJson(this);
+
+  UserProfile copyWith({
+    String? id,
+    int? createdAt,
+    String? firstName,
+    String? lastName,
+    String? employeeCode,
+    String? email,
+    String? birthday,
+    String? phoneNumber,
+    PictureProfile? pictureProfile,
+    UserSettings? userSettings,
+    HotelDetails? hotelDetails,
+    UserHotelStatus? userHotelStatus,
+    AccessControl? accessControl,
+  }) {
+    return UserProfile(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      employeeCode: employeeCode ?? this.employeeCode,
+      email: email ?? this.email,
+      birthday: birthday ?? this.birthday,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      pictureProfile: pictureProfile ?? this.pictureProfile,
+      userSettings: userSettings ?? this.userSettings,
+      hotelDetails: hotelDetails ?? this.hotelDetails,
+      userHotelStatus: userHotelStatus ?? this.userHotelStatus,
+      accessControl: accessControl ?? this.accessControl,
+    );
+  }
 }
 
 @JsonSerializable()

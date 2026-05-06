@@ -70,9 +70,22 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       firstName: firstName,
       lastName: lastName,
     );
-    // Server returns partial/empty on this endpoint — always refetch to keep
-    // nested fields (userSettings, hotelDetails, etc.) intact.
-    final updated = dto?.toEntity() ?? await fetchProfile();
+
+    final UserProfile updated;
+    if (dto != null) {
+      // Server returned full profile
+      updated = dto.toEntity();
+    } else {
+      // Server returned "Done" - merge new name fields with cached profile
+      // to avoid stale data from immediate fetchProfile() call
+      final cached = await _profileService.getProfile();
+      if (cached != null) {
+        updated = cached.copyWith(firstName: firstName, lastName: lastName);
+      } else {
+        // No cache - fetch fresh
+        updated = await fetchProfile();
+      }
+    }
     await _profileService.saveProfile(updated);
     return updated;
   }

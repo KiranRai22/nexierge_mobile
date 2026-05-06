@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nexierge/core/theme/unified_theme_manager.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../shared/widgets/app_toast.dart';
+import '../../domain/entities/service_catalog.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/catalog.dart';
 import '../providers/catalog_create_controller.dart';
+import '../providers/service_catalog_items_provider.dart';
+import '../providers/service_catalogs_provider.dart';
 import '../providers/manual_create_controller.dart';
 import '../providers/checked_in_guest_stays_provider.dart';
 import '../providers/ticket_form_options_provider.dart';
@@ -394,5 +398,3 @@ class _SegmentCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // UNIVERSAL TAB — 2-step wizard
 // ─────────────────────────────────────────────────────────────────────────────
-
-

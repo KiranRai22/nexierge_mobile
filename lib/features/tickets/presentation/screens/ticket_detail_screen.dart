@@ -274,6 +274,10 @@ class _DetailsTab extends StatelessWidget {
         bg = c.tagRedBg;
         fg = c.tagRedText;
         label = s.ticketStatusBadgeCancelled;
+      case TicketStatus.scheduled:
+        bg = c.tagPurpleBg;
+        fg = c.tagPurpleText;
+        label = s.subTabScheduled;
     }
     return TicketInfoStatusPill(label: label, bg: bg, fg: fg);
   }

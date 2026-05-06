@@ -5,6 +5,8 @@ import 'package:nexierge/features/dashboard/data/datasources/dashboard_remote_da
 import '../../../auth/data/dtos/user_profile_dto.dart';
 import '../../../auth/data/services/auth_me_service.dart';
 import '../../../auth/domain/entities/user_profile.dart' as auth;
+import '../../../auth/presentation/providers/user_profile_controller.dart'
+    as auth_ctrl;
 import '../../data/datasources/dashboard_remote_data_source.dart'
     as dashboard_dto;
 import '../../data/services/dashboard_data_service.dart';
@@ -212,7 +214,15 @@ final isDashboardBootstrapCompleteProvider = Provider<bool>((ref) {
 
 /// Provider to get user profile from bootstrap state
 /// Use this in dashboard screens to display user info (name, profile pic, theme)
+///
+/// Prefers the live auth controller state (which reflects profile edits like
+/// name / avatar updates in real time) and falls back to the initial bootstrap
+/// payload while the auth controller is still warming up.
 final bootstrapUserProfileProvider = Provider<auth.UserProfile?>((ref) {
+  final authProfile = ref
+      .watch(auth_ctrl.userProfileControllerProvider)
+      .profile;
+  if (authProfile != null) return authProfile;
   final bootstrap = ref.watch(dashboardBootstrapControllerProvider);
   return bootstrap.valueOrNull?.userProfile;
 });

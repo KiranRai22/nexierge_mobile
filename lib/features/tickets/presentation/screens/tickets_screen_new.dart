@@ -15,6 +15,7 @@ import '../providers/my_tickets_notifier.dart';
 import '../providers/session_providers.dart';
 import '../providers/tickets_list_controller.dart';
 import '../providers/tickets_main_tab_provider.dart';
+import '../providers/tickets_paged_notifier.dart';
 import '../widgets/ticket_card_new.dart';
 import '../widgets/tickets_top_bar.dart';
 import '../widgets/tickets_main_tabs.dart';
@@ -71,7 +72,8 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   Future<void> _refresh() async {
     await Future<void>.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
-    await ref.read(myTicketsNotifierProvider.notifier).refresh();
+    final tab = _ticketsTabFromMain(ref.read(ticketsMainTabProvider));
+    await ref.read(ticketsPagedProvider(specForTab(tab)).notifier).refresh();
   }
 
   void _toggleSearch() {
@@ -88,7 +90,15 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   Widget build(BuildContext context) {
     final mainTab = ref.watch(ticketsMainTabProvider);
     final selectedFilter = ref.watch(ticketsFilterProvider);
-    final asyncList = ref.watch(myTicketsListProvider);
+    // Selecting the Today tab triggers a fresh page-1 fetch every time the
+    // user lands on it.
+    ref.listen<TicketsMainTab>(ticketsMainTabProvider, (prev, next) {
+      if (next == TicketsMainTab.today && prev != TicketsMainTab.today) {
+        ref
+            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .refresh();
+      }
+    });
     final userProfile = ref.watch(userProfileProvider);
     final session = ref.watch(operatorSessionProvider);
     final themeMode =
@@ -97,8 +107,9 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
 
     final c = context.themeColors;
 
-    // Calculate counts for each main tab
-    final counts = _calculateTabCounts(asyncList);
+    // Calculate counts for each main tab from the paged providers'
+    // server-reported totals.
+    final counts = _calculateTabCounts();
 
     // Use user profile data if available, fallback to session data
     final displayName = userProfile?.firstName != null
@@ -222,7 +233,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
               child: RefreshIndicator(
                 onRefresh: _refresh,
                 color: c.tagPurpleIcon,
-                child: _buildList(asyncList, mainTab),
+                child: _buildList(mainTab),
               ),
             ),
           ],
@@ -231,18 +242,19 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
     );
   }
 
-  Map<TicketsMainTab, int> _calculateTabCounts(TicketsListView? view) {
-    if (view == null) {
-      return {for (var tab in TicketsMainTab.values) tab: 0};
+  Map<TicketsMainTab, int> _calculateTabCounts() {
+    int totalFor(TicketsTab tab) {
+      final s = ref.watch(ticketsPagedProvider(specForTab(tab))).valueOrNull;
+      // Prefer server's itemsTotal; fall back to currently loaded item
+      // count while the first page is in flight.
+      return s == null ? 0 : (s.itemsTotal > 0 ? s.itemsTotal : s.items.length);
     }
 
-    final state = ref.read(myTicketsNotifierProvider).valueOrNull;
     return {
-      TicketsMainTab.incoming: state?.incomingCount ?? view.incomingNow.length,
-      TicketsMainTab.today: state?.todayAllCount ??
-          (view.inProgress.length + view.completedToday.length),
-      TicketsMainTab.scheduled: view.scheduled.length,
-      TicketsMainTab.done: state?.todayDoneCount ?? view.completedToday.length,
+      TicketsMainTab.incoming: totalFor(TicketsTab.incoming),
+      TicketsMainTab.today: totalFor(TicketsTab.today),
+      TicketsMainTab.scheduled: totalFor(TicketsTab.scheduled),
+      TicketsMainTab.done: totalFor(TicketsTab.done),
     };
   }
 
@@ -250,19 +262,24 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
     FilterDepartmentSheet.show(context);
   }
 
-  Widget _buildList(TicketsListView? view, TicketsMainTab mainTab) {
-    // Realtime-driven tabs read straight from state-layer providers so
-    // websocket upserts repaint without rebuilding the parent screen.
-    if (mainTab == TicketsMainTab.incoming) {
-      return const _IncomingTabList();
-    }
-    if (mainTab == TicketsMainTab.today) {
-      return const _TodayTabList();
-    }
-    if (view == null) {
-      return const _LoadingList();
-    }
-    return _TicketsList(view: view, mainTab: mainTab);
+  Widget _buildList(TicketsMainTab mainTab) {
+    // All four tabs are paginated against `/tickets/get/all`. The list
+    // widget watches the paged provider for its tab and triggers
+    // infinite scroll near the end.
+    return _PagedTicketsTabList(tab: _ticketsTabFromMain(mainTab));
+  }
+}
+
+TicketsTab _ticketsTabFromMain(TicketsMainTab mainTab) {
+  switch (mainTab) {
+    case TicketsMainTab.incoming:
+      return TicketsTab.incoming;
+    case TicketsMainTab.today:
+      return TicketsTab.today;
+    case TicketsMainTab.scheduled:
+      return TicketsTab.scheduled;
+    case TicketsMainTab.done:
+      return TicketsTab.done;
   }
 }
 
@@ -280,10 +297,10 @@ VoidCallback _acceptHandler(BuildContext context, Ticket ticket) {
 
 VoidCallback _openHandler(BuildContext context, Ticket ticket) {
   return () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => TicketDetailScreen(ticketId: ticket.id),
-        ),
-      );
+    MaterialPageRoute<void>(
+      builder: (_) => TicketDetailScreen(ticketId: ticket.id),
+    ),
+  );
 }
 
 Future<void> _startWorkHandler(
@@ -335,70 +352,120 @@ Future<void> _markDoneHandler(
   }
 }
 
-class _TodayTabList extends ConsumerWidget {
-  const _TodayTabList();
+/// Paginated tab list. One instance per tab — watches the matching
+/// `ticketsPagedProvider`, renders rows via `TicketCardNew`, and triggers
+/// the next-page fetch when the user scrolls within ~3 items of the end.
+class _PagedTicketsTabList extends ConsumerStatefulWidget {
+  final TicketsTab tab;
+  const _PagedTicketsTabList({required this.tab});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tickets = ref.watch(todayTicketsProvider);
-    if (tickets.isEmpty) return const _EmptyView();
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-      itemCount: tickets.length,
-      itemBuilder: (context, index) {
-        final ticket = tickets[index];
-        return RepaintBoundary(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: TicketCardNew(
-              ticket: ticket,
-              onTap: _openHandler(context, ticket),
-              onAccept: _acceptHandler(context, ticket),
-              onStartWork: () => _startWorkHandler(context, ref, ticket),
-              onMarkDone: () => _markDoneHandler(context, ref, ticket),
-            ),
+  ConsumerState<_PagedTicketsTabList> createState() =>
+      _PagedTicketsTabListState();
+}
+
+class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
+  late final ScrollController _scrollCtl;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtl = ScrollController()..addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollCtl
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollCtl.hasClients) return;
+    final pos = _scrollCtl.position;
+    // Trigger when within ~3 ticket cards (~300px) of the bottom.
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      ref
+          .read(ticketsPagedProvider(specForTab(widget.tab)).notifier)
+          .loadNextPage();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spec = specForTab(widget.tab);
+    final asyncState = ref.watch(ticketsPagedProvider(spec));
+
+    // Keep sort order in sync with the filter chip ('newest'/'oldest').
+    // Use a separate listener to avoid calling setSortOrder during build.
+    final filter = ref.watch(ticketsFilterProvider);
+    final order = filter == 'oldest'
+        ? TicketsSortOrder.oldestFirst
+        : TicketsSortOrder.newestFirst;
+    // ignore: unawaited_futures
+    ref.read(ticketsPagedProvider(spec).notifier).setSortOrder(order);
+
+    return asyncState.when(
+      loading: () => const _LoadingList(),
+      error: (e, _) => _ErrorView(error: e.toString()),
+      data: (page) {
+        if (page.items.isEmpty) return const _EmptyView();
+        final tickets = page.items
+            .map(
+              (mt) => mapMyTicketToTicket(
+                mt,
+                workStartedEpoch: mt.lastTransitionAt > 0
+                    ? mt.lastTransitionAt
+                    : null,
+              ),
+            )
+            .toList(growable: false);
+        return ListView.builder(
+          controller: _scrollCtl,
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
           ),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+          itemCount: tickets.length + (page.hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= tickets.length) {
+              return const _PaginationLoader();
+            }
+            final ticket = tickets[index];
+            return RepaintBoundary(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TicketCardNew(
+                  ticket: ticket,
+                  onTap: _openHandler(context, ticket),
+                  onAccept: _acceptHandler(context, ticket),
+                  onStartWork: () => _startWorkHandler(context, ref, ticket),
+                  onMarkDone: () => _markDoneHandler(context, ref, ticket),
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 }
 
-class _IncomingTabList extends ConsumerWidget {
-  const _IncomingTabList();
+class _PaginationLoader extends StatelessWidget {
+  const _PaginationLoader();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final raw = ref.watch(incomingTicketsProvider);
-    final filter = ref.watch(ticketsFilterProvider);
-    final tickets = [...raw]..sort(
-        (a, b) => filter == 'oldest'
-            ? a.createdAt.compareTo(b.createdAt)
-            : b.createdAt.compareTo(a.createdAt),
-      );
-    if (tickets.isEmpty) return const _EmptyView();
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16),
+      child: Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-      itemCount: tickets.length,
-      itemBuilder: (context, index) {
-        final ticket = tickets[index];
-        return RepaintBoundary(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: TicketCardNew(
-              ticket: ticket,
-              onTap: _openHandler(context, ticket),
-              onAccept: _acceptHandler(context, ticket),
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -439,78 +506,6 @@ class _SearchField extends ConsumerWidget {
         ),
       ),
     );
-  }
-}
-
-class _TicketsList extends StatelessWidget {
-  final TicketsListView view;
-  final TicketsMainTab mainTab;
-  const _TicketsList({required this.view, required this.mainTab});
-
-  @override
-  Widget build(BuildContext context) {
-    final tickets = _getTicketsForMainTab(view, mainTab);
-
-    if (tickets.isEmpty) return const _EmptyView();
-
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-      itemCount: tickets.length,
-      itemBuilder: (context, index) {
-        final ticket = tickets[index];
-        return RepaintBoundary(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: TicketCardNew(
-              ticket: ticket,
-              onTap: () => _openDetail(context, ticket),
-              onAccept: () => _showAcceptSheet(context, ticket),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  List<Ticket> _getTicketsForMainTab(
-    TicketsListView view,
-    TicketsMainTab mainTab,
-  ) {
-    switch (mainTab) {
-      case TicketsMainTab.incoming:
-        return view.incomingNow;
-      case TicketsMainTab.today:
-        return [...view.inProgress, ...view.completedToday];
-      case TicketsMainTab.scheduled:
-        return view.scheduled;
-      case TicketsMainTab.done:
-        return view.completedToday;
-    }
-  }
-
-  void _openDetail(BuildContext context, Ticket t) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TicketDetailScreen(ticketId: t.id),
-      ),
-    );
-  }
-
-  Future<void> _showAcceptSheet(BuildContext context, Ticket ticket) async {
-    final result = await AcknowledgeTicketBottomSheet.show(
-      context: context,
-      ticketCode: ticket.code,
-      ticketTitle: ticket.title,
-      hasGuest: ticket.guest != null,
-    );
-
-    if (result != null && context.mounted) {
-      // TODO: Call accept ticket API with ETA result
-      // result.mode, result.minutesFromNow, result.customDateTime
-    }
   }
 }
 
