@@ -13,6 +13,8 @@ import '../../data/services/media_permission_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../providers/user_profile_controller.dart';
 import '../widgets/change_profile_picture_sheet.dart';
+import '../providers/profile_section_expansion_provider.dart';
+import '../widgets/profile_footer.dart';
 import '../widgets/profile_header_card_animated.dart';
 import '../widgets/profile_info_section.dart';
 import '../widgets/profile_logout_button.dart';
@@ -267,6 +269,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
             ), // Increased bottom padding for bottom nav
             children: [
               ProfileInfoSection(
+                key: const ValueKey(ProfileSectionId.account),
+                sectionId: ProfileSectionId.account,
                 title: s.profileSectionAccountInformation,
                 summary: _buildAccountSummary(widget.profile),
                 rows: [
@@ -299,6 +303,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
               ),
               const SizedBox(height: 24),
               ProfileInfoSection(
+                key: const ValueKey(ProfileSectionId.work),
+                sectionId: ProfileSectionId.work,
                 title: s.profileSectionWorkInformation,
                 summary: _buildWorkSummary(widget.profile),
                 rows: [
@@ -322,6 +328,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
               ),
               const SizedBox(height: 24),
               ProfileInfoSection(
+                key: const ValueKey(ProfileSectionId.hotel),
+                sectionId: ProfileSectionId.hotel,
                 title: 'Hotel Details',
                 summary: _buildHotelSummary(widget.profile),
                 rows: [
@@ -359,6 +367,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
               ),
               const SizedBox(height: 24),
               ProfileInfoSection(
+                key: const ValueKey(ProfileSectionId.subscription),
+                sectionId: ProfileSectionId.subscription,
                 title: 'Subscription',
                 summary: _buildSubscriptionSummary(widget.profile),
                 rows: [
@@ -386,6 +396,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
               ),
               const SizedBox(height: 24),
               ProfileInfoSection(
+                key: const ValueKey(ProfileSectionId.systemAccess),
+                sectionId: ProfileSectionId.systemAccess,
                 title: 'System Access',
                 summary: _buildAccessSummary(widget.profile),
                 rows: [
@@ -413,6 +425,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
               ProfilePreferencesSection(),
               const SizedBox(height: 24),
               const ProfileLogoutButton(),
+              const ProfileFooter(version: '1.0.0'),
             ],
           ),
         ),

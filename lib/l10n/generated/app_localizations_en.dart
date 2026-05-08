@@ -1280,6 +1280,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileUpdateNameFailed => 'Failed to update name';
 
   @override
+  String profileFooterVersion(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String profileFooterCopyright(int year) {
+    return '© $year Nexierge. All rights reserved.';
+  }
+
+  @override
   String get createSearchHint => 'Search requests...';
 
   @override

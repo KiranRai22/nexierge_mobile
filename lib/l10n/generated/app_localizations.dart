@@ -2342,6 +2342,18 @@ abstract class AppLocalizations {
   /// **'Failed to update name'**
   String get profileUpdateNameFailed;
 
+  /// No description provided for @profileFooterVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String profileFooterVersion(String version);
+
+  /// No description provided for @profileFooterCopyright.
+  ///
+  /// In en, this message translates to:
+  /// **'© {year} Nexierge. All rights reserved.'**
+  String profileFooterCopyright(int year);
+
   /// No description provided for @createSearchHint.
   ///
   /// In en, this message translates to:

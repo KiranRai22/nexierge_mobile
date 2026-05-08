@@ -620,6 +620,14 @@
   "profileLastName": "Last name",
   "profileUpdateNameSuccess": "Name updated",
   "profileUpdateNameFailed": "Failed to update name",
+  "profileFooterVersion": "Version {version}",
+  "@profileFooterVersion": {
+    "placeholders": { "version": { "type": "String" } }
+  },
+  "profileFooterCopyright": "© {year} Nexierge. All rights reserved.",
+  "@profileFooterCopyright": {
+    "placeholders": { "year": { "type": "int" } }
+  },
 
   "createSearchHint": "Search requests...",
   "createCustomButton": "+ Custom",

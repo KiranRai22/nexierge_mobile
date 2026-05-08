@@ -1,41 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../providers/profile_section_expansion_provider.dart';
 
 /// Section composed of an ALL-CAPS header and a card of label/value rows
 /// separated by hairline dividers. Used for "Account information" and
 /// "Work information" on the profile screen. Shows summary when collapsed.
-class ProfileInfoSection extends StatefulWidget {
+///
+/// [sectionId] keys this section's expand/collapse state in the
+/// [profileSectionExpansionProvider] — keep it stable across rebuilds.
+class ProfileInfoSection extends ConsumerWidget {
+  final String sectionId;
   final String title;
   final List<ProfileInfoRow> rows;
   final String? summary;
 
   const ProfileInfoSection({
     super.key,
+    required this.sectionId,
     required this.title,
     required this.rows,
     this.summary,
   });
 
   @override
-  State<ProfileInfoSection> createState() => _ProfileInfoSectionState();
-}
-
-class _ProfileInfoSectionState extends State<ProfileInfoSection> {
-  bool _isExpanded = true;
-
-  void _toggle() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.themeColors;
+    final isExpanded = ref.watch(profileSectionExpandedProvider(sectionId));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -45,7 +40,7 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
             children: [
               Expanded(
                 child: Text(
-                  widget.title.toUpperCase(),
+                  title.toUpperCase(),
                   style: TypographyManager.kpiLabel.copyWith(
                     color: c.fgSubtle,
                     letterSpacing: 0.6,
@@ -53,11 +48,13 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
                 ),
               ),
               GestureDetector(
-                onTap: _toggle,
+                onTap: () => ref
+                    .read(profileSectionExpansionProvider.notifier)
+                    .toggle(sectionId),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   child: AnimatedRotation(
-                    turns: _isExpanded ? 0.5 : 0,
+                    turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       LucideIcons.chevronDown,
@@ -70,11 +67,9 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
             ],
           ),
         ),
-        // Summary card when collapsed
-        if (!_isExpanded && widget.summary != null)
-          _buildSummaryCard()
+        if (!isExpanded && summary != null)
+          _SummaryCard(summary: summary!)
         else
-          // Expanded content - full card with all rows
           Container(
             decoration: CardDecoration.subtle(
               colors: c,
@@ -82,16 +77,14 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
             ),
             child: Column(
               children: [
-                // Always show first row
-                if (widget.rows.isNotEmpty) widget.rows.first,
-                // Animated remaining rows
+                if (rows.isNotEmpty) rows.first,
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
-                  child: _isExpanded && widget.rows.length > 1
+                  child: isExpanded && rows.length > 1
                       ? Column(
                           children: [
-                            for (var i = 1; i < widget.rows.length; i++) ...[
+                            for (var i = 1; i < rows.length; i++) ...[
                               Divider(
                                 height: 1,
                                 thickness: 1,
@@ -99,7 +92,7 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
                                 indent: 16,
                                 endIndent: 16,
                               ),
-                              widget.rows[i],
+                              rows[i],
                             ],
                           ],
                         )
@@ -111,8 +104,14 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
       ],
     );
   }
+}
 
-  Widget _buildSummaryCard() {
+class _SummaryCard extends StatelessWidget {
+  final String summary;
+  const _SummaryCard({required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
     final c = context.themeColors;
     return Container(
       decoration: CardDecoration.subtle(
@@ -124,7 +123,7 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
         children: [
           Expanded(
             child: Text(
-              widget.summary!,
+              summary,
               style: TypographyManager.bodyMedium.copyWith(color: c.fgBase),
               overflow: TextOverflow.ellipsis,
             ),

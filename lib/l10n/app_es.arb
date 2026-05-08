@@ -494,6 +494,14 @@
   "profileLastName": "Apellido",
   "profileUpdateNameSuccess": "Nombre actualizado",
   "profileUpdateNameFailed": "Error al actualizar el nombre",
+  "profileFooterVersion": "Versión {version}",
+  "@profileFooterVersion": {
+    "placeholders": { "version": { "type": "String" } }
+  },
+  "profileFooterCopyright": "© {year} Nexierge. Todos los derechos reservados.",
+  "@profileFooterCopyright": {
+    "placeholders": { "year": { "type": "int" } }
+  },
 
   "createSearchHint": "Buscar solicitudes...",
   "createCustomButton": "+ Personalizado",

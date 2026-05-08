@@ -12,9 +12,14 @@ import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
+import '../providers/profile_section_expansion_provider.dart';
 
 /// Preferences section with expand/collapse.
 /// Groups Language, Theme, Sound. Shows summary when collapsed.
+///
+/// Expand/collapse state is stored in [profileSectionExpansionProvider]
+/// under [ProfileSectionId.preferences] so it survives parent rebuilds
+/// and tab navigation.
 class ProfilePreferencesSection extends ConsumerStatefulWidget {
   const ProfilePreferencesSection({super.key});
 
@@ -25,18 +30,17 @@ class ProfilePreferencesSection extends ConsumerStatefulWidget {
 
 class _ProfilePreferencesSectionState
     extends ConsumerState<ProfilePreferencesSection> {
-  bool _isExpanded = false;
+  static const _sectionId = ProfileSectionId.preferences;
 
   void _toggle() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-    });
+    ref.read(profileSectionExpansionProvider.notifier).toggle(_sectionId);
   }
 
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
     final c = context.themeColors;
+    final isExpanded = ref.watch(profileSectionExpandedProvider(_sectionId));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -60,7 +64,7 @@ class _ProfilePreferencesSectionState
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   child: AnimatedRotation(
-                    turns: _isExpanded ? 0.5 : 0,
+                    turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
                     child: Icon(
                       LucideIcons.chevronDown,
@@ -74,7 +78,7 @@ class _ProfilePreferencesSectionState
           ),
         ),
         // Summary card when collapsed
-        if (!_isExpanded)
+        if (!isExpanded)
           _buildSummaryCard()
         else
           // Expanded content - individual cards
