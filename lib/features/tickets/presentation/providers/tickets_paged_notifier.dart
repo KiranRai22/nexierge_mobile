@@ -11,7 +11,7 @@ enum TicketsSortOrder { newestFirst, oldestFirst }
 
 /// Identifier for one of the four logical ticket lists. Used by the
 /// realtime listener to pick which provider to push events into.
-enum TicketsTab { incoming, today, scheduled, done }
+enum TicketsTab { incoming, today, done }
 
 /// Configuration for a paged ticket list — turns each tab into a
 /// declarative spec the notifier uses to call the API and decide whether
@@ -328,15 +328,13 @@ bool _isToday(int epochMs) {
 const _kIncomingSpec = TicketsPagedSpec(statuses: ['NEW']);
 
 final TicketsPagedSpec _kTodaySpec = TicketsPagedSpec(
-  statuses: const ['ACCEPTED', 'IN_PROGRESS', 'ON_HOLD'],
+  statuses: const ['ACCEPTED', 'IN_PROGRESS'],
   localPredicate: (t) {
     // Today = created today AND last transition today.
     return _isToday(t.createdAt) &&
         _isToday(t.lastTransitionAt > 0 ? t.lastTransitionAt : t.createdAt);
   },
 );
-
-const _kScheduledSpec = TicketsPagedSpec(statuses: ['ON_HOLD']);
 
 const _kDoneSpec = TicketsPagedSpec(statuses: ['DONE']);
 
@@ -356,8 +354,6 @@ TicketsPagedSpec specForTab(TicketsTab tab) {
       return _kIncomingSpec;
     case TicketsTab.today:
       return _kTodaySpec;
-    case TicketsTab.scheduled:
-      return _kScheduledSpec;
     case TicketsTab.done:
       return _kDoneSpec;
   }

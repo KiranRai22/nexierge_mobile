@@ -255,9 +255,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subTabToday => 'Today';
 
   @override
-  String get subTabScheduled => 'Scheduled';
-
-  @override
   String get subTabDone => 'Done';
 
   @override
@@ -270,7 +267,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionCompletedToday => 'COMPLETED TODAY';
 
   @override
-  String get sectionScheduled => 'SCHEDULED';
+  String get ticketStatusBadgeOnHold => 'On hold';
 
   @override
   String get chipUniversal => 'Universal';
@@ -439,6 +436,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ticketActionAccept => 'Accept Ticket';
 
   @override
+  String get ticketActionAcceptAndStart => 'Accept & Start';
+
+  @override
   String get ticketActionPause => 'Pause';
 
   @override
@@ -464,6 +464,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ticketActionFailedMarkDone => 'Couldn\'t mark as done. Reverted.';
+
+  @override
+  String get ticketActionHold => 'Put on Hold';
+
+  @override
+  String get ticketActionFailedHold =>
+      'Couldn\'t put ticket on hold. Reverted.';
+
+  @override
+  String get ticketActionFailedResume => 'Couldn\'t resume ticket. Reverted.';
+
+  @override
+  String get ticketActionHoldConfirmTitle => 'Put ticket on hold?';
+
+  @override
+  String get ticketActionHoldConfirmMessage =>
+      'The ticket will pause until you resume it.';
 
   @override
   String get ticketActivityCreated => 'Ticket created';

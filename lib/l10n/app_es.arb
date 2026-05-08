@@ -88,13 +88,13 @@
 
   "subTabIncoming": "Entrantes",
   "subTabToday": "Hoy",
-  "subTabScheduled": "Programados",
   "subTabDone": "Hechos",
 
   "sectionIncomingNow": "ENTRANTES AHORA",
   "sectionInProgress": "EN CURSO",
   "sectionCompletedToday": "COMPLETADOS HOY",
-  "sectionScheduled": "PROGRAMADOS",
+
+  "ticketStatusBadgeOnHold": "En espera",
 
   "chipUniversal": "Universal",
   "chipCatalog": "Catálogo",
@@ -421,6 +421,13 @@
   },
   "ticketActionStartWork": "Comenzar",
   "ticketActionAccept": "Aceptar ticket",
+  "ticketActionAcceptAndStart": "Aceptar e iniciar",
+  "ticketActionHold": "Poner en espera",
+  "ticketActionResume": "Reanudar",
+  "ticketActionFailedHold": "No se pudo poner en espera. Revertido.",
+  "ticketActionFailedResume": "No se pudo reanudar. Revertido.",
+  "ticketActionHoldConfirmTitle": "¿Poner ticket en espera?",
+  "ticketActionHoldConfirmMessage": "El ticket se pausará hasta que lo reanudes.",
   "ticketActionPause": "Pausar",
   "ticketActionResume": "Reanudar",
   "ticketActionComplete": "Completar",

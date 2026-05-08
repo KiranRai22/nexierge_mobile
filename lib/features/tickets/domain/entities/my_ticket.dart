@@ -71,6 +71,13 @@ class MyTicket {
   /// Check if ticket is done
   bool get isDone => status == 'DONE';
 
+  /// Check if ticket is canceled. Accepts both spellings during the
+  /// rollout — backend authoritative is `CANCELED`.
+  bool get isCanceled => status == 'CANCELED' || status == 'CANCELLED';
+
+  /// Check if ticket is expired (server-driven, no client transition).
+  bool get isExpired => status == 'EXPIRED';
+
   /// Check if ticket is overdue (due_at is in the past and not done)
   bool get isOverdue {
     if (dueAt == 0 || isDone) return false;
@@ -117,6 +124,11 @@ int defaultStatusChangedAt(MyTicket t) {
     case 'IN_PROGRESS':
     case 'ACCEPTED':
     case 'ON_HOLD':
+      if (t.acknowledgedAt > 0) return t.acknowledgedAt;
+      return t.createdAt;
+    case 'CANCELED':
+    case 'CANCELLED':
+    case 'EXPIRED':
       if (t.acknowledgedAt > 0) return t.acknowledgedAt;
       return t.createdAt;
     default:

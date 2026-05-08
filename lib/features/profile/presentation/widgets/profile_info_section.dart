@@ -7,15 +7,17 @@ import '../../../../core/theme/typography_manager.dart';
 
 /// Section composed of an ALL-CAPS header and a card of label/value rows
 /// separated by hairline dividers. Used for "Account information" and
-/// "Work information" on the profile screen.
+/// "Work information" on the profile screen. Shows summary when collapsed.
 class ProfileInfoSection extends StatefulWidget {
   final String title;
   final List<ProfileInfoRow> rows;
+  final String? summary;
 
   const ProfileInfoSection({
     super.key,
     required this.title,
     required this.rows,
+    this.summary,
   });
 
   @override
@@ -68,40 +70,67 @@ class _ProfileInfoSectionState extends State<ProfileInfoSection> {
             ],
           ),
         ),
-        Container(
-          decoration: CardDecoration.subtle(
-            colors: c,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              // Always show first row
-              if (widget.rows.isNotEmpty) widget.rows.first,
-              // Animated remaining rows
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: _isExpanded && widget.rows.length > 1
-                    ? Column(
-                        children: [
-                          for (var i = 1; i < widget.rows.length; i++) ...[
-                            Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: c.borderBase,
-                              indent: 16,
-                              endIndent: 16,
-                            ),
-                            widget.rows[i],
+        // Summary card when collapsed
+        if (!_isExpanded && widget.summary != null)
+          _buildSummaryCard()
+        else
+          // Expanded content - full card with all rows
+          Container(
+            decoration: CardDecoration.subtle(
+              colors: c,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                // Always show first row
+                if (widget.rows.isNotEmpty) widget.rows.first,
+                // Animated remaining rows
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: _isExpanded && widget.rows.length > 1
+                      ? Column(
+                          children: [
+                            for (var i = 1; i < widget.rows.length; i++) ...[
+                              Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: c.borderBase,
+                                indent: 16,
+                                endIndent: 16,
+                              ),
+                              widget.rows[i],
+                            ],
                           ],
-                        ],
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
           ),
-        ),
       ],
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    final c = context.themeColors;
+    return Container(
+      decoration: CardDecoration.subtle(
+        colors: c,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              widget.summary!,
+              style: TypographyManager.bodyMedium.copyWith(color: c.fgBase),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

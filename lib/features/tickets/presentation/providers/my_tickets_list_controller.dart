@@ -69,13 +69,16 @@ TicketStatus _mapStatus(String status) {
     case 'IN_PROGRESS':
       return TicketStatus.inProgress;
     case 'ON_HOLD':
-      // ON_HOLD tickets surface in the Scheduled tab and render a
-      // "Scheduled" chip on their cards.
-      return TicketStatus.scheduled;
+      return TicketStatus.onHold;
     case 'DONE':
       return TicketStatus.done;
+    case 'CANCELED':
     case 'CANCELLED':
-      return TicketStatus.cancelled;
+      return TicketStatus.canceled;
+    case 'EXPIRED':
+      // EXPIRED is server-driven; no UI tab yet — render as canceled-like
+      // terminal state until a dedicated badge is added.
+      return TicketStatus.canceled;
     default:
       return TicketStatus.incoming;
   }
@@ -122,7 +125,6 @@ extension TicketsListViewEmpty on TicketsListView {
     incomingNow: [],
     inProgress: [],
     completedToday: [],
-    scheduled: [],
     kpiIncoming: 0,
     kpiInProgress: 0,
     kpiOverdue: 0,
@@ -142,23 +144,12 @@ final myTicketsListProvider = Provider<TicketsListView?>((ref) {
     data: (state) {
       if (state.all.isEmpty && state.isLoading) return null;
 
-      final now = DateTime.now();
-      final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
-
       final incomingNow = state.incoming;
       final todayInProgressBucket = [
         ...state.todayAccepted,
         ...state.todayInProgress,
       ];
       final completedToday = state.todayDone;
-
-      // Schedule: accepted/in-progress tickets with dueAt beyond today.
-      final scheduled = state.all.where((t) {
-        if (!t.isAccepted && !t.isInProgress) return false;
-        if (t.dueAt == 0) return false;
-        final dueDate = DateTime.fromMillisecondsSinceEpoch(t.dueAt);
-        return dueDate.isAfter(endOfToday);
-      }).toList();
 
       Ticket mapWithWork(MyTicket t) =>
           _mapToTicket(t, workStartedEpoch: state.statusChangedAt[t.id]);
@@ -167,7 +158,6 @@ final myTicketsListProvider = Provider<TicketsListView?>((ref) {
         incomingNow: incomingNow.map(mapWithWork).toList(),
         inProgress: todayInProgressBucket.map(mapWithWork).toList(),
         completedToday: completedToday.map(mapWithWork).toList(),
-        scheduled: scheduled.map(mapWithWork).toList(),
         kpiIncoming: state.incomingCount,
         kpiInProgress: state.acceptedCount + state.inProgressCount,
         kpiOverdue: state.overdueCount,

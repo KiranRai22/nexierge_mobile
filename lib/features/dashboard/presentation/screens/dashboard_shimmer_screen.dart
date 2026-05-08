@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/color_palette.dart';
 import '../providers/dashboard_bootstrap_controller.dart';
-import '../widgets/shimmer_widget.dart';
+import '../../../../core/widgets/shimmer_widget.dart';
 
 /// Shimmer loading screen shown during dashboard bootstrap.
 /// Mimics the dashboard layout so the transition feels seamless.

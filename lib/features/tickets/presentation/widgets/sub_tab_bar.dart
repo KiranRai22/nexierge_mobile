@@ -6,7 +6,7 @@ import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/tickets_list_controller.dart';
 
-/// Pill-bar of sub-tabs: Incoming · Today · Scheduled · Done.
+/// Pill-bar of sub-tabs: Incoming · Today · Done.
 /// Horizontally scrollable so it never overflows on small phones.
 class SubTabBar extends StatelessWidget {
   final TicketsSubTab selected;
@@ -21,7 +21,6 @@ class SubTabBar extends StatelessWidget {
   static const List<TicketsSubTab> _tabs = [
     TicketsSubTab.incoming,
     TicketsSubTab.today,
-    TicketsSubTab.scheduled,
     TicketsSubTab.done,
   ];
 
@@ -31,8 +30,6 @@ class SubTabBar extends StatelessWidget {
         return s.subTabIncoming;
       case TicketsSubTab.today:
         return s.subTabToday;
-      case TicketsSubTab.scheduled:
-        return s.subTabScheduled;
       case TicketsSubTab.done:
         return s.subTabDone;
     }

@@ -66,15 +66,18 @@ abstract class TicketRepository {
     bool createdByAi = false,
   });
 
-  /// Advances a ticket through the backend state machine
-  /// (NEW → ACCEPTED → IN_PROGRESS → DONE).
-  Future<void> updateTicketStatus({required String ticketId});
+  /// Sets a ticket's status explicitly. Allowed [newStatus] values:
+  /// NEW, ACCEPTED, IN_PROGRESS, ON_HOLD, DONE.
+  /// CANCELED is set via [cancelTicket]; EXPIRED is server-driven only.
+  /// [resolutionNote] is sent as `resolution_notes` when set (used with DONE).
+  Future<void> changeTicketStatus({
+    required String ticketId,
+    required String newStatus,
+    String? resolutionNote,
+  });
 
   /// Cancels a ticket with a required reason.
   Future<void> cancelTicket({required String ticketId, required String reason});
-
-  /// Resets a ticket back to NEW status.
-  Future<void> resetTicket({required String ticketId});
 
   /// Updates the due time with a required reason.
   Future<void> changeDueTime({
@@ -323,9 +326,17 @@ class _TicketRepositoryImpl implements TicketRepository {
   }
 
   @override
-  Future<void> updateTicketStatus({required String ticketId}) async {
+  Future<void> changeTicketStatus({
+    required String ticketId,
+    required String newStatus,
+    String? resolutionNote,
+  }) async {
     try {
-      await _remote.updateTicketStatus(ticketId: ticketId);
+      await _remote.changeTicketStatus(
+        ticketId: ticketId,
+        newStatus: newStatus,
+        resolutionNote: resolutionNote,
+      );
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {
@@ -340,17 +351,6 @@ class _TicketRepositoryImpl implements TicketRepository {
   }) async {
     try {
       await _remote.cancelTicket(ticketId: ticketId, reason: reason);
-    } on DioException catch (e) {
-      throw mapDioError(e);
-    } catch (e) {
-      throw ErrorHandler.handle(e);
-    }
-  }
-
-  @override
-  Future<void> resetTicket({required String ticketId}) async {
-    try {
-      await _remote.resetTicket(ticketId: ticketId);
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {

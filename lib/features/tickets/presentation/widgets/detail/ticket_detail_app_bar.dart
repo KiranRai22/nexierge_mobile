@@ -159,17 +159,17 @@ class _StatusPill extends StatelessWidget {
           fg: c.tagNeutralText,
           label: s.ticketStatusBadgeDone,
         );
-      case TicketStatus.cancelled:
+      case TicketStatus.canceled:
         return (
           bg: c.tagRedBg,
           fg: c.tagRedText,
           label: s.ticketStatusBadgeCancelled,
         );
-      case TicketStatus.scheduled:
+      case TicketStatus.onHold:
         return (
           bg: c.tagPurpleBg,
           fg: c.tagPurpleText,
-          label: s.subTabScheduled,
+          label: s.ticketStatusBadgeOnHold,
         );
     }
   }

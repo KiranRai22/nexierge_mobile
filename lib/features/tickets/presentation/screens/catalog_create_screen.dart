@@ -7,6 +7,7 @@ import '../../../../core/theme/typography_manager.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../domain/entities/service_catalog.dart';
 import '../providers/service_catalogs_provider.dart';
+import '../widgets/skeletons/ticket_skeletons.dart';
 
 /// Screen to select a service catalog for creating catalog-based tickets.
 /// Fetches and displays all service catalogs from the API.
@@ -79,7 +80,7 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    return const CatalogGridSkeleton();
   }
 }
 

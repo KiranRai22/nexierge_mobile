@@ -1,19 +1,23 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'department.dart';
+
 part 'user_profile.g.dart';
 
 /// User profile entity from auth/me API
 @JsonSerializable()
 class UserProfile {
+  @JsonKey(defaultValue: '')
   final String id;
   @JsonKey(name: 'created_at')
   final int createdAt;
-  @JsonKey(name: 'first_name')
+  @JsonKey(name: 'first_name', defaultValue: '')
   final String firstName;
-  @JsonKey(name: 'last_name')
+  @JsonKey(name: 'last_name', defaultValue: '')
   final String lastName;
-  @JsonKey(name: 'employee_code')
+  @JsonKey(name: 'employee_code', defaultValue: '')
   final String employeeCode;
+  @JsonKey(defaultValue: '')
   final String email;
   final String? birthday;
   @JsonKey(name: 'phone_number')
@@ -81,6 +85,19 @@ class UserProfile {
       accessControl: accessControl ?? this.accessControl,
     );
   }
+
+  /// Get the full name of the user
+  String get fullName {
+    if (firstName.isNotEmpty && lastName.isNotEmpty) {
+      return '$firstName $lastName';
+    } else if (firstName.isNotEmpty) {
+      return firstName;
+    } else if (lastName.isNotEmpty) {
+      return lastName;
+    } else {
+      return email.isNotEmpty ? email : 'User';
+    }
+  }
 }
 
 @JsonSerializable()
@@ -97,8 +114,11 @@ class PictureProfile {
 
 @JsonSerializable()
 class UserSettings {
+  @JsonKey(defaultValue: '')
   final String id;
+  @JsonKey(defaultValue: 'en')
   final String lang;
+  @JsonKey(defaultValue: 'light')
   final String theme;
 
   const UserSettings({
@@ -129,19 +149,27 @@ class HotelDetails {
 
 @JsonSerializable()
 class Hotel {
+  @JsonKey(defaultValue: '')
   final String id;
-  @JsonKey(name: 'business_email')
+  @JsonKey(name: 'business_email', defaultValue: '')
   final String businessEmail;
+  @JsonKey(defaultValue: '')
   final String name;
+  @JsonKey(defaultValue: '')
   final String country;
+  @JsonKey(defaultValue: 'UTC')
   final String timezone;
+  @JsonKey(defaultValue: 'en')
   final String language;
+  @JsonKey(defaultValue: 'active')
   final String status;
-  @JsonKey(name: 'created_by_user_id')
+  @JsonKey(name: 'created_by_user_id', defaultValue: '')
   final String createdByUserId;
   @JsonKey(name: 'created_at')
   final int createdAt;
+  @JsonKey(defaultValue: '')
   final String city;
+  @JsonKey(defaultValue: '')
   final String street;
   @JsonKey(name: 'website_url')
   final String? websiteUrl;
@@ -176,6 +204,7 @@ class Hotel {
 class SubscriptionDetails {
   @JsonKey(name: 'subscription_active')
   final bool subscriptionActive;
+  @JsonKey(defaultValue: '')
   final String plan;
   @JsonKey(name: 'subscription_start_date')
   final int subscriptionStartDate;
@@ -197,15 +226,17 @@ class SubscriptionDetails {
 
 @JsonSerializable()
 class UserHotelStatus {
+  @JsonKey(defaultValue: '')
   final String id;
-  @JsonKey(name: 'user_id')
+  @JsonKey(name: 'user_id', defaultValue: '')
   final String userId;
-  @JsonKey(name: 'hotel_id')
+  @JsonKey(name: 'hotel_id', defaultValue: '')
   final String hotelId;
-  @JsonKey(name: 'hierarchy_role')
+  @JsonKey(name: 'hierarchy_role', defaultValue: '')
   final String hierarchyRole;
+  @JsonKey(defaultValue: '')
   final String status;
-  @JsonKey(name: 'schedule_type')
+  @JsonKey(name: 'schedule_type', defaultValue: '')
   final String scheduleType;
   @JsonKey(name: 'weekly_hours')
   final int weeklyHours;
@@ -217,7 +248,7 @@ class UserHotelStatus {
   final bool scheduleActive;
   @JsonKey(name: 'schedule_updated_at')
   final int scheduleUpdatedAt;
-  @JsonKey(name: 'schedule_updated_by')
+  @JsonKey(name: 'schedule_updated_by', defaultValue: '')
   final String scheduleUpdatedBy;
   @JsonKey(name: 'last_login_at')
   final int? lastLoginAt;
@@ -229,7 +260,7 @@ class UserHotelStatus {
   final int? verifiedBusinessEmailAt;
   @JsonKey(name: 'security_group_eligible')
   final bool securityGroupEligible;
-  @JsonKey(name: 'notes_internal')
+  @JsonKey(name: 'notes_internal', defaultValue: '')
   final String notesInternal;
   @JsonKey(name: 'is_primary_contact')
   final bool isPrimaryContact;
@@ -264,18 +295,18 @@ class UserHotelStatus {
 
 @JsonSerializable()
 class AccessControl {
-  @JsonKey(name: 'hotel_user_id')
+  @JsonKey(name: 'hotel_user_id', defaultValue: '')
   final String hotelUserId;
-  @JsonKey(name: 'hotel_id')
+  @JsonKey(name: 'hotel_id', defaultValue: '')
   final String hotelId;
-  @JsonKey(name: 'hierarchy_role')
+  @JsonKey(name: 'hierarchy_role', defaultValue: '')
   final String hierarchyRole;
-  @JsonKey(name: 'user_status')
+  @JsonKey(name: 'user_status', defaultValue: '')
   final String userStatus;
   final Login login;
   @JsonKey(name: 'hub_access')
   final List<HubAccess> hubAccess;
-  final List<dynamic> departments;
+  final List<AuthDepartment> departments;
 
   const AccessControl({
     required this.hotelUserId,
@@ -295,12 +326,13 @@ class AccessControl {
 
 @JsonSerializable()
 class Login {
-  @JsonKey(name: 'interface_access')
+  @JsonKey(name: 'interface_access', defaultValue: 'web')
   final String interfaceAccess;
-  @JsonKey(name: 'login_identifier_type')
+  @JsonKey(name: 'login_identifier_type', defaultValue: 'email')
   final String loginIdentifierType;
-  @JsonKey(name: 'auth_method')
+  @JsonKey(name: 'auth_method', defaultValue: 'password')
   final String authMethod;
+  @JsonKey(defaultValue: 'active')
   final String status;
 
   const Login({
@@ -317,7 +349,7 @@ class Login {
 
 @JsonSerializable()
 class HubAccess {
-  @JsonKey(name: 'hub_code')
+  @JsonKey(name: 'hub_code', defaultValue: '')
   final String hubCode;
   final String? hubRole;
 

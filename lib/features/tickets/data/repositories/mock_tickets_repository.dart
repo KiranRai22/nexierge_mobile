@@ -120,7 +120,7 @@ class MockTicketsRepository
   @override
   Future<void> cancel(String id) async {
     await _simulateLatency();
-    _mutate(id, (t) => t.copyWith(status: TicketStatus.cancelled));
+    _mutate(id, (t) => t.copyWith(status: TicketStatus.canceled));
     final t = _findOrNull(id);
     if (t != null) _pushEvent(_eventFromCancel(t));
   }

@@ -6,6 +6,7 @@ import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/entities/checked_in_guest_stay.dart';
 import '../../providers/checked_in_guest_stays_provider.dart';
+import '../skeletons/ticket_skeletons.dart';
 
 /// Bottom sheet for selecting a room.
 ///
@@ -51,9 +52,7 @@ class _CheckedInRoomSheetBody extends ConsumerWidget {
                     onPick: (guestStayId) =>
                         Navigator.of(context).pop(guestStayId),
                   ),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2.4),
-                  ),
+                  loading: () => const PickerListSkeleton(),
                   error: (e, _) => _ErrorView(
                     message: e.toString(),
                     onRetry: () =>

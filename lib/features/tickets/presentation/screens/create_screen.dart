@@ -25,6 +25,7 @@ import '../widgets/create/catalog_customizer_sheet.dart';
 import '../widgets/create/confirm_ticket_sheet.dart';
 import '../widgets/create/department_picker_sheet.dart';
 import '../widgets/create/room_picker_sheet.dart';
+import '../widgets/skeletons/ticket_skeletons.dart';
 
 part 'create_screen_universal.dart';
 part 'create_screen_catalog.dart';

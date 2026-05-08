@@ -6,6 +6,7 @@ import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/entities/ticket_form_options.dart';
 import '../../providers/ticket_form_options_provider.dart';
+import '../skeletons/ticket_skeletons.dart';
 
 /// Bottom sheet for selecting a department. Returns the [HotelDepartment.id] or null.
 class DepartmentPickerSheet {
@@ -46,9 +47,7 @@ class _DepartmentSheetBody extends ConsumerWidget {
                     departments: options.departments,
                     onPick: (id) => Navigator.of(context).pop(id),
                   ),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2.4),
-                  ),
+                  loading: () => const PickerListSkeleton(),
                   error: (e, _) => _ErrorView(
                     message: e.toString(),
                     onRetry: () => ref.invalidate(ticketFormOptionsProvider),

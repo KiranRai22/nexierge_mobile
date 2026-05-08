@@ -7,12 +7,12 @@ part of 'user_profile.dart';
 // **************************************************************************
 
 UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => UserProfile(
-  id: json['id'] as String,
+  id: json['id'] as String? ?? '',
   createdAt: (json['created_at'] as num).toInt(),
-  firstName: json['first_name'] as String,
-  lastName: json['last_name'] as String,
-  employeeCode: json['employee_code'] as String,
-  email: json['email'] as String,
+  firstName: json['first_name'] as String? ?? '',
+  lastName: json['last_name'] as String? ?? '',
+  employeeCode: json['employee_code'] as String? ?? '',
+  email: json['email'] as String? ?? '',
   birthday: json['birthday'] as String?,
   phoneNumber: json['phone_number'] as String?,
   pictureProfile: json['picture_profile'] == null
@@ -58,9 +58,9 @@ Map<String, dynamic> _$PictureProfileToJson(PictureProfile instance) =>
     <String, dynamic>{'url': instance.url};
 
 UserSettings _$UserSettingsFromJson(Map<String, dynamic> json) => UserSettings(
-  id: json['id'] as String,
-  lang: json['lang'] as String,
-  theme: json['theme'] as String,
+  id: json['id'] as String? ?? '',
+  lang: json['lang'] as String? ?? 'en',
+  theme: json['theme'] as String? ?? 'light',
 );
 
 Map<String, dynamic> _$UserSettingsToJson(UserSettings instance) =>
@@ -84,17 +84,17 @@ Map<String, dynamic> _$HotelDetailsToJson(HotelDetails instance) =>
     };
 
 Hotel _$HotelFromJson(Map<String, dynamic> json) => Hotel(
-  id: json['id'] as String,
-  businessEmail: json['business_email'] as String,
-  name: json['name'] as String,
-  country: json['country'] as String,
-  timezone: json['timezone'] as String,
-  language: json['language'] as String,
-  status: json['status'] as String,
-  createdByUserId: json['created_by_user_id'] as String,
+  id: json['id'] as String? ?? '',
+  businessEmail: json['business_email'] as String? ?? '',
+  name: json['name'] as String? ?? '',
+  country: json['country'] as String? ?? '',
+  timezone: json['timezone'] as String? ?? 'UTC',
+  language: json['language'] as String? ?? 'en',
+  status: json['status'] as String? ?? 'active',
+  createdByUserId: json['created_by_user_id'] as String? ?? '',
   createdAt: (json['created_at'] as num).toInt(),
-  city: json['city'] as String,
-  street: json['street'] as String,
+  city: json['city'] as String? ?? '',
+  street: json['street'] as String? ?? '',
   websiteUrl: json['website_url'] as String?,
   businessPhoneNumber: json['business_phone_number'] as String?,
   onboardingInitiated: json['onboarding_initiated'] as bool,
@@ -120,7 +120,7 @@ Map<String, dynamic> _$HotelToJson(Hotel instance) => <String, dynamic>{
 SubscriptionDetails _$SubscriptionDetailsFromJson(Map<String, dynamic> json) =>
     SubscriptionDetails(
       subscriptionActive: json['subscription_active'] as bool,
-      plan: json['plan'] as String,
+      plan: json['plan'] as String? ?? '',
       subscriptionStartDate: (json['subscription_start_date'] as num).toInt(),
       subscriptionEndDate: (json['subscription_end_date'] as num).toInt(),
     );
@@ -136,18 +136,18 @@ Map<String, dynamic> _$SubscriptionDetailsToJson(
 
 UserHotelStatus _$UserHotelStatusFromJson(Map<String, dynamic> json) =>
     UserHotelStatus(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      hotelId: json['hotel_id'] as String,
-      hierarchyRole: json['hierarchy_role'] as String,
-      status: json['status'] as String,
-      scheduleType: json['schedule_type'] as String,
+      id: json['id'] as String? ?? '',
+      userId: json['user_id'] as String? ?? '',
+      hotelId: json['hotel_id'] as String? ?? '',
+      hierarchyRole: json['hierarchy_role'] as String? ?? '',
+      status: json['status'] as String? ?? '',
+      scheduleType: json['schedule_type'] as String? ?? '',
       weeklyHours: (json['weekly_hours'] as num).toInt(),
       invitedByUserId: json['invited_by_user_id'] as String?,
       createdAt: (json['created_at'] as num).toInt(),
       scheduleActive: json['schedule_active'] as bool,
       scheduleUpdatedAt: (json['schedule_updated_at'] as num).toInt(),
-      scheduleUpdatedBy: json['schedule_updated_by'] as String,
+      scheduleUpdatedBy: json['schedule_updated_by'] as String? ?? '',
       lastLoginAt: (json['last_login_at'] as num?)?.toInt(),
       verifiedBusinessEmail: json['verified_business_email'] as String?,
       verifiedBusinessEmailStatus:
@@ -155,7 +155,7 @@ UserHotelStatus _$UserHotelStatusFromJson(Map<String, dynamic> json) =>
       verifiedBusinessEmailAt: (json['verified_business_email_at'] as num?)
           ?.toInt(),
       securityGroupEligible: json['security_group_eligible'] as bool,
-      notesInternal: json['notes_internal'] as String,
+      notesInternal: json['notes_internal'] as String? ?? '',
       isPrimaryContact: json['is_primary_contact'] as bool,
     );
 
@@ -184,15 +184,17 @@ Map<String, dynamic> _$UserHotelStatusToJson(UserHotelStatus instance) =>
 
 AccessControl _$AccessControlFromJson(Map<String, dynamic> json) =>
     AccessControl(
-      hotelUserId: json['hotel_user_id'] as String,
-      hotelId: json['hotel_id'] as String,
-      hierarchyRole: json['hierarchy_role'] as String,
-      userStatus: json['user_status'] as String,
+      hotelUserId: json['hotel_user_id'] as String? ?? '',
+      hotelId: json['hotel_id'] as String? ?? '',
+      hierarchyRole: json['hierarchy_role'] as String? ?? '',
+      userStatus: json['user_status'] as String? ?? '',
       login: Login.fromJson(json['login'] as Map<String, dynamic>),
       hubAccess: (json['hub_access'] as List<dynamic>)
           .map((e) => HubAccess.fromJson(e as Map<String, dynamic>))
           .toList(),
-      departments: json['departments'] as List<dynamic>,
+      departments: (json['departments'] as List<dynamic>)
+          .map((e) => AuthDepartment.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$AccessControlToJson(AccessControl instance) =>
@@ -207,10 +209,10 @@ Map<String, dynamic> _$AccessControlToJson(AccessControl instance) =>
     };
 
 Login _$LoginFromJson(Map<String, dynamic> json) => Login(
-  interfaceAccess: json['interface_access'] as String,
-  loginIdentifierType: json['login_identifier_type'] as String,
-  authMethod: json['auth_method'] as String,
-  status: json['status'] as String,
+  interfaceAccess: json['interface_access'] as String? ?? 'web',
+  loginIdentifierType: json['login_identifier_type'] as String? ?? 'email',
+  authMethod: json['auth_method'] as String? ?? 'password',
+  status: json['status'] as String? ?? 'active',
 );
 
 Map<String, dynamic> _$LoginToJson(Login instance) => <String, dynamic>{
@@ -221,7 +223,7 @@ Map<String, dynamic> _$LoginToJson(Login instance) => <String, dynamic>{
 };
 
 HubAccess _$HubAccessFromJson(Map<String, dynamic> json) => HubAccess(
-  hubCode: json['hub_code'] as String,
+  hubCode: json['hub_code'] as String? ?? '',
   hubRole: json['hubRole'] as String?,
 );
 

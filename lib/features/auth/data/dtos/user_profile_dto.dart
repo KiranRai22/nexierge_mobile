@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../domain/entities/user_profile.dart';
+import '../../domain/entities/department.dart';
 
 part 'user_profile_dto.g.dart';
 
@@ -54,12 +55,12 @@ class UserProfileDto {
 
   /// Convert to domain entity
   UserProfile toEntity() => UserProfile(
-    id: id,
+    id: id.isNotEmpty ? id : '',
     createdAt: createdAt,
-    firstName: firstName,
-    lastName: lastName,
-    employeeCode: employeeCode,
-    email: email,
+    firstName: firstName.isNotEmpty ? firstName : '',
+    lastName: lastName.isNotEmpty ? lastName : '',
+    employeeCode: employeeCode.isNotEmpty ? employeeCode : '',
+    email: email.isNotEmpty ? email : '',
     birthday: birthday,
     phoneNumber: phoneNumber,
     pictureProfile: pictureProfile?.toEntity(),
@@ -97,7 +98,11 @@ class UserSettingsDto {
 
   Map<String, dynamic> toJson() => _$UserSettingsDtoToJson(this);
 
-  UserSettings toEntity() => UserSettings(id: id, lang: lang, theme: theme);
+  UserSettings toEntity() => UserSettings(
+    id: id,
+    lang: lang.isNotEmpty ? lang : 'en',
+    theme: theme.isNotEmpty ? theme : 'light',
+  );
 }
 
 @JsonSerializable()
@@ -166,16 +171,16 @@ class HotelDto {
 
   Hotel toEntity() => Hotel(
     id: id,
-    businessEmail: businessEmail,
-    name: name,
-    country: country,
-    timezone: timezone,
-    language: language,
-    status: status,
-    createdByUserId: createdByUserId,
+    businessEmail: businessEmail.isNotEmpty ? businessEmail : '',
+    name: name.isNotEmpty ? name : '',
+    country: country.isNotEmpty ? country : '',
+    timezone: timezone.isNotEmpty ? timezone : 'UTC',
+    language: language.isNotEmpty ? language : 'en',
+    status: status.isNotEmpty ? status : 'active',
+    createdByUserId: createdByUserId.isNotEmpty ? createdByUserId : '',
     createdAt: createdAt,
-    city: city,
-    street: street,
+    city: city.isNotEmpty ? city : '',
+    street: street.isNotEmpty ? street : '',
     websiteUrl: websiteUrl,
     businessPhoneNumber: businessPhoneNumber,
     onboardingInitiated: onboardingInitiated,
@@ -314,7 +319,7 @@ class AccessControlDto {
   final LoginDto login;
   @JsonKey(name: 'hub_access')
   final List<HubAccessDto> hubAccess;
-  final List<dynamic> departments;
+  final List<AuthDepartment> departments;
 
   AccessControlDto({
     required this.hotelUserId,
@@ -365,10 +370,12 @@ class LoginDto {
   Map<String, dynamic> toJson() => _$LoginDtoToJson(this);
 
   Login toEntity() => Login(
-    interfaceAccess: interfaceAccess,
-    loginIdentifierType: loginIdentifierType,
-    authMethod: authMethod,
-    status: status,
+    interfaceAccess: interfaceAccess.isNotEmpty ? interfaceAccess : 'web',
+    loginIdentifierType: loginIdentifierType.isNotEmpty
+        ? loginIdentifierType
+        : 'email',
+    authMethod: authMethod.isNotEmpty ? authMethod : 'password',
+    status: status.isNotEmpty ? status : 'active',
   );
 }
 

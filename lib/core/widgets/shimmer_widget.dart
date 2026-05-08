@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// Shimmer effect — sliding diagonal gradient on a neutral block.
+///
+/// Mirrors the dashboard loading style so every screen converges on a
+/// single skeleton language. Dark-mode aware via the ambient [Theme].
 class ShimmerWidget extends StatefulWidget {
   final Widget child;
   final Color? baseColor;
@@ -20,24 +24,19 @@ class ShimmerWidget extends StatefulWidget {
 
 class _ShimmerWidgetState extends State<ShimmerWidget>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: widget.duration,
       vsync: this,
+      duration: widget.duration,
+    )..repeat();
+    _animation = Tween<double>(begin: -1, end: 2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
     );
-    _animation = Tween<double>(
-      begin: -2.0,
-      end: 2.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
-    _controller.repeat();
   }
 
   @override
@@ -48,8 +47,11 @@ class _ShimmerWidgetState extends State<ShimmerWidget>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.baseColor ?? Colors.grey[300]!;
-    final highlightColor = widget.highlightColor ?? Colors.grey[100]!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = widget.baseColor ??
+        (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0));
+    final highlightColor = widget.highlightColor ??
+        (isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF5F5F5));
 
     return AnimatedBuilder(
       animation: _animation,
@@ -57,11 +59,11 @@ class _ShimmerWidgetState extends State<ShimmerWidget>
         return ShaderMask(
           shaderCallback: (bounds) {
             return LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
               colors: [baseColor, highlightColor, baseColor],
               stops: const [0.0, 0.5, 1.0],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              transform: GradientRotation(_animation.value),
+              transform: _SlidingGradientTransform(percent: _animation.value),
             ).createShader(bounds);
           },
           child: widget.child,
@@ -71,89 +73,102 @@ class _ShimmerWidgetState extends State<ShimmerWidget>
   }
 }
 
-/// Pre-built shimmer widgets for common UI patterns
+class _SlidingGradientTransform extends GradientTransform {
+  final double percent;
+
+  const _SlidingGradientTransform({required this.percent});
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * percent, 0, 0);
+  }
+}
+
+/// Rectangular shimmer block.
 class ShimmerContainer extends StatelessWidget {
   final double? width;
   final double? height;
-  final BorderRadius? borderRadius;
+  final double borderRadius;
   final EdgeInsets? margin;
-  final Color? baseColor;
-  final Color? highlightColor;
+  final EdgeInsets? padding;
+  final Widget? child;
 
   const ShimmerContainer({
     super.key,
     this.width,
     this.height,
-    this.borderRadius,
+    this.borderRadius = 8,
     this.margin,
-    this.baseColor,
-    this.highlightColor,
+    this.padding,
+    this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: margin,
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: borderRadius ?? BorderRadius.circular(8),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ShimmerWidget(
+      child: Container(
+        width: width,
+        height: height,
+        margin: margin,
+        padding: padding,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+        child: child,
       ),
-      child: ShimmerWidget(
-        baseColor: baseColor,
-        highlightColor: highlightColor,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: borderRadius ?? BorderRadius.circular(8),
-          ),
+    );
+  }
+}
+
+/// Circular shimmer block — for avatars and round icons.
+class ShimmerCircle extends StatelessWidget {
+  final double size;
+
+  const ShimmerCircle({super.key, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ShimmerWidget(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+          shape: BoxShape.circle,
         ),
       ),
     );
   }
 }
 
+/// Single shimmer text line.
 class ShimmerText extends StatelessWidget {
   final double width;
   final double height;
-  final EdgeInsets? margin;
+  final double borderRadius;
 
   const ShimmerText({
     super.key,
-    required this.width,
+    this.width = 100,
     this.height = 16,
-    this.margin,
+    this.borderRadius = 4,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ShimmerContainer(
-      width: width,
-      height: height,
-      margin: margin,
-      borderRadius: BorderRadius.circular(4),
-    );
-  }
-}
-
-class ShimmerCircle extends StatelessWidget {
-  final double size;
-  final EdgeInsets? margin;
-
-  const ShimmerCircle({
-    super.key,
-    required this.size,
-    this.margin,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ShimmerContainer(
-      width: size,
-      height: size,
-      margin: margin,
-      borderRadius: BorderRadius.circular(size / 2),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ShimmerWidget(
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+      ),
     );
   }
 }

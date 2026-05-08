@@ -8,14 +8,13 @@ import 'session_providers.dart';
 import 'tickets_schedule_clock.dart';
 
 /// Sub-tab on the dashboard.
-enum TicketsSubTab { incoming, today, scheduled, done }
+enum TicketsSubTab { incoming, today, done }
 
 /// Computed view-model the dashboard renders.
 class TicketsListView {
   final List<Ticket> incomingNow;
   final List<Ticket> inProgress;
   final List<Ticket> completedToday;
-  final List<Ticket> scheduled;
   final int kpiIncoming;
   final int kpiInProgress;
   final int kpiOverdue;
@@ -24,17 +23,13 @@ class TicketsListView {
     required this.incomingNow,
     required this.inProgress,
     required this.completedToday,
-    required this.scheduled,
     required this.kpiIncoming,
     required this.kpiInProgress,
     required this.kpiOverdue,
   });
 
   bool get isEmpty =>
-      incomingNow.isEmpty &&
-      inProgress.isEmpty &&
-      completedToday.isEmpty &&
-      scheduled.isEmpty;
+      incomingNow.isEmpty && inProgress.isEmpty && completedToday.isEmpty;
 }
 
 /// Sub-tab is local to the dashboard.
@@ -55,9 +50,8 @@ final ticketsListProvider =
   final query = ref.watch(ticketsSearchQueryProvider).trim().toLowerCase();
   final dept = ref.watch(departmentFilterProvider);
   final session = ref.watch(operatorSessionProvider);
-  // Re-emit when the date boundary may have shifted (hourly + on app
-  // resume) so a ticket whose `eta` just rolled into "today" auto-promotes
-  // out of the Scheduled bucket without a backend refetch.
+  // Re-emit when the date boundary shifts (hourly + on app resume) so
+  // tickets bucket correctly across the Today rollover.
   ref.watch(ticketsScheduleClockProvider);
 
   return repo.watchAll().map((all) {
@@ -114,13 +108,7 @@ TicketsListView _project(List<Ticket> tickets, TicketsSubTab subTab) {
     if (t.status != TicketStatus.done || t.doneAt == null) return false;
     return t.doneAt!.isAfter(today) && t.doneAt!.isBefore(tomorrow);
   }).toList(growable: false);
-  final scheduled = tickets.where((t) {
-    if (t.eta == null) return false;
-    return t.eta!.isAfter(tomorrow);
-  }).toList(growable: false);
 
-  // Sub-tab filtering surface — KPI numbers always reflect the full snapshot
-  // so the strip doesn't change when the user moves between tabs.
   final kpiIncoming = incomingNow.length;
   final kpiInProgress = inProgress.length;
   final kpiOverdue = tickets.where((t) => t.isOverdue).length;
@@ -131,7 +119,6 @@ TicketsListView _project(List<Ticket> tickets, TicketsSubTab subTab) {
         incomingNow: incomingNow,
         inProgress: const [],
         completedToday: const [],
-        scheduled: const [],
         kpiIncoming: kpiIncoming,
         kpiInProgress: kpiInProgress,
         kpiOverdue: kpiOverdue,
@@ -141,17 +128,6 @@ TicketsListView _project(List<Ticket> tickets, TicketsSubTab subTab) {
         incomingNow: incomingNow,
         inProgress: inProgress,
         completedToday: completedToday,
-        scheduled: const [],
-        kpiIncoming: kpiIncoming,
-        kpiInProgress: kpiInProgress,
-        kpiOverdue: kpiOverdue,
-      );
-    case TicketsSubTab.scheduled:
-      return TicketsListView(
-        incomingNow: const [],
-        inProgress: const [],
-        completedToday: const [],
-        scheduled: scheduled,
         kpiIncoming: kpiIncoming,
         kpiInProgress: kpiInProgress,
         kpiOverdue: kpiOverdue,
@@ -161,7 +137,6 @@ TicketsListView _project(List<Ticket> tickets, TicketsSubTab subTab) {
         incomingNow: const [],
         inProgress: const [],
         completedToday: completedToday,
-        scheduled: const [],
         kpiIncoming: kpiIncoming,
         kpiInProgress: kpiInProgress,
         kpiOverdue: kpiOverdue,

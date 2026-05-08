@@ -560,12 +560,6 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get subTabToday;
 
-  /// No description provided for @subTabScheduled.
-  ///
-  /// In en, this message translates to:
-  /// **'Scheduled'**
-  String get subTabScheduled;
-
   /// No description provided for @subTabDone.
   ///
   /// In en, this message translates to:
@@ -590,11 +584,11 @@ abstract class AppLocalizations {
   /// **'COMPLETED TODAY'**
   String get sectionCompletedToday;
 
-  /// No description provided for @sectionScheduled.
+  /// No description provided for @ticketStatusBadgeOnHold.
   ///
   /// In en, this message translates to:
-  /// **'SCHEDULED'**
-  String get sectionScheduled;
+  /// **'On hold'**
+  String get ticketStatusBadgeOnHold;
 
   /// No description provided for @chipUniversal.
   ///
@@ -920,6 +914,12 @@ abstract class AppLocalizations {
   /// **'Accept Ticket'**
   String get ticketActionAccept;
 
+  /// No description provided for @ticketActionAcceptAndStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept & Start'**
+  String get ticketActionAcceptAndStart;
+
   /// No description provided for @ticketActionPause.
   ///
   /// In en, this message translates to:
@@ -973,6 +973,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t mark as done. Reverted.'**
   String get ticketActionFailedMarkDone;
+
+  /// No description provided for @ticketActionHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Put on Hold'**
+  String get ticketActionHold;
+
+  /// No description provided for @ticketActionFailedHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t put ticket on hold. Reverted.'**
+  String get ticketActionFailedHold;
+
+  /// No description provided for @ticketActionFailedResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t resume ticket. Reverted.'**
+  String get ticketActionFailedResume;
+
+  /// No description provided for @ticketActionHoldConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Put ticket on hold?'**
+  String get ticketActionHoldConfirmTitle;
+
+  /// No description provided for @ticketActionHoldConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The ticket will pause until you resume it.'**
+  String get ticketActionHoldConfirmMessage;
 
   /// No description provided for @ticketActivityCreated.
   ///

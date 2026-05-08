@@ -258,9 +258,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get subTabToday => 'Hoy';
 
   @override
-  String get subTabScheduled => 'Programados';
-
-  @override
   String get subTabDone => 'Hechos';
 
   @override
@@ -273,7 +270,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sectionCompletedToday => 'COMPLETADOS HOY';
 
   @override
-  String get sectionScheduled => 'PROGRAMADOS';
+  String get ticketStatusBadgeOnHold => 'En espera';
 
   @override
   String get chipUniversal => 'Universal';
@@ -442,6 +439,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ticketActionAccept => 'Aceptar ticket';
 
   @override
+  String get ticketActionAcceptAndStart => 'Aceptar e iniciar';
+
+  @override
   String get ticketActionPause => 'Pausar';
 
   @override
@@ -470,6 +470,22 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get ticketActionFailedMarkDone =>
       'No se pudo marcar como hecho. Revertido.';
+
+  @override
+  String get ticketActionHold => 'Poner en espera';
+
+  @override
+  String get ticketActionFailedHold => 'No se pudo poner en espera. Revertido.';
+
+  @override
+  String get ticketActionFailedResume => 'No se pudo reanudar. Revertido.';
+
+  @override
+  String get ticketActionHoldConfirmTitle => '¿Poner ticket en espera?';
+
+  @override
+  String get ticketActionHoldConfirmMessage =>
+      'El ticket se pausará hasta que lo reanudes.';
 
   @override
   String get ticketActivityCreated => 'Ticket creado';

@@ -49,7 +49,7 @@ class _TicketHeroCardState extends State<TicketHeroCard> {
 
   bool get _isLive {
     final s = widget.ticket.status;
-    return s != TicketStatus.done && s != TicketStatus.cancelled;
+    return s != TicketStatus.done && s != TicketStatus.canceled;
   }
 
   @override

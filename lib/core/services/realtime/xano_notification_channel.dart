@@ -11,7 +11,7 @@ final _xanoSocketStatusProvider = StreamProvider<SocketConnectionStatus>((ref) {
   return socketService.statusStream;
 });
 
-/// Automatically joins the notifications channel when socket connects.
+/// Automatically joins the notifications channel when socket connects and profile is available.
 /// Uses hotel_id and user_id from dashboard bootstrap.
 final xanoNotificationChannelProvider = Provider<void>((ref) {
   final socketService = ref.watch(xanoSocketServiceProvider);
@@ -19,45 +19,40 @@ final xanoNotificationChannelProvider = Provider<void>((ref) {
   // Watch the socket status stream
   final statusAsync = ref.watch(_xanoSocketStatusProvider);
 
-  statusAsync.whenData((status) {
-    if (status == SocketConnectionStatus.connected) {
-      // Socket just connected, join the notification channel
-      final bootstrap = ref
-          .read(dashboardBootstrapControllerProvider)
-          .valueOrNull;
-      final userProfile = bootstrap?.userProfile;
+  // Watch the bootstrap state to get profile availability
+  final bootstrapAsync = ref.watch(dashboardBootstrapControllerProvider);
 
-      if (userProfile != null) {
-        final hotelId = userProfile.hotelDetails.hotel.id;
-        final userId = userProfile.id;
+  // Check both socket connection and profile availability
+  final socketConnected =
+      statusAsync.valueOrNull == SocketConnectionStatus.connected;
+  final profile = bootstrapAsync.valueOrNull?.userProfile;
 
-        if (hotelId.isNotEmpty && userId.isNotEmpty) {
-          debugPrint(
-            '[XanoNotificationChannel] Socket connected, joining channel',
-          );
-          debugPrint(
-            '[XanoNotificationChannel] hotelId: $hotelId, userId: $userId',
-          );
-          socketService.joinNotificationChannel(
-            hotelId: hotelId,
-            userId: userId,
-          );
-        } else {
-          debugPrint(
-            '[XanoNotificationChannel] Cannot join: empty hotelId or userId',
-          );
-        }
-      } else {
-        debugPrint(
-          '[XanoNotificationChannel] Cannot join: userProfile not available',
-        );
-      }
+  if (socketConnected && profile != null) {
+    final hotelId = profile.hotelDetails.hotel.id;
+    final userId = profile.id;
+
+    if (hotelId.isNotEmpty && userId.isNotEmpty) {
+      debugPrint(
+        '[XanoNotificationChannel] Socket connected and profile available, joining channel',
+      );
+      debugPrint(
+        '[XanoNotificationChannel] hotelId: $hotelId, userId: $userId',
+      );
+      socketService.joinNotificationChannel(hotelId: hotelId, userId: userId);
+    } else {
+      debugPrint(
+        '[XanoNotificationChannel] Cannot join: empty hotelId or userId',
+      );
     }
-  });
+  } else if (socketConnected && profile == null) {
+    debugPrint(
+      '[XanoNotificationChannel] Socket connected but profile not available, waiting...',
+    );
+  }
 
   if (kDebugMode) {
     debugPrint(
-      '[XanoNotificationChannel] Provider initialized, waiting for socket connection',
+      '[XanoNotificationChannel] Provider initialized, waiting for socket connection and profile',
     );
   }
 });

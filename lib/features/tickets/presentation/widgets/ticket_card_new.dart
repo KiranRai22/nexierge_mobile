@@ -630,7 +630,7 @@ class _ActionButton extends StatelessWidget {
       TicketStatus.done => _buildDoneBadge(c),
       TicketStatus.inProgress => _buildMarkDoneButton(c, onMarkDone),
       TicketStatus.accepted => _buildStartWorkButton(c, onStartWork),
-      TicketStatus.scheduled => _buildScheduledBadge(c, s.subTabScheduled),
+      TicketStatus.onHold => _buildScheduledBadge(c, s.ticketStatusBadgeOnHold),
       _ => _buildAcceptButton(c, onAccept),
     };
   }

@@ -8,6 +8,7 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/ticket_form_options.dart';
 import '../providers/session_providers.dart';
 import '../providers/ticket_form_options_provider.dart';
+import 'skeletons/ticket_skeletons.dart';
 
 /// Modal bottom sheet for choosing departments. Mirrors the prototype's
 /// list-of-checkboxes pattern. Apply / Clear at the bottom.
@@ -240,11 +241,9 @@ class _DeptList extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: PickerListSkeleton(showLeadingCircle: false),
       ),
       error: (e, _) => Center(
         child: Padding(

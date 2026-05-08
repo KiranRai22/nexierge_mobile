@@ -93,13 +93,13 @@
 
   "subTabIncoming": "Incoming",
   "subTabToday": "Today",
-  "subTabScheduled": "Scheduled",
   "subTabDone": "Done",
 
   "sectionIncomingNow": "INCOMING NOW",
   "sectionInProgress": "IN PROGRESS",
   "sectionCompletedToday": "COMPLETED TODAY",
-  "sectionScheduled": "SCHEDULED",
+
+  "ticketStatusBadgeOnHold": "On hold",
 
   "chipUniversal": "Universal",
   "chipCatalog": "Catalog",
@@ -168,6 +168,7 @@
   },
   "ticketActionStartWork": "Start Work",
   "ticketActionAccept": "Accept Ticket",
+  "ticketActionAcceptAndStart": "Accept & Start",
   "ticketActionPause": "Pause",
   "ticketActionResume": "Resume",
   "ticketActionComplete": "Complete",
@@ -177,6 +178,12 @@
   "ticketActionFailedAccept": "Couldn't accept ticket. Reverted.",
   "ticketActionFailedStartWork": "Couldn't start work. Reverted.",
   "ticketActionFailedMarkDone": "Couldn't mark as done. Reverted.",
+  "ticketActionHold": "Put on Hold",
+  "ticketActionResume": "Resume",
+  "ticketActionFailedHold": "Couldn't put ticket on hold. Reverted.",
+  "ticketActionFailedResume": "Couldn't resume ticket. Reverted.",
+  "ticketActionHoldConfirmTitle": "Put ticket on hold?",
+  "ticketActionHoldConfirmMessage": "The ticket will pause until you resume it.",
   "ticketActivityCreated": "Ticket created",
   "ticketActivityStatusChange": "{from} \u2192 {to}",
   "@ticketActivityStatusChange": {

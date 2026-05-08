@@ -144,8 +144,7 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
                   final allCount =
                       v.incomingNow.length +
                       v.inProgress.length +
-                      v.completedToday.length +
-                      v.scheduled.length;
+                      v.completedToday.length;
                   final acceptedCount = v.inProgress
                       .where((t) => t.status == TicketStatus.accepted)
                       .length;
@@ -305,8 +304,6 @@ class _TicketsList extends StatelessWidget {
         _Section(s.sectionInProgress, view.inProgress),
       if (view.completedToday.isNotEmpty)
         _Section(s.sectionCompletedToday, view.completedToday),
-      if (view.scheduled.isNotEmpty)
-        _Section(s.sectionScheduled, view.scheduled),
     ];
 
     return ListView.builder(

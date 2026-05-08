@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
@@ -13,12 +14,17 @@ class AcknowledgeTicketResult {
   final String readyByLabel;
   final String buttonLabel;
 
+  /// True when the user picked "Accept & Start" — caller should transition
+  /// the ticket directly to IN_PROGRESS instead of stopping at ACCEPTED.
+  final bool startImmediately;
+
   const AcknowledgeTicketResult({
     required this.mode,
     this.minutesFromNow,
     this.customDateTime,
     required this.readyByLabel,
     required this.buttonLabel,
+    this.startImmediately = false,
   });
 }
 
@@ -34,6 +40,7 @@ class AcknowledgeTicketBottomSheet {
     required String ticketCode,
     required String ticketTitle,
     required bool hasGuest,
+    bool canAcceptAndStart = false,
   }) {
     return showModalBottomSheet<AcknowledgeTicketResult>(
       context: context,
@@ -43,6 +50,7 @@ class AcknowledgeTicketBottomSheet {
         ticketCode: ticketCode,
         ticketTitle: ticketTitle,
         hasGuest: hasGuest,
+        canAcceptAndStart: canAcceptAndStart,
       ),
     );
   }
@@ -52,11 +60,13 @@ class _AcknowledgeTicketSheetBody extends StatefulWidget {
   final String ticketCode;
   final String ticketTitle;
   final bool hasGuest;
+  final bool canAcceptAndStart;
 
   const _AcknowledgeTicketSheetBody({
     required this.ticketCode,
     required this.ticketTitle,
     required this.hasGuest,
+    required this.canAcceptAndStart,
   });
 
   @override
@@ -166,7 +176,7 @@ class _AcknowledgeTicketSheetBodyState
     });
   }
 
-  Future<void> _handleAcknowledge() async {
+  Future<void> _handleAcknowledge({bool startImmediately = false}) async {
     if (_submitting) return;
     setState(() => _submitting = true);
     if (!mounted) return;
@@ -178,6 +188,7 @@ class _AcknowledgeTicketSheetBodyState
         customDateTime: _customDateTime,
         readyByLabel: _readyByLabel,
         buttonLabel: 'Acknowledge $_buttonTimeLabel',
+        startImmediately: startImmediately,
       ),
     );
   }
@@ -307,9 +318,74 @@ class _AcknowledgeTicketSheetBodyState
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _submitting
+                            ? null
+                            : () => _handleAcknowledge(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: c.buttonInverted,
+                          foregroundColor: c.fgOnInverted,
+                          disabledBackgroundColor: c.bgDisabled,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: _submitting
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: c.fgOnInverted,
+                                ),
+                              )
+                            : Text(
+                                context.l10n.ticketActionAccept,
+                                style: TypographyManager.textBodyStrong
+                                    .copyWith(color: c.fgOnInverted),
+                              ),
+                      ),
+                    ),
+                    if (widget.canAcceptAndStart) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _submitting
+                              ? null
+                              : () =>
+                                  _handleAcknowledge(startImmediately: true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: c.tagPurpleBg,
+                            foregroundColor: c.tagPurpleText,
+                            disabledBackgroundColor: c.bgDisabled,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: c.tagPurpleBorder),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            context.l10n.ticketActionAcceptAndStart,
+                            style: TypographyManager.textBodyStrong.copyWith(
+                              color: c.tagPurpleText,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
                   child: OutlinedButton(
                     onPressed: _submitting
                         ? null
@@ -323,41 +399,11 @@ class _AcknowledgeTicketSheetBodyState
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: Text(
-                      'Cancel',
+                      context.l10n.ticketActionCancel,
                       style: TypographyManager.textBodyStrong.copyWith(
                         color: c.fgBase,
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _submitting ? null : _handleAcknowledge,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: c.buttonInverted,
-                      foregroundColor: c.fgOnInverted,
-                      disabledBackgroundColor: c.bgDisabled,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: _submitting
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: c.fgOnInverted,
-                            ),
-                          )
-                        : Text(
-                            'Acknowledge',
-                            style: TypographyManager.textBodyStrong.copyWith(
-                              color: c.fgOnInverted,
-                            ),
-                          ),
                   ),
                 ),
               ],

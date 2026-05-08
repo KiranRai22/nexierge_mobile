@@ -25,9 +25,9 @@ class TicketCard extends StatelessWidget {
         return ColorPalette.ticketStripeDone;
       case TicketStatus.inProgress:
       case TicketStatus.accepted:
-      case TicketStatus.scheduled:
+      case TicketStatus.onHold:
         return ColorPalette.ticketStripeInProgress;
-      case TicketStatus.cancelled:
+      case TicketStatus.canceled:
         return ColorPalette.statusUnassigned;
       case TicketStatus.incoming:
         return ColorPalette.ticketStripeUniversal;
@@ -364,10 +364,13 @@ class _StatusBadge extends StatelessWidget {
         );
       case TicketStatus.done:
         return (label: s.statusDone, color: ColorPalette.statusDone);
-      case TicketStatus.cancelled:
+      case TicketStatus.canceled:
         return (label: s.statusCancelled, color: ColorPalette.statusUnassigned);
-      case TicketStatus.scheduled:
-        return (label: s.subTabScheduled, color: ColorPalette.statusInProgress);
+      case TicketStatus.onHold:
+        return (
+          label: s.ticketStatusBadgeOnHold,
+          color: ColorPalette.statusInProgress,
+        );
     }
   }
 

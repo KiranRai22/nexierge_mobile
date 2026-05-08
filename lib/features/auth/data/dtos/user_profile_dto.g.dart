@@ -196,7 +196,9 @@ AccessControlDto _$AccessControlDtoFromJson(Map<String, dynamic> json) =>
       hubAccess: (json['hub_access'] as List<dynamic>)
           .map((e) => HubAccessDto.fromJson(e as Map<String, dynamic>))
           .toList(),
-      departments: json['departments'] as List<dynamic>,
+      departments: (json['departments'] as List<dynamic>)
+          .map((e) => AuthDepartment.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$AccessControlDtoToJson(AccessControlDto instance) =>

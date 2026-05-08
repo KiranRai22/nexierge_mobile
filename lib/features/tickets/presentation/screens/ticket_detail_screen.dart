@@ -15,6 +15,7 @@ import '../widgets/detail/ticket_detail_app_bar.dart';
 import '../widgets/detail/ticket_detail_tabs.dart';
 import '../widgets/detail/ticket_hero_card.dart';
 import '../widgets/detail/ticket_info_card.dart';
+import '../widgets/skeletons/ticket_detail_skeleton.dart';
 
 Ticket _mapToTicket(TicketDetail detail) {
   return Ticket(
@@ -54,8 +55,13 @@ TicketStatus _mapStatus(String status) {
       return TicketStatus.inProgress;
     case 'DONE':
       return TicketStatus.done;
+    case 'CANCELED':
     case 'CANCELLED':
-      return TicketStatus.cancelled;
+      return TicketStatus.canceled;
+    case 'ON_HOLD':
+      return TicketStatus.onHold;
+    case 'EXPIRED':
+      return TicketStatus.canceled;
     default:
       return TicketStatus.incoming;
   }
@@ -113,7 +119,7 @@ class TicketDetailScreen extends ConsumerWidget {
       backgroundColor: c.bgBase,
       body: asyncTicket.when(
         data: (t) => _DetailBody(ticket: t),
-        loading: () => const _LoadingView(),
+        loading: () => const TicketDetailSkeleton(),
         error: (e, _) => _ErrorView(error: e.toString()),
       ),
     );
@@ -270,14 +276,14 @@ class _DetailsTab extends StatelessWidget {
         bg = c.tagNeutralBg;
         fg = c.tagNeutralText;
         label = s.ticketStatusBadgeDone;
-      case TicketStatus.cancelled:
+      case TicketStatus.canceled:
         bg = c.tagRedBg;
         fg = c.tagRedText;
         label = s.ticketStatusBadgeCancelled;
-      case TicketStatus.scheduled:
+      case TicketStatus.onHold:
         bg = c.tagPurpleBg;
         fg = c.tagPurpleText;
-        label = s.subTabScheduled;
+        label = s.ticketStatusBadgeOnHold;
     }
     return TicketInfoStatusPill(label: label, bg: bg, fg: fg);
   }
@@ -337,263 +343,6 @@ class _ActivityTab extends StatelessWidget {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [TicketActivityTimeline(ticket: ticket)],
-    );
-  }
-}
-
-class _LoadingView extends StatelessWidget {
-  const _LoadingView();
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    return Scaffold(
-      backgroundColor: c.bgBase,
-      body: Column(
-        children: [
-          _AppBarShimmer(c: c),
-          _TabsShimmer(c: c),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _HeroShimmer(c: c),
-                const SizedBox(height: 16),
-                _InfoShimmer(c: c),
-              ],
-            ),
-          ),
-          _ActionBarShimmer(c: c),
-        ],
-      ),
-    );
-  }
-}
-
-class _AppBarShimmer extends StatelessWidget {
-  final AppColors c;
-  const _AppBarShimmer({required this.c});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        border: Border(bottom: BorderSide(color: c.borderBase, width: 1)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: c.borderBase.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              height: 20,
-              width: 100,
-              decoration: BoxDecoration(
-                color: c.borderBase.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: c.borderBase.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TabsShimmer extends StatelessWidget {
-  final AppColors c;
-  const _TabsShimmer({required this.c});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        border: Border(bottom: BorderSide(color: c.borderBase, width: 1)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 24,
-              width: 60,
-              decoration: BoxDecoration(
-                color: c.borderBase.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(width: 24),
-          Expanded(
-            child: Container(
-              height: 24,
-              width: 60,
-              decoration: BoxDecoration(
-                color: c.borderBase.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroShimmer extends StatelessWidget {
-  final AppColors c;
-  const _HeroShimmer({required this.c});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: c.borderBase, width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 20,
-              width: 80,
-              decoration: BoxDecoration(
-                color: c.borderBase.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              height: 16,
-              width: 120,
-              decoration: BoxDecoration(
-                color: c.borderBase.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              height: 16,
-              width: 100,
-              decoration: BoxDecoration(
-                color: c.borderBase.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoShimmer extends StatelessWidget {
-  final AppColors c;
-  const _InfoShimmer({required this.c});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: c.borderBase, width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            for (var i = 0; i < 4; i++) ...[
-              if (i > 0) const SizedBox(height: 12),
-              Row(
-                children: [
-                  Container(
-                    height: 14,
-                    width: 80,
-                    decoration: BoxDecoration(
-                      color: c.borderBase.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    height: 14,
-                    width: 100,
-                    decoration: BoxDecoration(
-                      color: c.borderBase.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionBarShimmer extends StatelessWidget {
-  final AppColors c;
-  const _ActionBarShimmer({required this.c});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        border: Border(top: BorderSide(color: c.borderBase, width: 1)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: c.borderBase.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: c.borderBase.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

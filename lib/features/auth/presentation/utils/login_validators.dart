@@ -1,3 +1,4 @@
+import '../../../../core/utils/string_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
 /// Field-level validators for the login form.
@@ -123,8 +124,10 @@ abstract class LoginValidators {
   }
 
   /// Normalises an email: trim + lowercase
-  static String normaliseEmail(String input) => input.trim().toLowerCase();
+  static String normaliseEmail(String input) =>
+      StringUtils.normalizeSpaces(input.trim()).toLowerCase();
 
   /// Normalises a code: trim + uppercase
-  static String normaliseCode(String input) => input.trim().toUpperCase();
+  static String normaliseCode(String input) =>
+      StringUtils.normalizeSpaces(input.trim()).toUpperCase();
 }

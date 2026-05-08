@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/utils/string_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../data/services/image_picker_service.dart';
@@ -15,6 +16,7 @@ import '../widgets/profile_header_card_animated.dart';
 import '../widgets/profile_info_section.dart';
 import '../widgets/profile_logout_button.dart';
 import '../widgets/profile_preferences_section.dart';
+import '../widgets/skeletons/profile_screen_skeleton.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -114,7 +116,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (_updatingName) return;
 
     final parts = profile.fullName.trim().split(RegExp(r'\s+'));
-    final originalFirst = parts.first;
+    final originalFirst = parts.isNotEmpty ? parts.first : '';
     final originalLast = parts.length > 1 ? parts.sublist(1).join(' ') : '';
 
     final result = await showDialog<(String, String)?>(
@@ -133,9 +135,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final s = context.l10n;
 
     try {
+      // Format names using StringUtils before submission
+      final formattedFirstName = StringUtils.formatName(firstName.trim());
+      final formattedLastName = StringUtils.formatName(lastName.trim());
+
       final success = await ref
           .read(userProfileControllerProvider.notifier)
-          .updateName(firstName.trim(), lastName.trim());
+          .updateName(formattedFirstName, formattedLastName);
       if (!mounted) return;
       if (success) {
         context.showSuccess(s.profileUpdateNameSuccess);
@@ -159,7 +165,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: SafeArea(
         bottom: false,
         child: asyncProfile.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const ProfileScreenSkeleton(),
           error: (e, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -261,6 +267,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
             children: [
               ProfileInfoSection(
                 title: s.profileSectionAccountInformation,
+                summary: _buildAccountSummary(widget.profile),
                 rows: [
                   ProfileInfoRow(
                     label: s.profileFieldName,
@@ -290,6 +297,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
               const SizedBox(height: 24),
               ProfileInfoSection(
                 title: s.profileSectionWorkInformation,
+                summary: _buildWorkSummary(widget.profile),
                 rows: [
                   if (widget.profile.hotelName != null &&
                       widget.profile.hotelName!.isNotEmpty)
@@ -327,6 +335,37 @@ class _ProfileBodyState extends State<_ProfileBody> {
       case UserStatus.inactive:
         return s.profileStatusInactive;
     }
+  }
+
+  String _buildAccountSummary(UserProfile profile) {
+    final parts = profile.fullName.trim().split(RegExp(r'\s+'));
+    final firstName = parts.isNotEmpty
+        ? StringUtils.formatName(parts.first)
+        : '';
+    final employeeCode = profile.employeeCode ?? '';
+    final role = StringUtils.formatRoleWithMapping(profile.role);
+
+    return 'Name: $firstName, ECode: $employeeCode, Role: $role';
+  }
+
+  String _buildWorkSummary(UserProfile profile) {
+    final hotelName = StringUtils.formatName(profile.hotelName ?? '');
+    final status = _statusLabel(context.l10n, profile.status);
+
+    final List<String> summaryParts = [
+      'Property: $hotelName',
+      'Status: $status',
+    ];
+
+    // Only add department if it's not empty
+    if (profile.departments.isNotEmpty) {
+      final formattedDepartments = profile.departments
+          .map((dept) => StringUtils.formatName(dept))
+          .join(', ');
+      summaryParts.insert(1, 'Department: $formattedDepartments');
+    }
+
+    return summaryParts.join(', ');
   }
 }
 

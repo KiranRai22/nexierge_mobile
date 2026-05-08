@@ -106,8 +106,7 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
         SizedBox.square(dimension: 10),
         Expanded(
           child: catalogAsync.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
+            loading: () => const CatalogGridSkeleton(),
             error: (err, _) => _CatalogLoadError(
               onRetry: () => refreshUniversalCatalog(ref),
             ),

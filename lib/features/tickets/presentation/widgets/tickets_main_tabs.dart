@@ -54,8 +54,6 @@ class TicketsMainTabs extends StatelessWidget {
         return s.subTabIncoming;
       case TicketsMainTab.today:
         return s.subTabToday;
-      case TicketsMainTab.scheduled:
-        return s.subTabScheduled;
       case TicketsMainTab.done:
         return s.subTabDone;
     }
@@ -137,4 +135,4 @@ class _TabItem extends StatelessWidget {
   }
 }
 
-enum TicketsMainTab { incoming, today, scheduled, done }
+enum TicketsMainTab { incoming, today, done }

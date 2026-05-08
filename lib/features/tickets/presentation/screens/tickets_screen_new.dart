@@ -16,6 +16,7 @@ import '../providers/session_providers.dart';
 import '../providers/tickets_list_controller.dart';
 import '../providers/tickets_main_tab_provider.dart';
 import '../providers/tickets_paged_notifier.dart';
+import '../widgets/skeletons/ticket_skeletons.dart';
 import '../widgets/ticket_card_new.dart';
 import '../widgets/tickets_top_bar.dart';
 import '../widgets/tickets_main_tabs.dart';
@@ -83,10 +84,8 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
         return true; // Has newest/oldest filters
       case TicketsMainTab.today:
         return true; // Has all/accepted/inprogress/overdue filters
-      case TicketsMainTab.scheduled:
-        return false; // ENHANCEMENT: Filters hidden
       case TicketsMainTab.done:
-        return false; // ENHANCEMENT: Filters hidden
+        return false; // Filters hidden
     }
   }
 
@@ -274,7 +273,6 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
     return {
       TicketsMainTab.incoming: totalFor(TicketsTab.incoming),
       TicketsMainTab.today: totalFor(TicketsTab.today),
-      TicketsMainTab.scheduled: totalFor(TicketsTab.scheduled),
       TicketsMainTab.done: totalFor(TicketsTab.done),
     };
   }
@@ -297,22 +295,42 @@ TicketsTab _ticketsTabFromMain(TicketsMainTab mainTab) {
       return TicketsTab.incoming;
     case TicketsMainTab.today:
       return TicketsTab.today;
-    case TicketsMainTab.scheduled:
-      return TicketsTab.scheduled;
     case TicketsMainTab.done:
       return TicketsTab.done;
   }
 }
 
-/// Builds an `onAccept` handler matching the existing AcceptSheet contract.
-VoidCallback _acceptHandler(BuildContext context, Ticket ticket) {
+/// True when [eta] is between now and end-of-today (local). Used to gate
+/// the Accept & Start option on the acknowledge sheet.
+bool _isDueWithinToday(DateTime? eta) {
+  if (eta == null) return false;
+  final now = DateTime.now();
+  final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+  return !eta.isBefore(now) && !eta.isAfter(endOfToday);
+}
+
+/// Builds an `onAccept` handler that opens the acknowledge sheet and
+/// applies the resulting status change. When the user picks
+/// "Accept & Start" the ticket goes straight to IN_PROGRESS.
+VoidCallback _acceptHandler(BuildContext context, WidgetRef ref, Ticket ticket) {
   return () async {
-    await AcknowledgeTicketBottomSheet.show(
+    final result = await AcknowledgeTicketBottomSheet.show(
       context: context,
       ticketCode: ticket.code,
       ticketTitle: ticket.title,
       hasGuest: ticket.guest != null,
+      canAcceptAndStart: _isDueWithinToday(ticket.eta),
     );
+    if (result == null || !context.mounted) return;
+    final target = result.startImmediately ? 'IN_PROGRESS' : 'ACCEPTED';
+    try {
+      await ref
+          .read(ticketRepositoryProvider)
+          .changeTicketStatus(ticketId: ticket.id, newStatus: target);
+      ref.read(myTicketsNotifierProvider.notifier).refresh();
+    } catch (e) {
+      if (context.mounted) context.showFailure(e.toString());
+    }
   };
 }
 
@@ -348,7 +366,7 @@ Future<void> _startWorkHandler(
   try {
     await ref
         .read(ticketRepositoryProvider)
-        .updateTicketStatus(ticketId: ticket.id);
+        .changeTicketStatus(ticketId: ticket.id, newStatus: 'IN_PROGRESS');
     ref.read(myTicketsNotifierProvider.notifier).refresh();
   } catch (e) {
     if (context.mounted) context.showFailure(e.toString());
@@ -470,7 +488,7 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
                 child: TicketCardNew(
                   ticket: ticket,
                   onTap: _openHandler(context, ticket),
-                  onAccept: _acceptHandler(context, ticket),
+                  onAccept: _acceptHandler(context, ref, ticket),
                   onStartWork: () => _startWorkHandler(context, ref, ticket),
                   onMarkDone: () => _markDoneHandler(context, ref, ticket),
                 ),
@@ -488,16 +506,7 @@ class _PaginationLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: SizedBox(
-          width: 22,
-          height: 22,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-    );
+    return const TicketPaginationSkeleton();
   }
 }
 
@@ -544,22 +553,7 @@ class _LoadingList extends StatelessWidget {
   const _LoadingList();
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-      itemCount: 4,
-      itemBuilder: (context, __) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Container(
-          height: 92,
-          decoration: BoxDecoration(
-            color: context.themeColors.bgSubtle,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: context.themeColors.borderBase),
-          ),
-        ),
-      ),
-    );
+    return const TicketListSkeleton();
   }
 }
 

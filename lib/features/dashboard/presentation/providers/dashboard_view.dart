@@ -189,9 +189,9 @@ AttentionItem? _classify(Ticket t, DateTime now) {
         );
       }
       return null;
-    case TicketStatus.scheduled:
+    case TicketStatus.onHold:
     case TicketStatus.done:
-    case TicketStatus.cancelled:
+    case TicketStatus.canceled:
       return null;
   }
 }

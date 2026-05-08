@@ -34,8 +34,15 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   Future<UserProfile> updateProfilePicture(File imageFile) async {
     print('[UserProfileRepository] Starting updateProfilePicture');
     try {
+      // Get current profile to preserve existing name fields
+      final currentProfile = await fetchProfile();
+
       final editService = UserEditService(_dioClient.authenticatedDio);
-      final dto = await editService.uploadProfilePicture(imageFile: imageFile);
+      final dto = await editService.uploadProfilePicture(
+        imageFile: imageFile,
+        firstName: currentProfile.firstName,
+        lastName: currentProfile.lastName,
+      );
       print(
         '[UserProfileRepository] Upload service returned: ${dto != null ? 'success' : 'null dto'}',
       );
