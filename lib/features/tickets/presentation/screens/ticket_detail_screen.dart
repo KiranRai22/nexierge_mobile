@@ -17,12 +17,24 @@ import '../widgets/detail/ticket_hero_card.dart';
 import '../widgets/detail/ticket_info_card.dart';
 import '../widgets/skeletons/ticket_detail_skeleton.dart';
 
+String _getTicketTitle(TicketDetail detail) {
+  if (detail.issueSummary.isNotEmpty) {
+    return detail.issueSummary;
+  } else if (detail.guestName.isNotEmpty) {
+    return detail.guestName;
+  } else if (detail.room.isNotEmpty) {
+    return detail.room;
+  } else {
+    return '—';
+  }
+}
+
 Ticket _mapToTicket(TicketDetail detail) {
   return Ticket(
     id: detail.id,
     code: detail.id.substring(0, 8),
-    title: detail.guestName,
-    kind: TicketKind.manual,
+    title: _getTicketTitle(detail),
+    kind: _mapKind(detail.type),
     status: _mapStatus(detail.status),
     department: _mapDepartment(detail.departmentId),
     room: Room(id: detail.room, number: detail.onbRoomNumber, floor: 0),
@@ -88,6 +100,17 @@ TicketSource _mapSource(String source) {
       return TicketSource.system;
     default:
       return TicketSource.guestApp;
+  }
+}
+
+TicketKind _mapKind(String type) {
+  switch (type.toUpperCase()) {
+    case 'REQUEST':
+      return TicketKind.universal;
+    case 'CATALOG':
+      return TicketKind.catalog;
+    default:
+      return TicketKind.manual;
   }
 }
 
@@ -271,7 +294,7 @@ class _DetailsTab extends StatelessWidget {
       case TicketStatus.incoming:
         bg = c.tagBlueBg;
         fg = c.tagBlueText;
-        label = s.ticketStatusBadgeIncoming;
+        label = s.ticketStatusBadgeNew;
       case TicketStatus.done:
         bg = c.tagNeutralBg;
         fg = c.tagNeutralText;

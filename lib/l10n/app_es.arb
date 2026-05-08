@@ -376,6 +376,34 @@
   "ticketKindUniversal": "Universal",
   "ticketKindCatalog": "Catálogo",
   "ticketKindManual": "Manual",
+  "ticketKindPaid": "Pagado",
+  "incomingUniversalRequestLabel": "Solicitud universal",
+  "incomingItemsCount": "{count, plural, one{1 artículo} other{{count} artículos}}",
+  "@incomingItemsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "incomingUniversalTitleWithCount": "{name} (×{count})",
+  "@incomingUniversalTitleWithCount": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "incomingCatalogTitleWithCount": "{name} (×{count} artículos)",
+  "@incomingCatalogTitleWithCount": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "incomingItemsAndTotal": "{count, plural, one{1 artículo · {total}} other{{count} artículos · {total}}}",
+  "@incomingItemsAndTotal": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "total": { "type": "String" }
+    }
+  },
+  "actionAcceptShort": "Aceptar",
 
   "filterNewestFirst": "Más reciente primero",
   "filterOldestFirst": "Más antiguo primero",

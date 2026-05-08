@@ -30,11 +30,8 @@ CatalogItem _mapItemDtoToCatalogItem(ServiceCatalogItemDto dto) {
         required: g.isRequired,
         options: g.modifiers
             .map(
-              (mod) => Option(
-                id: mod.id,
-                name: mod.name,
-                priceDelta: mod.price,
-              ),
+              (mod) =>
+                  Option(id: mod.id, name: mod.name, priceDelta: mod.price),
             )
             .toList(growable: false),
       ),
@@ -46,6 +43,11 @@ CatalogItem _mapItemDtoToCatalogItem(ServiceCatalogItemDto dto) {
   // that don't render a network image.
   const fallbackEmoji = '🍽️';
 
+  final imageUrl = dto.images.isNotEmpty ? dto.images.first : null;
+  debugPrint(
+    '[CatalogItem Mapping] Item: ${dto.name}, Images: ${dto.images}, Selected URL: $imageUrl',
+  );
+
   return CatalogItem(
     id: dto.id,
     name: dto.name,
@@ -53,22 +55,17 @@ CatalogItem _mapItemDtoToCatalogItem(ServiceCatalogItemDto dto) {
     emoji: fallbackEmoji,
     basePrice: dto.price,
     optionGroups: groups,
-    imageUrl: dto.images.isNotEmpty ? dto.images.first : null,
+    imageUrl: imageUrl,
   );
 }
 
 /// Async provider that fetches all items for a given catalog id.
-final serviceCatalogItemsProvider =
-    FutureProvider.family.autoDispose<List<CatalogItem>, String>((
-      ref,
-      catalogId,
-    ) async {
+final serviceCatalogItemsProvider = FutureProvider.family
+    .autoDispose<List<CatalogItem>, String>((ref, catalogId) async {
       if (catalogId.isEmpty) return const [];
       debugPrint('[serviceCatalogItemsProvider] fetching for $catalogId');
       final repo = ref.read(ticketRepositoryProvider);
       final dtos = await repo.fetchServiceCatalogItems(catalogId: catalogId);
-      debugPrint(
-        '[serviceCatalogItemsProvider] fetched ${dtos.length} items',
-      );
+      debugPrint('[serviceCatalogItemsProvider] fetched ${dtos.length} items');
       return dtos.map(_mapItemDtoToCatalogItem).toList(growable: false);
     });

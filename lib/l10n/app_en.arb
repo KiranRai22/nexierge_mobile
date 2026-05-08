@@ -151,6 +151,7 @@
   "ticketPriorityP2": "P2",
   "ticketPriorityP3": "P3",
   "ticketStatusBadgeAccepted": "ACCEPTED",
+  "ticketStatusBadgeNew": "NEW",
   "ticketStatusBadgeIncoming": "INCOMING",
   "ticketStatusBadgeInProgress": "IN PROGRESS",
   "ticketStatusBadgeDone": "DONE",
@@ -565,6 +566,34 @@
   "ticketKindUniversal": "Universal",
   "ticketKindCatalog": "Catalog",
   "ticketKindManual": "Manual",
+  "ticketKindPaid": "Paid",
+  "incomingUniversalRequestLabel": "Universal request",
+  "incomingItemsCount": "{count, plural, one{1 item} other{{count} items}}",
+  "@incomingItemsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "incomingUniversalTitleWithCount": "{name} (×{count})",
+  "@incomingUniversalTitleWithCount": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "incomingCatalogTitleWithCount": "{name} (×{count} items)",
+  "@incomingCatalogTitleWithCount": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "incomingItemsAndTotal": "{count, plural, one{1 item · {total}} other{{count} items · {total}}}",
+  "@incomingItemsAndTotal": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "total": { "type": "String" }
+    }
+  },
+  "actionAcceptShort": "Accept",
 
   "filterNewestFirst": "Newest first",
   "filterOldestFirst": "Oldest first",

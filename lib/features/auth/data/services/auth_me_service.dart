@@ -65,9 +65,6 @@ class AuthMeService {
 
       return UserProfileDto.fromJson(jsonData);
     } on DioException catch (e) {
-      print('[AuthMeService] DioException: ${e.type}');
-      print('[AuthMeService] DioException response: ${e.response}');
-      print('[AuthMeService] DioException data: ${e.response?.data}');
       throw _mapDioError(e);
     }
   }

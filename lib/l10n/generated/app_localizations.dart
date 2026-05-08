@@ -842,6 +842,12 @@ abstract class AppLocalizations {
   /// **'ACCEPTED'**
   String get ticketStatusBadgeAccepted;
 
+  /// No description provided for @ticketStatusBadgeNew.
+  ///
+  /// In en, this message translates to:
+  /// **'NEW'**
+  String get ticketStatusBadgeNew;
+
   /// No description provided for @ticketStatusBadgeIncoming.
   ///
   /// In en, this message translates to:
@@ -2149,6 +2155,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual'**
   String get ticketKindManual;
+
+  /// No description provided for @ticketKindPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get ticketKindPaid;
+
+  /// No description provided for @incomingUniversalRequestLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Universal request'**
+  String get incomingUniversalRequestLabel;
+
+  /// No description provided for @incomingItemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 item} other{{count} items}}'**
+  String incomingItemsCount(int count);
+
+  /// No description provided for @incomingUniversalTitleWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (×{count})'**
+  String incomingUniversalTitleWithCount(String name, int count);
+
+  /// No description provided for @incomingCatalogTitleWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (×{count} items)'**
+  String incomingCatalogTitleWithCount(String name, int count);
+
+  /// No description provided for @incomingItemsAndTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 item · {total}} other{{count} items · {total}}}'**
+  String incomingItemsAndTotal(int count, String total);
+
+  /// No description provided for @actionAcceptShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get actionAcceptShort;
 
   /// No description provided for @filterNewestFirst.
   ///

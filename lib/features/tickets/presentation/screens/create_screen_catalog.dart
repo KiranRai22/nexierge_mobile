@@ -53,6 +53,7 @@ class _CatalogStepSelect extends ConsumerWidget {
       emoji: '🍽️',
       department: Department.fnb,
       items: const [],
+      imageUrl: sc.logoUrl,
     );
   }
 
@@ -637,6 +638,10 @@ class _CatalogMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint(
+      '[CatalogMenuCard] Item: ${item.name}, ImageUrl: ${item.imageUrl}, Emoji: ${item.emoji}',
+    );
+
     final s = context.l10n;
     final qty = draft.quantityFor(item.id);
     final lines = draft.linesFor(item.id);
@@ -676,17 +681,61 @@ class _CatalogMenuCard extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 alignment: Alignment.center,
                 child: (item.imageUrl != null && item.imageUrl!.isNotEmpty)
-                    ? Image.network(
-                        item.imageUrl!,
+                    ? Stack(
+                        children: [
+                          Image.network(
+                            item.imageUrl!,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: 56,
+                                height: 56,
+                                color: ColorPalette.opsSurface,
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: ColorPalette.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              debugPrint(
+                                '[CatalogMenuCard] Image load error for ${item.name}: $error',
+                              );
+                              return Container(
+                                width: 56,
+                                height: 56,
+                                color: ColorPalette.opsSurface,
+                                child: Center(
+                                  child: Text(
+                                    item.emoji,
+                                    style: const TextStyle(fontSize: 24),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      )
+                    : Container(
                         width: 56,
                         height: 56,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Text(
-                          item.emoji,
-                          style: const TextStyle(fontSize: 24),
+                        color: ColorPalette.opsSurface,
+                        child: Center(
+                          child: Text(
+                            item.emoji,
+                            style: const TextStyle(fontSize: 24),
+                          ),
                         ),
-                      )
-                    : Text(item.emoji, style: const TextStyle(fontSize: 24)),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1246,7 +1295,7 @@ class _CatalogStepDetailsState
               // Department (read-only with AUTO badge)
               _FieldLabel(s.createDepartmentLabel, required: false),
               const SizedBox(height: 6),
-              _AutoDepartmentField(department: catalog.department),
+              _CatalogAutoDepartmentField(department: catalog.department),
               const SizedBox(height: 16),
 
               // Source chips
@@ -1346,10 +1395,36 @@ class _CatalogSummaryCard extends StatelessWidget {
                     border: Border.all(color: ColorPalette.opsBorder),
                   ),
                   alignment: Alignment.center,
-                  child: Text(
-                    catalog.emoji,
-                    style: const TextStyle(fontSize: 16),
-                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child:
+                      (catalog.imageUrl != null && catalog.imageUrl!.isNotEmpty)
+                      ? Image.network(
+                          catalog.imageUrl!,
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1,
+                                color: ColorPalette.textSecondary,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Text(
+                              catalog.emoji,
+                              style: const TextStyle(fontSize: 16),
+                            );
+                          },
+                        )
+                      : Text(
+                          catalog.emoji,
+                          style: const TextStyle(fontSize: 16),
+                        ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1428,7 +1503,55 @@ class _CatalogSummaryLine extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(line.item.emoji, style: const TextStyle(fontSize: 16)),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child:
+                    (line.item.imageUrl != null &&
+                        line.item.imageUrl!.isNotEmpty)
+                    ? Image.network(
+                        line.item.imageUrl!,
+                        width: 24,
+                        height: 24,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 24,
+                            height: 24,
+                            color: ColorPalette.opsSurface,
+                            alignment: Alignment.center,
+                            child: SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1,
+                                color: ColorPalette.textSecondary,
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              line.item.emoji,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          );
+                        },
+                      )
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          line.item.emoji,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+              ),
+            ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1565,6 +1688,56 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
                       ),
                     )
                   : Text(s.createTicketCta),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Auto department field for catalog tickets that shows "Department Auto Selected"
+class _CatalogAutoDepartmentField extends StatelessWidget {
+  final Department department;
+  const _CatalogAutoDepartmentField({required this.department});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: ColorPalette.opsSurfaceSubtle,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: ColorPalette.opsBorder),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Department Auto Selected',
+              style: TypographyManager.bodyMedium.copyWith(
+                color: ColorPalette.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: ColorPalette.opsPurpleTint,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: ColorPalette.opsPurple),
+            ),
+            child: Text(
+              s.createDepartmentAuto,
+              style: TypographyManager.bodySmall.copyWith(
+                color: ColorPalette.opsPurpleDark,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+              ),
             ),
           ),
         ],

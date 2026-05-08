@@ -8,9 +8,38 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../domain/models/department.dart';
+import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/models/ticket.dart';
 import '../providers/my_tickets_notifier.dart';
+
+/// Resolves the localized department label, preferring the API-provided
+/// name when present, falling back to the static enum mapping.
+String _departmentLabel(BuildContext context, Ticket ticket) {
+  final api = ticket.departmentName;
+  if (api != null && api.isNotEmpty) return api;
+  return ticket.department.label(context.l10n);
+}
+
+/// Parses `#RRGGBB` (or `RRGGBB`) into a [Color]. Returns null on bad input.
+Color? _parseHexColor(String? hex) {
+  if (hex == null || hex.isEmpty) return null;
+  var cleaned = hex.trim();
+  if (cleaned.startsWith('#')) cleaned = cleaned.substring(1);
+  if (cleaned.length == 6) cleaned = 'FF$cleaned';
+  if (cleaned.length != 8) return null;
+  final value = int.tryParse(cleaned, radix: 16);
+  if (value == null) return null;
+  return Color(value);
+}
+
+/// Quick-and-dirty currency formatter: USD/usd → `$12.34`, anything else
+/// returns `12.34 EUR`. Keeps the card free of intl plumbing for now.
+String _formatMoney(double amount, String currency) {
+  final upper = currency.toUpperCase();
+  final formatted = amount.toStringAsFixed(2);
+  if (upper == 'USD' || upper.isEmpty) return '\$$formatted';
+  return '$formatted $upper';
+}
 
 /// Ticket card matching the image design.
 /// Layout: Title row → Room row → Inner card → Bottom row (tag + button)
@@ -35,54 +64,62 @@ class TicketCardNew extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.themeColors;
     final isFresh = ref.watch(isFreshlyArrivedProvider(ticket.id));
-    return _FreshArrivalWrapper(
-      isFresh: isFresh,
-      baseColor: c.bgBase,
-      highlightColor: c.bgHighlight,
-      builder: (bgColor) => Semantics(
-        button: true,
-        label: '${ticket.code} ${ticket.title}',
-        child: Material(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(16),
-          clipBehavior: Clip.antiAlias,
-          child: GestureDetector(
-            onTap: onTap,
-            child: Container(
-              decoration: CardDecoration.standard(
-                colors: c,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Title row: dot + title + timer
-                    _TitleRow(ticket: ticket),
-                    const SizedBox(height: 6),
-                    // Room row: icon + room + department
-                    _RoomRow(ticket: ticket),
-                    const SizedBox(height: 12),
-                    // Inner card with avatar, details
-                    _InnerCard(ticket: ticket),
-                    const SizedBox(height: 12),
-                    // Bottom row: tag (left) + action button (right)
-                    _BottomRow(
-                      ticket: ticket,
-                      onAccept: onAccept,
-                      onStartWork: onStartWork,
-                      onMarkDone: onMarkDone,
-                    ),
-                  ],
-                ),
+
+    // Only show shimmer effect for transitioning tickets
+    final cardContent = Semantics(
+      button: true,
+      label: '${ticket.code} ${ticket.title}',
+      child: Material(
+        color: c.bgBase,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            decoration: CardDecoration.standard(
+              colors: c,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title row: dot + title + timer
+                  _TitleRow(ticket: ticket),
+                  const SizedBox(height: 6),
+                  // Room row: icon + room + department
+                  _RoomRow(ticket: ticket),
+                  const SizedBox(height: 12),
+                  // Inner card with avatar, details
+                  _InnerCard(ticket: ticket),
+                  const SizedBox(height: 12),
+                  // Bottom row: tag (left) + action button (right)
+                  _BottomRow(
+                    ticket: ticket,
+                    onAccept: onAccept,
+                    onStartWork: onStartWork,
+                    onMarkDone: onMarkDone,
+                  ),
+                ],
               ),
             ),
           ),
         ),
       ),
     );
+
+    // Apply shimmer effect only when ticket is transitioning
+    if (ticket.isTransitioning) {
+      return ShimmerWidget(
+        baseColor: c.bgBase,
+        highlightColor: c.bgHighlight,
+        child: cardContent,
+      );
+    }
+
+    return cardContent;
   }
 }
 
@@ -170,15 +207,18 @@ class _TitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final catalog = ticket.kindData is CatalogKindData
+        ? ticket.kindData as CatalogKindData
+        : null;
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Status dot
-        _StatusDot(ticket: ticket),
+        _KindDot(ticket: ticket),
         const SizedBox(width: 8),
-        // Title with item count
         Expanded(
           child: Text(
-            _buildTitle(ticket),
+            _buildTitle(context, ticket),
             style: TypographyManager.cardTitle.copyWith(
               fontWeight: FontWeight.w700,
               fontSize: 16,
@@ -188,40 +228,93 @@ class _TitleRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // Timer or Done time
-        _TimeDisplay(ticket: ticket),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _TimeDisplay(ticket: ticket),
+            if (catalog != null && catalog.grandTotal > 0) ...[
+              const SizedBox(height: 2),
+              Text(
+                _formatMoney(catalog.grandTotal, catalog.currency),
+                style: TypographyManager.bodySmall.copyWith(
+                  color: c.fgBase,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }
 
-  String _buildTitle(Ticket ticket) {
-    final itemCount = ticket.items.length;
-    if (itemCount > 1) {
-      return '${ticket.title} (x$itemCount items)';
+  String _buildTitle(BuildContext context, Ticket ticket) {
+    final s = context.l10n;
+    final data = ticket.kindData;
+    switch (ticket.kind) {
+      case TicketKind.universal:
+        if (data is UniversalKindData) {
+          final lang = Localizations.localeOf(context).languageCode;
+          final name = data.resolveName(lang);
+          if (data.itemCount > 1) {
+            return s.incomingUniversalTitleWithCount(name, data.itemCount);
+          }
+          return name;
+        }
+        return ticket.title;
+      case TicketKind.catalog:
+        if (data is CatalogKindData) {
+          final name = data.catalogName.isNotEmpty
+              ? data.catalogName
+              : ticket.title;
+          if (data.itemCount > 0) {
+            return s.incomingCatalogTitleWithCount(name, data.itemCount);
+          }
+          return name;
+        }
+        return ticket.title;
+      case TicketKind.manual:
+        return ticket.title;
     }
-    return ticket.title;
   }
 }
 
-class _StatusDot extends StatelessWidget {
+class _KindDot extends StatelessWidget {
   final Ticket ticket;
-  const _StatusDot({required this.ticket});
+  const _KindDot({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(color: _getDotColor(c), shape: BoxShape.circle),
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: _resolveColor(c),
+          shape: BoxShape.circle,
+        ),
+      ),
     );
   }
 
-  Color _getDotColor(AppColors c) {
-    if (ticket.department == Department.housekeeping) return c.tagPurpleIcon;
-    if (ticket.department == Department.roomService) return c.tagBlueIcon;
-    if (ticket.department == Department.maintenance) return c.fgMuted;
-    return c.tagPurpleIcon;
+  Color _resolveColor(AppColors c) {
+    switch (ticket.kind) {
+      case TicketKind.manual:
+        return c.fgMuted;
+      case TicketKind.universal:
+        return c.tagPurpleIcon;
+      case TicketKind.catalog:
+        if (ticket.kindData is CatalogKindData) {
+          final brand = _parseHexColor(
+            (ticket.kindData as CatalogKindData).brandColorHex,
+          );
+          if (brand != null) return brand;
+        }
+        return c.tagPurpleIcon;
+    }
   }
 }
 
@@ -323,13 +416,12 @@ class _RoomRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final s = context.l10n;
     return Row(
       children: [
         Icon(LucideIcons.doorOpen, size: 14, color: c.fgMuted),
         const SizedBox(width: 4),
         Text(
-          'Room ${ticket.room.number} · ${ticket.department.label(s)}',
+          '${ticket.room.number} · ${_departmentLabel(context, ticket)}',
           style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
         ),
       ],
@@ -337,14 +429,34 @@ class _RoomRow extends StatelessWidget {
   }
 }
 
+/// Shows a kind-specific preview block. Returns `SizedBox.shrink()` for
+/// manual tickets — the mock has no inner block for those.
 class _InnerCard extends StatelessWidget {
   final Ticket ticket;
   const _InnerCard({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
-    final c = context.themeColors;
+    final data = ticket.kindData;
+    if (data is UniversalKindData) {
+      return _UniversalInnerBlock(ticket: ticket, data: data);
+    }
+    if (data is CatalogKindData) {
+      return _CatalogInnerBlock(ticket: ticket, data: data);
+    }
+    return const SizedBox.shrink();
+  }
+}
 
+class _UniversalInnerBlock extends StatelessWidget {
+  final Ticket ticket;
+  final UniversalKindData data;
+  const _UniversalInnerBlock({required this.ticket, required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -354,55 +466,215 @@ class _InnerCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar stack (for multiple items)
-          _AvatarStack(ticket: ticket),
+          _RoundThumbnail(
+            imageUrl: data.thumbnailUrl,
+            emoji: data.emoji ?? '•',
+            size: 40,
+          ),
           const SizedBox(width: 12),
-          // Details column
-          Expanded(child: _InnerCardContent(ticket: ticket)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        s.incomingUniversalRequestLabel,
+                        style: TypographyManager.bodyMedium.copyWith(
+                          color: c.fgBase,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      s.incomingItemsCount(data.itemCount),
+                      style: TypographyManager.bodySmall.copyWith(
+                        color: c.fgMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _departmentLabel(context, ticket),
+                  style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _AvatarStack extends StatelessWidget {
+class _CatalogInnerBlock extends StatelessWidget {
   final Ticket ticket;
-  const _AvatarStack({required this.ticket});
+  final CatalogKindData data;
+  const _CatalogInnerBlock({required this.ticket, required this.data});
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final items = ticket.items;
+    final s = context.l10n;
+    final totalLine = data.grandTotal > 0
+        ? s.incomingItemsAndTotal(
+            data.itemCount,
+            _formatMoney(data.grandTotal, data.currency),
+          )
+        : s.incomingItemsCount(data.itemCount);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: c.bgSubtle,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _StackedThumbnails(
+            imageUrls: data.itemThumbnails,
+            fallbackEmoji: '🍽️',
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        data.catalogName,
+                        style: TypographyManager.bodyMedium.copyWith(
+                          color: c.fgBase,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      totalLine,
+                      style: TypographyManager.bodySmall.copyWith(
+                        color: c.fgMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                if (data.itemNames.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    data.itemNames.join(', '),
+                    style: TypographyManager.bodySmall.copyWith(
+                      color: c.fgMuted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-    if (items.isEmpty) {
-      return _buildFallbackAvatar(c);
+class _RoundThumbnail extends StatelessWidget {
+  final String? imageUrl;
+  final String emoji;
+  final double size;
+  const _RoundThumbnail({
+    required this.imageUrl,
+    required this.emoji,
+    this.size = 40,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final placeholder = Center(
+      child: Text(emoji, style: TextStyle(fontSize: size * 0.5)),
+    );
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        shape: BoxShape.circle,
+        border: Border.all(color: c.borderBase),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: (imageUrl != null && imageUrl!.isNotEmpty)
+          ? Image.network(
+              imageUrl!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => placeholder,
+            )
+          : placeholder,
+    );
+  }
+}
+
+class _StackedThumbnails extends StatelessWidget {
+  final List<String> imageUrls;
+  final String fallbackEmoji;
+  const _StackedThumbnails({
+    required this.imageUrls,
+    required this.fallbackEmoji,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final visible = imageUrls.take(3).toList();
+    if (visible.isEmpty) {
+      return _RoundThumbnail(
+        imageUrl: null,
+        emoji: fallbackEmoji,
+      );
     }
-
-    if (items.length == 1) {
-      return _buildAvatar(c, items.first.emoji);
-    }
-
-    // Multiple items - show overlapping avatars
+    const tileSize = 36.0;
+    const overlap = 16.0;
+    final width = tileSize + (visible.length - 1) * overlap;
     return SizedBox(
-      width: 52,
-      height: 40,
+      width: width,
+      height: tileSize,
       child: Stack(
         children: [
-          for (var i = 0; i < items.length && i < 3; i++)
+          for (var i = 0; i < visible.length; i++)
             Positioned(
-              left: i * 16.0,
+              left: i * overlap,
               child: Container(
-                width: 36,
-                height: 36,
+                width: tileSize,
+                height: tileSize,
                 decoration: BoxDecoration(
                   color: c.bgBase,
                   shape: BoxShape.circle,
                   border: Border.all(color: c.borderBase, width: 2),
                 ),
-                child: ClipOval(
-                  child: Center(
+                clipBehavior: Clip.antiAlias,
+                child: Image.network(
+                  visible[i],
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Center(
                     child: Text(
-                      items[i].emoji ?? '•',
+                      fallbackEmoji,
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),
@@ -412,136 +684,6 @@ class _AvatarStack extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Widget _buildAvatar(AppColors c, String? emoji) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        shape: BoxShape.circle,
-        border: Border.all(color: c.borderBase),
-      ),
-      child: ClipOval(
-        child: emoji != null
-            ? Center(child: Text(emoji, style: const TextStyle(fontSize: 20)))
-            : Center(
-                child: Icon(LucideIcons.package, size: 18, color: c.fgMuted),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildFallbackAvatar(AppColors c) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        shape: BoxShape.circle,
-        border: Border.all(color: c.borderBase),
-      ),
-      child: ClipOval(
-        child: Center(
-          child: Icon(LucideIcons.package, size: 18, color: c.fgMuted),
-        ),
-      ),
-    );
-  }
-}
-
-class _InnerCardContent extends StatelessWidget {
-  final Ticket ticket;
-  const _InnerCardContent({required this.ticket});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    final items = ticket.items;
-
-    // Row 1: Title + item count + price
-    final title = items.isEmpty
-        ? 'Universal request'
-        : (items.length == 1 ? items.first.title : items.first.title);
-
-    final itemCountText =
-        '${items.length} ${items.length == 1 ? 'item' : 'items'}';
-    final priceText = _formatPrice(ticket);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Row 1: Title · count · price
-        Row(
-          children: [
-            Expanded(
-              child: RichText(
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  style: TypographyManager.bodyMedium.copyWith(
-                    color: c.fgBase,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  children: [
-                    TextSpan(text: title),
-                    TextSpan(
-                      text: ' · $itemCountText',
-                      style: TypographyManager.bodyMedium.copyWith(
-                        color: c.fgMuted,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (priceText.isNotEmpty) ...[
-              const SizedBox(width: 8),
-              Text(
-                priceText,
-                style: TypographyManager.bodyMedium.copyWith(
-                  color: c.fgBase,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 4),
-        // Row 2: Item names (comma separated) or department
-        Text(
-          _buildSubtitle(context, ticket),
-          style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-
-  String _formatPrice(Ticket ticket) {
-    if (ticket.kind != TicketKind.catalog) return '';
-    final total = ticket.items.fold<double>(
-      0,
-      (sum, item) => sum + (item.lineTotal),
-    );
-    if (total <= 0) return '';
-    return '\$${total.toStringAsFixed(2)}';
-  }
-
-  String _buildSubtitle(BuildContext context, Ticket ticket) {
-    final items = ticket.items;
-    if (items.isEmpty) {
-      return ticket.department.label(context.l10n);
-    }
-    if (items.length == 1) {
-      return items.first.subtitle;
-    }
-    // Multiple items - join names with comma
-    return items.map((i) => i.title).join(', ');
   }
 }
 
@@ -589,8 +731,12 @@ class _TypeTag extends StatelessWidget {
         c.tagPurpleText,
         s.ticketKindUniversal,
       ),
-      TicketKind.catalog => (c.tagBlueBg, c.tagBlueText, 'Paid'),
-      TicketKind.manual => (c.tagOrangeBg, c.tagOrangeText, s.ticketKindManual),
+      TicketKind.catalog => (c.tagBlueBg, c.tagBlueText, s.ticketKindPaid),
+      TicketKind.manual => (
+        c.bgSubtle,
+        c.fgMuted,
+        s.ticketKindManual,
+      ),
     };
 
     return Container(
@@ -660,29 +806,34 @@ class _ActionButton extends StatelessWidget {
   }
 
   Widget _buildAcceptButton(AppColors c, VoidCallback? onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: c.tagPurpleIcon,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(LucideIcons.check, size: 14, color: Colors.white),
-            const SizedBox(width: 4),
-            Text(
-              'Accept',
-              style: TypographyManager.labelSmall.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
+    return Builder(
+      builder: (context) {
+        final s = context.l10n;
+        return GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: c.tagPurpleIcon,
+              borderRadius: BorderRadius.circular(10),
             ),
-          ],
-        ),
-      ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LucideIcons.check, size: 14, color: Colors.white),
+                const SizedBox(width: 4),
+                Text(
+                  s.actionAcceptShort,
+                  style: TypographyManager.labelSmall.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

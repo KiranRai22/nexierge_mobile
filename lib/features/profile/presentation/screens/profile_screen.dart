@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/string_utils.dart';
@@ -290,7 +291,9 @@ class _ProfileBodyState extends State<_ProfileBody> {
                   ),
                   ProfileInfoRow(
                     label: s.profileFieldRole,
-                    value: widget.profile.role,
+                    value: StringUtils.formatRoleWithMapping(
+                      widget.profile.role,
+                    ),
                   ),
                 ],
               ),
@@ -315,6 +318,95 @@ class _ProfileBodyState extends State<_ProfileBody> {
                     label: s.profileFieldStatus,
                     value: _statusLabel(s, widget.profile.status),
                   ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              ProfileInfoSection(
+                title: 'Hotel Details',
+                summary: _buildHotelSummary(widget.profile),
+                rows: [
+                  if (widget.profile.hotelBusinessEmail != null &&
+                      widget.profile.hotelBusinessEmail!.isNotEmpty)
+                    ProfileInfoRow(
+                      label: 'Business Email',
+                      value: widget.profile.hotelBusinessEmail!,
+                    ),
+                  if (widget.profile.hotelBusinessPhone != null &&
+                      widget.profile.hotelBusinessPhone!.isNotEmpty)
+                    ProfileInfoRow(
+                      label: 'Business Phone',
+                      value: widget.profile.hotelBusinessPhone!,
+                    ),
+                  if (widget.profile.hotelWebsite != null &&
+                      widget.profile.hotelWebsite!.isNotEmpty)
+                    ProfileInfoRow(
+                      label: 'Website',
+                      value: widget.profile.hotelWebsite!,
+                    ),
+                  if (widget.profile.hotelAddress != null &&
+                      widget.profile.hotelAddress!.isNotEmpty)
+                    ProfileInfoRow(
+                      label: 'Address',
+                      value: widget.profile.hotelAddress!,
+                    ),
+                  if (widget.profile.hotelTimezone != null &&
+                      widget.profile.hotelTimezone!.isNotEmpty)
+                    ProfileInfoRow(
+                      label: 'Timezone',
+                      value: widget.profile.hotelTimezone!,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              ProfileInfoSection(
+                title: 'Subscription',
+                summary: _buildSubscriptionSummary(widget.profile),
+                rows: [
+                  ProfileInfoRow(
+                    label: 'Plan',
+                    value: widget.profile.subscriptionPlan ?? 'Not available',
+                  ),
+                  ProfileInfoRow(
+                    label: 'Status',
+                    value: widget.profile.subscriptionActive ?? false
+                        ? 'Active'
+                        : 'Inactive',
+                  ),
+                  if (widget.profile.subscriptionStartDate != null)
+                    ProfileInfoRow(
+                      label: 'Start Date',
+                      value: _formatDate(widget.profile.subscriptionStartDate!),
+                    ),
+                  if (widget.profile.subscriptionEndDate != null)
+                    ProfileInfoRow(
+                      label: 'End Date',
+                      value: _formatDate(widget.profile.subscriptionEndDate!),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              ProfileInfoSection(
+                title: 'System Access',
+                summary: _buildAccessSummary(widget.profile),
+                rows: [
+                  ProfileInfoRow(
+                    label: 'Login Method',
+                    value: widget.profile.authMethod ?? 'Password',
+                  ),
+                  ProfileInfoRow(
+                    label: 'Interface Access',
+                    value: widget.profile.interfaceAccess ?? 'Web',
+                  ),
+                  if (widget.profile.hubAccess.isNotEmpty)
+                    ProfileInfoRow(
+                      label: 'Hub Access',
+                      value: widget.profile.hubAccess.join(', '),
+                    ),
+                  if (widget.profile.lastLoginAt != null)
+                    ProfileInfoRow(
+                      label: 'Last Login',
+                      value: _formatDate(widget.profile.lastLoginAt!),
+                    ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -366,6 +458,51 @@ class _ProfileBodyState extends State<_ProfileBody> {
     }
 
     return summaryParts.join(', ');
+  }
+
+  String _buildHotelSummary(UserProfile profile) {
+    final parts = <String>[];
+
+    if (profile.hotelBusinessEmail != null &&
+        profile.hotelBusinessEmail!.isNotEmpty) {
+      parts.add('Email: ${profile.hotelBusinessEmail}');
+    }
+    if (profile.hotelBusinessPhone != null &&
+        profile.hotelBusinessPhone!.isNotEmpty) {
+      parts.add('Phone: ${profile.hotelBusinessPhone}');
+    }
+    if (profile.hotelTimezone != null && profile.hotelTimezone!.isNotEmpty) {
+      parts.add('Timezone: ${profile.hotelTimezone}');
+    }
+
+    return parts.isNotEmpty ? parts.join(', ') : 'Hotel details available';
+  }
+
+  String _buildSubscriptionSummary(UserProfile profile) {
+    final plan = profile.subscriptionPlan ?? 'No plan';
+    final status = profile.subscriptionActive ?? false ? 'Active' : 'Inactive';
+    return 'Plan: $plan, Status: $status';
+  }
+
+  String _buildAccessSummary(UserProfile profile) {
+    final parts = <String>[];
+
+    if (profile.authMethod != null) {
+      parts.add('Auth: ${profile.authMethod}');
+    }
+    if (profile.interfaceAccess != null) {
+      parts.add('Interface: ${profile.interfaceAccess}');
+    }
+    if (profile.hubAccess.isNotEmpty) {
+      parts.add('Hubs: ${profile.hubAccess.length}');
+    }
+
+    return parts.isNotEmpty ? parts.join(', ') : 'Standard access';
+  }
+
+  String _formatDate(int timestamp) {
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }
 

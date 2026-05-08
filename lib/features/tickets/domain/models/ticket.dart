@@ -3,14 +3,7 @@ import 'department.dart';
 /// Lifecycle of a ticket. Backend statuses (NEW, ACCEPTED, IN_PROGRESS,
 /// ON_HOLD, DONE, CANCELED, EXPIRED) map to these enum values. EXPIRED
 /// folds into [canceled] for now until a dedicated UI is added.
-enum TicketStatus {
-  incoming,
-  accepted,
-  inProgress,
-  onHold,
-  done,
-  canceled,
-}
+enum TicketStatus { incoming, accepted, inProgress, onHold, done, canceled }
 
 /// What category of ticket this is. Drives the chip colour on the card.
 enum TicketKind { universal, catalog, manual }
@@ -84,6 +77,72 @@ class Guest {
   const Guest({required this.id, required this.displayName, this.statusLine});
 }
 
+/// Per-kind data carried alongside a [Ticket]. Exactly one subtype is
+/// populated for any given ticket; pick by [Ticket.kind].
+sealed class TicketKindData {
+  const TicketKindData();
+}
+
+class UniversalKindData extends TicketKindData {
+  /// Fallback display name (typically the `item` field). Use [resolveName]
+  /// to pick the locale-appropriate value.
+  final String displayName;
+  final String? thumbnailUrl;
+  final String? emoji;
+  final int itemCount;
+
+  /// Localized name map — `{ "en": "Pillows", "es": "Almohadas" }`. Empty
+  /// when the backend didn't ship a preset.
+  final Map<String, String> nameI18n;
+
+  const UniversalKindData({
+    required this.displayName,
+    this.thumbnailUrl,
+    this.emoji,
+    required this.itemCount,
+    this.nameI18n = const {},
+  });
+
+  /// Picks the best display name for [languageCode] — exact match, then
+  /// `en`, then [displayName].
+  String resolveName(String languageCode) {
+    final exact = nameI18n[languageCode];
+    if (exact != null && exact.isNotEmpty) return exact;
+    final en = nameI18n['en'];
+    if (en != null && en.isNotEmpty) return en;
+    return displayName;
+  }
+}
+
+class CatalogKindData extends TicketKindData {
+  final String catalogName;
+  final String? logoUrl;
+  final String? brandColorHex;
+  final double grandTotal;
+  final String currency;
+  final int itemCount;
+  final List<String> itemThumbnails;
+  final List<String> itemNames;
+
+  const CatalogKindData({
+    required this.catalogName,
+    this.logoUrl,
+    this.brandColorHex,
+    required this.grandTotal,
+    required this.currency,
+    required this.itemCount,
+    required this.itemThumbnails,
+    required this.itemNames,
+  });
+}
+
+class ManualKindData extends TicketKindData {
+  final String summary;
+  final String details;
+
+  const ManualKindData({required this.summary, required this.details});
+}
+
 /// Domain ticket model. Immutable; mutations go through the repository.
 class Ticket {
   final String id; // internal id (e.g. t1)
@@ -92,6 +151,9 @@ class Ticket {
   final TicketKind kind;
   final TicketStatus status;
   final Department department;
+  final String? departmentName;
+  final String? departmentEmoji;
+  final String? departmentIconUrl;
   final Room room;
   final Guest? guest;
   final List<RequestItem> items;
@@ -99,6 +161,8 @@ class Ticket {
   final String? assigneeName;
   final TicketPriority priority;
   final TicketSource? source;
+  final bool isTransitioning;
+  final TicketKindData? kindData;
 
   /// Source-of-truth timestamps. UI computes "X minutes ago" from them.
   final DateTime createdAt;
@@ -120,6 +184,9 @@ class Ticket {
     required this.room,
     required this.items,
     required this.createdAt,
+    this.departmentName,
+    this.departmentEmoji,
+    this.departmentIconUrl,
     this.guest,
     this.note,
     this.assigneeName,
@@ -129,6 +196,8 @@ class Ticket {
     this.workStartedAt,
     this.priority = TicketPriority.p2,
     this.source,
+    this.isTransitioning = false,
+    this.kindData,
   });
 
   bool get isOverdue {
@@ -142,6 +211,9 @@ class Ticket {
   Ticket copyWith({
     TicketStatus? status,
     Department? department,
+    String? departmentName,
+    String? departmentEmoji,
+    String? departmentIconUrl,
     String? note,
     String? assigneeName,
     DateTime? acceptedAt,
@@ -150,6 +222,8 @@ class Ticket {
     DateTime? workStartedAt,
     TicketPriority? priority,
     TicketSource? source,
+    bool? isTransitioning,
+    TicketKindData? kindData,
   }) {
     return Ticket(
       id: id,
@@ -158,6 +232,9 @@ class Ticket {
       kind: kind,
       status: status ?? this.status,
       department: department ?? this.department,
+      departmentName: departmentName ?? this.departmentName,
+      departmentEmoji: departmentEmoji ?? this.departmentEmoji,
+      departmentIconUrl: departmentIconUrl ?? this.departmentIconUrl,
       room: room,
       guest: guest,
       items: items,
@@ -170,6 +247,8 @@ class Ticket {
       workStartedAt: workStartedAt ?? this.workStartedAt,
       priority: priority ?? this.priority,
       source: source ?? this.source,
+      isTransitioning: isTransitioning ?? this.isTransitioning,
+      kindData: kindData ?? this.kindData,
     );
   }
 }

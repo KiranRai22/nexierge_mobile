@@ -9,7 +9,8 @@ import '../../domain/entities/service_catalog.dart';
 import '../../domain/entities/ticket_detail.dart';
 import '../../domain/entities/ticket_form_options.dart';
 
-/// Page of tickets returned by the paginated `/tickets/get/all` endpoint.
+/// Page of tickets returned by the paginated `/tickets/get_my_tickets`
+/// endpoint.
 class TicketsPageResult {
   final List<MyTicket> items;
   final int curPage;
@@ -43,13 +44,19 @@ abstract class TicketRepository {
   Future<TicketDetail> fetchTicketDetails({required String ticketId});
   Future<List<MyTicket>> fetchMyTickets({required String hotelId});
 
-  /// Paginated tickets for the new tab-driven UX. Filters by [statuses]
-  /// (server-side `status[]`); pages of [perPage] starting at [page].
+  /// Paginated tickets for the tab-driven UX, sourced from
+  /// `/tickets/get_my_tickets`. Filters by [statuses] (server-side
+  /// `status[]`); pages of [perPage] starting at [page].
   Future<TicketsPageResult> fetchTicketsPage({
     required String hotelId,
     required List<String> statuses,
     required int page,
     required int perPage,
+    // NEW FILTERING PARAMETERS
+    String? departmentId,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+    String? ticketType,
   });
   Future<TicketFormOptions> fetchTicketFormOptions({required String hotelId});
 
@@ -64,6 +71,7 @@ abstract class TicketRepository {
     String? contactId,
     String? source,
     bool createdByAi = false,
+    String type = 'MANUAL',
   });
 
   /// Sets a ticket's status explicitly. Allowed [newStatus] values:
@@ -90,6 +98,20 @@ abstract class TicketRepository {
   Future<void> markDoneWithNote({
     required String ticketId,
     String? resolutionNote,
+  });
+
+  /// Accepts a ticket with due time and optional notes
+  Future<void> acknowledgeTicket({
+    required String ticketId,
+    required int dueAt,
+    String? notes,
+  });
+
+  /// Accepts and starts a ticket with due time and optional notes
+  Future<void> acknowledgeAndStartTicket({
+    required String ticketId,
+    required int dueAt,
+    String? notes,
   });
 
   /// Submits a catalog (paid) order via
@@ -134,13 +156,21 @@ class _TicketRepositoryImpl implements TicketRepository {
     required List<String> statuses,
     required int page,
     required int perPage,
+    String? departmentId,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+    String? ticketType,
   }) async {
     try {
-      final dto = await _remote.getAllTickets(
+      final dto = await _remote.getMyTicketsPage(
         hotelId: hotelId,
         statuses: statuses,
         page: page,
         perPage: perPage,
+        departmentId: departmentId,
+        createdAtStartDate: createdAtStartDate,
+        createdAtEndDate: createdAtEndDate,
+        ticketType: ticketType,
       );
       final names = <String, String>{};
       final items = dto.items
@@ -154,6 +184,10 @@ class _TicketRepositoryImpl implements TicketRepository {
                 (dept?['department_id'] as String?) ??
                 '';
             final deptName = (dept?['name'] as String?) ?? '';
+            final deptCode = (dept?['code'] as String?) ?? '';
+            final deptMobileIcon = (dept?['mobile_icon'] as String?) ?? '';
+            final deptIcon = dept?['icon'] as Map?;
+            final deptIconUrl = (deptIcon?['url'] as String?) ?? '';
             if (deptId.isNotEmpty && deptName.isNotEmpty) {
               names[d.id] = deptName;
             }
@@ -168,16 +202,58 @@ class _TicketRepositoryImpl implements TicketRepository {
                         (roomData['onb_room_type_id'] as String?) ?? '',
                   )
                 : null;
+            final universalItems = d.universalDetails
+                .map(
+                  (u) => UniversalTicketItem(
+                    id: u.id,
+                    item: u.item,
+                    emoji: u.emoji,
+                    thumbnailUrl: u.thumbnailUrl,
+                    nameI18n: u.nameI18n,
+                  ),
+                )
+                .toList(growable: false);
+            final catalogDetails = d.catalogDetails == null
+                ? null
+                : CatalogTicketDetails(
+                    catalogName: d.catalogDetails!.catalogName,
+                    logoUrl: d.catalogDetails!.logoUrl,
+                    brandColorHex: d.catalogDetails!.brandColorHex,
+                    grandTotal: d.catalogDetails!.grandTotal,
+                    currency: d.catalogDetails!.currency,
+                    items: d.catalogDetails!.items
+                        .map(
+                          (i) => CatalogTicketItem(
+                            itemName: i.itemName,
+                            imageUrl: i.imageUrl,
+                          ),
+                        )
+                        .toList(growable: false),
+                  );
+            final manualDetails = d.manualDetails == null
+                ? null
+                : ManualTicketDetails(
+                    summary: d.manualDetails!.summary,
+                    details: d.manualDetails!.details,
+                  );
             return MyTicket(
               id: d.id,
               createdAt: d.createdAt,
+              updatedAt: d.updatedAt,
               lastTransitionAt: d.lastTransitionAt,
+              slaBreached: d.slaBreached,
               hotelId: d.hotelId,
               departmentId: deptId,
+              departmentName: deptName.isEmpty ? null : deptName,
+              departmentMobileIcon:
+                  deptMobileIcon.isEmpty ? null : deptMobileIcon,
+              departmentIconUrl: deptIconUrl.isEmpty ? null : deptIconUrl,
+              departmentCode: deptCode.isEmpty ? null : deptCode,
               assignedToUserId: d.assignedToUserId,
               createdByUserId: d.createdByUserId,
               createdByAi: d.createdByAi,
               type: d.type,
+              ticketType: d.ticketType,
               status: d.status,
               dueAt: d.dueAt,
               category: d.category,
@@ -195,6 +271,10 @@ class _TicketRepositoryImpl implements TicketRepository {
               confirmedAt: d.confirmedAt,
               closedAt: d.closedAt is String ? d.closedAt as String : null,
               roomDetails: roomDetails,
+              isTransitioning: false,
+              universalItems: universalItems,
+              catalogDetails: catalogDetails,
+              manualDetails: manualDetails,
             );
           })
           .toList(growable: false);
@@ -303,6 +383,7 @@ class _TicketRepositoryImpl implements TicketRepository {
     String? contactId,
     String? source,
     bool createdByAi = false,
+    String type = 'MANUAL',
   }) async {
     try {
       final dto = await _remote.createManualTicket(
@@ -315,6 +396,7 @@ class _TicketRepositoryImpl implements TicketRepository {
           contactId: contactId,
           source: source,
           createdByAi: createdByAi,
+          type: type,
         ),
       );
       return dto.ticketId ?? '';
@@ -403,6 +485,44 @@ class _TicketRepositoryImpl implements TicketRepository {
       await _remote.markDoneWithNote(
         ticketId: ticketId,
         resolutionNote: resolutionNote,
+      );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> acknowledgeTicket({
+    required String ticketId,
+    required int dueAt,
+    String? notes,
+  }) async {
+    try {
+      await _remote.acknowledgeTicket(
+        ticketId: ticketId,
+        dueAt: dueAt,
+        notes: notes,
+      );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> acknowledgeAndStartTicket({
+    required String ticketId,
+    required int dueAt,
+    String? notes,
+  }) async {
+    try {
+      await _remote.acknowledgeAndStartTicket(
+        ticketId: ticketId,
+        dueAt: dueAt,
+        notes: notes,
       );
     } on DioException catch (e) {
       throw mapDioError(e);

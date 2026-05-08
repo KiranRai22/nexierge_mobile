@@ -29,10 +29,27 @@ class TicketsPagedSpec {
   /// Items per page on this tab. Mobile default is 10.
   final int perPage;
 
+  // NEW SERVER-SIDE FILTERING PARAMETERS
+  /// Server-side department filter.
+  final String? departmentId;
+
+  /// Server-side created_at start date filter (epoch ms).
+  final int? createdAtStartDate;
+
+  /// Server-side created_at end date filter (epoch ms).
+  final int? createdAtEndDate;
+
+  /// Server-side ticket_type filter.
+  final String? ticketType;
+
   const TicketsPagedSpec({
     required this.statuses,
     this.localPredicate,
     this.perPage = 10,
+    this.departmentId,
+    this.createdAtStartDate,
+    this.createdAtEndDate,
+    this.ticketType,
   });
 }
 
@@ -134,6 +151,10 @@ class TicketsPagedNotifier
       statuses: _spec.statuses,
       page: page,
       perPage: _spec.perPage,
+      departmentId: _spec.departmentId,
+      createdAtStartDate: _spec.createdAtStartDate,
+      createdAtEndDate: _spec.createdAtEndDate,
+      ticketType: _spec.ticketType,
     );
     final filtered = _spec.localPredicate == null
         ? res.items
@@ -223,19 +244,29 @@ class TicketsPagedNotifier
     if (!matches) {
       if (existingIndex < 0) return;
       final next = [...current.items]..removeAt(existingIndex);
-      state = AsyncData(current.copyWith(items: next));
+      // Decrease itemsTotal since ticket no longer matches this tab's filter
+      final newTotal = (current.itemsTotal > 0)
+          ? current.itemsTotal - 1
+          : current.itemsTotal - 1;
+      state = AsyncData(current.copyWith(items: next, itemsTotal: newTotal));
       return;
     }
 
     final isBrandNew = existingIndex < 0;
     List<MyTicket> nextItems;
+    int newItemsTotal = current.itemsTotal;
+
     if (isBrandNew) {
       nextItems = current.sortOrder == TicketsSortOrder.newestFirst
           ? [ticket, ...current.items]
           : [...current.items, ticket];
+      // Increase itemsTotal since this is a new ticket for this tab
+      newItemsTotal = current.itemsTotal + 1;
     } else {
       nextItems = [...current.items];
-      nextItems[existingIndex] = ticket;
+      // Ensure transitioning state is cleared when socket confirmation arrives
+      final updatedTicket = ticket.copyWith(isTransitioning: false);
+      nextItems[existingIndex] = updatedTicket;
       nextItems = _sort(nextItems, current.sortOrder);
     }
 
@@ -244,7 +275,11 @@ class TicketsPagedNotifier
         : current.freshlyArrivedIds;
 
     state = AsyncData(
-      current.copyWith(items: nextItems, freshlyArrivedIds: nextFresh),
+      current.copyWith(
+        items: nextItems,
+        freshlyArrivedIds: nextFresh,
+        itemsTotal: newItemsTotal,
+      ),
     );
 
     if (isBrandNew) _scheduleFreshClear(ticket.id);
@@ -256,13 +291,21 @@ class TicketsPagedNotifier
     final current = state.valueOrNull;
     if (current == null) return;
     if (!current.items.any((t) => t.id == ticketId)) return;
+
     final nextFresh = current.freshlyArrivedIds.contains(ticketId)
         ? ({...current.freshlyArrivedIds}..remove(ticketId))
         : current.freshlyArrivedIds;
+
+    // Decrease itemsTotal since ticket was deleted
+    final newTotal = (current.itemsTotal > 0)
+        ? current.itemsTotal - 1
+        : current.itemsTotal - 1;
+
     state = AsyncData(
       current.copyWith(
         items: current.items.where((t) => t.id != ticketId).toList(),
         freshlyArrivedIds: nextFresh,
+        itemsTotal: newTotal,
       ),
     );
   }
@@ -312,6 +355,68 @@ class TicketsPagedNotifier
       }
     });
   }
+
+  /// Mark a ticket as transitioning (for shimmer effect)
+  void markTicketTransitioning(String ticketId) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    final index = current.items.indexWhere((t) => t.id == ticketId);
+    if (index < 0) return;
+
+    final updatedTicket = current.items[index].copyWith(isTransitioning: true);
+    final updatedItems = [...current.items];
+    updatedItems[index] = updatedTicket;
+
+    state = AsyncData(current.copyWith(items: updatedItems));
+  }
+
+  /// Update ticket status immediately (optimistic update)
+  void updateTicketStatusImmediate(String ticketId, String newStatus) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    final index = current.items.indexWhere((t) => t.id == ticketId);
+    if (index < 0) return;
+
+    final ticket = current.items[index];
+    final updatedTicket = ticket.copyWith(
+      status: newStatus,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+      lastTransitionAt: DateTime.now().millisecondsSinceEpoch,
+      isTransitioning: true, // Keep shimmer effect until socket confirmation
+    );
+
+    // Check if ticket still matches this tab's filter
+    final matchesFilter = _matchesFilter(updatedTicket);
+
+    if (!matchesFilter) {
+      // Ticket no longer belongs to this tab, remove it and update count
+      final nextItems = [...current.items]..removeAt(index);
+      final newTotal = (current.itemsTotal > 0)
+          ? current.itemsTotal - 1
+          : current.itemsTotal - 1;
+      state = AsyncData(
+        current.copyWith(items: nextItems, itemsTotal: newTotal),
+      );
+    } else {
+      // Update ticket in place
+      final updatedItems = [...current.items];
+      updatedItems[index] = updatedTicket;
+      state = AsyncData(current.copyWith(items: updatedItems));
+    }
+  }
+
+  /// Update tab count immediately when ticket moves between tabs
+  void updateTabCountImmediate({required int delta}) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    final newTotal = (current.itemsTotal + delta)
+        .clamp(0, double.infinity)
+        .toInt();
+    state = AsyncData(current.copyWith(itemsTotal: newTotal));
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -325,16 +430,37 @@ bool _isToday(int epochMs) {
   return dt.year == now.year && dt.month == now.month && dt.day == now.day;
 }
 
+/// Helper to get today's date range in epoch milliseconds for server-side filtering
+(int start, int end) _todayDateRange() {
+  final now = DateTime.now();
+  final startOfDay = DateTime(now.year, now.month, now.day, 0, 0, 0);
+  final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+  return (startOfDay.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch);
+}
+
 const _kIncomingSpec = TicketsPagedSpec(statuses: ['NEW']);
 
-final TicketsPagedSpec _kTodaySpec = TicketsPagedSpec(
-  statuses: const ['ACCEPTED', 'IN_PROGRESS'],
-  localPredicate: (t) {
-    // Today = created today AND last transition today.
-    return _isToday(t.createdAt) &&
-        _isToday(t.lastTransitionAt > 0 ? t.lastTransitionAt : t.createdAt);
-  },
-);
+// Cache the today spec to avoid infinite rebuilds
+TicketsPagedSpec? _cachedTodaySpec;
+DateTime? _lastSpecDate;
+
+TicketsPagedSpec _kTodaySpec() {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+
+  // Only recalculate if the date has changed
+  if (_lastSpecDate == null || _lastSpecDate!.isBefore(today)) {
+    final (start, end) = _todayDateRange();
+    _cachedTodaySpec = TicketsPagedSpec(
+      statuses: const ['ACCEPTED', 'IN_PROGRESS'],
+      createdAtStartDate: start,
+      createdAtEndDate: end,
+    );
+    _lastSpecDate = today;
+  }
+
+  return _cachedTodaySpec!;
+}
 
 const _kDoneSpec = TicketsPagedSpec(statuses: ['DONE']);
 
@@ -353,7 +479,7 @@ TicketsPagedSpec specForTab(TicketsTab tab) {
     case TicketsTab.incoming:
       return _kIncomingSpec;
     case TicketsTab.today:
-      return _kTodaySpec;
+      return _kTodaySpec();
     case TicketsTab.done:
       return _kDoneSpec;
   }

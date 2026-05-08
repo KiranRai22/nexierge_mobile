@@ -9,12 +9,20 @@ abstract class TicketRemoteDataSource {
   Future<TicketDetailDto> getTicketDetails({required String ticketId});
   Future<List<MyTicketDto>> getMyTickets({required String hotelId});
 
-  /// GET /tickets/get/all — paginated list filtered by status[].
-  Future<TicketsPageDto> getAllTickets({
+  /// GET /tickets/get_my_tickets — paginated list filtered by status[].
+  ///
+  /// Server response shape matches [TicketsPageDto]
+  /// (`curPage`/`nextPage`/`itemsTotal`/`items`).
+  Future<TicketsPageDto> getMyTicketsPage({
     required String hotelId,
     required List<String> statuses,
     required int page,
     required int perPage,
+    // NEW FILTERING PARAMETERS
+    String? departmentId,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+    String? ticketType,
   });
   Future<TicketFormOptionsDto> getDepartmentsAndRooms({
     required String hotelId,
@@ -45,10 +53,24 @@ abstract class TicketRemoteDataSource {
 
   /// Marks ticket DONE, optionally with a resolution note. Currently routes
   /// the status change through [changeTicketStatus] — the note parameter
-  /// is preserved in the signature but not yet wired to the backend.
+  /// is sent as `resolution_notes`.
   Future<void> markDoneWithNote({
     required String ticketId,
     String? resolutionNote,
+  });
+
+  /// POST /tickets/acknowledge/{id} — accepts a ticket with optional due time and notes
+  Future<void> acknowledgeTicket({
+    required String ticketId,
+    required int dueAt,
+    String? notes,
+  });
+
+  /// POST /tickets/acknowledge_and_start/{id} — accepts and starts a ticket with optional due time and notes
+  Future<void> acknowledgeAndStartTicket({
+    required String ticketId,
+    required int dueAt,
+    String? notes,
   });
 
   /// Get all service catalogs for a hotel
@@ -96,9 +118,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required CreateCatalogOrderRequestDto request,
   }) async {
     final payload = request.toJson();
-    debugPrint(
-      '[TicketRemoteDataSource] createCatalogOrder payload: $payload',
-    );
+    debugPrint('[TicketRemoteDataSource] createCatalogOrder payload: $payload');
     final res = await _dio.post(
       APIEndpoints.serviceCatalogsCreateOrder,
       data: payload,
@@ -114,28 +134,70 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
   }
 
   @override
-  Future<TicketsPageDto> getAllTickets({
+  Future<TicketsPageDto> getMyTicketsPage({
     required String hotelId,
     required List<String> statuses,
     required int page,
     required int perPage,
+    String? departmentId,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+    String? ticketType,
   }) async {
     debugPrint(
-      '[TicketRemoteDataSource] getAllTickets hotel=$hotelId statuses=$statuses page=$page perPage=$perPage',
+      '[TicketRemoteDataSource] getMyTicketsPage hotel=$hotelId statuses=$statuses page=$page perPage=$perPage '
+      'department=$departmentId startDate=$createdAtStartDate endDate=$createdAtEndDate ticketType=$ticketType',
     );
-    final res = await _dio.get(
-      APIEndpoints.ticketsGetAll,
-      queryParameters: {
-        'hotel_id': hotelId,
-        'status[]': statuses,
-        'page': page,
-        'per_page': perPage,
-      },
-      // Xano expects repeated `status[]=A&status[]=B` (not bracketed
-      // indices). ListFormat.multi emits the key once per value as-is.
-      options: Options(listFormat: ListFormat.multi),
-    );
-    return TicketsPageDto.fromJson(res.data as Map<String, dynamic>);
+
+    final queryParameters = <String, dynamic>{
+      'hotel_id': hotelId,
+      'status[]': statuses,
+      'page': page,
+      'per_page': perPage,
+    };
+
+    // Add optional filtering parameters
+    if (departmentId != null) queryParameters['department'] = departmentId;
+    if (createdAtStartDate != null)
+      queryParameters['created_at_start_date'] = createdAtStartDate;
+    if (createdAtEndDate != null)
+      queryParameters['created_at_end_date'] = createdAtEndDate;
+    if (ticketType != null) queryParameters['ticket_type'] = ticketType;
+
+    try {
+      debugPrint(
+        '[TicketRemoteDataSource] Making API call to: ${APIEndpoints.ticketsGetMyTickets}',
+      );
+      debugPrint('[TicketRemoteDataSource] Query parameters: $queryParameters');
+
+      final res = await _dio.get(
+        APIEndpoints.ticketsGetMyTickets,
+        queryParameters: queryParameters,
+        // Xano expects repeated `status[]=A&status[]=B` (not bracketed
+        // indices). ListFormat.multi emits the key once per value as-is.
+        options: Options(listFormat: ListFormat.multi),
+      );
+
+      debugPrint(
+        '[TicketRemoteDataSource] API response received: ${res.statusCode}',
+      );
+      debugPrint('[TicketRemoteDataSource] Response data: ${res.data}');
+
+      return TicketsPageDto.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      debugPrint('[TicketRemoteDataSource] DioException: ${e.type}');
+      debugPrint('[TicketRemoteDataSource] DioException message: ${e.message}');
+      debugPrint(
+        '[TicketRemoteDataSource] DioException response: ${e.response?.data}',
+      );
+      debugPrint(
+        '[TicketRemoteDataSource] DioException status code: ${e.response?.statusCode}',
+      );
+      rethrow;
+    } catch (e) {
+      debugPrint('[TicketRemoteDataSource] Unexpected error: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -156,10 +218,14 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     print(
       '[TicketRemoteDataSource] Response data type: ${res.data.runtimeType}',
     );
-    final list = res.data as List<dynamic>;
+
+    // API returns TicketsPageDto structure, extract items array
+    final responseData = res.data as Map<String, dynamic>;
+    final items = (responseData['items'] as List<dynamic>? ?? const []);
+
     // ignore: avoid_print
-    print('[TicketRemoteDataSource] Parsed ${list.length} tickets');
-    return list
+    print('[TicketRemoteDataSource] Parsed ${items.length} tickets');
+    return items
         .map((e) => MyTicketDto.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -185,17 +251,21 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String newStatus,
     String? resolutionNote,
   }) async {
+    final note = (resolutionNote != null && resolutionNote.isNotEmpty)
+        ? resolutionNote
+        : null;
     debugPrint(
       '[TicketRemoteDataSource] changeTicketStatus: $ticketId -> $newStatus'
-      '${resolutionNote != null ? ' note=$resolutionNote' : ''}',
+      ' note=${note ?? 'null'}',
     );
+    // `resolution_notes` is always present in the body — sent as `null`
+    // when the caller has no summary to attach (e.g. reset to NEW).
     await _dio.post(
       APIEndpoints.ticketsChangeStatus(ticketId),
       data: {
         'tickets_v2_id': ticketId,
         'new_status': newStatus,
-        if (resolutionNote != null && resolutionNote.isNotEmpty)
-          'resolution_notes': resolutionNote,
+        'resolution_notes': note,
       },
     );
   }
@@ -235,6 +305,28 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
       newStatus: 'DONE',
       resolutionNote: resolutionNote,
     );
+  }
+
+  @override
+  Future<void> acknowledgeTicket({
+    required String ticketId,
+    required int dueAt,
+    String? notes,
+  }) async {
+    final url = APIEndpoints.ticketsAcknowledge(ticketId);
+    debugPrint('[TicketRemoteDataSource] acknowledgeTicket: $url');
+    await _dio.post(url, data: {'due_at': dueAt, 'notes': notes});
+  }
+
+  @override
+  Future<void> acknowledgeAndStartTicket({
+    required String ticketId,
+    required int dueAt,
+    String? notes,
+  }) async {
+    final url = APIEndpoints.ticketsAcknowledgeAndStart(ticketId);
+    debugPrint('[TicketRemoteDataSource] acknowledgeAndStartTicket: $url');
+    await _dio.post(url, data: {'due_at': dueAt, 'notes': notes});
   }
 
   @override
@@ -409,7 +501,7 @@ class MyTicketDto {
   }
 }
 
-/// Wraps the paginated `/tickets/get/all` response.
+/// Wraps the paginated `/tickets/get_my_tickets` response.
 ///
 /// `nextPage` is null when the server has no more pages — this is the
 /// signal infinite-scroll uses to stop loading.
@@ -439,10 +531,126 @@ class TicketsPageDto {
   }
 }
 
-/// DTO for items inside the `/tickets/get/all` response. Carries the
-/// richer nested fields the endpoint returns (department object, room_data,
-/// last_transition_at) so we don't have to refetch ticket detail just to
-/// render the card.
+/// One entry of `_universal_request_order_details` (the field is an array).
+/// Each entry pairs the ordered item name with the preset that defines
+/// its emoji / thumbnail / localized name.
+class UniversalRequestOrderItemDto {
+  final String id;
+  final String item;
+  final String emoji;
+  final String? thumbnailUrl;
+  final Map<String, String> nameI18n;
+
+  UniversalRequestOrderItemDto({
+    required this.id,
+    required this.item,
+    required this.emoji,
+    this.thumbnailUrl,
+    this.nameI18n = const {},
+  });
+
+  factory UniversalRequestOrderItemDto.fromJson(Map<String, dynamic> json) {
+    final active = json['_hotel_universal_request_active'] as Map?;
+    final preset = active?['_universal_request_preset'] as Map?;
+    final thumb = preset?['thumbnail_image'] as Map?;
+    final i18nRaw = preset?['name_i18n'] as Map?;
+    return UniversalRequestOrderItemDto(
+      id: (json['id'] as String?) ?? '',
+      item: (json['item'] as String?) ?? '',
+      emoji: (preset?['icon'] as String?) ?? '',
+      thumbnailUrl: thumb?['url'] as String?,
+      nameI18n: i18nRaw == null
+          ? const {}
+          : i18nRaw.map(
+              (k, v) => MapEntry(k.toString(), (v as String?) ?? ''),
+            ),
+    );
+  }
+}
+
+/// One catalog item line inside `_service_catalog_order_details.order_item_details.items`.
+class ServiceCatalogOrderItemDto {
+  final String itemName;
+  final String? imageUrl;
+
+  ServiceCatalogOrderItemDto({required this.itemName, this.imageUrl});
+
+  factory ServiceCatalogOrderItemDto.fromJson(Map<String, dynamic> json) {
+    final details = json['item_details'] as Map?;
+    final images = (details?['image'] as List?) ?? const [];
+    final firstImage = images.isNotEmpty ? images.first?.toString() : null;
+    return ServiceCatalogOrderItemDto(
+      itemName: (json['item_name'] as String?) ?? '',
+      imageUrl: (firstImage != null && firstImage.isNotEmpty)
+          ? firstImage
+          : null,
+    );
+  }
+}
+
+/// Trimmed projection of `_service_catalog_order_details` that the card
+/// actually needs. The full HTML invoice and modifier tree are dropped
+/// here on purpose — they're not used in the list view.
+class ServiceCatalogOrderDetailsDto {
+  final String catalogName;
+  final String? logoUrl;
+  final String? brandColorHex;
+  final double grandTotal;
+  final String currency;
+  final List<ServiceCatalogOrderItemDto> items;
+
+  ServiceCatalogOrderDetailsDto({
+    required this.catalogName,
+    this.logoUrl,
+    this.brandColorHex,
+    required this.grandTotal,
+    required this.currency,
+    required this.items,
+  });
+
+  factory ServiceCatalogOrderDetailsDto.fromJson(Map<String, dynamic> json) {
+    final svc = json['service_catalog_details'] as Map?;
+    final logo = svc?['logo'] as Map?;
+    final orderItem = json['order_item_details'] as Map?;
+    final itemsRaw = (orderItem?['items'] as List?) ?? const [];
+    return ServiceCatalogOrderDetailsDto(
+      catalogName: (svc?['name'] as String?) ?? '',
+      logoUrl: logo?['url'] as String?,
+      brandColorHex: svc?['brand_color'] as String?,
+      grandTotal: (json['grand_total'] as num?)?.toDouble() ?? 0,
+      currency: (json['currency'] as String?) ?? '',
+      items: itemsRaw
+          .map(
+            (e) => ServiceCatalogOrderItemDto.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+    );
+  }
+}
+
+/// `_manual_ticket_details` — the row carries the real summary/details for
+/// manual tickets here (top-level `issue_summary` / `issue_details` are
+/// often empty for manual rows).
+class ManualTicketDetailsDto {
+  final String summary;
+  final String details;
+
+  ManualTicketDetailsDto({required this.summary, required this.details});
+
+  factory ManualTicketDetailsDto.fromJson(Map<String, dynamic> json) {
+    return ManualTicketDetailsDto(
+      summary: (json['summary'] as String?) ?? '',
+      details: (json['details'] as String?) ?? '',
+    );
+  }
+}
+
+/// DTO for items inside the `/tickets/get_my_tickets` response. Carries
+/// the richer nested fields the endpoint returns (department object,
+/// room_data, last_transition_at, sla_breached) so we don't have to
+/// refetch ticket detail just to render the card.
 class AllTicketDto {
   final String id;
   final int createdAt;
@@ -470,12 +678,22 @@ class AllTicketDto {
   final String resolutionNotes;
   final int confirmedAt;
   final dynamic closedAt;
+  final bool slaBreached;
 
   /// Department block: `{ id, name, mobile_icon, ... }`.
   final Map<String, dynamic>? department;
 
   /// Room data block: `{ id, onb_room_number, ... }`.
   final Map<String, dynamic>? roomData;
+
+  /// Per-kind nested detail blocks. Exactly one of these is populated for
+  /// a given row, matching the discriminator in [ticketType]:
+  ///   - `universal_request` → [universalDetails]
+  ///   - `service_catalog`   → [catalogDetails]
+  ///   - `manual`            → [manualDetails]
+  final List<UniversalRequestOrderItemDto> universalDetails;
+  final ServiceCatalogOrderDetailsDto? catalogDetails;
+  final ManualTicketDetailsDto? manualDetails;
 
   AllTicketDto({
     required this.id,
@@ -504,14 +722,36 @@ class AllTicketDto {
     required this.resolutionNotes,
     required this.confirmedAt,
     this.closedAt,
+    this.slaBreached = false,
     this.department,
     this.roomData,
+    this.universalDetails = const [],
+    this.catalogDetails,
+    this.manualDetails,
   });
 
   factory AllTicketDto.fromJson(Map<String, dynamic> json) {
     String s(String key) => (json[key] as String?) ?? '';
     int i(String key) => (json[key] as num?)?.toInt() ?? 0;
     bool b(String key) => (json[key] as bool?) ?? false;
+
+    final universalRaw =
+        (json['_universal_request_order_details'] as List?) ?? const [];
+    final universal = universalRaw
+        .whereType<Map<String, dynamic>>()
+        .map(UniversalRequestOrderItemDto.fromJson)
+        .toList(growable: false);
+
+    final catalogRaw = json['_service_catalog_order_details'];
+    final catalog = catalogRaw is Map<String, dynamic>
+        ? ServiceCatalogOrderDetailsDto.fromJson(catalogRaw)
+        : null;
+
+    final manualRaw = json['_manual_ticket_details'];
+    final manual = manualRaw is Map<String, dynamic>
+        ? ManualTicketDetailsDto.fromJson(manualRaw)
+        : null;
+
     return AllTicketDto(
       id: s('id'),
       createdAt: i('created_at'),
@@ -539,8 +779,12 @@ class AllTicketDto {
       resolutionNotes: s('resolution_notes'),
       confirmedAt: i('confirmed_at'),
       closedAt: json['closed_at'],
+      slaBreached: b('sla_breached'),
       department: json['department'] as Map<String, dynamic>?,
       roomData: json['room_data'] as Map<String, dynamic>?,
+      universalDetails: universal,
+      catalogDetails: catalog,
+      manualDetails: manual,
     );
   }
 }
@@ -554,6 +798,7 @@ class CreateManualTicketRequestDto {
   final String? contactId;
   final String summary;
   final String details;
+  final String type;
 
   /// Origin of the ticket (e.g. whatsApp, frontDesk). Wire format: camelCase
   /// `TicketSource.name`. Omitted from the payload when null.
@@ -568,6 +813,7 @@ class CreateManualTicketRequestDto {
     this.source,
     required this.summary,
     required this.details,
+    this.type = 'MANUAL',
   });
 
   Map<String, dynamic> toJson() {
@@ -579,6 +825,7 @@ class CreateManualTicketRequestDto {
       'contact_id': contactId,
       'summary': summary,
       'details': details,
+      'type': type,
     };
     if (source != null) map['source'] = source;
     return map;
@@ -705,7 +952,7 @@ class ServiceCatalogItemDto {
       name: json['name'] as String? ?? '',
       description: json['description'] as String?,
       images:
-          (json['image'] as List<dynamic>?)
+          (json['images'] as List<dynamic>? ?? json['image'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .where((s) => s.isNotEmpty)
               .toList() ??
@@ -833,11 +1080,11 @@ class CreateOrderModifierDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'modifier_id': modifierId,
-        'modifier_name': modifierName,
-        'modifier_quantity': modifierQuantity,
-        'modifier_price': modifierPrice,
-      };
+    'modifier_id': modifierId,
+    'modifier_name': modifierName,
+    'modifier_quantity': modifierQuantity,
+    'modifier_price': modifierPrice,
+  };
 }
 
 /// Bundle of picked modifiers from a single option-group.
@@ -853,10 +1100,10 @@ class CreateOrderModifierGroupDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'modifier_group_id': modifierGroupId,
-        'modifier_group_name': modifierGroupName,
-        'modifiers': modifiers.map((m) => m.toJson()).toList(),
-      };
+    'modifier_group_id': modifierGroupId,
+    'modifier_group_name': modifierGroupName,
+    'modifiers': modifiers.map((m) => m.toJson()).toList(),
+  };
 }
 
 /// One ordered item with its picked modifier groups.
@@ -872,11 +1119,10 @@ class CreateOrderItemDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'item_id': itemId,
-        'special_instructions': specialInstructions,
-        'modifier_groups':
-            modifierGroups.map((g) => g.toJson()).toList(),
-      };
+    'item_id': itemId,
+    'special_instructions': specialInstructions,
+    'modifier_groups': modifierGroups.map((g) => g.toJson()).toList(),
+  };
 }
 
 /// Request body for `/service_catalogs/user_app/order/create`.
@@ -909,17 +1155,17 @@ class CreateCatalogOrderRequestDto {
   });
 
   Map<String, dynamic> toJson() => {
-        'hotel_id': hotelId,
-        'guest_stay_id': guestStayId,
-        'contact_id': contactId,
-        'service_catalogs_id': serviceCatalogsId,
-        'notes': notes,
-        'sub_total': subTotal,
-        'tax': tax,
-        'sla_target_minutes': slaTargetMinutes,
-        'tracking_id': trackingId,
-        'items': items.map((i) => i.toJson()).toList(),
-      };
+    'hotel_id': hotelId,
+    'guest_stay_id': guestStayId,
+    'contact_id': contactId,
+    'service_catalogs_id': serviceCatalogsId,
+    'notes': notes,
+    'sub_total': subTotal,
+    'tax': tax,
+    'sla_target_minutes': slaTargetMinutes,
+    'tracking_id': trackingId,
+    'items': items.map((i) => i.toJson()).toList(),
+  };
 }
 
 /// Response for `/service_catalogs/user_app/order/create`. The exact

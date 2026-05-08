@@ -1,14 +1,78 @@
+/// One ordered universal-request item, captured from
+/// `_universal_request_order_details[i]` in the my-tickets response.
+class UniversalTicketItem {
+  final String id;
+  final String item;
+  final String emoji;
+  final String? thumbnailUrl;
+  final Map<String, String> nameI18n;
+
+  const UniversalTicketItem({
+    required this.id,
+    required this.item,
+    required this.emoji,
+    this.thumbnailUrl,
+    this.nameI18n = const {},
+  });
+}
+
+/// One catalog item line (name + first image url) captured from
+/// `_service_catalog_order_details.order_item_details.items[i]`.
+class CatalogTicketItem {
+  final String itemName;
+  final String? imageUrl;
+
+  const CatalogTicketItem({required this.itemName, this.imageUrl});
+}
+
+/// Trimmed catalog order summary captured from
+/// `_service_catalog_order_details`. Only fields the list view needs.
+class CatalogTicketDetails {
+  final String catalogName;
+  final String? logoUrl;
+  final String? brandColorHex;
+  final double grandTotal;
+  final String currency;
+  final List<CatalogTicketItem> items;
+
+  const CatalogTicketDetails({
+    required this.catalogName,
+    this.logoUrl,
+    this.brandColorHex,
+    required this.grandTotal,
+    required this.currency,
+    required this.items,
+  });
+}
+
+/// Manual ticket payload captured from `_manual_ticket_details`. The
+/// real `summary` and `details` live here for manual tickets — the
+/// top-level `issue_summary` / `issue_details` are typically empty.
+class ManualTicketDetails {
+  final String summary;
+  final String details;
+
+  const ManualTicketDetails({required this.summary, required this.details});
+}
+
 /// Domain entity for My Ticket from get_my_tickets API.
 class MyTicket {
   final String id;
   final int createdAt;
+  final int updatedAt;
   final int lastTransitionAt;
+  final bool slaBreached;
   final String hotelId;
   final String departmentId;
+  final String? departmentName;
+  final String? departmentMobileIcon;
+  final String? departmentIconUrl;
+  final String? departmentCode;
   final String? assignedToUserId;
   final String createdByUserId;
   final bool createdByAi;
   final String type;
+  final String? ticketType;
   final String status;
   final int dueAt;
   final String category;
@@ -26,17 +90,31 @@ class MyTicket {
   final int confirmedAt;
   final String? closedAt;
   final RoomDetails? roomDetails;
+  final bool isTransitioning;
+
+  /// Per-kind detail blocks. Exactly one is populated for any given
+  /// ticket — pick by [ticketType].
+  final List<UniversalTicketItem> universalItems;
+  final CatalogTicketDetails? catalogDetails;
+  final ManualTicketDetails? manualDetails;
 
   const MyTicket({
     required this.id,
     required this.createdAt,
+    this.updatedAt = 0,
     this.lastTransitionAt = 0,
+    this.slaBreached = false,
     required this.hotelId,
     required this.departmentId,
+    this.departmentName,
+    this.departmentMobileIcon,
+    this.departmentIconUrl,
+    this.departmentCode,
     this.assignedToUserId,
     required this.createdByUserId,
     required this.createdByAi,
     required this.type,
+    this.ticketType,
     required this.status,
     required this.dueAt,
     required this.category,
@@ -54,7 +132,91 @@ class MyTicket {
     required this.confirmedAt,
     this.closedAt,
     this.roomDetails,
+    this.isTransitioning = false,
+    this.universalItems = const [],
+    this.catalogDetails,
+    this.manualDetails,
   });
+
+  MyTicket copyWith({
+    String? id,
+    int? createdAt,
+    int? updatedAt,
+    int? lastTransitionAt,
+    bool? slaBreached,
+    String? hotelId,
+    String? departmentId,
+    String? departmentName,
+    String? departmentMobileIcon,
+    String? departmentIconUrl,
+    String? departmentCode,
+    String? assignedToUserId,
+    String? createdByUserId,
+    bool? createdByAi,
+    String? type,
+    String? ticketType,
+    String? status,
+    int? dueAt,
+    String? category,
+    String? priority,
+    String? issueSummary,
+    String? issueDetails,
+    bool? isIncident,
+    String? incidentNotes,
+    String? room,
+    String? guestName,
+    String? acknowledgedByUserId,
+    int? acknowledgedAt,
+    String? resolutionCode,
+    String? resolutionNotes,
+    int? confirmedAt,
+    String? closedAt,
+    RoomDetails? roomDetails,
+    bool? isTransitioning,
+    List<UniversalTicketItem>? universalItems,
+    CatalogTicketDetails? catalogDetails,
+    ManualTicketDetails? manualDetails,
+  }) {
+    return MyTicket(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      lastTransitionAt: lastTransitionAt ?? this.lastTransitionAt,
+      slaBreached: slaBreached ?? this.slaBreached,
+      hotelId: hotelId ?? this.hotelId,
+      departmentId: departmentId ?? this.departmentId,
+      departmentName: departmentName ?? this.departmentName,
+      departmentMobileIcon: departmentMobileIcon ?? this.departmentMobileIcon,
+      departmentIconUrl: departmentIconUrl ?? this.departmentIconUrl,
+      departmentCode: departmentCode ?? this.departmentCode,
+      assignedToUserId: assignedToUserId ?? this.assignedToUserId,
+      createdByUserId: createdByUserId ?? this.createdByUserId,
+      createdByAi: createdByAi ?? this.createdByAi,
+      type: type ?? this.type,
+      ticketType: ticketType ?? this.ticketType,
+      status: status ?? this.status,
+      dueAt: dueAt ?? this.dueAt,
+      category: category ?? this.category,
+      priority: priority ?? this.priority,
+      issueSummary: issueSummary ?? this.issueSummary,
+      issueDetails: issueDetails ?? this.issueDetails,
+      isIncident: isIncident ?? this.isIncident,
+      incidentNotes: incidentNotes ?? this.incidentNotes,
+      room: room ?? this.room,
+      guestName: guestName ?? this.guestName,
+      acknowledgedByUserId: acknowledgedByUserId ?? this.acknowledgedByUserId,
+      acknowledgedAt: acknowledgedAt ?? this.acknowledgedAt,
+      resolutionCode: resolutionCode ?? this.resolutionCode,
+      resolutionNotes: resolutionNotes ?? this.resolutionNotes,
+      confirmedAt: confirmedAt ?? this.confirmedAt,
+      closedAt: closedAt ?? this.closedAt,
+      roomDetails: roomDetails ?? this.roomDetails,
+      isTransitioning: isTransitioning ?? this.isTransitioning,
+      universalItems: universalItems ?? this.universalItems,
+      catalogDetails: catalogDetails ?? this.catalogDetails,
+      manualDetails: manualDetails ?? this.manualDetails,
+    );
+  }
 
   /// Check if ticket is NEW (incoming)
   bool get isIncoming => status == 'NEW';
@@ -78,9 +240,16 @@ class MyTicket {
   /// Check if ticket is expired (server-driven, no client transition).
   bool get isExpired => status == 'EXPIRED';
 
-  /// Check if ticket is overdue (due_at is in the past and not done)
+  /// Check if ticket is overdue.
+  ///
+  /// True when either:
+  /// - the server has flagged `sla_breached`, or
+  /// - `due_at` is in the past and the ticket is not in a terminal state
+  ///   (DONE / CANCELED / EXPIRED).
   bool get isOverdue {
-    if (dueAt == 0 || isDone) return false;
+    if (isDone || isCanceled || isExpired) return false;
+    if (slaBreached) return true;
+    if (dueAt == 0) return false;
     return DateTime.fromMillisecondsSinceEpoch(dueAt).isBefore(DateTime.now());
   }
 }
@@ -113,8 +282,8 @@ class RoomDetails {
 /// Realtime events override this with [DateTime.now] at the moment the
 /// event is observed (see [MyTicketsState.statusChangedAt]).
 int defaultStatusChangedAt(MyTicket t) {
-  // The /tickets/get/all endpoint provides last_transition_at directly, so
-  // prefer it whenever it is populated.
+  // The /tickets/get_my_tickets endpoint provides last_transition_at
+  // directly, so prefer it whenever it is populated.
   if (t.lastTransitionAt > 0) return t.lastTransitionAt;
   switch (t.status.toUpperCase()) {
     case 'DONE':
@@ -197,9 +366,18 @@ class MyTicketsState {
   int get incomingCount => incoming.length;
 
   // ───────────────────────── Today (status changed today) ──────────────────
+  //
+  // "Today" buckets exclude DONE/CANCELED/EXPIRED tickets — Done has its own
+  // top-level tab and terminal-state tickets aren't part of the operator's
+  // active workload. Overdue spans both ACCEPTED and IN_PROGRESS, since a
+  // ticket can blow past its SLA before work has actually started.
 
-  /// All tickets whose latest status transition happened today.
-  List<MyTicket> get todayAll => all.where(_changedToday).toList();
+  bool _isActiveToday(MyTicket t) =>
+      (t.isAccepted || t.isInProgress) && _changedToday(t);
+
+  /// Active tickets (Accepted + In Progress) whose latest status transition
+  /// happened today. Excludes Done/Canceled/Expired.
+  List<MyTicket> get todayAll => all.where(_isActiveToday).toList();
   List<MyTicket> get todayAccepted =>
       all.where((t) => t.isAccepted && _changedToday(t)).toList();
   List<MyTicket> get todayInProgress =>
@@ -207,8 +385,16 @@ class MyTicketsState {
   List<MyTicket> get todayDone =>
       all.where((t) => t.isDone && _changedToday(t)).toList();
 
-  List<MyTicket> get todayOverdue =>
-      all.where((t) => t.isInProgress && t.isOverdue && _changedToday(t)).toList();
+  /// Overdue subset of [todayAll] — covers both ACCEPTED and IN_PROGRESS
+  /// tickets whose `due_at` has passed.
+  List<MyTicket> get todayOverdue => all
+      .where(
+        (t) =>
+            (t.isAccepted || t.isInProgress) &&
+            t.isOverdue &&
+            _changedToday(t),
+      )
+      .toList();
 
   int get todayAllCount => todayAll.length;
   int get todayAcceptedCount => todayAccepted.length;

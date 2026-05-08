@@ -151,7 +151,7 @@ class _StatusPill extends StatelessWidget {
         return (
           bg: c.tagBlueBg,
           fg: c.tagBlueText,
-          label: s.ticketStatusBadgeIncoming,
+          label: s.ticketStatusBadgeNew,
         );
       case TicketStatus.done:
         return (

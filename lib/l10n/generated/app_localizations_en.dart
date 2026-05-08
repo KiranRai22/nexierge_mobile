@@ -398,6 +398,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ticketStatusBadgeAccepted => 'ACCEPTED';
 
   @override
+  String get ticketStatusBadgeNew => 'NEW';
+
+  @override
   String get ticketStatusBadgeIncoming => 'INCOMING';
 
   @override
@@ -1156,6 +1159,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ticketKindManual => 'Manual';
+
+  @override
+  String get ticketKindPaid => 'Paid';
+
+  @override
+  String get incomingUniversalRequestLabel => 'Universal request';
+
+  @override
+  String incomingItemsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String incomingUniversalTitleWithCount(String name, int count) {
+    return '$name (×$count)';
+  }
+
+  @override
+  String incomingCatalogTitleWithCount(String name, int count) {
+    return '$name (×$count items)';
+  }
+
+  @override
+  String incomingItemsAndTotal(int count, String total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items · $total',
+      one: '1 item · $total',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get actionAcceptShort => 'Accept';
 
   @override
   String get filterNewestFirst => 'Newest first';

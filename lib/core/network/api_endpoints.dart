@@ -69,10 +69,10 @@ abstract class APIEndpoints {
   static const String ticketsDetails = '$_host/api:bAt3sLZU/tickets/details';
   static const String ticketsGetMyTickets =
       '$_host/api:bAt3sLZU/tickets/get_my_tickets';
-  static const String ticketsGetAll = '$_host/api:t_TeioyT/tickets/get/all';
   static const String ticketsAddGetDepartmentsAndRooms =
       '$_host/api:bAt3sLZU/tickets/add/get_departnents_and_rooms';
   static const String ticketsManual = '$_host/api:t_TeioyT/tickets/manual';
+
   /// Base path for `/tickets/change_status/{id}` — append the ticket id
   /// to form the full URL. Body carries `{tickets_v2_id, new_status}`.
   static const String ticketsChangeStatusBase =
@@ -83,6 +83,20 @@ abstract class APIEndpoints {
   static const String ticketsCancel = '$_host/api:bAt3sLZU/tickets/cancel';
   static const String ticketsChangeDue =
       '$_host/api:bAt3sLZU/tickets/change_due';
+
+  /// Base path for `/tickets/acknowledge/{id}` — append the ticket id
+  /// to form the full URL. Body carries `{due_at, notes}`.
+  static const String ticketsAcknowledgeBase =
+      '$_host/api:t_TeioyT/tickets/acknowledge';
+  static String ticketsAcknowledge(String ticketId) =>
+      '$ticketsAcknowledgeBase/$ticketId';
+
+  /// Base path for `/tickets/acknowledge_and_start/{id}` — append the ticket id
+  /// to form the full URL. Body carries `{due_at, notes}`.
+  static const String ticketsAcknowledgeAndStartBase =
+      '$_host/api:t_TeioyT/tickets/acknowledge_and_start';
+  static String ticketsAcknowledgeAndStart(String ticketId) =>
+      '$ticketsAcknowledgeAndStartBase/$ticketId';
 
   // Service Catalogs
   static const String serviceCatalogsAll =

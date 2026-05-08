@@ -28,6 +28,45 @@ class UserProfile {
   /// Name of the property (hotel) the user belongs to.
   final String? hotelName;
 
+  /// Hotel business email from hotel_details.hotel.business_email
+  final String? hotelBusinessEmail;
+
+  /// Hotel business phone from hotel_details.hotel.business_phone_number
+  final String? hotelBusinessPhone;
+
+  /// Hotel website from hotel_details.hotel.website_url
+  final String? hotelWebsite;
+
+  /// Hotel address (combined city, street, country)
+  final String? hotelAddress;
+
+  /// Hotel timezone from hotel_details.hotel.timezone
+  final String? hotelTimezone;
+
+  /// Subscription plan from subscription_details.plan
+  final String? subscriptionPlan;
+
+  /// Subscription active status from subscription_details.subscription_active
+  final bool? subscriptionActive;
+
+  /// Subscription start date from subscription_details.subscription_start_date
+  final int? subscriptionStartDate;
+
+  /// Subscription end date from subscription_details.subscription_end_date
+  final int? subscriptionEndDate;
+
+  /// Authentication method from access_control.login.auth_method
+  final String? authMethod;
+
+  /// Interface access from access_control.login.interface_access
+  final String? interfaceAccess;
+
+  /// Hub access codes from access_control.hub_access
+  final List<String> hubAccess;
+
+  /// Last login timestamp from user_hotel_status.last_login_at
+  final int? lastLoginAt;
+
   const UserProfile({
     required this.id,
     required this.fullName,
@@ -41,6 +80,19 @@ class UserProfile {
     this.avatarUrl,
     this.phone,
     this.hotelName,
+    this.hotelBusinessEmail,
+    this.hotelBusinessPhone,
+    this.hotelWebsite,
+    this.hotelAddress,
+    this.hotelTimezone,
+    this.subscriptionPlan,
+    this.subscriptionActive,
+    this.subscriptionStartDate,
+    this.subscriptionEndDate,
+    this.authMethod,
+    this.interfaceAccess,
+    this.hubAccess = const [],
+    this.lastLoginAt,
   });
 
   /// Two-letter initials for the avatar — uses first + last name when

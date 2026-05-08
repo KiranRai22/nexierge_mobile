@@ -11,6 +11,7 @@ class Catalog {
   final String emoji;
   final Department department;
   final List<CatalogItem> items;
+  final String? imageUrl;
 
   const Catalog({
     required this.id,
@@ -19,6 +20,7 @@ class Catalog {
     required this.emoji,
     required this.department,
     required this.items,
+    this.imageUrl,
   });
 }
 

@@ -91,13 +91,15 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       ),
     );
     if (confirmed != true) return;
-    await _withGuard(() => _runOptimistic(
-          newStatus: 'ON_HOLD',
-          apiCall: () => ref
-              .read(ticketRepositoryProvider)
-              .changeTicketStatus(ticketId: t.id, newStatus: 'ON_HOLD'),
-          failureMessage: failureMsg,
-        ));
+    await _withGuard(
+      () => _runOptimistic(
+        newStatus: 'ON_HOLD',
+        apiCall: () => ref
+            .read(ticketRepositoryProvider)
+            .changeTicketStatus(ticketId: t.id, newStatus: 'ON_HOLD'),
+        failureMessage: failureMsg,
+      ),
+    );
   }
 
   // ────────── RESUME (ON_HOLD → IN_PROGRESS) ──────────
@@ -105,13 +107,15 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   Future<void> _onResume() async {
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedResume;
-    await _withGuard(() => _runOptimistic(
-          newStatus: 'IN_PROGRESS',
-          apiCall: () => ref
-              .read(ticketRepositoryProvider)
-              .changeTicketStatus(ticketId: t.id, newStatus: 'IN_PROGRESS'),
-          failureMessage: failureMsg,
-        ));
+    await _withGuard(
+      () => _runOptimistic(
+        newStatus: 'IN_PROGRESS',
+        apiCall: () => ref
+            .read(ticketRepositoryProvider)
+            .changeTicketStatus(ticketId: t.id, newStatus: 'IN_PROGRESS'),
+        failureMessage: failureMsg,
+      ),
+    );
   }
 
   // ────────── ACCEPT (NEW → ACCEPTED) ──────────
@@ -124,17 +128,91 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       ticketCode: t.code,
       ticketTitle: t.guest?.displayName ?? '',
       hasGuest: t.guest != null,
-      canAcceptAndStart: _isDueWithinToday(t.eta),
+      canAcceptAndStart: true,
     );
     if (result == null) return;
     final targetStatus = result.startImmediately ? 'IN_PROGRESS' : 'ACCEPTED';
-    await _withGuard(() => _runOptimistic(
-          newStatus: targetStatus,
-          apiCall: () => ref
-              .read(ticketRepositoryProvider)
-              .changeTicketStatus(ticketId: t.id, newStatus: targetStatus),
-          failureMessage: failureMsg,
-        ));
+    await _withGuard(
+      () => _runOptimistic(
+        newStatus: targetStatus,
+        apiCall: () => ref
+            .read(ticketRepositoryProvider)
+            .changeTicketStatus(ticketId: t.id, newStatus: targetStatus),
+        failureMessage: failureMsg,
+      ),
+    );
+  }
+
+  // ────────── ACCEPT ONLY (NEW → ACCEPTED) ──────────
+
+  Future<void> _onAcceptOnly() async {
+    final t = widget.ticket;
+    final failureMsg = context.l10n.ticketActionFailedAccept;
+
+    // Calculate due time (default to 15 minutes from now)
+    final now = DateTime.now();
+    final dueTime = now.add(const Duration(minutes: 15));
+    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    // Check if due time is within today
+    if (dueTime.isAfter(endOfToday)) {
+      if (mounted) {
+        context.showFailure(
+          'Due time must be within today. We will handle this case later.',
+        );
+      }
+      return;
+    }
+
+    await _withGuard(
+      () => _runOptimistic(
+        newStatus: 'ACCEPTED',
+        apiCall: () => ref
+            .read(ticketRepositoryProvider)
+            .acknowledgeTicket(
+              ticketId: t.id,
+              dueAt: dueTime.millisecondsSinceEpoch,
+              notes: null,
+            ),
+        failureMessage: failureMsg,
+      ),
+    );
+  }
+
+  // ────────── ACCEPT AND START (NEW → IN_PROGRESS) ──────────
+
+  Future<void> _onAcceptAndStart() async {
+    final t = widget.ticket;
+    final failureMsg = context.l10n.ticketActionFailedAccept;
+
+    // Calculate due time (default to 15 minutes from now)
+    final now = DateTime.now();
+    final dueTime = now.add(const Duration(minutes: 15));
+    final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    // Check if due time is within today
+    if (dueTime.isAfter(endOfToday)) {
+      if (mounted) {
+        context.showFailure(
+          'Due time must be within today. We will handle this case later.',
+        );
+      }
+      return;
+    }
+
+    await _withGuard(
+      () => _runOptimistic(
+        newStatus: 'IN_PROGRESS',
+        apiCall: () => ref
+            .read(ticketRepositoryProvider)
+            .acknowledgeAndStartTicket(
+              ticketId: t.id,
+              dueAt: dueTime.millisecondsSinceEpoch,
+              notes: null,
+            ),
+        failureMessage: failureMsg,
+      ),
+    );
   }
 
   /// True when [eta] falls anywhere between now and end-of-today (local).
@@ -157,13 +235,15 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       etaLabel: _etaLabel(t),
     );
     if (confirmed != true) return;
-    await _withGuard(() => _runOptimistic(
-          newStatus: 'IN_PROGRESS',
-          apiCall: () => ref
-              .read(ticketRepositoryProvider)
-              .changeTicketStatus(ticketId: t.id, newStatus: 'IN_PROGRESS'),
-          failureMessage: failureMsg,
-        ));
+    await _withGuard(
+      () => _runOptimistic(
+        newStatus: 'IN_PROGRESS',
+        apiCall: () => ref
+            .read(ticketRepositoryProvider)
+            .changeTicketStatus(ticketId: t.id, newStatus: 'IN_PROGRESS'),
+        failureMessage: failureMsg,
+      ),
+    );
   }
 
   // ────────── MARK DONE (IN_PROGRESS → DONE) ──────────
@@ -174,13 +254,15 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     final note = await MarkDoneBottomSheet.show(context);
     // null = dismissed, '' or string = confirmed (note is optional)
     if (note == null) return;
-    await _withGuard(() => _runOptimistic(
-          newStatus: 'DONE',
-          apiCall: () => ref
-              .read(ticketRepositoryProvider)
-              .markDoneWithNote(ticketId: t.id, resolutionNote: note),
-          failureMessage: failureMsg,
-        ));
+    await _withGuard(
+      () => _runOptimistic(
+        newStatus: 'DONE',
+        apiCall: () => ref
+            .read(ticketRepositoryProvider)
+            .markDoneWithNote(ticketId: t.id, resolutionNote: note),
+        failureMessage: failureMsg,
+      ),
+    );
   }
 
   /// Optimistic transition: patch local state, pop the detail screen, then
@@ -229,7 +311,9 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
     await _withGuard(() async {
       try {
-        await ref.read(ticketRepositoryProvider).changeDueTime(
+        await ref
+            .read(ticketRepositoryProvider)
+            .changeDueTime(
               ticketId: t.id,
               newDueAt: result.newDueAt,
               reason: result.reason,
@@ -251,10 +335,12 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
     await _withGuard(() async {
       try {
-        await ref
-            .read(ticketRepositoryProvider)
-            .cancelTicket(ticketId: t.id, reason: reason);
-        _patchStatus(t.id, 'CANCELLED');
+        await ref.read(ticketRepositoryProvider).changeTicketStatus(
+              ticketId: t.id,
+              newStatus: 'CANCELED',
+              resolutionNote: reason,
+            );
+        _patchStatus(t.id, 'CANCELED');
         if (!mounted) return;
         Navigator.of(context).pop();
       } catch (e) {
@@ -315,62 +401,64 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   }
 
   MyTicket _emptyTicket(String id) => MyTicket(
-        id: '',
-        createdAt: 0,
-        hotelId: '',
-        departmentId: '',
-        createdByUserId: '',
-        createdByAi: false,
-        type: '',
-        status: '',
-        dueAt: 0,
-        category: '',
-        priority: '',
-        issueSummary: '',
-        issueDetails: '',
-        isIncident: false,
-        incidentNotes: '',
-        room: '',
-        guestName: '',
-        acknowledgedAt: 0,
-        resolutionCode: '',
-        resolutionNotes: '',
-        confirmedAt: 0,
-      );
+    id: '',
+    createdAt: 0,
+    hotelId: '',
+    departmentId: '',
+    createdByUserId: '',
+    createdByAi: false,
+    type: '',
+    status: '',
+    dueAt: 0,
+    category: '',
+    priority: '',
+    issueSummary: '',
+    issueDetails: '',
+    isIncident: false,
+    incidentNotes: '',
+    room: '',
+    guestName: '',
+    acknowledgedAt: 0,
+    resolutionCode: '',
+    resolutionNotes: '',
+    confirmedAt: 0,
+  );
 
   MyTicket _withStatus(MyTicket t, String status) => MyTicket(
-        id: t.id,
-        createdAt: t.createdAt,
-        hotelId: t.hotelId,
-        departmentId: t.departmentId,
-        assignedToUserId: t.assignedToUserId,
-        createdByUserId: t.createdByUserId,
-        createdByAi: t.createdByAi,
-        type: t.type,
-        status: status,
-        dueAt: status == 'NEW' ? 0 : t.dueAt,
-        category: t.category,
-        priority: t.priority,
-        issueSummary: t.issueSummary,
-        issueDetails: t.issueDetails,
-        isIncident: t.isIncident,
-        incidentNotes: t.incidentNotes,
-        room: t.room,
-        guestName: t.guestName,
-        acknowledgedByUserId: t.acknowledgedByUserId,
-        acknowledgedAt: (status == 'ACCEPTED' || status == 'IN_PROGRESS')
-            ? (t.acknowledgedAt > 0
-                ? t.acknowledgedAt
-                : DateTime.now().millisecondsSinceEpoch)
-            : t.acknowledgedAt,
-        resolutionCode: t.resolutionCode,
-        resolutionNotes: t.resolutionNotes,
-        confirmedAt: status == 'DONE'
-            ? DateTime.now().millisecondsSinceEpoch
-            : t.confirmedAt,
-        closedAt: t.closedAt,
-        roomDetails: t.roomDetails,
-      );
+    id: t.id,
+    createdAt: t.createdAt,
+    updatedAt: DateTime.now().millisecondsSinceEpoch,
+    slaBreached: t.slaBreached,
+    hotelId: t.hotelId,
+    departmentId: t.departmentId,
+    assignedToUserId: t.assignedToUserId,
+    createdByUserId: t.createdByUserId,
+    createdByAi: t.createdByAi,
+    type: t.type,
+    status: status,
+    dueAt: status == 'NEW' ? 0 : t.dueAt,
+    category: t.category,
+    priority: t.priority,
+    issueSummary: t.issueSummary,
+    issueDetails: t.issueDetails,
+    isIncident: t.isIncident,
+    incidentNotes: t.incidentNotes,
+    room: t.room,
+    guestName: t.guestName,
+    acknowledgedByUserId: t.acknowledgedByUserId,
+    acknowledgedAt: (status == 'ACCEPTED' || status == 'IN_PROGRESS')
+        ? (t.acknowledgedAt > 0
+              ? t.acknowledgedAt
+              : DateTime.now().millisecondsSinceEpoch)
+        : t.acknowledgedAt,
+    resolutionCode: t.resolutionCode,
+    resolutionNotes: t.resolutionNotes,
+    confirmedAt: status == 'DONE'
+        ? DateTime.now().millisecondsSinceEpoch
+        : t.confirmedAt,
+    closedAt: t.closedAt,
+    roomDetails: t.roomDetails,
+  );
 
   // ────────── BUILD ──────────
 
@@ -383,27 +471,29 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         t.status == TicketStatus.done || t.status == TicketStatus.canceled;
     if (isFinal) return const SizedBox.shrink();
 
-    final primaryLabel = switch (t.status) {
-      TicketStatus.inProgress => s.ticketActionComplete,
-      TicketStatus.accepted => s.ticketActionStartWork,
-      TicketStatus.incoming => s.ticketActionAccept,
-      TicketStatus.onHold => s.ticketActionResume,
-      _ => s.ticketActionStartWork,
-    };
-    final primaryIcon = t.status == TicketStatus.onHold
-        ? LucideIcons.play
-        : LucideIcons.circlePlay;
-
     // Cancel: live tickets only (accepted/inProgress/onHold).
-    final showCancel = t.status == TicketStatus.accepted ||
+    final showCancel =
+        t.status == TicketStatus.accepted ||
         t.status == TicketStatus.inProgress ||
         t.status == TicketStatus.onHold;
     // Reset: only available while work is in progress (IN_PROGRESS → NEW).
     final showReset = t.status == TicketStatus.inProgress;
     // Hold: while the ticket is being worked on. Not for NEW (must accept
     // first) and not from ON_HOLD (use Resume instead).
-    final showHold = t.status == TicketStatus.accepted ||
+    final showHold =
+        t.status == TicketStatus.accepted ||
         t.status == TicketStatus.inProgress;
+
+    // Prepare primary button data for non-NEW tickets
+    final primaryLabel = switch (t.status) {
+      TicketStatus.inProgress => s.ticketActionComplete,
+      TicketStatus.accepted => s.ticketActionStartWork,
+      TicketStatus.onHold => s.ticketActionResume,
+      _ => s.ticketActionStartWork,
+    };
+    final primaryIcon = t.status == TicketStatus.onHold
+        ? LucideIcons.play
+        : LucideIcons.circlePlay;
 
     return Material(
       color: c.bgBase,
@@ -414,30 +504,74 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _busy ? null : _onPrimary,
-                icon: Icon(primaryIcon, size: 18),
-                label: Text(primaryLabel),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: c.buttonInverted,
-                  foregroundColor: c.fgOnInverted,
-                  disabledBackgroundColor: c.bgDisabled,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            // Show Accept and Accept & Start buttons for NEW tickets
+            if (t.status == TicketStatus.incoming) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _busy ? null : () => _onAcceptOnly(),
+                      icon: Icon(LucideIcons.check, size: 16),
+                      label: Text('Accept'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: c.buttonInverted,
+                        foregroundColor: c.fgOnInverted,
+                        disabledBackgroundColor: c.bgDisabled,
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: TypographyManager.textBodyStrong,
+                      ),
+                    ),
                   ),
-                  textStyle: TypographyManager.textBodyStrong,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _busy ? null : () => _onAcceptAndStart(),
+                      icon: Icon(LucideIcons.play, size: 16),
+                      label: Text('Accept & Start'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: c.buttonInverted,
+                        foregroundColor: c.fgOnInverted,
+                        disabledBackgroundColor: c.bgDisabled,
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: TypographyManager.textBodyStrong,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              // Show single primary button for other statuses
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _busy ? null : _onPrimary,
+                  icon: Icon(primaryIcon, size: 18),
+                  label: Text(primaryLabel),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: c.buttonInverted,
+                    foregroundColor: c.fgOnInverted,
+                    disabledBackgroundColor: c.bgDisabled,
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: TypographyManager.textBodyStrong,
+                  ),
                 ),
               ),
-            ),
+            ],
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
                   child: _SecondaryButton(
-                    icon: LucideIcons.calendarClock,
+                    icon: LucideIcons.calendar,
                     label: s.ticketActionChangeDue,
                     onTap: _busy ? null : _onChangeDue,
                   ),
@@ -464,17 +598,17 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
                 ],
               ],
             ),
-            if (showHold) ...[
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: _SecondaryButton(
-                  icon: LucideIcons.pause,
-                  label: s.ticketActionHold,
-                  onTap: _busy ? null : _onHold,
-                ),
-              ),
-            ],
+            // if (showHold) ...[
+            //   const SizedBox(height: 8),
+            //   SizedBox(
+            //     width: double.infinity,
+            //     child: _SecondaryButton(
+            //       icon: LucideIcons.pause,
+            //       label: s.ticketActionHold,
+            //       onTap: _busy ? null : _onHold,
+            //     ),
+            //   ),
+            // ],
           ],
         ),
       ),

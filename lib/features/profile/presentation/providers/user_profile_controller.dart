@@ -66,6 +66,24 @@ List<String> _extractDepartments(List<dynamic> raw, Ref ref) {
 /// `me_user` API) to the leaner [UserProfile] used exclusively by the
 /// profile screen widgets.
 UserProfile _mapToProfileEntity(auth_entity.UserProfile p, Ref ref) {
+  // Build hotel address from hotel details
+  final hotelAddressParts = <String>[];
+  if (p.hotelDetails.hotel.street.isNotEmpty) {
+    hotelAddressParts.add(p.hotelDetails.hotel.street);
+  }
+  if (p.hotelDetails.hotel.city.isNotEmpty) {
+    hotelAddressParts.add(p.hotelDetails.hotel.city);
+  }
+  if (p.hotelDetails.hotel.country.isNotEmpty) {
+    hotelAddressParts.add(p.hotelDetails.hotel.country);
+  }
+
+  // Extract hub access codes
+  final hubAccessCodes = p.accessControl.hubAccess
+      .map((hub) => hub.hubCode)
+      .where((code) => code.isNotEmpty)
+      .toList();
+
   return UserProfile(
     id: p.id,
     fullName: p.fullName,
@@ -81,6 +99,22 @@ UserProfile _mapToProfileEntity(auth_entity.UserProfile p, Ref ref) {
     theme: p.userSettings.theme,
     phone: p.phoneNumber,
     hotelName: p.hotelDetails.hotel.name,
+    hotelBusinessEmail: p.hotelDetails.hotel.businessEmail,
+    hotelBusinessPhone: p.hotelDetails.hotel.businessPhoneNumber,
+    hotelWebsite: p.hotelDetails.hotel.websiteUrl,
+    hotelAddress: hotelAddressParts.isNotEmpty
+        ? hotelAddressParts.join(', ')
+        : null,
+    hotelTimezone: p.hotelDetails.hotel.timezone,
+    subscriptionPlan: p.hotelDetails.subscriptionDetails.plan,
+    subscriptionActive: p.hotelDetails.subscriptionDetails.subscriptionActive,
+    subscriptionStartDate:
+        p.hotelDetails.subscriptionDetails.subscriptionStartDate,
+    subscriptionEndDate: p.hotelDetails.subscriptionDetails.subscriptionEndDate,
+    authMethod: p.accessControl.login.authMethod,
+    interfaceAccess: p.accessControl.login.interfaceAccess,
+    hubAccess: hubAccessCodes,
+    lastLoginAt: p.userHotelStatus.lastLoginAt,
   );
 }
 

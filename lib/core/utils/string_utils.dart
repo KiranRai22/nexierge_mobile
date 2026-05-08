@@ -4,7 +4,6 @@ import 'dart:core';
 /// throughout the application. Provides methods for names, roles, text
 /// normalization, and various formatting needs.
 abstract class StringUtils {
-  
   // ---------------------------------------------------------------------------
   // Basic Text Manipulation
   // ---------------------------------------------------------------------------
@@ -53,8 +52,11 @@ abstract class StringUtils {
     if (input.isEmpty) return input;
     final parts = input.split('_');
     if (parts.length == 1) return parts.first;
-    return parts.first.toLowerCase() + 
-           parts.skip(1).map((part) => capitalizeFirst(part.toLowerCase())).join('');
+    return parts.first.toLowerCase() +
+        parts
+            .skip(1)
+            .map((part) => capitalizeFirst(part.toLowerCase()))
+            .join('');
   }
 
   /// Converts snake_case to Title Case (Space-separated words)
@@ -70,7 +72,10 @@ abstract class StringUtils {
   static String camelToSnake(String input) {
     if (input.isEmpty) return input;
     return input
-        .replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}')
+        .replaceAllMapped(
+          RegExp(r'[A-Z]'),
+          (match) => '_${match.group(0)!.toLowerCase()}',
+        )
         .toLowerCase();
   }
 
@@ -82,13 +87,13 @@ abstract class StringUtils {
   /// Handles various input formats and ensures consistent output
   static String formatName(String name) {
     if (name.isEmpty) return name;
-    
+
     // Normalize spaces first
     String formatted = normalizeSpaces(name);
-    
+
     // Capitalize each word
     formatted = capitalizeWords(formatted);
-    
+
     return formatted;
   }
 
@@ -105,17 +110,17 @@ abstract class StringUtils {
   /// Gets initials from a full name (max 2 characters)
   static String getInitials(String fullName) {
     if (fullName.isEmpty) return '';
-    
+
     final words = normalizeSpaces(fullName).split(' ');
     if (words.isEmpty) return '';
-    
+
     if (words.length == 1) {
       return words.first.isNotEmpty ? words.first[0].toUpperCase() : '';
     }
-    
+
     final first = words.first.isNotEmpty ? words.first[0].toUpperCase() : '';
     final second = words.last.isNotEmpty ? words.last[0].toUpperCase() : '';
-    
+
     return '$first$second';
   }
 
@@ -127,24 +132,24 @@ abstract class StringUtils {
   /// Handles: lowercase, UPPERCASE, snake_case, camelCase, mixed formats
   static String formatRole(String role) {
     if (role.isEmpty) return role;
-    
+
     // First convert to snake_case for normalization
     String normalized = role;
-    
+
     // Handle camelCase to snake_case
     if (normalized.contains(RegExp(r'[a-z][A-Z]'))) {
       normalized = camelToSnake(normalized);
     }
-    
+
     // Handle spaces to snake_case
     normalized = normalized.replaceAll(' ', '_');
-    
+
     // Handle multiple underscores
     normalized = normalized.replaceAll(RegExp(r'_+'), '_');
-    
+
     // Remove leading/trailing underscores
     normalized = normalized.replaceAll(RegExp(r'^_|_$'), '');
-    
+
     // Convert to Title Case
     return snakeToTitleCase(normalized);
   }
@@ -168,6 +173,8 @@ abstract class StringUtils {
     'ceo': 'Chief Executive Officer',
     'cto': 'Chief Technology Officer',
     'cfo': 'Chief Financial Officer',
+    'system_controller': 'System Controller',
+    'systemcontroller': 'System Controller',
   };
 
   /// Formats role with common mappings
@@ -181,13 +188,16 @@ abstract class StringUtils {
   // ---------------------------------------------------------------------------
 
   /// Removes special characters, keeping only letters, numbers, and basic punctuation
-  static String removeSpecialCharacters(String input, {bool keepSpaces = true}) {
+  static String removeSpecialCharacters(
+    String input, {
+    bool keepSpaces = true,
+  }) {
     if (input.isEmpty) return input;
-    
-    String pattern = keepSpaces 
+
+    String pattern = keepSpaces
         ? r'[^a-zA-Z0-9\s.,!?@#\$%\^&\*\(\)\-\+]'
         : r'[^a-zA-Z0-9.,!?@#\$%\^&\*\(\)\-\+]';
-    
+
     return input.replaceAll(RegExp(pattern), '');
   }
 
@@ -213,13 +223,17 @@ abstract class StringUtils {
   }
 
   /// Masks sensitive information (like phone numbers, emails)
-  static String maskSensitive(String input, {int visibleChars = 4, String maskChar = '*'}) {
+  static String maskSensitive(
+    String input, {
+    int visibleChars = 4,
+    String maskChar = '*',
+  }) {
     if (input.isEmpty) return input;
     if (input.length <= visibleChars) return input;
-    
+
     final visible = input.substring(0, visibleChars);
     final masked = maskChar * (input.length - visibleChars);
-    
+
     return visible + masked;
   }
 

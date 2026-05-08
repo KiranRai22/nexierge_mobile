@@ -6,17 +6,23 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import 'tickets_main_tabs.dart';
 
-/// Filter chips that change based on the selected main tab
+/// Filter chips that change based on the selected main tab.
+///
+/// [filterCounts] is an optional map from filter key (e.g. 'all',
+/// 'accepted') to the number of tickets in that bucket. When provided,
+/// chips render the count beside the label.
 class TicketsFilterChips extends StatelessWidget {
   final TicketsMainTab selectedTab;
   final String? selectedFilter;
   final ValueChanged<String?> onFilterChanged;
+  final Map<String, int>? filterCounts;
 
   const TicketsFilterChips({
     super.key,
     required this.selectedTab,
     this.selectedFilter,
     required this.onFilterChanged,
+    this.filterCounts,
   });
 
   @override
@@ -31,10 +37,12 @@ class TicketsFilterChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         children: filters.map((filter) {
           final isSelected = selectedFilter == filter.key;
+          final count = filterCounts?[filter.key];
           return Padding(
             padding: const EdgeInsets.only(right: 6),
             child: _FilterChip(
               label: filter.label,
+              count: count,
               isSelected: isSelected,
               isDanger: filter.isDanger,
               onTap: () => onFilterChanged(isSelected ? null : filter.key),
@@ -65,12 +73,6 @@ class TicketsFilterChips extends StatelessWidget {
       case TicketsMainTab.done:
         // ENHANCEMENT: Hide filters for done tab for now
         return [];
-      // Original filters (commented out as enhancement):
-      // return [
-      //   _FilterOption('today', s.subTabToday),
-      //   _FilterOption('thisweek', s.filterThisWeek),
-      //   _FilterOption('thismonth', s.filterThisMonth),
-      // ];
     }
   }
 }
@@ -84,12 +86,14 @@ class _FilterOption {
 
 class _FilterChip extends StatelessWidget {
   final String label;
+  final int? count;
   final bool isSelected;
   final bool isDanger;
   final VoidCallback onTap;
 
   const _FilterChip({
     required this.label,
+    required this.count,
     required this.isSelected,
     required this.onTap,
     this.isDanger = false,
@@ -107,6 +111,7 @@ class _FilterChip extends StatelessWidget {
     final fg = isSelected
         ? (isDanger ? c.tagRedText : c.tagPurpleText)
         : c.fgBase;
+    final showCount = count != null;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -116,13 +121,29 @@ class _FilterChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: border),
         ),
-        child: Text(
-          label,
-          style: TypographyManager.labelSmall.copyWith(
-            fontSize: 12,
-            color: fg,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TypographyManager.labelSmall.copyWith(
+                fontSize: 12,
+                color: fg,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+            if (showCount) ...[
+              const SizedBox(width: 6),
+              Text(
+                '$count',
+                style: TypographyManager.labelSmall.copyWith(
+                  fontSize: 12,
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

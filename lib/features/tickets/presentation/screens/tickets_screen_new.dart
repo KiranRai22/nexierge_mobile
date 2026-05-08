@@ -8,6 +8,7 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../shell/presentation/widgets/app_bottom_nav.dart';
+import '../../domain/entities/my_ticket.dart';
 import '../../domain/models/ticket.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../providers/my_tickets_list_controller.dart';
@@ -41,7 +42,8 @@ class TicketsScreenNew extends ConsumerStatefulWidget {
   ConsumerState<TicketsScreenNew> createState() => _TicketsScreenNewState();
 }
 
-class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
+class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
+    with WidgetsBindingObserver {
   late final TextEditingController _searchCtl;
   bool _isSearchVisible = false;
 
@@ -49,12 +51,25 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   void initState() {
     super.initState();
     _searchCtl = TextEditingController();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchCtl.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // On app resume, do one quiet refresh to catch any websocket frames
+    // missed while backgrounded. The existing realtime stream handles
+    // foreground updates from then on.
+    if (state == AppLifecycleState.resumed && mounted) {
+      // ignore: discarded_futures
+      ref.read(myTicketsNotifierProvider.notifier).refresh();
+    }
   }
 
   void _openNotifications(BuildContext context) {
@@ -103,21 +118,27 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
   Widget build(BuildContext context) {
     final mainTab = ref.watch(ticketsMainTabProvider);
     final selectedFilter = ref.watch(ticketsFilterProvider);
-    // Auto-filter logic for tab changes
+    // Tab transitions: rely on the realtime cache for freshness — no
+    // refresh-on-tap. Reset the chip state to the default of each tab so
+    // the operator doesn't carry a stale filter across tabs.
     ref.listen<TicketsMainTab>(ticketsMainTabProvider, (prev, next) {
-      // Selecting the Today tab triggers a fresh page-1 fetch every time the
-      // user lands on it.
-      if (next == TicketsMainTab.today && prev != TicketsMainTab.today) {
-        ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-            .refresh();
-      }
-
-      // When Incoming tab is selected, always apply newest first filter
-      if (next == TicketsMainTab.incoming && prev != TicketsMainTab.incoming) {
-        ref.read(ticketsFilterProvider.notifier).state = 'newest';
+      if (prev == next) return;
+      switch (next) {
+        case TicketsMainTab.today:
+          ref.read(ticketsFilterProvider.notifier).state = 'all';
+          break;
+        case TicketsMainTab.incoming:
+          ref.read(ticketsFilterProvider.notifier).state = 'newest';
+          break;
+        case TicketsMainTab.done:
+          ref.read(ticketsFilterProvider.notifier).state = null;
+          break;
       }
     });
+
+    // Today filter-chip counts come from the realtime ticket cache — they
+    // update in-place on websocket events without a network round-trip.
+    final todayCounts = _todayFilterCounts();
     final userProfile = ref.watch(userProfileProvider);
     final session = ref.watch(operatorSessionProvider);
     final themeMode =
@@ -243,6 +264,9 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
                 child: TicketsFilterChips(
                   selectedTab: mainTab,
                   selectedFilter: selectedFilter,
+                  filterCounts: mainTab == TicketsMainTab.today
+                      ? todayCounts
+                      : null,
                   onFilterChanged: (filter) =>
                       ref.read(ticketsFilterProvider.notifier).state = filter,
                 ),
@@ -277,12 +301,27 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew> {
     };
   }
 
+  /// Today filter-chip counts derived from the realtime cache. Returns
+  /// zeroes while the cache is still loading.
+  Map<String, int> _todayFilterCounts() {
+    final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
+    if (state == null) {
+      return const {'all': 0, 'accepted': 0, 'inprogress': 0, 'overdue': 0};
+    }
+    return {
+      'all': state.todayAllCount,
+      'accepted': state.todayAcceptedCount,
+      'inprogress': state.todayInProgressCount,
+      'overdue': state.todayOverdueCount,
+    };
+  }
+
   void _showFilterSheet(BuildContext context) {
     FilterDepartmentSheet.show(context);
   }
 
   Widget _buildList(TicketsMainTab mainTab) {
-    // All four tabs are paginated against `/tickets/get/all`. The list
+    // All three tabs are paginated against `/tickets/get_my_tickets`. The list
     // widget watches the paged provider for its tab and triggers
     // infinite scroll near the end.
     return _PagedTicketsTabList(tab: _ticketsTabFromMain(mainTab));
@@ -300,6 +339,36 @@ TicketsTab _ticketsTabFromMain(TicketsMainTab mainTab) {
   }
 }
 
+/// Narrows the Today tab's already-fetched items down to the chip the
+/// operator picked. The Incoming and Done tabs ignore this filter — their
+/// chips are sort-only or absent.
+///
+/// "All" excludes terminal-state tickets (Done/Canceled/Expired) — those
+/// belong on the Done tab, not the operator's active workload. "Overdue"
+/// covers both Accepted and In Progress whose `due_at` has passed.
+List<MyTicket> _applyTodaySubFilter(
+  TicketsTab tab,
+  List<MyTicket> items,
+  String? filter,
+) {
+  if (tab != TicketsTab.today) return items;
+  bool isActive(MyTicket t) => t.isAccepted || t.isInProgress;
+  switch (filter) {
+    case 'accepted':
+      return items.where((t) => t.isAccepted).toList(growable: false);
+    case 'inprogress':
+      return items.where((t) => t.isInProgress).toList(growable: false);
+    case 'overdue':
+      return items
+          .where((t) => isActive(t) && t.isOverdue)
+          .toList(growable: false);
+    case 'all':
+    case null:
+    default:
+      return items.where(isActive).toList(growable: false);
+  }
+}
+
 /// True when [eta] is between now and end-of-today (local). Used to gate
 /// the Accept & Start option on the acknowledge sheet.
 bool _isDueWithinToday(DateTime? eta) {
@@ -309,27 +378,139 @@ bool _isDueWithinToday(DateTime? eta) {
   return !eta.isBefore(now) && !eta.isAfter(endOfToday);
 }
 
+/// Calculate due time in milliseconds from now based on selected minutes
+/// Returns null if the calculated time is not within today
+int? _calculateDueTimeInMs(int minutesFromNow) {
+  final now = DateTime.now();
+  final dueTime = now.add(Duration(minutes: minutesFromNow));
+  final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+  // Check if due time is within today
+  if (dueTime.isAfter(endOfToday)) {
+    return null; // Not within today
+  }
+
+  return dueTime.millisecondsSinceEpoch;
+}
+
+/// Calculate due time in milliseconds from now based on custom date time
+/// Returns null if the date is not today
+int? _calculateCustomDueTimeInMs(DateTime customDateTime) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final customDate = DateTime(
+    customDateTime.year,
+    customDateTime.month,
+    customDateTime.day,
+  );
+
+  // Check if custom date is today
+  if (customDate.isAtSameMomentAs(today)) {
+    return customDateTime.millisecondsSinceEpoch;
+  }
+
+  return null; // Not today
+}
+
 /// Builds an `onAccept` handler that opens the acknowledge sheet and
 /// applies the resulting status change. When the user picks
 /// "Accept & Start" the ticket goes straight to IN_PROGRESS.
-VoidCallback _acceptHandler(BuildContext context, WidgetRef ref, Ticket ticket) {
+VoidCallback _acceptHandler(
+  BuildContext context,
+  WidgetRef ref,
+  Ticket ticket,
+) {
   return () async {
     final result = await AcknowledgeTicketBottomSheet.show(
       context: context,
       ticketCode: ticket.code,
       ticketTitle: ticket.title,
       hasGuest: ticket.guest != null,
-      canAcceptAndStart: _isDueWithinToday(ticket.eta),
+      canAcceptAndStart: true,
     );
     if (result == null || !context.mounted) return;
-    final target = result.startImmediately ? 'IN_PROGRESS' : 'ACCEPTED';
+
+    // Calculate due time in milliseconds
+    int? dueTimeMs;
+    if (result.mode == 'preset' && result.minutesFromNow != null) {
+      dueTimeMs = _calculateDueTimeInMs(result.minutesFromNow!);
+    } else if (result.mode == 'custom' && result.customDateTime != null) {
+      dueTimeMs = _calculateCustomDueTimeInMs(result.customDateTime!);
+    }
+
+    // Check if due time is within today
+    if (dueTimeMs == null) {
+      if (context.mounted) {
+        context.showFailure(
+          'Due time must be within today. We will handle this case later.',
+        );
+      }
+      return;
+    }
+
     try {
-      await ref
-          .read(ticketRepositoryProvider)
-          .changeTicketStatus(ticketId: ticket.id, newStatus: target);
+      // Step 1: Mark ticket as transitioning (show shimmer effect)
+      for (final tab in kAllTicketsTabs) {
+        ref
+            .read(ticketsPagedProvider(specForTab(tab)).notifier)
+            .markTicketTransitioning(ticket.id);
+      }
+
+      // Step 2: Update tab counts immediately (optimistic update)
+      ref
+          .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
+          .updateTabCountImmediate(delta: -1);
+
+      ref
+          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+          .updateTabCountImmediate(delta: 1);
+
+      // Step 3: Make API call
+      if (result.startImmediately) {
+        // Use acknowledge_and_start API
+        await ref
+            .read(ticketRepositoryProvider)
+            .acknowledgeAndStartTicket(
+              ticketId: ticket.id,
+              dueAt: dueTimeMs,
+              notes: null, // Notes not currently captured in bottom sheet
+            );
+      } else {
+        // Use acknowledge API
+        await ref
+            .read(ticketRepositoryProvider)
+            .acknowledgeTicket(
+              ticketId: ticket.id,
+              dueAt: dueTimeMs,
+              notes: null, // Notes not currently captured in bottom sheet
+            );
+      }
+
+      // Step 4: Update ticket status immediately (remove from incoming, add to today)
+      ref
+          .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
+          .updateTicketStatusImmediate(ticket.id, 'ACCEPTED');
+
+      ref
+          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+          .updateTicketStatusImmediate(ticket.id, 'ACCEPTED');
+
+      // Step 5: Refresh other providers as backup
       ref.read(myTicketsNotifierProvider.notifier).refresh();
     } catch (e) {
-      if (context.mounted) context.showFailure(e.toString());
+      if (context.mounted) {
+        context.showFailure(e.toString());
+        // Revert optimistic updates on error
+        ref
+            .read(
+              ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
+            )
+            .updateTabCountImmediate(delta: 1);
+
+        ref
+            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .updateTabCountImmediate(delta: -1);
+      }
     }
   };
 }
@@ -364,9 +545,27 @@ Future<void> _startWorkHandler(
   if (confirmed != true || !context.mounted) return;
 
   try {
+    // Step 1: Mark ticket as transitioning (show shimmer effect)
+    for (final tab in kAllTicketsTabs) {
+      ref
+          .read(ticketsPagedProvider(specForTab(tab)).notifier)
+          .markTicketTransitioning(ticket.id);
+    }
+
+    // Step 2: Update tab counts immediately (today -> today, count stays same)
+    // No count change needed for IN_PROGRESS transition
+
+    // Step 3: Make API call
     await ref
         .read(ticketRepositoryProvider)
         .changeTicketStatus(ticketId: ticket.id, newStatus: 'IN_PROGRESS');
+
+    // Step 4: Update ticket status immediately
+    ref
+        .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+        .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
+
+    // Step 5: Refresh other providers as backup
     ref.read(myTicketsNotifierProvider.notifier).refresh();
   } catch (e) {
     if (context.mounted) context.showFailure(e.toString());
@@ -382,12 +581,50 @@ Future<void> _markDoneHandler(
   if (note == null || !context.mounted) return;
 
   try {
+    // Step 1: Mark ticket as transitioning (show shimmer effect)
+    for (final tab in kAllTicketsTabs) {
+      ref
+          .read(ticketsPagedProvider(specForTab(tab)).notifier)
+          .markTicketTransitioning(ticket.id);
+    }
+
+    // Step 2: Update tab counts immediately (today -> done)
+    ref
+        .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+        .updateTabCountImmediate(delta: -1);
+
+    ref
+        .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
+        .updateTabCountImmediate(delta: 1);
+
+    // Step 3: Make API call
     await ref
         .read(ticketRepositoryProvider)
         .markDoneWithNote(ticketId: ticket.id, resolutionNote: note);
+
+    // Step 4: Update ticket status immediately (remove from today, add to done)
+    ref
+        .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+        .updateTicketStatusImmediate(ticket.id, 'DONE');
+
+    ref
+        .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
+        .updateTicketStatusImmediate(ticket.id, 'DONE');
+
+    // Step 5: Refresh other providers as backup
     ref.read(myTicketsNotifierProvider.notifier).refresh();
   } catch (e) {
-    if (context.mounted) context.showFailure(e.toString());
+    if (context.mounted) {
+      context.showFailure(e.toString());
+      // Revert optimistic updates on error
+      ref
+          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+          .updateTabCountImmediate(delta: 1);
+
+      ref
+          .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
+          .updateTabCountImmediate(delta: -1);
+    }
   }
 }
 
@@ -454,8 +691,17 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
       loading: () => const _LoadingList(),
       error: (e, _) => _ErrorView(error: e.toString()),
       data: (page) {
-        if (page.items.isEmpty) return const _EmptyView();
-        final tickets = page.items
+        // Apply Today sub-filter (accepted / inprogress / overdue) on top
+        // of the server-side status filter. The server already constrains
+        // the list to ACCEPTED + IN_PROGRESS for the Today tab; this
+        // narrows further when a chip other than 'all' is selected.
+        final visibleItems = _applyTodaySubFilter(
+          widget.tab,
+          page.items,
+          filter,
+        );
+        if (visibleItems.isEmpty) return const _EmptyView();
+        final tickets = visibleItems
             .map(
               (mt) => mapMyTicketToTicket(
                 mt,

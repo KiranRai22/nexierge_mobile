@@ -7,7 +7,7 @@ import '../../data/repositories/ticket_repository.dart';
 import '../../domain/models/catalog.dart';
 import '../../domain/models/ticket.dart';
 import 'checked_in_guest_stays_provider.dart';
-import 'tickets_paged_notifier.dart';
+import 'my_tickets_notifier.dart';
 
 /// Three-step Catalog create flow:
 ///   1. selectCatalog — pick which catalog to order from
@@ -261,15 +261,11 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
       final repo = ref.read(ticketRepositoryProvider);
       final ticketId = await repo.createCatalogOrder(request: request);
 
-      // Surface the new ticket on the Today tab without waiting for the
-      // realtime push.
-      try {
-        await ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-            .refresh();
-      } catch (e) {
-        debugPrint('[CatalogDraftController] today refresh failed: $e');
-      }
+      // Refresh all ticket tabs (Incoming/Today/Done) as a safety net so the
+      // freshly-created ticket shows up immediately even if the realtime
+      // push is delayed or dropped. Mirrors the manual create flow.
+      // ignore: discarded_futures
+      ref.read(myTicketsNotifierProvider.notifier).refresh();
 
       return ticketId.isEmpty ? '_pending_' : ticketId;
     } finally {

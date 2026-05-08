@@ -47,11 +47,23 @@ class _ConfirmBody extends ConsumerWidget {
     final guest = draft.guestName.trim();
     final note = draft.note.trim();
 
+    debugPrint(
+      '[ConfirmTicket] Catalog: ${catalog.name}, ImageUrl: ${catalog.imageUrl}, Emoji: ${catalog.emoji}',
+    );
+    debugPrint(
+      '[ConfirmTicket] Cart items: ${draft.cart.map((item) => '${item.item.name} - ImageUrl: ${item.item.imageUrl}').toList()}',
+    );
+
     final rows = <_SummaryRow>[
-      _SummaryRow.inline(s.confirmTicketRowCatalog, catalog.name),
+      _SummaryRow.catalog(
+        s.confirmTicketRowCatalog,
+        catalog.name,
+        catalog.imageUrl,
+        catalog.emoji,
+      ),
       _SummaryRow.inline(
         s.confirmTicketRowDepartment,
-        catalog.department.label(s),
+        'Department Auto Selected',
       ),
       _SummaryRow.inline(
         s.confirmTicketRowRoom,
@@ -67,13 +79,13 @@ class _ConfirmBody extends ConsumerWidget {
         formatMoney(draft.total),
         emphasize: true,
       ),
-      if (note.isNotEmpty)
-        _SummaryRow.block(s.confirmTicketRowNotes, note),
+      if (note.isNotEmpty) _SummaryRow.block(s.confirmTicketRowNotes, note),
     ];
 
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SafeArea(
         top: false,
         child: FractionallySizedBox(
@@ -219,12 +231,21 @@ class _SummaryRow {
   final String value;
   final bool block;
   final bool emphasize;
+  final String? imageUrl;
+  final String? emoji;
 
   const _SummaryRow.inline(this.label, this.value, {this.emphasize = false})
-      : block = false;
+    : block = false,
+      imageUrl = null,
+      emoji = null;
   const _SummaryRow.block(this.label, this.value)
-      : block = true,
-        emphasize = false;
+    : block = true,
+      emphasize = false,
+      imageUrl = null,
+      emoji = null;
+  const _SummaryRow.catalog(this.label, this.value, this.imageUrl, this.emoji)
+    : block = false,
+      emphasize = false;
 }
 
 class _SummaryBlock extends StatelessWidget {
@@ -243,8 +264,7 @@ class _SummaryBlock extends StatelessWidget {
         children: [
           for (int i = 0; i < rows.length; i++) ...[
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: rows[i].block
                   ? _BlockRow(row: rows[i])
                   : _InlineRow(row: rows[i]),
@@ -276,13 +296,78 @@ class _InlineRow extends StatelessWidget {
             ),
           ),
         ),
-        Text(
-          row.value,
-          style: TypographyManager.bodyMedium.copyWith(
-            color: ColorPalette.textPrimary,
-            fontWeight: row.emphasize ? FontWeight.w800 : FontWeight.w600,
+        if (row.imageUrl != null && row.imageUrl!.isNotEmpty)
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                margin: const EdgeInsets.only(right: 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.network(
+                    row.imageUrl!,
+                    width: 24,
+                    height: 24,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        debugPrint(
+                          '[ConfirmTicket] Catalog image loaded successfully: ${row.imageUrl}',
+                        );
+                        return child;
+                      }
+                      debugPrint(
+                        '[ConfirmTicket] Catalog image loading: ${row.imageUrl}',
+                      );
+                      return Container(
+                        width: 24,
+                        height: 24,
+                        color: ColorPalette.opsSurface,
+                        child: Center(
+                          child: SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1,
+                              color: ColorPalette.textSecondary,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint(
+                        '[ConfirmTicket] Catalog image load error: $error',
+                      );
+                      return FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          row.emoji ?? '🍽️',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Text(
+                row.value,
+                style: TypographyManager.bodyMedium.copyWith(
+                  color: ColorPalette.textPrimary,
+                  fontWeight: row.emphasize ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          )
+        else
+          Text(
+            row.value,
+            style: TypographyManager.bodyMedium.copyWith(
+              color: ColorPalette.textPrimary,
+              fontWeight: row.emphasize ? FontWeight.w800 : FontWeight.w600,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -341,6 +426,10 @@ class _ItemsBlock extends StatelessWidget {
                 final n = (perItemIndex[line.item.id] ?? 0) + 1;
                 perItemIndex[line.item.id] = n;
                 final summary = line.optionsSummary;
+
+                debugPrint(
+                  '[ConfirmTicket _ItemsBlock] Item: ${line.item.name}, ImageUrl: ${line.item.imageUrl}, Emoji: ${line.item.emoji}',
+                );
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                   child: Column(
@@ -356,16 +445,75 @@ class _ItemsBlock extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: ColorPalette.opsBorder),
                             ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              line.item.emoji,
-                              style: const TextStyle(fontSize: 14),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child:
+                                  line.item.imageUrl != null &&
+                                      line.item.imageUrl!.isNotEmpty
+                                  ? Image.network(
+                                      line.item.imageUrl!,
+                                      width: 26,
+                                      height: 26,
+                                      fit: BoxFit.cover,
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                            if (loadingProgress == null) {
+                                              debugPrint(
+                                                '[ConfirmTicket] Item image loaded successfully: ${line.item.name}',
+                                              );
+                                              return child;
+                                            }
+                                            debugPrint(
+                                              '[ConfirmTicket] Item image loading: ${line.item.name}',
+                                            );
+                                            return Container(
+                                              width: 26,
+                                              height: 26,
+                                              color: ColorPalette.opsSurface,
+                                              child: Center(
+                                                child: SizedBox(
+                                                  width: 12,
+                                                  height: 12,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 1,
+                                                        color: ColorPalette
+                                                            .textSecondary,
+                                                      ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        debugPrint(
+                                          '[ConfirmTicket] Item image load error for ${line.item.name}: $error',
+                                        );
+                                        return FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            line.item.emoji,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        line.item.emoji,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: ColorPalette.opsPurpleSoft,
                               borderRadius: BorderRadius.circular(999),

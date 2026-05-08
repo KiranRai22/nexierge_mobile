@@ -6,6 +6,7 @@ import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/utils/string_utils.dart';
 import '../../domain/entities/user_profile.dart';
 
 /// Animated header that shrinks on scroll.
@@ -110,7 +111,13 @@ class _ProfileHeaderCardAnimatedState extends State<ProfileHeaderCardAnimated> {
         SizedBox(height: avatarNameSpacing),
         _buildNameRow(fontSize: nameFontSize),
         const SizedBox(height: 8),
-        _RolePill(label: widget.profile.role),
+        _RolePill(
+          label: StringUtils.formatRoleWithMapping(widget.profile.role),
+        ),
+        if (widget.profile.hubAccess.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _HubAccessRow(hubAccess: widget.profile.hubAccess),
+        ],
         if (widget.profile.departments.isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(
@@ -195,7 +202,17 @@ class _ProfileHeaderCardAnimatedState extends State<ProfileHeaderCardAnimated> {
                 ],
               ),
               const SizedBox(height: 4),
-              _RolePill(label: widget.profile.role, compact: true),
+              _RolePill(
+                label: StringUtils.formatRoleWithMapping(widget.profile.role),
+                compact: true,
+              ),
+              if (widget.profile.hubAccess.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                _HubAccessRow(
+                  hubAccess: widget.profile.hubAccess,
+                  compact: true,
+                ),
+              ],
             ],
           ),
         ),
@@ -413,5 +430,93 @@ class _RolePill extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ── Hub Access Row ─────────────────────────────────────────────────────────────
+
+class _HubAccessRow extends StatelessWidget {
+  final List<String> hubAccess;
+  final bool compact;
+
+  const _HubAccessRow({required this.hubAccess, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: compact ? 4 : 6,
+      runSpacing: compact ? 2 : 4,
+      children: hubAccess
+          .map((hub) => _HubAccessPill(hubCode: hub, compact: compact))
+          .toList(),
+    );
+  }
+}
+
+class _HubAccessPill extends StatelessWidget {
+  final String hubCode;
+  final bool compact;
+
+  const _HubAccessPill({required this.hubCode, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final (label, icon) = _getHubInfo(hubCode);
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 8,
+        vertical: compact ? 2 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: c.bgSubtle,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: c.borderBase, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: compact ? 10 : 12, color: c.fgSubtle),
+          SizedBox(width: compact ? 2 : 4),
+          Text(
+            label,
+            style: TypographyManager.labelSmall.copyWith(
+              color: c.fgSubtle,
+              fontWeight: FontWeight.w500,
+              fontSize: compact ? 9 : 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  (String, IconData) _getHubInfo(String hubCode) {
+    switch (hubCode.toLowerCase()) {
+      case 'analytics':
+        return ('Analytics', LucideIcons.trendingUp);
+      case 'communication':
+        return ('Comm', LucideIcons.messageSquare);
+      case 'tickets':
+        return ('Tickets', LucideIcons.ticket);
+      case 'guests_rooms':
+        return ('Guests', LucideIcons.users);
+      case 'ai_training':
+        return ('AI', LucideIcons.sparkles);
+      case 'housekeeping':
+        return ('Housekeeping', LucideIcons.package);
+      case 'maintenance':
+        return ('Maintenance', LucideIcons.wrench);
+      case 'room_service':
+        return ('Room Service', LucideIcons.utensils);
+      case 'front_desk':
+        return ('Front Desk', LucideIcons.building);
+      default:
+        return (hubCode, LucideIcons.circle);
+    }
   }
 }

@@ -23,27 +23,24 @@ Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
     }
   }
 
-  // Fix title: avoid "Request Request" duplication
-  final String title;
-  if (t.issueSummary.isNotEmpty) {
-    title = t.issueSummary;
-  } else {
-    final typeLower = t.type.toLowerCase();
-    // If type already contains "request", don't append it again
-    if (typeLower.contains('request')) {
-      title = t.type;
-    } else {
-      title = '${t.type} Request';
-    }
-  }
+  final kind = _mapKind(t.type, t.ticketType);
+  final kindData = _buildKindData(t, kind);
+  final title = _buildTitle(t, kind, kindData);
 
   return Ticket(
     id: t.id,
     code: t.roomDetails?.onbRoomNumber ?? 'N/A',
     title: title,
     status: _mapStatus(t.status),
-    kind: _mapKind(t.type),
-    department: _mapDepartment(t.departmentId),
+    kind: kind,
+    department: _mapDepartment(
+      code: t.departmentCode,
+      name: t.departmentName,
+      fallback: t.departmentId,
+    ),
+    departmentName: t.departmentName,
+    departmentEmoji: t.departmentMobileIcon,
+    departmentIconUrl: t.departmentIconUrl,
     room: Room(
       id: t.room,
       number: t.roomDetails?.onbRoomNumber ?? 'N/A',
@@ -55,9 +52,69 @@ Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
     createdAt: DateTime.fromMillisecondsSinceEpoch(t.createdAt),
     eta: t.dueAt > 0 ? DateTime.fromMillisecondsSinceEpoch(t.dueAt) : null,
     workStartedAt: workStartedAt,
-    items: [],
+    items: const [],
     assigneeName: t.assignedToUserId,
+    isTransitioning: t.isTransitioning,
+    kindData: kindData,
   );
+}
+
+TicketKindData? _buildKindData(MyTicket t, TicketKind kind) {
+  switch (kind) {
+    case TicketKind.universal:
+      if (t.universalItems.isEmpty) return null;
+      final first = t.universalItems.first;
+      return UniversalKindData(
+        displayName: first.item,
+        thumbnailUrl: first.thumbnailUrl,
+        emoji: first.emoji.isEmpty ? null : first.emoji,
+        itemCount: t.universalItems.length,
+        nameI18n: first.nameI18n,
+      );
+    case TicketKind.catalog:
+      final c = t.catalogDetails;
+      if (c == null) return null;
+      return CatalogKindData(
+        catalogName: c.catalogName,
+        logoUrl: c.logoUrl,
+        brandColorHex: c.brandColorHex,
+        grandTotal: c.grandTotal,
+        currency: c.currency,
+        itemCount: c.items.length,
+        itemThumbnails: [
+          for (final i in c.items)
+            if (i.imageUrl != null && i.imageUrl!.isNotEmpty) i.imageUrl!,
+        ],
+        itemNames: c.items.map((i) => i.itemName).toList(growable: false),
+      );
+    case TicketKind.manual:
+      final m = t.manualDetails;
+      return ManualKindData(
+        summary: m?.summary ?? t.issueSummary,
+        details: m?.details ?? t.issueDetails,
+      );
+  }
+}
+
+String _buildTitle(MyTicket t, TicketKind kind, TicketKindData? kindData) {
+  switch (kind) {
+    case TicketKind.universal:
+      final u = kindData is UniversalKindData ? kindData : null;
+      final base = u?.displayName.isNotEmpty == true
+          ? u!.displayName
+          : (t.issueSummary.isNotEmpty ? t.issueSummary : 'Universal request');
+      return base;
+    case TicketKind.catalog:
+      final c = kindData is CatalogKindData ? kindData : null;
+      return c?.catalogName.isNotEmpty == true
+          ? c!.catalogName
+          : (t.issueSummary.isNotEmpty ? t.issueSummary : 'Catalog order');
+    case TicketKind.manual:
+      final m = kindData is ManualKindData ? kindData : null;
+      if (m != null && m.summary.isNotEmpty) return m.summary;
+      if (t.issueSummary.isNotEmpty) return t.issueSummary;
+      return t.departmentName ?? 'Manual ticket';
+  }
 }
 
 TicketStatus _mapStatus(String status) {
@@ -84,38 +141,72 @@ TicketStatus _mapStatus(String status) {
   }
 }
 
-TicketKind _mapKind(String type) {
-  switch (type.toUpperCase()) {
-    case 'REQUEST':
+TicketKind _mapKind(String type, String? ticketType) {
+  final effective = (ticketType?.isNotEmpty == true ? ticketType! : type)
+      .toLowerCase();
+  switch (effective) {
+    case 'universal_request':
+    case 'request':
       return TicketKind.universal;
-    case 'CATALOG':
+    case 'service_catalog':
+    case 'catalog':
       return TicketKind.catalog;
+    case 'manual':
+    case 'manual_ticket_request':
+      return TicketKind.manual;
     default:
       return TicketKind.manual;
   }
 }
 
-Department _mapDepartment(String departmentId) {
-  final id = departmentId.toLowerCase();
-  if (id.contains('housekeeping') || id.contains('house')) {
+Department _mapDepartment({
+  String? code,
+  String? name,
+  required String fallback,
+}) {
+  // Prefer the stable backend `department.code` (e.g. `fnb`, `frontdesk`).
+  final byCode = (code ?? '').toLowerCase();
+  switch (byCode) {
+    case 'fnb':
+    case 'fb':
+      return Department.fnb;
+    case 'frontdesk':
+    case 'front_desk':
+    case 'front-desk':
+      return Department.frontDesk;
+    case 'housekeeping':
+      return Department.housekeeping;
+    case 'maintenance':
+      return Department.maintenance;
+    case 'concierge':
+      return Department.concierge;
+    case 'roomservice':
+    case 'room_service':
+      return Department.roomService;
+  }
+  // Fall back to fuzzy name match, then the legacy id-string heuristic.
+  final hint = ((name ?? '').isNotEmpty ? name! : fallback).toLowerCase();
+  if (hint.contains('housekeeping') || hint.contains('house')) {
     return Department.housekeeping;
   }
-  if (id.contains('maintenance') || id.contains('maint')) {
+  if (hint.contains('maintenance') || hint.contains('maint')) {
     return Department.maintenance;
   }
-  if (id.contains('room') || id.contains('service')) {
+  if (hint.contains('room service') || hint.contains('roomservice')) {
     return Department.roomService;
   }
-  if (id.contains('front') || id.contains('desk')) {
+  if (hint.contains('front') || hint.contains('desk') ||
+      hint.contains('reservation')) {
     return Department.frontDesk;
   }
-  if (id.contains('concierge')) {
+  if (hint.contains('concierge')) {
     return Department.concierge;
   }
-  if (id.contains('f&b') || id.contains('fn') || id.contains('food')) {
+  if (hint.contains('f&b') ||
+      hint.contains('food') ||
+      hint.contains('beverage')) {
     return Department.fnb;
   }
-  // Default fallback
   return Department.housekeeping;
 }
 
