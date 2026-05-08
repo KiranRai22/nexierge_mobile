@@ -286,18 +286,22 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
     );
   }
 
+  /// Top-tab badge counts. Sourced from the realtime cache so they always
+  /// match the filter-chip counts on the Today tab. Falls back to zero
+  /// while the cache is still loading.
   Map<TicketsMainTab, int> _calculateTabCounts() {
-    int totalFor(TicketsTab tab) {
-      final s = ref.read(ticketsPagedProvider(specForTab(tab))).valueOrNull;
-      // Prefer server's itemsTotal; fall back to currently loaded item
-      // count while the first page is in flight.
-      return s == null ? 0 : (s.itemsTotal > 0 ? s.itemsTotal : s.items.length);
+    final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
+    if (state == null) {
+      return const {
+        TicketsMainTab.incoming: 0,
+        TicketsMainTab.today: 0,
+        TicketsMainTab.done: 0,
+      };
     }
-
     return {
-      TicketsMainTab.incoming: totalFor(TicketsTab.incoming),
-      TicketsMainTab.today: totalFor(TicketsTab.today),
-      TicketsMainTab.done: totalFor(TicketsTab.done),
+      TicketsMainTab.incoming: state.incomingCount,
+      TicketsMainTab.today: state.todayAllCount,
+      TicketsMainTab.done: state.doneCount,
     };
   }
 
@@ -343,30 +347,48 @@ TicketsTab _ticketsTabFromMain(TicketsMainTab mainTab) {
 /// operator picked. The Incoming and Done tabs ignore this filter — their
 /// chips are sort-only or absent.
 ///
-/// "All" excludes terminal-state tickets (Done/Canceled/Expired) — those
-/// belong on the Done tab, not the operator's active workload. "Overdue"
-/// covers both Accepted and In Progress whose `due_at` has passed.
+/// Today list rules (mirror `MyTicketsState.todayFiltered`):
+/// - Day filter is `last_transition_at` (or its fallback) within today —
+///   not `created_at`.
+/// - Overdue is its own bucket: it's mutually exclusive with Accepted and
+///   In Progress.
 List<MyTicket> _applyTodaySubFilter(
   TicketsTab tab,
   List<MyTicket> items,
   String? filter,
 ) {
   if (tab != TicketsTab.today) return items;
-  bool isActive(MyTicket t) => t.isAccepted || t.isInProgress;
+  final today = items.where(_isTransitionedToday).toList(growable: false);
   switch (filter) {
     case 'accepted':
-      return items.where((t) => t.isAccepted).toList(growable: false);
+      return today
+          .where((t) => t.isAccepted && !t.isOverdue)
+          .toList(growable: false);
     case 'inprogress':
-      return items.where((t) => t.isInProgress).toList(growable: false);
+      return today
+          .where((t) => t.isInProgress && !t.isOverdue)
+          .toList(growable: false);
     case 'overdue':
-      return items
-          .where((t) => isActive(t) && t.isOverdue)
+      return today
+          .where((t) => (t.isAccepted || t.isInProgress) && t.isOverdue)
           .toList(growable: false);
     case 'all':
     case null:
     default:
-      return items.where(isActive).toList(growable: false);
+      return today
+          .where((t) => t.isAccepted || t.isInProgress)
+          .toList(growable: false);
   }
+}
+
+/// True when [t]'s status changed today by `last_transition_at` semantics
+/// (with the same fallback chain as `defaultStatusChangedAt`).
+bool _isTransitionedToday(MyTicket t) {
+  final epoch = defaultStatusChangedAt(t);
+  if (epoch <= 0) return false;
+  final dt = DateTime.fromMillisecondsSinceEpoch(epoch).toLocal();
+  final now = DateTime.now();
+  return dt.year == now.year && dt.month == now.month && dt.day == now.day;
 }
 
 /// True when [eta] is between now and end-of-today (local). Used to gate

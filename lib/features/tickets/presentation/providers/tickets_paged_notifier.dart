@@ -423,44 +423,16 @@ class TicketsPagedNotifier
 // Specs + providers per tab
 // ──────────────────────────────────────────────────────────────────────
 
-bool _isToday(int epochMs) {
-  if (epochMs <= 0) return false;
-  final dt = DateTime.fromMillisecondsSinceEpoch(epochMs).toLocal();
-  final now = DateTime.now();
-  return dt.year == now.year && dt.month == now.month && dt.day == now.day;
-}
-
-/// Helper to get today's date range in epoch milliseconds for server-side filtering
-(int start, int end) _todayDateRange() {
-  final now = DateTime.now();
-  final startOfDay = DateTime(now.year, now.month, now.day, 0, 0, 0);
-  final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
-  return (startOfDay.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch);
-}
-
 const _kIncomingSpec = TicketsPagedSpec(statuses: ['NEW']);
 
-// Cache the today spec to avoid infinite rebuilds
-TicketsPagedSpec? _cachedTodaySpec;
-DateTime? _lastSpecDate;
-
-TicketsPagedSpec _kTodaySpec() {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-
-  // Only recalculate if the date has changed
-  if (_lastSpecDate == null || _lastSpecDate!.isBefore(today)) {
-    final (start, end) = _todayDateRange();
-    _cachedTodaySpec = TicketsPagedSpec(
-      statuses: const ['ACCEPTED', 'IN_PROGRESS'],
-      createdAtStartDate: start,
-      createdAtEndDate: end,
-    );
-    _lastSpecDate = today;
-  }
-
-  return _cachedTodaySpec!;
-}
+/// Today server spec: status IN [ACCEPTED, IN_PROGRESS]. Date filtering is
+/// applied client-side using `last_transition_at` semantics — see
+/// `MyTicketsState._changedToday`. We deliberately don't filter by
+/// `created_at` server-side since "today" means "something happened today
+/// on this ticket", not "created today".
+const _kTodaySpec = TicketsPagedSpec(
+  statuses: ['ACCEPTED', 'IN_PROGRESS'],
+);
 
 const _kDoneSpec = TicketsPagedSpec(statuses: ['DONE']);
 
@@ -479,7 +451,7 @@ TicketsPagedSpec specForTab(TicketsTab tab) {
     case TicketsTab.incoming:
       return _kIncomingSpec;
     case TicketsTab.today:
-      return _kTodaySpec();
+      return _kTodaySpec;
     case TicketsTab.done:
       return _kDoneSpec;
   }

@@ -202,32 +202,51 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
 
   @override
   Future<List<MyTicketDto>> getMyTickets({required String hotelId}) async {
-    // ignore: avoid_print
-    print('[TicketRemoteDataSource] Fetching tickets for hotel: $hotelId');
-    // ignore: avoid_print
-    print(
-      '[TicketRemoteDataSource] Endpoint: ${APIEndpoints.ticketsGetMyTickets}',
-    );
-    final res = await _dio.get(
-      APIEndpoints.ticketsGetMyTickets,
-      queryParameters: {'hotel_id': hotelId},
-    );
-    // ignore: avoid_print
-    print('[TicketRemoteDataSource] Response status: ${res.statusCode}');
-    // ignore: avoid_print
-    print(
-      '[TicketRemoteDataSource] Response data type: ${res.data.runtimeType}',
+    // The realtime cache backed by this method needs ALL tickets, not just
+    // page 1. Loop through pages with a generous `per_page` to minimize
+    // round-trips and a hard safety cap on total iterations.
+    const perPage = 100;
+    const maxPages = 20; // 2,000 ticket safety cap.
+
+    final accumulated = <MyTicketDto>[];
+    debugPrint(
+      '[TicketRemoteDataSource] getMyTickets paginating hotel=$hotelId '
+      'perPage=$perPage maxPages=$maxPages',
     );
 
-    // API returns TicketsPageDto structure, extract items array
-    final responseData = res.data as Map<String, dynamic>;
-    final items = (responseData['items'] as List<dynamic>? ?? const []);
+    var page = 1;
+    while (page <= maxPages) {
+      final res = await _dio.get(
+        APIEndpoints.ticketsGetMyTickets,
+        queryParameters: {
+          'hotel_id': hotelId,
+          'page': page,
+          'per_page': perPage,
+        },
+      );
+      final body = res.data as Map<String, dynamic>;
+      final items = (body['items'] as List<dynamic>? ?? const []);
+      accumulated.addAll(
+        items.map((e) => MyTicketDto.fromJson(e as Map<String, dynamic>)),
+      );
 
-    // ignore: avoid_print
-    print('[TicketRemoteDataSource] Parsed ${items.length} tickets');
-    return items
-        .map((e) => MyTicketDto.fromJson(e as Map<String, dynamic>))
-        .toList();
+      final nextPage = (body['nextPage'] as num?)?.toInt();
+      debugPrint(
+        '[TicketRemoteDataSource] getMyTickets page=$page got=${items.length} '
+        'nextPage=$nextPage total=${accumulated.length}',
+      );
+      if (nextPage == null) break;
+      page = nextPage;
+    }
+
+    if (page > maxPages) {
+      debugPrint(
+        '[TicketRemoteDataSource] getMyTickets hit maxPages cap '
+        '($maxPages × $perPage = ${maxPages * perPage}) — counts may be '
+        'incomplete for hotels above this size',
+      );
+    }
+    return accumulated;
   }
 
   @override

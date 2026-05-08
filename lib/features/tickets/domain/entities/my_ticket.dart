@@ -367,32 +367,46 @@ class MyTicketsState {
 
   // ───────────────────────── Today (status changed today) ──────────────────
   //
-  // "Today" buckets exclude DONE/CANCELED/EXPIRED tickets — Done has its own
-  // top-level tab and terminal-state tickets aren't part of the operator's
-  // active workload. Overdue spans both ACCEPTED and IN_PROGRESS, since a
-  // ticket can blow past its SLA before work has actually started.
+  // "Today" = anything with `last_transition_at` (or its fallback) within
+  // today. Buckets exclude DONE/CANCELED/EXPIRED — those belong on the Done
+  // tab, not in the operator's active workload.
+  //
+  // Overdue is its own partition: a ticket past its `due_at` is reported
+  // ONLY under [todayOverdue], never under [todayAccepted] or
+  // [todayInProgress]. So:
+  //
+  //   todayAll = todayAccepted + todayInProgress + todayOverdue   (disjoint)
 
   bool _isActiveToday(MyTicket t) =>
       (t.isAccepted || t.isInProgress) && _changedToday(t);
 
-  /// Active tickets (Accepted + In Progress) whose latest status transition
-  /// happened today. Excludes Done/Canceled/Expired.
+  /// Active tickets (Accepted + In Progress) whose status changed today.
+  /// Includes overdue — overdue is a lens, not a removal from the bucket.
   List<MyTicket> get todayAll => all.where(_isActiveToday).toList();
-  List<MyTicket> get todayAccepted =>
-      all.where((t) => t.isAccepted && _changedToday(t)).toList();
-  List<MyTicket> get todayInProgress =>
-      all.where((t) => t.isInProgress && _changedToday(t)).toList();
+
+  /// Accepted today AND not overdue. Overdue accepted tickets surface only
+  /// under [todayOverdue].
+  List<MyTicket> get todayAccepted => all
+      .where((t) => t.isAccepted && _changedToday(t) && !t.isOverdue)
+      .toList();
+
+  /// In Progress today AND not overdue.
+  List<MyTicket> get todayInProgress => all
+      .where((t) => t.isInProgress && _changedToday(t) && !t.isOverdue)
+      .toList();
+
   List<MyTicket> get todayDone =>
       all.where((t) => t.isDone && _changedToday(t)).toList();
 
-  /// Overdue subset of [todayAll] — covers both ACCEPTED and IN_PROGRESS
-  /// tickets whose `due_at` has passed.
+  /// Overdue partition — past `due_at`, status changed today, status is
+  /// Accepted or In Progress. Mutually exclusive with [todayAccepted] and
+  /// [todayInProgress].
   List<MyTicket> get todayOverdue => all
       .where(
         (t) =>
             (t.isAccepted || t.isInProgress) &&
-            t.isOverdue &&
-            _changedToday(t),
+            _changedToday(t) &&
+            t.isOverdue,
       )
       .toList();
 
