@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 
 /// Raised, centered FAB used in the bottom-nav notch. Triggers the
@@ -36,7 +37,7 @@ class CenterFab extends StatelessWidget {
           shape: const CircleBorder(),
           child: InkWell(
             customBorder: const CircleBorder(),
-            onTap: onPressed,
+            onTap: tapSound(onPressed),
             child: const Icon(Icons.add, size: 26, color: Colors.white),
           ),
         ),

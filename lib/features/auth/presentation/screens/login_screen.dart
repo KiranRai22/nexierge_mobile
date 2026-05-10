@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/device_token_service.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -477,7 +478,7 @@ class _SignInButton extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: tapSound(onPressed),
         style: ElevatedButton.styleFrom(
           backgroundColor: isDisabled
               ? ColorPalette.loginButtonDisabledBg

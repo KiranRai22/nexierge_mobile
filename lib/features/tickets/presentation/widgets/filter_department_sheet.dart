@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -148,7 +149,7 @@ class _Header extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: onClose,
+            onTap: tapSound(onClose, SoundCategory.back),
             child: Container(
               width: 32,
               height: 32,
@@ -205,7 +206,7 @@ class _DeptList extends ConsumerWidget {
               final isOn = selected.contains(dept);
 
               return InkWell(
-                onTap: () => onToggle(dept),
+                onTap: tapSound(() => onToggle(dept), SoundCategory.preference),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -230,7 +231,7 @@ class _DeptList extends ConsumerWidget {
                       ),
                       if (i == depts.length - 1)
                         TextButton(
-                          onPressed: () => onSelectAll(depts),
+                          onPressed: tapSound(() => onSelectAll(depts), SoundCategory.preference),
                           child: Text(s.filterActionSelectAll),
                         ),
                     ],
@@ -303,7 +304,7 @@ class _Footer extends StatelessWidget {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: onClear,
+              onPressed: tapSound(onClear, SoundCategory.back),
               style: OutlinedButton.styleFrom(
                 foregroundColor: c.fgBase,
                 side: BorderSide(color: c.borderBase),
@@ -321,7 +322,7 @@ class _Footer extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              onPressed: onApply,
+              onPressed: tapSound(onApply),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size.fromHeight(44),
                 shape: RoundedRectangleBorder(

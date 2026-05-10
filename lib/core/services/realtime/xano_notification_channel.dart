@@ -5,8 +5,9 @@ import '../../../features/dashboard/presentation/providers/dashboard_bootstrap_c
 import 'socket_connection_status.dart';
 import 'xano_socket_service.dart';
 
-/// Provider that exposes the socket status stream
-final _xanoSocketStatusProvider = StreamProvider<SocketConnectionStatus>((ref) {
+/// Provider that exposes the socket status stream. Public so other features
+/// (e.g. reconciliation on reconnect) can react to connection-state changes.
+final xanoSocketStatusProvider = StreamProvider<SocketConnectionStatus>((ref) {
   final socketService = ref.watch(xanoSocketServiceProvider);
   return socketService.statusStream;
 });
@@ -17,7 +18,7 @@ final xanoNotificationChannelProvider = Provider<void>((ref) {
   final socketService = ref.watch(xanoSocketServiceProvider);
 
   // Watch the socket status stream
-  final statusAsync = ref.watch(_xanoSocketStatusProvider);
+  final statusAsync = ref.watch(xanoSocketStatusProvider);
 
   // Watch the bootstrap state to get profile availability
   final bootstrapAsync = ref.watch(dashboardBootstrapControllerProvider);

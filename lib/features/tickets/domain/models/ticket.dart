@@ -1,3 +1,4 @@
+import '../../../../core/time/server_clock.dart';
 import 'department.dart';
 
 /// Lifecycle of a ticket. Backend statuses (NEW, ACCEPTED, IN_PROGRESS,
@@ -205,7 +206,7 @@ class Ticket {
     if (status == TicketStatus.done || status == TicketStatus.canceled) {
       return false;
     }
-    return DateTime.now().isAfter(eta!);
+    return ServerClock.now().isAfter(eta!);
   }
 
   Ticket copyWith({

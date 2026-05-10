@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -71,7 +72,7 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
               ),
               IconButton(
                 icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -116,7 +117,7 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: c.borderBase),
                     minimumSize: const Size.fromHeight(48),
@@ -136,7 +137,7 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(_noteCtl.text),
+                  onPressed: tapSound(() => Navigator.of(context).pop(_noteCtl.text)),
                   icon: const Icon(LucideIcons.circleCheck, size: 18),
                   label: const Text('Mark as Done'),
                   style: ElevatedButton.styleFrom(

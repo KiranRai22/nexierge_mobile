@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 class StartWorkConfirmationBottomSheet extends StatelessWidget {
-  const StartWorkConfirmationBottomSheet._({required this.etaLabel});
-
-  final String etaLabel;
+  const StartWorkConfirmationBottomSheet._();
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +46,7 @@ class StartWorkConfirmationBottomSheet extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -91,7 +90,7 @@ class StartWorkConfirmationBottomSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Countdown: $etaLabel',
+                        'Countdown will start now',
                         style: TypographyManager.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
                           color: c.fgBase,
@@ -118,7 +117,7 @@ class StartWorkConfirmationBottomSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: c.borderBase),
                       shape: RoundedRectangleBorder(
@@ -138,7 +137,7 @@ class StartWorkConfirmationBottomSheet extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => Navigator.of(context).pop(true),
+                    onPressed: tapSound(() => Navigator.of(context).pop(true)),
                     icon: const Icon(LucideIcons.circlePlay, size: 18),
                     label: const Text('Start Work'),
                     style: ElevatedButton.styleFrom(
@@ -166,15 +165,11 @@ class StartWorkConfirmationBottomSheet extends StatelessWidget {
 
 /// Shows the Start Work confirmation sheet.
 /// Returns true if confirmed, null if dismissed.
-Future<bool?> showStartWorkConfirmation({
-  required BuildContext context,
-  required String etaLabel,
-}) {
+Future<bool?> showStartWorkConfirmation({required BuildContext context}) {
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) =>
-        StartWorkConfirmationBottomSheet._(etaLabel: etaLabel),
+    builder: (context) => const StartWorkConfirmationBottomSheet._(),
   );
 }

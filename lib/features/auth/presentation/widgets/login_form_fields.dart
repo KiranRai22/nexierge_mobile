@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/login_controller.dart';
@@ -279,7 +280,7 @@ class SecretField extends StatelessWidget {
                     color: ColorPalette.loginInputDivider,
                   ),
                   IconButton(
-                    onPressed: onToggleObscure,
+                    onPressed: tapSound(onToggleObscure, SoundCategory.preference),
                     splashRadius: 20,
                     icon: Icon(
                       obscure

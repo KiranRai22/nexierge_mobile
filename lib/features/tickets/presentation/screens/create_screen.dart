@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../shared/widgets/app_toast.dart';

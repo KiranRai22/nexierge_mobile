@@ -87,9 +87,11 @@ abstract class TicketRepository {
   /// Cancels a ticket with a required reason.
   Future<void> cancelTicket({required String ticketId, required String reason});
 
-  /// Updates the due time with a required reason.
+  /// Updates the due time with a required reason. The hotel id is required
+  /// by the backend so the change is scoped to the correct tenant.
   Future<void> changeDueTime({
     required String ticketId,
+    required String hotelId,
     required int newDueAt,
     required String reason,
   });
@@ -443,12 +445,14 @@ class _TicketRepositoryImpl implements TicketRepository {
   @override
   Future<void> changeDueTime({
     required String ticketId,
+    required String hotelId,
     required int newDueAt,
     required String reason,
   }) async {
     try {
       await _remote.changeDueTime(
         ticketId: ticketId,
+        hotelId: hotelId,
         newDueAt: newDueAt,
         reason: reason,
       );

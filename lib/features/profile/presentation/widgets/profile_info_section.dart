@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -48,9 +49,9 @@ class ProfileInfoSection extends ConsumerWidget {
                 ),
               ),
               GestureDetector(
-                onTap: () => ref
+                onTap: tapSound(() => ref
                     .read(profileSectionExpansionProvider.notifier)
-                    .toggle(sectionId),
+                    .toggle(sectionId), SoundCategory.card),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   child: AnimatedRotation(

@@ -560,6 +560,12 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get subTabToday;
 
+  /// No description provided for @subTabBacklog.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlog'**
+  String get subTabBacklog;
+
   /// No description provided for @subTabDone.
   ///
   /// In en, this message translates to:

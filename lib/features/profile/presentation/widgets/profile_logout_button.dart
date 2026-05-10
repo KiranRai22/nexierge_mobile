@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../auth/presentation/providers/auth_session_controller.dart';
@@ -38,12 +39,12 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
         content: Text(s.profileLogoutConfirmBody),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
+            onPressed: tapSound(() => Navigator.of(dialogContext).pop(false), SoundCategory.back),
             child: Text(s.profileLogoutConfirmCancel),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: ColorPalette.primary),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
+            onPressed: tapSound(() => Navigator.of(dialogContext).pop(true)),
             child: Text(s.profileLogoutConfirmAction),
           ),
         ],
@@ -74,7 +75,7 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: _busy ? null : () => _confirmAndSignOut(context),
+        onPressed: _busy ? null : tapSound(() => _confirmAndSignOut(context)),
         style: ElevatedButton.styleFrom(
           backgroundColor: ColorPalette.primary,
           foregroundColor: ColorPalette.white,

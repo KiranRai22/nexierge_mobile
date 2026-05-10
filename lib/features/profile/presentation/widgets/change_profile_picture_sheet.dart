@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../data/services/image_picker_service.dart';
@@ -82,7 +83,7 @@ class _SheetBody extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   icon: Icon(LucideIcons.x, color: c.fgSubtle, size: 20),
                   splashRadius: 20,
                   tooltip: s.cancel,
@@ -139,7 +140,7 @@ class _ActionTile extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.card),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
@@ -201,7 +202,7 @@ class _CancelButton extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.back),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(

@@ -194,18 +194,7 @@ class TicketCard extends StatelessWidget {
   }
 
   void _showStartWorkConfirmation(BuildContext context) {
-    showStartWorkConfirmation(
-      context: context,
-      etaLabel: ticket.eta != null
-          ? () {
-              final diff = ticket.eta!.difference(DateTime.now());
-              if (diff.isNegative) return '—';
-              if (diff.inDays > 0) return '${diff.inDays}d';
-              if (diff.inHours > 0) return '${diff.inHours}h';
-              return '${diff.inMinutes}m';
-            }()
-          : '—',
-    );
+    showStartWorkConfirmation(context: context);
   }
 }
 

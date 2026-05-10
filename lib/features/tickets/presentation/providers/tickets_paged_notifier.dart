@@ -11,7 +11,7 @@ enum TicketsSortOrder { newestFirst, oldestFirst }
 
 /// Identifier for one of the four logical ticket lists. Used by the
 /// realtime listener to pick which provider to push events into.
-enum TicketsTab { incoming, today, done }
+enum TicketsTab { incoming, today, backlog, done }
 
 /// Configuration for a paged ticket list — turns each tab into a
 /// declarative spec the notifier uses to call the API and decide whether
@@ -430,11 +430,36 @@ const _kIncomingSpec = TicketsPagedSpec(statuses: ['NEW']);
 /// `MyTicketsState._changedToday`. We deliberately don't filter by
 /// `created_at` server-side since "today" means "something happened today
 /// on this ticket", not "created today".
-const _kTodaySpec = TicketsPagedSpec(
-  statuses: ['ACCEPTED', 'IN_PROGRESS'],
+final _kTodaySpec = TicketsPagedSpec(
+  statuses: const ['ACCEPTED', 'IN_PROGRESS'],
+  localPredicate: _isTransitionedToday,
+);
+
+/// Backlog server spec: same statuses as Today (still active work) but the
+/// inverse date predicate — `last_transition_at` is NOT today. Carryover
+/// from previous days. Server-side same status filter; the date split is
+/// purely client-side so a single `/get_my_tickets` page covers both tabs.
+final _kBacklogSpec = TicketsPagedSpec(
+  statuses: const ['ACCEPTED', 'IN_PROGRESS'],
+  localPredicate: _isNotTransitionedToday,
 );
 
 const _kDoneSpec = TicketsPagedSpec(statuses: ['DONE']);
+
+/// Bucket predicate: ticket's `due_at` falls on today's local calendar.
+/// Mirrors [MyTicketsState._changedToday] so badge counts match paged list
+/// contents. Tickets with no due_at (`dueAt == 0`) are never Today —
+/// they fall into Backlog when active.
+bool _isSameLocalDay(int epochMs, DateTime now) {
+  if (epochMs <= 0) return false;
+  final dt = DateTime.fromMillisecondsSinceEpoch(epochMs).toLocal();
+  return dt.year == now.year && dt.month == now.month && dt.day == now.day;
+}
+
+bool _isTransitionedToday(MyTicket t) =>
+    _isSameLocalDay(t.dueAt, DateTime.now());
+
+bool _isNotTransitionedToday(MyTicket t) => !_isTransitionedToday(t);
 
 /// AsyncNotifier provider, parameterised by spec. Each tab uses its own
 /// const spec so Riverpod gives back a stable instance.
@@ -452,6 +477,8 @@ TicketsPagedSpec specForTab(TicketsTab tab) {
       return _kIncomingSpec;
     case TicketsTab.today:
       return _kTodaySpec;
+    case TicketsTab.backlog:
+      return _kBacklogSpec;
     case TicketsTab.done:
       return _kDoneSpec;
   }

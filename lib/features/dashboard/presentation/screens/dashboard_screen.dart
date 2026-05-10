@@ -39,44 +39,27 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool _isCompact = false;
-  static const double _compactThreshold = 50.0;
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
+  /// Maximum height of the stats sliver header — full 3-row grid plus its
+  /// bottom padding. Generous enough to hold all four KPI cards with their
+  /// dotted divider + footer text fully visible; under-sizing this clips
+  /// the bottom "Not started" card.
+  static const double _statsMaxExtent = 470.0;
+
+  /// Minimum height — compact 1-row chip strip plus its bottom padding.
+  /// Stays pinned at the top once the user has scrolled past `_statsMaxExtent
+  ///  - _statsMinExtent`, so Needs Attention cards flow underneath rather
+  /// than getting hidden behind it.
+  ///
+  /// Sized to fit each chip's intrinsic Column (icon 20 + gap 4 + value 22 =
+  /// 46) plus the chip's vertical chrome (~24) plus the strip's 12px
+  /// bottom padding — total ~82, with a small buffer for fonts that scale.
+  static const double _statsMinExtent = 88.0;
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.hasClients) {
-      final offset = _scrollController.offset;
-      // Use different thresholds to prevent flickering
-      // Enter compact mode when scrolling up past 50px
-      // Exit compact mode only when scrolling down near the top (20px)
-      if (_isCompact) {
-        // In compact mode - require scrolling down to near top to exit
-        if (offset < 20) {
-          setState(() {
-            _isCompact = false;
-          });
-        }
-      } else {
-        // In full mode - enter compact when scrolling up
-        if (offset > _compactThreshold) {
-          setState(() {
-            _isCompact = true;
-          });
-        }
-      }
-    }
   }
 
   void _openNotifications(BuildContext context) {
@@ -221,65 +204,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
 
-            // Animated stats section - compact when scrolled
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              child: _isCompact
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: asyncCounts.when(
-                        data: (counts) => DashboardStatsCompact(
-                          incoming: counts.needsAcknowledgmentCount,
-                          accepted: counts.notStartedCount,
-                          inProgress: counts.inProgressCount,
-                          overdue: counts.overdueCount,
-                          onTapIncoming: _navigateToNeedsAcknowledgment,
-                          onTapInProgress: _navigateToInProgress,
-                          onTapOverdue: _navigateToOverdue,
-                          onTapAccepted: _navigateToNotStarted,
-                        ),
-                        loading: () => const SizedBox(height: 48),
-                        error: (_, _) => const SizedBox(height: 48),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-
-            // Needs attention header - always visible when compact
-            if (_isCompact)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Needs Attention',
-                      style: TypographyManager.textHeading.copyWith(
-                        color: c.fgBase,
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () => widget.onSwitchTab(ShellTab.tickets),
-                      borderRadius: BorderRadius.circular(6),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 4,
-                        ),
-                        child: Text(
-                          'View All',
-                          style: TypographyManager.textCaption.copyWith(
-                            color: c.tagPurpleIcon,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-            // Scrollable content below
+            // Scrollable content. The stats grid lives inside a pinned
+            // SliverPersistentHeader that smoothly shrinks + cross-fades
+            // into the compact 1-row strip as the user scrolls, instead of
+            // toggling layouts at a threshold (which jumped abruptly and
+            // could hide the first Needs Attention card behind the strip).
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refresh,
@@ -287,50 +216,57 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    if (!_isCompact)
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                        sliver: SliverToBoxAdapter(
-                          // KPI counts come from the real `dashboard/numbers`
-                          // endpoint. Breakdown line stays driven by the local
-                          // mock projection until the backend exposes it.
-                          child: asyncCounts.when(
-                            data: (counts) => DashboardStatsGrid(
-                              incoming: counts.needsAcknowledgmentCount,
-                              accepted: counts.notStartedCount,
-                              inProgress: counts.inProgressCount,
-                              overdue: counts.overdueCount,
-                              breakdown: asyncView.maybeWhen(
-                                data: (v) => v.incomingBreakdown,
-                                orElse: () => const IncomingBreakdown(
-                                  universal: 0,
-                                  catalog: 0,
-                                  manual: 0,
-                                ),
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _DashboardStatsHeaderDelegate(
+                        maxHeight: _statsMaxExtent,
+                        minHeight: _statsMinExtent,
+                        backgroundColor: c.bgSubtle,
+                        fullGrid: asyncCounts.when(
+                          data: (counts) => DashboardStatsGrid(
+                            incoming: counts.needsAcknowledgmentCount,
+                            accepted: counts.notStartedCount,
+                            inProgress: counts.inProgressCount,
+                            overdue: counts.overdueCount,
+                            breakdown: asyncView.maybeWhen(
+                              data: (v) => v.incomingBreakdown,
+                              orElse: () => const IncomingBreakdown(
+                                universal: 0,
+                                catalog: 0,
+                                manual: 0,
                               ),
-                              onTapIncoming: _navigateToNeedsAcknowledgment,
-                              onTapInProgress: _navigateToInProgress,
-                              onTapOverdue: _navigateToOverdue,
-                              onTapAccepted: _navigateToNotStarted,
                             ),
-                            loading: () => const _StatsSkeleton(),
-                            error: (_, _) => const _StatsSkeleton(),
+                            onTapIncoming: _navigateToNeedsAcknowledgment,
+                            onTapInProgress: _navigateToInProgress,
+                            onTapOverdue: _navigateToOverdue,
+                            onTapAccepted: _navigateToNotStarted,
                           ),
+                          loading: () => const _StatsSkeleton(),
+                          error: (_, _) => const _StatsSkeleton(),
+                        ),
+                        compactStrip: asyncCounts.when(
+                          data: (counts) => DashboardStatsCompact(
+                            incoming: counts.needsAcknowledgmentCount,
+                            accepted: counts.notStartedCount,
+                            inProgress: counts.inProgressCount,
+                            overdue: counts.overdueCount,
+                            onTapIncoming: _navigateToNeedsAcknowledgment,
+                            onTapInProgress: _navigateToInProgress,
+                            onTapOverdue: _navigateToOverdue,
+                            onTapAccepted: _navigateToNotStarted,
+                          ),
+                          loading: () => const SizedBox(height: 48),
+                          error: (_, _) => const SizedBox(height: 48),
                         ),
                       ),
+                    ),
                     SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        _isCompact ? 30 : 0,
-                        16,
-                        120, // Increased bottom padding for bottom nav
-                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
                       sliver: SliverToBoxAdapter(
                         child: asyncNeedsAttention.when(
                           data: (items) => NeedsAttentionApiList(
                             items: items,
                             isLoading: false,
-                            showHeader: !_isCompact,
                             onViewAll: () =>
                                 widget.onSwitchTab(ShellTab.tickets),
                             onItemTap: (ticketId) {
@@ -345,7 +281,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           loading: () => NeedsAttentionApiList(
                             items: const [],
                             isLoading: true,
-                            showHeader: !_isCompact,
                             onViewAll: () =>
                                 widget.onSwitchTab(ShellTab.tickets),
                             onItemTap: (_) {},
@@ -353,7 +288,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           error: (_, _) => NeedsAttentionApiList(
                             items: const [],
                             isLoading: false,
-                            showHeader: !_isCompact,
                             onViewAll: () =>
                                 widget.onSwitchTab(ShellTab.tickets),
                             onItemTap: (_) {},
@@ -391,4 +325,97 @@ class _StatsSkeleton extends StatelessWidget {
   }
 
   static void _noop() {}
+}
+
+/// SliverPersistentHeader delegate that smoothly shrinks the dashboard's
+/// stats area as the user scrolls. The full 3-row grid sits at the top of
+/// the header zone and fades out as `shrinkOffset` grows; the compact
+/// 1-row strip sits at the bottom (anchored to the always-visible
+/// `minExtent` band) and fades in. The header pins at `minExtent`, so the
+/// Needs Attention list slides underneath it instead of being hidden by
+/// an absolutely-positioned compact bar (which was the old bug).
+class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget fullGrid;
+  final Widget compactStrip;
+  final double maxHeight;
+  final double minHeight;
+  final Color backgroundColor;
+
+  _DashboardStatsHeaderDelegate({
+    required this.fullGrid,
+    required this.compactStrip,
+    required this.maxHeight,
+    required this.minHeight,
+    required this.backgroundColor,
+  });
+
+  @override
+  double get maxExtent => maxHeight;
+
+  @override
+  double get minExtent => minHeight;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final range = maxExtent - minExtent;
+    final t = range > 0 ? (shrinkOffset / range).clamp(0.0, 1.0) : 1.0;
+    return Container(
+      color: backgroundColor,
+      child: ClipRect(
+        child: Stack(
+          children: [
+            // Full grid — top-aligned in the header zone, fades out as the
+            // header shrinks. IgnorePointer flips once it's mostly gone so
+            // taps don't land on invisible cards.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                ignoring: t > 0.5,
+                child: Opacity(
+                  opacity: 1.0 - t,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: fullGrid,
+                  ),
+                ),
+              ),
+            ),
+            // Compact strip — anchored to the bottom (always inside the
+            // pinned `minExtent` band), fades in symmetrically.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: minExtent,
+              child: IgnorePointer(
+                ignoring: t < 0.5,
+                child: Opacity(
+                  opacity: t,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: compactStrip,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_DashboardStatsHeaderDelegate oldDelegate) {
+    return oldDelegate.maxHeight != maxHeight ||
+        oldDelegate.minHeight != minHeight ||
+        oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.fullGrid != fullGrid ||
+        oldDelegate.compactStrip != compactStrip;
+  }
 }

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/realtime/xano_notification_channel.dart';
 import '../../../../core/services/realtime/xano_socket_service.dart';
+import '../../../dashboard/presentation/providers/dashboard_counts_controller.dart';
 import '../../data/services/ticket_realtime_event_mapper.dart';
 import 'my_tickets_notifier.dart';
 import 'ticket_detail_api_controller.dart';
@@ -24,6 +27,16 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
 
   final socket = ref.watch(xanoSocketServiceProvider);
 
+  // Coalesce bursty socket events into a single counts refetch per ~600ms
+  // window so a flurry of ticket transitions doesn't hammer /dashboard/numbers.
+  Timer? countsDebounce;
+  void scheduleCountsRefresh() {
+    countsDebounce?.cancel();
+    countsDebounce = Timer(const Duration(milliseconds: 600), () {
+      ref.invalidate(dashboardCountsControllerProvider);
+    });
+  }
+
   final sub = socket.messageStream.listen(
     (raw) {
       final event = parseTicketRealtimeEvent(raw);
@@ -38,6 +51,7 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
                 .read(ticketsPagedProvider(specForTab(tab)).notifier)
                 .applyRealtimeUpsert(ticket);
           }
+          scheduleCountsRefresh();
           // If the user is viewing this ticket's detail, pull the latest
           // payload so the activity timeline picks up the new transition
           // entry the backend just emitted.
@@ -52,6 +66,7 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
                 .read(ticketsPagedProvider(specForTab(tab)).notifier)
                 .applyRealtimeDelete(ticketId);
           }
+          scheduleCountsRefresh();
       }
     },
     onError: (Object e) {
@@ -59,7 +74,10 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
     },
   );
 
-  ref.onDispose(sub.cancel);
+  ref.onDispose(() {
+    countsDebounce?.cancel();
+    sub.cancel();
+  });
 
   if (kDebugMode) {
     debugPrint('[TicketsRealtimeListener] subscribed to socket messages');

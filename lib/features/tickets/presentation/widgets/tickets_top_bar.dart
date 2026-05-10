@@ -155,7 +155,7 @@ class _CircleIconButton extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           GestureDetector(
-            onTap: onPressed,
+            onTap: tapSound(onPressed),
             child: Container(
               width: 32,
               height: 32,

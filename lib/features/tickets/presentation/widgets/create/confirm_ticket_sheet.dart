@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/services/sound_manager.dart';
 import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
@@ -119,7 +120,7 @@ class _ConfirmBody extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: ColorPalette.textPrimary,
                           side: BorderSide(color: ColorPalette.opsBorder),
@@ -138,7 +139,7 @@ class _ConfirmBody extends ConsumerWidget {
                     Expanded(
                       flex: 2,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
+                        onPressed: tapSound(() => Navigator.of(context).pop(true)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: ColorPalette.textPrimary,
                           foregroundColor: ColorPalette.white,
@@ -218,7 +219,7 @@ class _Header extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.close_rounded),
             color: ColorPalette.textSecondary,
-            onPressed: onClose,
+            onPressed: tapSound(onClose, SoundCategory.back),
           ),
         ],
       ),

@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/time/server_clock.dart';
 import '../../../shell/presentation/widgets/app_bottom_nav.dart';
 import '../../domain/entities/my_ticket.dart';
 import '../../domain/models/ticket.dart';
@@ -98,6 +100,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       case TicketsMainTab.incoming:
         return true; // Has newest/oldest filters
       case TicketsMainTab.today:
+      case TicketsMainTab.backlog:
         return true; // Has all/accepted/inprogress/overdue filters
       case TicketsMainTab.done:
         return false; // Filters hidden
@@ -125,6 +128,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       if (prev == next) return;
       switch (next) {
         case TicketsMainTab.today:
+        case TicketsMainTab.backlog:
           ref.read(ticketsFilterProvider.notifier).state = 'all';
           break;
         case TicketsMainTab.incoming:
@@ -171,6 +175,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       backgroundColor: c.bgBase,
       floatingActionButton: CenterFab(
         onPressed: () async {
+          SoundManager.instance.play(SoundCategory.button);
           final submitted = await CreateRouter.openCreate(context, ref);
           if (submitted && mounted) {
             widget.onSwitchTab(ShellTab.tickets);
@@ -217,7 +222,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                     button: true,
                     label: context.l10n.filterTitle,
                     child: InkWell(
-                      onTap: () => _showFilterSheet(context),
+                      onTap: tapSound(() => _showFilterSheet(context)),
                       borderRadius: BorderRadius.circular(999),
                       child: Container(
                         width: 40,
@@ -266,7 +271,9 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                   selectedFilter: selectedFilter,
                   filterCounts: mainTab == TicketsMainTab.today
                       ? todayCounts
-                      : null,
+                      : (mainTab == TicketsMainTab.backlog
+                            ? _backlogFilterCounts()
+                            : null),
                   onFilterChanged: (filter) =>
                       ref.read(ticketsFilterProvider.notifier).state = filter,
                 ),
@@ -295,12 +302,14 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       return const {
         TicketsMainTab.incoming: 0,
         TicketsMainTab.today: 0,
+        TicketsMainTab.backlog: 0,
         TicketsMainTab.done: 0,
       };
     }
     return {
       TicketsMainTab.incoming: state.incomingCount,
       TicketsMainTab.today: state.todayAllCount,
+      TicketsMainTab.backlog: state.backlogAllCount,
       TicketsMainTab.done: state.doneCount,
     };
   }
@@ -317,6 +326,21 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       'accepted': state.todayAcceptedCount,
       'inprogress': state.todayInProgressCount,
       'overdue': state.todayOverdueCount,
+    };
+  }
+
+  /// Backlog filter-chip counts — mirrors [_todayFilterCounts] for the
+  /// non-today bucket. Same chip keys so the chip widget needs no changes.
+  Map<String, int> _backlogFilterCounts() {
+    final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
+    if (state == null) {
+      return const {'all': 0, 'accepted': 0, 'inprogress': 0, 'overdue': 0};
+    }
+    return {
+      'all': state.backlogAllCount,
+      'accepted': state.backlogAcceptedCount,
+      'inprogress': state.backlogInProgressCount,
+      'overdue': state.backlogOverdueCount,
     };
   }
 
@@ -338,100 +362,70 @@ TicketsTab _ticketsTabFromMain(TicketsMainTab mainTab) {
       return TicketsTab.incoming;
     case TicketsMainTab.today:
       return TicketsTab.today;
+    case TicketsMainTab.backlog:
+      return TicketsTab.backlog;
     case TicketsMainTab.done:
       return TicketsTab.done;
   }
 }
 
-/// Narrows the Today tab's already-fetched items down to the chip the
-/// operator picked. The Incoming and Done tabs ignore this filter — their
+/// Narrows the Today / Backlog tab's already-fetched items down to the
+/// chip the operator picked. Incoming and Done tabs are passthrough — their
 /// chips are sort-only or absent.
 ///
-/// Today list rules (mirror `MyTicketsState.todayFiltered`):
-/// - Day filter is `last_transition_at` (or its fallback) within today —
-///   not `created_at`.
-/// - Overdue is its own bucket: it's mutually exclusive with Accepted and
-///   In Progress.
+/// Day predicate is `last_transition_at` (or its fallback) within today.
+/// Today = predicate true; Backlog = predicate false. Overdue is its own
+/// bucket and is mutually exclusive with Accepted / In Progress in both.
 List<MyTicket> _applyTodaySubFilter(
   TicketsTab tab,
   List<MyTicket> items,
   String? filter,
 ) {
-  if (tab != TicketsTab.today) return items;
-  final today = items.where(_isTransitionedToday).toList(growable: false);
+  final bool Function(MyTicket) dayPredicate;
+  switch (tab) {
+    case TicketsTab.today:
+      dayPredicate = _isTransitionedToday;
+      break;
+    case TicketsTab.backlog:
+      dayPredicate = (t) => !_isTransitionedToday(t);
+      break;
+    case TicketsTab.incoming:
+    case TicketsTab.done:
+      return items;
+  }
+  final scoped = items.where(dayPredicate).toList(growable: false);
   switch (filter) {
     case 'accepted':
-      return today
+      return scoped
           .where((t) => t.isAccepted && !t.isOverdue)
           .toList(growable: false);
     case 'inprogress':
-      return today
+      return scoped
           .where((t) => t.isInProgress && !t.isOverdue)
           .toList(growable: false);
     case 'overdue':
-      return today
+      return scoped
           .where((t) => (t.isAccepted || t.isInProgress) && t.isOverdue)
           .toList(growable: false);
     case 'all':
     case null:
     default:
-      return today
+      return scoped
           .where((t) => t.isAccepted || t.isInProgress)
           .toList(growable: false);
   }
 }
 
-/// True when [t]'s status changed today by `last_transition_at` semantics
-/// (with the same fallback chain as `defaultStatusChangedAt`).
+/// True when [t]'s `due_at` is on today's local calendar. Today/Backlog
+/// bucketing is driven by due date, not by `last_transition_at` — so a
+/// non-status patch (e.g. change-due-time pushing due to next week) does
+/// NOT pull a backlog ticket into Today. Tickets with no due (`dueAt == 0`)
+/// are never Today.
 bool _isTransitionedToday(MyTicket t) {
-  final epoch = defaultStatusChangedAt(t);
-  if (epoch <= 0) return false;
-  final dt = DateTime.fromMillisecondsSinceEpoch(epoch).toLocal();
-  final now = DateTime.now();
+  if (t.dueAt <= 0) return false;
+  final dt = DateTime.fromMillisecondsSinceEpoch(t.dueAt).toLocal();
+  final now = ServerClock.now();
   return dt.year == now.year && dt.month == now.month && dt.day == now.day;
-}
-
-/// True when [eta] is between now and end-of-today (local). Used to gate
-/// the Accept & Start option on the acknowledge sheet.
-bool _isDueWithinToday(DateTime? eta) {
-  if (eta == null) return false;
-  final now = DateTime.now();
-  final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
-  return !eta.isBefore(now) && !eta.isAfter(endOfToday);
-}
-
-/// Calculate due time in milliseconds from now based on selected minutes
-/// Returns null if the calculated time is not within today
-int? _calculateDueTimeInMs(int minutesFromNow) {
-  final now = DateTime.now();
-  final dueTime = now.add(Duration(minutes: minutesFromNow));
-  final endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
-
-  // Check if due time is within today
-  if (dueTime.isAfter(endOfToday)) {
-    return null; // Not within today
-  }
-
-  return dueTime.millisecondsSinceEpoch;
-}
-
-/// Calculate due time in milliseconds from now based on custom date time
-/// Returns null if the date is not today
-int? _calculateCustomDueTimeInMs(DateTime customDateTime) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final customDate = DateTime(
-    customDateTime.year,
-    customDateTime.month,
-    customDateTime.day,
-  );
-
-  // Check if custom date is today
-  if (customDate.isAtSameMomentAs(today)) {
-    return customDateTime.millisecondsSinceEpoch;
-  }
-
-  return null; // Not today
 }
 
 /// Builds an `onAccept` handler that opens the acknowledge sheet and
@@ -448,27 +442,13 @@ VoidCallback _acceptHandler(
       ticketCode: ticket.code,
       ticketTitle: ticket.title,
       hasGuest: ticket.guest != null,
-      canAcceptAndStart: true,
     );
     if (result == null || !context.mounted) return;
 
-    // Calculate due time in milliseconds
-    int? dueTimeMs;
-    if (result.mode == 'preset' && result.minutesFromNow != null) {
-      dueTimeMs = _calculateDueTimeInMs(result.minutesFromNow!);
-    } else if (result.mode == 'custom' && result.customDateTime != null) {
-      dueTimeMs = _calculateCustomDueTimeInMs(result.customDateTime!);
-    }
-
-    // Check if due time is within today
-    if (dueTimeMs == null) {
-      if (context.mounted) {
-        context.showFailure(
-          'Due time must be within today. We will handle this case later.',
-        );
-      }
-      return;
-    }
+    // The sheet now resolves the due-at epoch itself for any picked preset
+    // or custom date/time. Future dates are accepted — the today-only gate
+    // was dropped along with the sheet's "Accept & Start" gating.
+    final dueTimeMs = result.dueAtEpochMs;
 
     try {
       // Step 1: Mark ticket as transitioning (show shimmer effect)
@@ -495,7 +475,7 @@ VoidCallback _acceptHandler(
             .acknowledgeAndStartTicket(
               ticketId: ticket.id,
               dueAt: dueTimeMs,
-              notes: null, // Notes not currently captured in bottom sheet
+              notes: result.notes,
             );
       } else {
         // Use acknowledge API
@@ -504,18 +484,23 @@ VoidCallback _acceptHandler(
             .acknowledgeTicket(
               ticketId: ticket.id,
               dueAt: dueTimeMs,
-              notes: null, // Notes not currently captured in bottom sheet
+              notes: result.notes,
             );
       }
 
-      // Step 4: Update ticket status immediately (remove from incoming, add to today)
+      // Step 4: Update ticket status immediately (remove from incoming, add
+      // to today). Mirror the API call's target status so the optimistic
+      // local view matches what the server just persisted — picking
+      // "Accept & Start" lands the ticket in IN_PROGRESS, not ACCEPTED.
+      final optimisticStatus =
+          result.startImmediately ? 'IN_PROGRESS' : 'ACCEPTED';
       ref
           .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
-          .updateTicketStatusImmediate(ticket.id, 'ACCEPTED');
+          .updateTicketStatusImmediate(ticket.id, optimisticStatus);
 
       ref
           .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-          .updateTicketStatusImmediate(ticket.id, 'ACCEPTED');
+          .updateTicketStatusImmediate(ticket.id, optimisticStatus);
 
       // Step 5: Refresh other providers as backup
       ref.read(myTicketsNotifierProvider.notifier).refresh();
@@ -540,7 +525,13 @@ VoidCallback _acceptHandler(
 VoidCallback _openHandler(BuildContext context, Ticket ticket) {
   return () => Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => TicketDetailScreen(ticketId: ticket.id),
+      // Forward the list-built Ticket as a preset so the detail header /
+      // type / source come straight from what the user just saw on the
+      // card, no cache lookup race.
+      builder: (_) => TicketDetailScreen(
+        ticketId: ticket.id,
+        presetTicket: ticket,
+      ),
     ),
   );
 }
@@ -550,20 +541,7 @@ Future<void> _startWorkHandler(
   WidgetRef ref,
   Ticket ticket,
 ) async {
-  final etaLabel = () {
-    final eta = ticket.eta;
-    if (eta == null) return '—';
-    final diff = eta.difference(DateTime.now());
-    if (diff.isNegative) return '—';
-    if (diff.inDays > 0) return '${diff.inDays}d';
-    if (diff.inHours > 0) return '${diff.inHours}h';
-    return '${diff.inMinutes}m';
-  }();
-
-  final confirmed = await showStartWorkConfirmation(
-    context: context,
-    etaLabel: etaLabel,
-  );
+  final confirmed = await showStartWorkConfirmation(context: context);
   if (confirmed != true || !context.mounted) return;
 
   try {

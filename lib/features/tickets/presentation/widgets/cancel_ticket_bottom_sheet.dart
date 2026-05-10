@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -75,7 +76,7 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
               ),
               IconButton(
                 icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -121,7 +122,7 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: c.borderBase),
                     minimumSize: const Size.fromHeight(48),
@@ -142,7 +143,7 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _canConfirm
-                      ? () => Navigator.of(context).pop(_reasonCtl.text.trim())
+                      ? tapSound(() => Navigator.of(context).pop(_reasonCtl.text.trim()))
                       : null,
                   icon: Icon(
                     LucideIcons.circleX,

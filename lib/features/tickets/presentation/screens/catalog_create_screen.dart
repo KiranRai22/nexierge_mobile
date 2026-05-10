@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/widgets/shimmer_widget.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../domain/entities/service_catalog.dart';
 import '../providers/service_catalogs_provider.dart';
@@ -28,7 +30,10 @@ class CatalogCreateScreen extends ConsumerWidget {
         scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: tapSound(
+            () => Navigator.of(context).pop(),
+            SoundCategory.back,
+          ),
         ),
         title: Text(s.createCatalogTitle, style: TypographyManager.screenTitle),
         centerTitle: true,
@@ -108,7 +113,10 @@ class _EmptyView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          TextButton(onPressed: onRefresh, child: const Text('Refresh')),
+          TextButton(
+            onPressed: tapSound(onRefresh),
+            child: const Text('Refresh'),
+          ),
         ],
       ),
     );
@@ -141,7 +149,10 @@ class _ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+            ElevatedButton(
+              onPressed: tapSound(onRetry),
+              child: const Text('Retry'),
+            ),
           ],
         ),
       ),
@@ -167,7 +178,10 @@ class _CatalogListView extends StatelessWidget {
         final catalog = catalogs[index];
         return _CatalogCard(
           catalog: catalog,
-          onTap: () => onCatalogSelected(catalog),
+          onTap: tapSound(
+            () => onCatalogSelected(catalog),
+            SoundCategory.card,
+          )!,
         );
       },
     );
@@ -216,6 +230,14 @@ class _CatalogCard extends StatelessWidget {
                           width: 56,
                           height: 56,
                           fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const ShimmerContainer(
+                              width: 56,
+                              height: 56,
+                              borderRadius: 12,
+                            );
+                          },
                           errorBuilder: (_, __, ___) =>
                               Icon(Icons.store, color: brandColor, size: 28),
                         ),

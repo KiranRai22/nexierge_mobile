@@ -5,9 +5,12 @@ import '../../../../core/theme/color_palette.dart';
 import '../../../dashboard/presentation/screens/dashboard_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../tickets/presentation/providers/my_tickets_notifier.dart';
+import '../../../tickets/presentation/providers/ticket_form_options_provider.dart';
 import '../../../tickets/presentation/providers/tickets_main_tab_provider.dart';
 import '../../../tickets/presentation/providers/tickets_realtime_listener.dart';
+import '../../../tickets/presentation/providers/tickets_reconcile_provider.dart';
 import '../../../tickets/presentation/screens/tickets_screen_new.dart';
+import '../../../tickets/presentation/widgets/ticket_event_orchestrator.dart';
 import '../../../tickets/presentation/widgets/tickets_main_tabs.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'create_router.dart';
@@ -73,16 +76,28 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     // shell is alive (i.e. user is logged in), every ticket WS frame
     // dispatches into the persistent ticket notifier.
     ref.watch(ticketsRealtimeListenerProvider);
+    // Reconcile ticket state on socket (re)connect and on app resume so any
+    // events missed while disconnected/backgrounded are picked up without
+    // requiring user interaction.
+    ref.watch(ticketsReconcileProvider);
+    // Pre-fetch the hotel's department list so detail screens can resolve
+    // `department_id → name` without waiting for first navigation. The
+    // detail API returns only `department_id`; the name comes from this
+    // cache (see `_resolveTicketTitle` in ticket_detail_screen.dart).
+    ref.watch(ticketFormOptionsProvider);
 
     return Scaffold(
       backgroundColor: ColorPalette.opsSurface,
-      body: IndexedStack(
-        index: _stackIndex,
-        children: [
-          DashboardScreen(onSwitchTab: _onSelect),
-          TicketsScreenNew(onSwitchTab: _onSelect),
-          const ProfileScreen(),
-        ],
+      body: TicketEventOrchestrator(
+        onNavigateToTickets: _navigateToTicketsTab,
+        child: IndexedStack(
+          index: _stackIndex,
+          children: [
+            DashboardScreen(onSwitchTab: _onSelect),
+            TicketsScreenNew(onSwitchTab: _onSelect),
+            const ProfileScreen(),
+          ],
+        ),
       ),
       floatingActionButton: _current == ShellTab.dashboard
           ? CenterFab(onPressed: _onFabPressed)
@@ -90,5 +105,15 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: AppBottomNav(current: _current, onSelect: _onSelect),
     );
+  }
+
+  /// Toast-tap entry point. Bypasses the auto-Today reset in [_onSelect] so
+  /// the orchestrator can land the user on the exact sub-tab tied to the
+  /// event bucket (Incoming / Today / Done).
+  void _navigateToTicketsTab(TicketsMainTab mainTab) {
+    setState(() => _current = ShellTab.tickets);
+    ref.read(ticketsTabActiveProvider.notifier).state = true;
+    ref.read(ticketsMainTabProvider.notifier).state = mainTab;
+    ref.read(ticketsFilterProvider.notifier).state = 'all';
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -48,7 +49,7 @@ abstract class LoginStateDialog {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
+              onPressed: tapSound(() => Navigator.of(ctx).pop()),
               child: Text(ctx.l10n.confirm),
             ),
           ],

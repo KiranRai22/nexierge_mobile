@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/services/sound_manager.dart';
 import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/models/catalog.dart';
@@ -183,7 +184,12 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
                             child: _RadioRow(
                               option: o,
                               selected: _selectedOptions[g.id]?.id == o.id,
-                              onTap: () => _selectOption(g, o),
+                              onTap: () {
+                                SoundManager.instance.play(
+                                  SoundCategory.preference,
+                                );
+                                _selectOption(g, o);
+                              },
                             ),
                           )
                       else
@@ -220,7 +226,7 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
                 top: false,
                 minimum: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                 child: ElevatedButton(
-                  onPressed: canSubmit ? _confirm : null,
+                  onPressed: canSubmit ? tapSound(_confirm) : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ColorPalette.opsPurple,
                     foregroundColor: ColorPalette.white,
@@ -321,7 +327,7 @@ class _CircleIcon extends StatelessWidget {
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onPressed,
+        onTap: tapSound(onPressed, SoundCategory.back),
         customBorder: const CircleBorder(),
         child: SizedBox(
           width: 32,

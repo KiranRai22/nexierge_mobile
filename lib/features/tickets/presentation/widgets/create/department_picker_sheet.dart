@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/services/sound_manager.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/entities/ticket_form_options.dart';
@@ -104,7 +105,7 @@ class _DepartmentCell extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onTap,
+          onTap: tapSound(onTap, SoundCategory.card),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
@@ -169,7 +170,7 @@ class _Header extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.close_rounded),
             color: c.fgMuted,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
           ),
         ],
       ),
@@ -197,7 +198,7 @@ class _ErrorView extends StatelessWidget {
               style: TypographyManager.bodySmall.copyWith(color: c.fgError),
             ),
             const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: Text(context.l10n.retry)),
+            OutlinedButton(onPressed: tapSound(onRetry), child: Text(context.l10n.retry)),
           ],
         ),
       ),

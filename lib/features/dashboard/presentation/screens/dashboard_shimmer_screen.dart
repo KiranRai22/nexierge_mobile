@@ -263,20 +263,28 @@ class _BottomNavShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Row(
+    // SafeArea here keeps the shimmer above the iOS home indicator / Android
+    // gesture bar so the bar's full height is actually visible. Without it
+    // the bottom row of icons collides with the system gesture area.
+    return Material(
+      color: Colors.white,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Container(
+            height: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           // Home tab shimmer
@@ -307,6 +315,9 @@ class _BottomNavShimmer extends StatelessWidget {
             ],
           ),
         ],
+      ),
+          ),
+        ),
       ),
     );
   }

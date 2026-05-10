@@ -11,7 +11,12 @@ import '../../../domain/models/ticket.dart';
 /// Top bar of the ticket detail screen.
 ///
 /// Visual:
-///   ( ◀ )  TKT-0008  [ACCEPTED] [P2]                ( ✕ )
+///   ( ◀ )  Extra bath towels  [ACCEPTED] [P2]        ( ✕ )
+///
+/// The heading is the human-friendly ticket title (built from the request
+/// kind: catalog name, universal item name, or manual summary). The
+/// previous TKT-#### code rendering was replaced with the title because
+/// staff identify tickets by what was requested, not the internal id.
 ///
 /// Both action buttons are circular with a subtle filled background. The
 /// status pill is colour-mapped from `TicketStatus`; the priority pill is
@@ -52,7 +57,7 @@ class TicketDetailAppBar extends StatelessWidget
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      ticket.code,
+                      ticket.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TypographyManager.textHeading.copyWith(

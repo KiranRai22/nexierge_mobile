@@ -44,9 +44,11 @@ abstract class TicketRemoteDataSource {
   /// POST /tickets/cancel — cancels ticket with a required reason.
   Future<void> cancelTicket({required String ticketId, required String reason});
 
-  /// POST /tickets/change_due — updates the due time with a required reason.
+  /// PATCH /tickets/change_due_time/{id} — updates the due time with a
+  /// required reason. Body shape: `{due_at: <ms_string>, reason, hotel_id}`.
   Future<void> changeDueTime({
     required String ticketId,
+    required String hotelId,
     required int newDueAt,
     required String reason,
   });
@@ -95,9 +97,13 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
 
   @override
   Future<TicketDetailDto> getTicketDetails({required String ticketId}) async {
+    debugPrint('[TicketRemoteDataSource] getTicketDetails: $ticketId');
     final res = await _dio.post(
       APIEndpoints.ticketsDetails,
       data: {'ticket_id': ticketId},
+    );
+    debugPrint(
+      '[TicketRemoteDataSource] getTicketDetails response: ${res.data}',
     );
     return TicketDetailDto.fromJson(res.data as Map<String, dynamic>);
   }
@@ -304,13 +310,20 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
   @override
   Future<void> changeDueTime({
     required String ticketId,
+    required String hotelId,
     required int newDueAt,
     required String reason,
   }) async {
-    debugPrint('[TicketRemoteDataSource] changeDueTime: $ticketId');
-    await _dio.post(
-      APIEndpoints.ticketsChangeDue,
-      data: {'ticket_id': ticketId, 'due_at': newDueAt, 'reason': reason},
+    final url = APIEndpoints.ticketsChangeDueTime(ticketId);
+    debugPrint('[TicketRemoteDataSource] changeDueTime: PATCH $url');
+    // Backend expects `due_at` as a string ms timestamp (not int).
+    await _dio.patch(
+      url,
+      data: {
+        'due_at': newDueAt.toString(),
+        'reason': reason,
+        'hotel_id': hotelId,
+      },
     );
   }
 

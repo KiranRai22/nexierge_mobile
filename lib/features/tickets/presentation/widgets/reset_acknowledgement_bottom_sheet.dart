@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -57,7 +58,7 @@ class ResetAcknowledgementBottomSheet extends StatelessWidget {
               ),
               IconButton(
                 icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -90,7 +91,7 @@ class ResetAcknowledgementBottomSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: c.borderBase),
                     minimumSize: const Size.fromHeight(48),
@@ -110,7 +111,7 @@ class ResetAcknowledgementBottomSheet extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(true),
+                  onPressed: tapSound(() => Navigator.of(context).pop(true)),
                   icon: const Icon(LucideIcons.rotateCcw, size: 18),
                   label: const Text('Reset'),
                   style: ElevatedButton.styleFrom(

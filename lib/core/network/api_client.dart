@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../error/error_handler.dart';
+import '../time/server_clock.dart';
 import 'api_endpoints.dart';
 
 /// Single configured [Dio] instance — the chassis for every backend call.
@@ -33,7 +34,20 @@ Dio buildDio({String? authToken, String? Function()? tokenProvider}) {
         }
         handler.next(options);
       },
+      onResponse: (response, handler) {
+        // Sync the process-wide ServerClock from the backend's Date header
+        // so elapsed-time UI is identical across devices regardless of local
+        // clock drift. Header is RFC 7231 (e.g. "Mon, 10 May 2026 14:30:00 GMT").
+        final dateHeader = response.headers.value('date');
+        ServerClock.updateFromHttpDate(dateHeader);
+        handler.next(response);
+      },
       onError: (error, handler) {
+        // Even error responses carry a Date header — keep the clock fresh.
+        final dateHeader = error.response?.headers.value('date');
+        if (dateHeader != null) {
+          ServerClock.updateFromHttpDate(dateHeader);
+        }
         if (kDebugMode) {
           debugPrint(
             '[ApiClient] ${error.requestOptions.method} '

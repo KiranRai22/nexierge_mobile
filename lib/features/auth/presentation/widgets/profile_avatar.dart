@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/user_profile_controller.dart';
@@ -69,7 +70,7 @@ class ProfileAvatar extends ConsumerWidget {
     final initials = '$first$last'.isNotEmpty ? '$first$last' : '?';
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: tapSound(onTap),
       child: Container(
         width: size,
         height: size,
@@ -140,7 +141,7 @@ class _AvatarPlaceholder extends StatelessWidget {
     final displayInitials = initials ?? '?';
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: tapSound(onTap),
       child: Container(
         width: size,
         height: size,

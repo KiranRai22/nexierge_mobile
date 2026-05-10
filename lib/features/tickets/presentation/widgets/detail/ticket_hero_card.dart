@@ -5,8 +5,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/card_theme.dart';
+import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
+import '../../../../../core/time/server_clock.dart';
+import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../domain/models/department.dart';
 import '../../../domain/models/ticket.dart';
 
@@ -60,7 +63,7 @@ class _TicketHeroCardState extends State<TicketHeroCard> {
 
   DateTime get _start => widget.ticket.acceptedAt ?? widget.ticket.createdAt;
 
-  DateTime get _end => widget.ticket.doneAt ?? DateTime.now();
+  DateTime get _end => widget.ticket.doneAt ?? ServerClock.now();
 
   @override
   Widget build(BuildContext context) {
@@ -121,6 +124,18 @@ class _TicketHeroCardState extends State<TicketHeroCard> {
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          // Right column: ticket-kind chip on top, status chip below.
+          // Vertically centered via parent Row's CrossAxisAlignment.center.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _KindPill(kind: widget.ticket.kind),
+              const SizedBox(height: 4),
+              _StatusPill(status: widget.ticket.status),
+            ],
+          ),
         ],
       ),
     );
@@ -151,5 +166,126 @@ class _TicketHeroCardState extends State<TicketHeroCard> {
     if (h > 0) return '${h}h ${m}m ${sec}s';
     if (m > 0) return '${m}m ${sec}s';
     return '${sec}s';
+  }
+}
+
+/// Kind chip — same visual language as the list-card `_KindChip`
+/// (universal / catalog="Paid" / manual). Colours come from
+/// [ColorPalette.chip*Bg/Fg] so list and detail render identically.
+class _KindPill extends StatelessWidget {
+  final TicketKind kind;
+  const _KindPill({required this.kind});
+
+  ({String label, Color bg, Color fg}) _spec(AppLocalizations s) {
+    switch (kind) {
+      case TicketKind.universal:
+        return (
+          label: s.chipUniversal,
+          bg: ColorPalette.chipUniversalBg,
+          fg: ColorPalette.chipUniversalFg,
+        );
+      case TicketKind.catalog:
+        return (
+          label: s.chipCatalog,
+          bg: ColorPalette.chipCatalogBg,
+          fg: ColorPalette.chipCatalogFg,
+        );
+      case TicketKind.manual:
+        return (
+          label: s.chipManual,
+          bg: ColorPalette.chipManualBg,
+          fg: ColorPalette.chipManualFg,
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spec = _spec(context.l10n);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: spec.bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        spec.label,
+        style: TypographyManager.labelSmall.copyWith(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          color: spec.fg,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+}
+
+/// Status chip — colour-mapped to status. Sits under [_KindPill] in the
+/// hero card's right column. Uses the same theme tokens as the inline
+/// status pill in the Ticket Information section so the two pills match.
+class _StatusPill extends StatelessWidget {
+  final TicketStatus status;
+  const _StatusPill({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+    final ({Color bg, Color fg, String label}) data;
+    switch (status) {
+      case TicketStatus.accepted:
+        data = (
+          bg: c.tagGreenBg,
+          fg: c.tagGreenText,
+          label: s.ticketStatusBadgeAccepted,
+        );
+      case TicketStatus.inProgress:
+        data = (
+          bg: c.tagGreenBg,
+          fg: c.tagGreenText,
+          label: s.ticketStatusBadgeInProgress,
+        );
+      case TicketStatus.incoming:
+        data = (
+          bg: c.tagBlueBg,
+          fg: c.tagBlueText,
+          label: s.ticketStatusBadgeNew,
+        );
+      case TicketStatus.done:
+        data = (
+          bg: c.tagNeutralBg,
+          fg: c.tagNeutralText,
+          label: s.ticketStatusBadgeDone,
+        );
+      case TicketStatus.canceled:
+        data = (
+          bg: c.tagRedBg,
+          fg: c.tagRedText,
+          label: s.ticketStatusBadgeCancelled,
+        );
+      case TicketStatus.onHold:
+        data = (
+          bg: c.tagPurpleBg,
+          fg: c.tagPurpleText,
+          label: s.ticketStatusBadgeOnHold,
+        );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: data.bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        data.label,
+        style: TypographyManager.labelSmall.copyWith(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          color: data.fg,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
   }
 }

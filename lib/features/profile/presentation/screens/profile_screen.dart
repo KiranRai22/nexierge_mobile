@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -98,11 +99,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         content: Text(body),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: tapSound(() => Navigator.of(ctx).pop(false), SoundCategory.back),
             child: Text(s.cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: tapSound(() => Navigator.of(ctx).pop(true)),
             child: Text(s.profileAvatarPermissionOpenSettings),
           ),
         ],
@@ -668,7 +669,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
         Row(
           children: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(null),
+              onPressed: tapSound(() => Navigator.of(context).pop(null), SoundCategory.back),
               child: Text(
                 s.cancel,
                 style: TypographyManager.bodyMedium.copyWith(color: c.fgMuted),
@@ -676,7 +677,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
             ),
             const Spacer(),
             ElevatedButton(
-              onPressed: _onSave,
+              onPressed: tapSound(_onSave),
               style: ElevatedButton.styleFrom(
                 backgroundColor: c.tagPurpleIcon,
                 foregroundColor: Colors.white,

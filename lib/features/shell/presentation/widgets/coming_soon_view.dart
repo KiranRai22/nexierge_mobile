@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -58,7 +59,7 @@ class ComingSoonView extends StatelessWidget {
             if (onPrimaryAction != null && primaryActionLabel != null) ...[
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: onPrimaryAction,
+                onPressed: tapSound(onPrimaryAction),
                 style: FilledButton.styleFrom(
                   backgroundColor: ColorPalette.opsPurple,
                   foregroundColor: Colors.white,

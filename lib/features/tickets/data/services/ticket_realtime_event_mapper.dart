@@ -35,10 +35,15 @@ TicketRealtimeEvent? parseTicketRealtimeEvent(dynamic raw) {
       ?.toString()
       .toLowerCase();
 
-  // Find the row body wherever Xano put it.
-  final body = _firstMap(decoded['payload']) ??
+  // Find the row body wherever Xano put it. The live channel wraps the
+  // ticket row at `payload.data` (verified against the production frame),
+  // but older deployments shipped the row at `payload` or root — keep all
+  // shapes accepted so the mapper stays tolerant.
+  final payload = decoded['payload'];
+  final body = _firstMap(payload is Map<String, dynamic> ? payload['data'] : null) ??
       _firstMap(decoded['data']) ??
       _firstMap(decoded['record']) ??
+      _firstMap(payload) ??
       _firstMap(decoded);
 
   // Delete action can ship just an id (no full row).

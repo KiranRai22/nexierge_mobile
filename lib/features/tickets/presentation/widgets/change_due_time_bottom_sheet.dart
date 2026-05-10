@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -133,7 +134,7 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
               ),
               IconButton(
                 icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -156,10 +157,10 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
             children: _chips.map((chip) {
               final selected = _selectedMinutes == chip.minutes;
               return GestureDetector(
-                onTap: () => setState(() {
+                onTap: tapSound(() => setState(() {
                   _selectedMinutes = chip.minutes;
                   _customDue = null;
-                }),
+                }), SoundCategory.preference),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(
@@ -198,7 +199,7 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
           const SizedBox(height: 12),
           // Custom date/time toggle
           GestureDetector(
-            onTap: _pickCustom,
+            onTap: tapSound(_pickCustom, SoundCategory.preference),
             child: Row(
               children: [
                 Icon(LucideIcons.chevronDown, size: 14, color: c.fgMuted),
@@ -291,7 +292,7 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: c.borderBase),
                     minimumSize: const Size.fromHeight(48),
@@ -312,13 +313,13 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: _canSave
-                      ? () => Navigator.of(context).pop(
+                      ? tapSound(() => Navigator.of(context).pop(
                             ChangeDueResult(
                               newDueAt:
                                   _resolvedDue.millisecondsSinceEpoch,
                               reason: _reasonCtl.text.trim(),
                             ),
-                          )
+                          ))
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.buttonInverted,

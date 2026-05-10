@@ -5,12 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/time/server_clock.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/models/ticket.dart';
 import '../providers/my_tickets_notifier.dart';
+
+/// Light green border used to highlight a ticket whose status just changed
+/// (or that just arrived). Visible for [kRecentChangeHighlightWindow]
+/// after the realtime event lands.
+const Color _kRecentChangeBorder = Color(0xFF34A853);
 
 /// Resolves the localized department label, preferring the API-provided
 /// name when present, falling back to the static enum mapping.
@@ -63,7 +70,23 @@ class TicketCardNew extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.themeColors;
-    final isFresh = ref.watch(isFreshlyArrivedProvider(ticket.id));
+    final isRecentlyChanged = ref.watch(
+      isRecentlyChangedProvider(ticket.id),
+    );
+
+    // Highlighted border when the ticket was just created or its status
+    // moved within the last few seconds (driven by the realtime layer).
+    final baseDecoration = CardDecoration.standard(
+      colors: c,
+      borderRadius: BorderRadius.circular(16),
+    );
+    final decoration = isRecentlyChanged
+        ? (baseDecoration is BoxDecoration
+              ? baseDecoration.copyWith(
+                  border: Border.all(color: _kRecentChangeBorder, width: 2),
+                )
+              : baseDecoration)
+        : baseDecoration;
 
     // Only show shimmer effect for transitioning tickets
     final cardContent = Semantics(
@@ -74,12 +97,9 @@ class TicketCardNew extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: GestureDetector(
-          onTap: onTap,
+          onTap: tapSound(onTap, SoundCategory.card),
           child: Container(
-            decoration: CardDecoration.standard(
-              colors: c,
-              borderRadius: BorderRadius.circular(16),
-            ),
+            decoration: decoration,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -375,7 +395,7 @@ class _TimeDisplayState extends State<_TimeDisplay> {
       );
     }
 
-    final now = DateTime.now();
+    final now = ServerClock.now();
     final isOverdue = t.isOverdue;
     final elapsedFrom = t.workStartedAt ?? t.createdAt;
     final elapsed = now.difference(elapsedFrom);
@@ -810,7 +830,7 @@ class _ActionButton extends StatelessWidget {
       builder: (context) {
         final s = context.l10n;
         return GestureDetector(
-          onTap: onTap,
+          onTap: tapSound(onTap),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
@@ -839,7 +859,7 @@ class _ActionButton extends StatelessWidget {
 
   Widget _buildStartWorkButton(AppColors c, VoidCallback? onTap) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: tapSound(onTap),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
@@ -866,7 +886,7 @@ class _ActionButton extends StatelessWidget {
 
   Widget _buildMarkDoneButton(AppColors c, VoidCallback? onTap) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: tapSound(onTap),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(

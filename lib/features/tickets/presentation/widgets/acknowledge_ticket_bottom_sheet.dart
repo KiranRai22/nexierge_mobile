@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/time/server_clock.dart';
 
 /// Result data when acknowledging a ticket with ETA selection
 class AcknowledgeTicketResult {
@@ -18,13 +20,25 @@ class AcknowledgeTicketResult {
   /// the ticket directly to IN_PROGRESS instead of stopping at ACCEPTED.
   final bool startImmediately;
 
+  /// Optional staff note typed into the sheet. Trimmed; null when blank so
+  /// the API receives `null` rather than an empty string.
+  final String? notes;
+
+  /// Resolved due-at as epoch ms, ready to ship to
+  /// `/tickets/acknowledge` / `/tickets/acknowledge_and_start`. Always
+  /// computed on the client from the picked preset or custom date/time so
+  /// the caller doesn't need to redo the math.
+  final int dueAtEpochMs;
+
   const AcknowledgeTicketResult({
     required this.mode,
     this.minutesFromNow,
     this.customDateTime,
     required this.readyByLabel,
     required this.buttonLabel,
+    required this.dueAtEpochMs,
     this.startImmediately = false,
+    this.notes,
   });
 }
 
@@ -40,7 +54,6 @@ class AcknowledgeTicketBottomSheet {
     required String ticketCode,
     required String ticketTitle,
     required bool hasGuest,
-    bool canAcceptAndStart = false,
   }) {
     return showModalBottomSheet<AcknowledgeTicketResult>(
       context: context,
@@ -50,7 +63,6 @@ class AcknowledgeTicketBottomSheet {
         ticketCode: ticketCode,
         ticketTitle: ticketTitle,
         hasGuest: hasGuest,
-        canAcceptAndStart: canAcceptAndStart,
       ),
     );
   }
@@ -60,13 +72,11 @@ class _AcknowledgeTicketSheetBody extends StatefulWidget {
   final String ticketCode;
   final String ticketTitle;
   final bool hasGuest;
-  final bool canAcceptAndStart;
 
   const _AcknowledgeTicketSheetBody({
     required this.ticketCode,
     required this.ticketTitle,
     required this.hasGuest,
-    required this.canAcceptAndStart,
   });
 
   @override
@@ -92,11 +102,30 @@ class _AcknowledgeTicketSheetBodyState
     _PresetOption(minutes: 4320, label: '+3 days', icon: LucideIcons.calendar),
   ];
 
+  /// The due date/time the user has currently picked — either the custom
+  /// date/time or `now + selectedMinutes`. Driven by [ServerClock] so it's
+  /// consistent with the rest of the app's clock semantics.
+  DateTime get _effectiveDueDateTime {
+    if (_isCustomDateTime && _customDateTime != null) return _customDateTime!;
+    return ServerClock.now().add(Duration(minutes: _selectedMinutes));
+  }
+
+  /// Whether the picked due time falls inside today (local calendar). Drives
+  /// visibility of the "Accept & Start" button — only meaningful when work
+  /// is expected to begin today.
+  bool get _isDueToday {
+    final due = _effectiveDueDateTime;
+    final now = ServerClock.now();
+    return due.year == now.year &&
+        due.month == now.month &&
+        due.day == now.day;
+  }
+
   String get _readyByLabel {
     if (_isCustomDateTime && _customDateTime != null) {
       return 'Ready by ${_formatDateTime(_customDateTime!)}';
     }
-    return 'Ready by ${_formatDateTime(DateTime.now().add(Duration(minutes: _selectedMinutes)))}';
+    return 'Ready by ${_formatDateTime(ServerClock.now().add(Duration(minutes: _selectedMinutes)))}';
   }
 
   String get _buttonTimeLabel {
@@ -111,7 +140,7 @@ class _AcknowledgeTicketSheetBodyState
   }
 
   String _formatDateTime(DateTime dt) {
-    final now = DateTime.now();
+    final now = ServerClock.now();
     final isToday =
         dt.day == now.day && dt.month == now.month && dt.year == now.year;
     final hour12 = dt.hour > 12
@@ -147,7 +176,7 @@ class _AcknowledgeTicketSheetBodyState
   }
 
   Future<void> _selectCustomDateTime() async {
-    final now = DateTime.now();
+    final now = ServerClock.now();
     final selectedDate = await showDatePicker(
       context: context,
       initialDate: now.add(const Duration(minutes: 30)),
@@ -181,6 +210,7 @@ class _AcknowledgeTicketSheetBodyState
     setState(() => _submitting = true);
     if (!mounted) return;
 
+    final note = _noteController.text.trim();
     Navigator.of(context).pop(
       AcknowledgeTicketResult(
         mode: _isCustomDateTime ? 'custom' : 'preset',
@@ -189,6 +219,8 @@ class _AcknowledgeTicketSheetBodyState
         readyByLabel: _readyByLabel,
         buttonLabel: 'Acknowledge $_buttonTimeLabel',
         startImmediately: startImmediately,
+        notes: note.isEmpty ? null : note,
+        dueAtEpochMs: _effectiveDueDateTime.millisecondsSinceEpoch,
       ),
     );
   }
@@ -318,95 +350,14 @@ class _AcknowledgeTicketSheetBodyState
           const SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _submitting
-                            ? null
-                            : () => _handleAcknowledge(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: c.buttonInverted,
-                          foregroundColor: c.fgOnInverted,
-                          disabledBackgroundColor: c.bgDisabled,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: _submitting
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: c.fgOnInverted,
-                                ),
-                              )
-                            : Text(
-                                context.l10n.ticketActionAccept,
-                                style: TypographyManager.textBodyStrong
-                                    .copyWith(color: c.fgOnInverted),
-                              ),
-                      ),
-                    ),
-                    if (widget.canAcceptAndStart) ...[
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _submitting
-                              ? null
-                              : () =>
-                                  _handleAcknowledge(startImmediately: true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: c.tagPurpleBg,
-                            foregroundColor: c.tagPurpleText,
-                            disabledBackgroundColor: c.bgDisabled,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: c.tagPurpleBorder),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            context.l10n.ticketActionAcceptAndStart,
-                            style: TypographyManager.textBodyStrong.copyWith(
-                              color: c.tagPurpleText,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: _submitting
-                        ? null
-                        : () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: c.fgBase,
-                      side: BorderSide(color: c.borderBase),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: Text(
-                      context.l10n.ticketActionCancel,
-                      style: TypographyManager.textBodyStrong.copyWith(
-                        color: c.fgBase,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            child: _ActionButtons(
+              colors: c,
+              submitting: _submitting,
+              showAcceptAndStart: _isDueToday,
+              onAccept: () => _handleAcknowledge(),
+              onAcceptAndStart: () =>
+                  _handleAcknowledge(startImmediately: true),
+              onCancel: () => Navigator.of(context).pop(),
             ),
           ),
           SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 24),
@@ -453,7 +404,7 @@ class _Header extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: () => Navigator.of(context).pop(),
+            onTap: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
             behavior: HitTestBehavior.opaque,
             child: Padding(
               padding: const EdgeInsets.all(4),
@@ -484,7 +435,7 @@ class _PresetChip extends StatelessWidget {
     final fg = selected ? colors.tagPurpleText : colors.fgSubtle;
     final border = selected ? colors.tagPurpleBorder : colors.borderBase;
     return InkWell(
-      onTap: onTap,
+      onTap: tapSound(onTap, SoundCategory.preference),
       borderRadius: BorderRadius.circular(999),
       child: Container(
         decoration: BoxDecoration(
@@ -528,7 +479,7 @@ class _CustomDateTimeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: tapSound(onTap, SoundCategory.preference),
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -553,6 +504,166 @@ class _CustomDateTimeRow extends StatelessWidget {
   }
 }
 
+/// Action button cluster at the bottom of the acknowledge sheet.
+///
+/// Two layouts depending on whether the picked due time falls within today:
+///
+/// * **Today** — `[Accept Ticket | Accept & Start]` row, with a separate
+///   full-width `Cancel` outlined button below. Matches the original design.
+/// * **Not today** — `[Cancel | Accept Ticket]` single row with leading
+///   icons on each button. "Accept & Start" is suppressed because starting
+///   work today on something due later is not meaningful.
+class _ActionButtons extends StatelessWidget {
+  final AppColors colors;
+  final bool submitting;
+  final bool showAcceptAndStart;
+  final VoidCallback onAccept;
+  final VoidCallback onAcceptAndStart;
+  final VoidCallback onCancel;
+
+  const _ActionButtons({
+    required this.colors,
+    required this.submitting,
+    required this.showAcceptAndStart,
+    required this.onAccept,
+    required this.onAcceptAndStart,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final c = colors;
+
+    Widget acceptButton({Widget? icon}) {
+      return ElevatedButton(
+        onPressed: submitting ? null : tapSound(onAccept),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: c.buttonInverted,
+          foregroundColor: c.fgOnInverted,
+          disabledBackgroundColor: c.bgDisabled,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: submitting
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: c.fgOnInverted,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    icon,
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    l10n.ticketActionAccept,
+                    style: TypographyManager.textBodyStrong.copyWith(
+                      color: c.fgOnInverted,
+                    ),
+                  ),
+                ],
+              ),
+      );
+    }
+
+    Widget cancelButton({Widget? icon}) {
+      return OutlinedButton(
+        onPressed: submitting ? null : tapSound(onCancel, SoundCategory.back),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: c.fgBase,
+          side: BorderSide(color: c.borderBase),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              icon,
+              const SizedBox(width: 8),
+            ],
+            Text(
+              l10n.ticketActionCancel,
+              style: TypographyManager.textBodyStrong.copyWith(
+                color: c.fgBase,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (showAcceptAndStart) {
+      // Original layout: Accept + Accept & Start in a row, Cancel below.
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: acceptButton()),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: submitting ? null : tapSound(onAcceptAndStart),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: c.tagPurpleBg,
+                    foregroundColor: c.tagPurpleText,
+                    disabledBackgroundColor: c.bgDisabled,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: c.tagPurpleBorder),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    l10n.ticketActionAcceptAndStart,
+                    style: TypographyManager.textBodyStrong.copyWith(
+                      color: c.tagPurpleText,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(width: double.infinity, child: cancelButton()),
+        ],
+      );
+    }
+
+    // Compact layout: due is not today → Cancel + Accept in one row, with
+    // leading icons.
+    return Row(
+      children: [
+        Expanded(
+          child: cancelButton(
+            icon: Icon(LucideIcons.x, size: 18, color: c.fgBase),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: acceptButton(
+            icon: Icon(LucideIcons.check, size: 18, color: c.fgOnInverted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _DueInfoCard extends StatelessWidget {
   final String label;
   final VoidCallback onEdit;
@@ -566,7 +677,7 @@ class _DueInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onEdit,
+      onTap: tapSound(onEdit, SoundCategory.preference),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: double.infinity,

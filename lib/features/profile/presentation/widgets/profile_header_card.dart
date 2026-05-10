@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
@@ -67,7 +68,7 @@ class ProfileHeaderCard extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : GestureDetector(
-                      onTap: onEditName,
+                      onTap: tapSound(onEditName),
                       child: Tooltip(
                         message: context.l10n.profileEditNameTitle,
                         child: Icon(
@@ -177,7 +178,7 @@ class _Avatar extends StatelessWidget {
                 ),
                 child: InkWell(
                   customBorder: const CircleBorder(),
-                  onTap: onChange,
+                  onTap: tapSound(onChange),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Tooltip(

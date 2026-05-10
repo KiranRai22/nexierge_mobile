@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/app_locale.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/locale_controller.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
@@ -117,7 +118,7 @@ class _ProfileLanguageCardState extends ConsumerState<ProfileLanguageCard>
                   ),
                 const SizedBox(width: 12),
                 GestureDetector(
-                  onTap: _toggle,
+                  onTap: tapSound(_toggle, SoundCategory.card),
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     child: AnimatedIcon(
@@ -205,7 +206,7 @@ class _SegmentChip extends StatelessWidget {
       color: isSelected ? ColorPalette.opsPurple : Colors.transparent,
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.preference),
         borderRadius: BorderRadius.circular(999),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

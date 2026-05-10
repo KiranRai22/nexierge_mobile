@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/services/sound_manager.dart';
 import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/entities/checked_in_guest_stay.dart';
@@ -127,7 +128,7 @@ class _ErrorView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             OutlinedButton(
-              onPressed: onRetry,
+              onPressed: tapSound(onRetry),
               child: Text(context.l10n.retry),
             ),
           ],
@@ -172,7 +173,7 @@ class _Header extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.close_rounded),
             color: ColorPalette.textSecondary,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
           ),
         ],
       ),
@@ -195,7 +196,7 @@ class _RoomCell extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onTap,
+          onTap: tapSound(onTap, SoundCategory.card),
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexierge/l10n/generated/app_localizations.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -54,6 +55,8 @@ class TicketsMainTabs extends StatelessWidget {
         return s.subTabIncoming;
       case TicketsMainTab.today:
         return s.subTabToday;
+      case TicketsMainTab.backlog:
+        return s.subTabBacklog;
       case TicketsMainTab.done:
         return s.subTabDone;
     }
@@ -79,7 +82,7 @@ class _TabItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = colors;
     return GestureDetector(
-      onTap: onTap,
+      onTap: tapSound(onTap, SoundCategory.navigation),
       behavior: HitTestBehavior.opaque,
       child: Center(
         child: Container(
@@ -135,4 +138,4 @@ class _TabItem extends StatelessWidget {
   }
 }
 
-enum TicketsMainTab { incoming, today, done }
+enum TicketsMainTab { incoming, today, backlog, done }

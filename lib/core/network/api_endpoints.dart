@@ -81,8 +81,15 @@ abstract class APIEndpoints {
       '$ticketsChangeStatusBase/$ticketId';
 
   static const String ticketsCancel = '$_host/api:bAt3sLZU/tickets/cancel';
-  static const String ticketsChangeDue =
-      '$_host/api:bAt3sLZU/tickets/change_due';
+
+  /// Base path for `PATCH /tickets/change_due_time/{id}` — append the ticket
+  /// id to form the full URL. Body carries
+  /// `{due_at: <ms_string>, reason, hotel_id}`. Replaces the legacy
+  /// `tickets/change_due` POST endpoint.
+  static const String ticketsChangeDueTimeBase =
+      '$_host/api:t_TeioyT/tickets/change_due_time';
+  static String ticketsChangeDueTime(String ticketId) =>
+      '$ticketsChangeDueTimeBase/$ticketId';
 
   /// Base path for `/tickets/acknowledge/{id}` — append the ticket id
   /// to form the full URL. Body carries `{due_at, notes}`.

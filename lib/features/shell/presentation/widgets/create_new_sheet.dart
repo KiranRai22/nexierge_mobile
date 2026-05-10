@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -126,7 +127,10 @@ class _Header extends StatelessWidget {
           ),
           IconButton(
             tooltip: s.cancel,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: tapSound(
+              () => Navigator.of(context).pop(),
+              SoundCategory.back,
+            ),
             icon: Icon(Icons.close, color: c.fgMuted),
           ),
         ],
@@ -158,7 +162,10 @@ class _Option extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => Navigator.of(context).pop(choice),
+          onTap: tapSound(
+            () => Navigator.of(context).pop(choice),
+            SoundCategory.card,
+          ),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.all(16),

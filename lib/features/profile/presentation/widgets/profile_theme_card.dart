@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
@@ -119,7 +120,7 @@ class _Chip extends StatelessWidget {
         color: isSelected ? ColorPalette.opsPurple : Colors.transparent,
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
-          onTap: onTap,
+          onTap: tapSound(onTap, SoundCategory.preference),
           borderRadius: BorderRadius.circular(999),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

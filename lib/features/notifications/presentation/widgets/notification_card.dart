@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -29,7 +30,7 @@ class NotificationCard extends StatelessWidget {
       color: c.bgBase,
       borderRadius: radius,
       child: InkWell(
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.card),
         borderRadius: radius,
         child: Container(
           decoration: CardDecoration.subtle(colors: c, borderRadius: radius),

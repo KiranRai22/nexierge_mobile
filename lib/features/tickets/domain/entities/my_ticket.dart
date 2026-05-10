@@ -1,3 +1,5 @@
+import '../../../../core/time/server_clock.dart';
+
 /// One ordered universal-request item, captured from
 /// `_universal_request_order_details[i]` in the my-tickets response.
 class UniversalTicketItem {
@@ -250,7 +252,7 @@ class MyTicket {
     if (isDone || isCanceled || isExpired) return false;
     if (slaBreached) return true;
     if (dueAt == 0) return false;
-    return DateTime.fromMillisecondsSinceEpoch(dueAt).isBefore(DateTime.now());
+    return DateTime.fromMillisecondsSinceEpoch(dueAt).isBefore(ServerClock.now());
   }
 }
 
@@ -321,12 +323,19 @@ class MyTicketsState {
   /// notifier-side timer.
   final Set<String> freshlyArrivedIds;
 
+  /// Per-ticket epoch ms of the most recent realtime change (creation OR
+  /// status transition). Drives the green-border highlight on the card. The
+  /// notifier prunes entries older than the highlight window via timer; the
+  /// UI also defends against staleness by checking `now - ts < window`.
+  final Map<String, int> recentChangeAt;
+
   const MyTicketsState({
     this.all = const [],
     this.isLoading = false,
     this.error,
     this.statusChangedAt = const {},
     this.freshlyArrivedIds = const {},
+    this.recentChangeAt = const {},
   });
 
   MyTicketsState copyWith({
@@ -335,6 +344,7 @@ class MyTicketsState {
     String? error,
     Map<String, int>? statusChangedAt,
     Set<String>? freshlyArrivedIds,
+    Map<String, int>? recentChangeAt,
   }) {
     return MyTicketsState(
       all: all ?? this.all,
@@ -342,6 +352,7 @@ class MyTicketsState {
       error: error,
       statusChangedAt: statusChangedAt ?? this.statusChangedAt,
       freshlyArrivedIds: freshlyArrivedIds ?? this.freshlyArrivedIds,
+      recentChangeAt: recentChangeAt ?? this.recentChangeAt,
     );
   }
 
@@ -353,11 +364,19 @@ class MyTicketsState {
   bool _isToday(int epochMs) {
     if (epochMs <= 0) return false;
     final dt = DateTime.fromMillisecondsSinceEpoch(epochMs).toLocal();
-    final now = DateTime.now();
+    final now = ServerClock.now();
     return dt.year == now.year && dt.month == now.month && dt.day == now.day;
   }
 
-  bool _changedToday(MyTicket t) => _isToday(statusChangedAtFor(t));
+  /// Today bucketing uses the ticket's **due-at** date — a ticket is "for
+  /// today" iff its `due_at` falls on today's local calendar. This avoids
+  /// counting a backlog ticket as Today just because the backend touched
+  /// `last_transition_at` on a non-status patch (e.g. change-due-time):
+  /// only when the user actually moves the due date INTO today does the
+  /// ticket flip from Backlog → Today.
+  ///
+  /// Tickets with no `due_at` (== 0) are never in the Today bucket.
+  bool _changedToday(MyTicket t) => _isToday(t.dueAt);
 
   // ───────────────────────── Incoming ─────────────────────────
 
@@ -365,11 +384,16 @@ class MyTicketsState {
   List<MyTicket> get incoming => all.where((t) => t.isIncoming).toList();
   int get incomingCount => incoming.length;
 
-  // ───────────────────────── Today (status changed today) ──────────────────
+  // ───────────────────────── Today (due today) ────────────────────────────
   //
-  // "Today" = anything with `last_transition_at` (or its fallback) within
-  // today. Buckets exclude DONE/CANCELED/EXPIRED — those belong on the Done
-  // tab, not in the operator's active workload.
+  // "Today" = active (Accepted / In Progress) tickets whose `due_at` falls
+  // on today's local calendar. Buckets exclude DONE/CANCELED/EXPIRED —
+  // those belong on the Done tab, not in the operator's active workload.
+  //
+  // Bucket predicate is `due_at` (NOT `last_transition_at`) because the
+  // operator's mental model is "what's due today", and because backends
+  // commonly touch `last_transition_at` on non-status patches which would
+  // otherwise spuriously pull a backlog ticket into Today.
   //
   // Overdue is its own partition: a ticket past its `due_at` is reported
   // ONLY under [todayOverdue], never under [todayAccepted] or
@@ -416,6 +440,38 @@ class MyTicketsState {
   int get todayDoneCount => todayDone.length;
   int get todayOverdueCount => todayOverdue.length;
 
+  // ───────────────────────── Backlog (active, NOT today) ──────────────
+  // Mirrors the Today block but inverts the date predicate — active tickets
+  // (Accepted / In Progress) whose `last_transition_at` is not today.
+  // Carryover from previous days the operator hasn't closed out yet.
+
+  bool _isActiveBacklog(MyTicket t) =>
+      (t.isAccepted || t.isInProgress) && !_changedToday(t);
+
+  List<MyTicket> get backlogAll => all.where(_isActiveBacklog).toList();
+
+  List<MyTicket> get backlogAccepted => all
+      .where((t) => t.isAccepted && !_changedToday(t) && !t.isOverdue)
+      .toList();
+
+  List<MyTicket> get backlogInProgress => all
+      .where((t) => t.isInProgress && !_changedToday(t) && !t.isOverdue)
+      .toList();
+
+  List<MyTicket> get backlogOverdue => all
+      .where(
+        (t) =>
+            (t.isAccepted || t.isInProgress) &&
+            !_changedToday(t) &&
+            t.isOverdue,
+      )
+      .toList();
+
+  int get backlogAllCount => backlogAll.length;
+  int get backlogAcceptedCount => backlogAccepted.length;
+  int get backlogInProgressCount => backlogInProgress.length;
+  int get backlogOverdueCount => backlogOverdue.length;
+
   // ───────────────────────── legacy aggregate counts ──────────────────────
   // Retained for callers that still display global "across all dates"
   // counts (KPIs, dashboard cards) — these don't filter by today.
@@ -441,6 +497,22 @@ class MyTicketsState {
       case null:
       default:
         return todayAll;
+    }
+  }
+
+  /// Backlog equivalent of [todayFiltered].
+  List<MyTicket> backlogFiltered(String? filterKey) {
+    switch (filterKey) {
+      case 'accepted':
+        return backlogAccepted;
+      case 'inprogress':
+        return backlogInProgress;
+      case 'overdue':
+        return backlogOverdue;
+      case 'all':
+      case null:
+      default:
+        return backlogAll;
     }
   }
 }

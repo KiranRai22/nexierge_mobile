@@ -1088,7 +1088,7 @@ class _CatalogStickyContinue extends StatelessWidget {
                 ),
               ),
               GestureDetector(
-                onTap: ctl.clearCart,
+                onTap: tapSound(ctl.clearCart, SoundCategory.back),
                 behavior: HitTestBehavior.opaque,
                 child: Text(
                   s.createSelectionBarClearAll,
@@ -1107,7 +1107,7 @@ class _CatalogStickyContinue extends StatelessWidget {
           top: false,
           minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: ElevatedButton(
-            onPressed: ctl.goToDetails,
+            onPressed: tapSound(ctl.goToDetails),
             style: ElevatedButton.styleFrom(
               backgroundColor: ColorPalette.opsPurple,
               foregroundColor: ColorPalette.white,
@@ -1639,7 +1639,7 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: onCancel,
+              onPressed: tapSound(onCancel, SoundCategory.back),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ColorPalette.textPrimary,
                 side: BorderSide(color: ColorPalette.opsBorder),
@@ -1658,7 +1658,7 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
           Expanded(
             flex: 2,
             child: ElevatedButton(
-              onPressed: draft.canSubmit ? onSubmit : null,
+              onPressed: draft.canSubmit ? tapSound(onSubmit) : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorPalette.opsPurple,
                 foregroundColor: ColorPalette.white,

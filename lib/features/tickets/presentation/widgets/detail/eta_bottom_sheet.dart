@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/services/sound_manager.dart';
 import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../core/utils/date_utils.dart';
@@ -196,7 +197,7 @@ class _Pill extends StatelessWidget {
       label: label,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.preference),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -276,7 +277,7 @@ class _ConfirmButton extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: onTap,
+          onPressed: tapSound(onTap),
           style: ElevatedButton.styleFrom(
             backgroundColor: ColorPalette.opsPurple,
             foregroundColor: ColorPalette.white,

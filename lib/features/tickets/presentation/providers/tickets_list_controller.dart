@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/time/server_clock.dart';
 import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
@@ -93,7 +94,7 @@ List<Ticket> _applySearch(List<Ticket> tickets, String query) {
 }
 
 TicketsListView _project(List<Ticket> tickets, TicketsSubTab subTab) {
-  final now = DateTime.now();
+  final now = ServerClock.now();
   final today = DateTime(now.year, now.month, now.day);
   final tomorrow = today.add(const Duration(days: 1));
 

@@ -6,6 +6,36 @@ import '../../domain/models/ticket.dart';
 import 'my_tickets_notifier.dart';
 import 'tickets_list_controller.dart';
 import 'tickets_main_tab_provider.dart';
+import 'tickets_paged_notifier.dart';
+
+/// The list-built [Ticket] for [ticketId], if a matching MyTicket is cached
+/// in any of the local stores (legacy "all" notifier OR per-tab paged
+/// providers, since the list cards render from the paged providers and the
+/// legacy notifier may not have caught up yet).
+///
+/// This is the same `Ticket` object the list cards render — same title,
+/// same kind, same source, same departmentName, etc. The detail screen
+/// prefers these fields over re-deriving from the sparse
+/// `/tickets/details` payload so the user sees identical metadata.
+final cachedTicketByIdProvider = Provider.family<Ticket?, String>((ref, id) {
+  final legacyAll = ref.watch(myTicketsNotifierProvider).valueOrNull?.all;
+  if (legacyAll != null) {
+    for (final t in legacyAll) {
+      if (t.id == id) return mapMyTicketToTicket(t);
+    }
+  }
+  // Fall back to scanning the paged providers (one per tab). The cards
+  // render from these so a freshly-arrived ticket lives here before the
+  // legacy notifier's bulk refetch catches up.
+  for (final tab in kAllTicketsTabs) {
+    final page = ref.watch(ticketsPagedProvider(specForTab(tab))).valueOrNull;
+    if (page == null) continue;
+    for (final t in page.items) {
+      if (t.id == id) return mapMyTicketToTicket(t);
+    }
+  }
+  return null;
+});
 
 /// Simplified Ticket mapping from MyTicket for UI display.
 /// This is a lightweight adapter - full Ticket model is kept for detail view.
@@ -96,24 +126,38 @@ TicketKindData? _buildKindData(MyTicket t, TicketKind kind) {
   }
 }
 
+/// Builds the human-readable title shown on cards + detail header. Falls
+/// back through richer signals before the generic literal so a bare ticket
+/// (no items, no summary) still gets something useful like "Housekeeping
+/// request" or "Room 8 request" instead of "Universal request".
 String _buildTitle(MyTicket t, TicketKind kind, TicketKindData? kindData) {
+  final deptName = t.departmentName?.trim();
+  final hasDept = deptName != null && deptName.isNotEmpty;
+  final roomNo = t.roomDetails?.onbRoomNumber.trim();
+  final hasRoom = roomNo != null && roomNo.isNotEmpty;
+
   switch (kind) {
     case TicketKind.universal:
       final u = kindData is UniversalKindData ? kindData : null;
-      final base = u?.displayName.isNotEmpty == true
-          ? u!.displayName
-          : (t.issueSummary.isNotEmpty ? t.issueSummary : 'Universal request');
-      return base;
+      if (u?.displayName.isNotEmpty == true) return u!.displayName;
+      if (t.issueSummary.isNotEmpty) return t.issueSummary;
+      if (hasDept) return '$deptName request';
+      if (hasRoom) return 'Room $roomNo request';
+      return 'Universal request';
     case TicketKind.catalog:
       final c = kindData is CatalogKindData ? kindData : null;
-      return c?.catalogName.isNotEmpty == true
-          ? c!.catalogName
-          : (t.issueSummary.isNotEmpty ? t.issueSummary : 'Catalog order');
+      if (c?.catalogName.isNotEmpty == true) return c!.catalogName;
+      if (t.issueSummary.isNotEmpty) return t.issueSummary;
+      if (hasDept) return '$deptName order';
+      if (hasRoom) return 'Room $roomNo order';
+      return 'Catalog order';
     case TicketKind.manual:
       final m = kindData is ManualKindData ? kindData : null;
       if (m != null && m.summary.isNotEmpty) return m.summary;
       if (t.issueSummary.isNotEmpty) return t.issueSummary;
-      return t.departmentName ?? 'Manual ticket';
+      if (hasDept) return deptName;
+      if (hasRoom) return 'Room $roomNo request';
+      return 'Manual ticket';
   }
 }
 

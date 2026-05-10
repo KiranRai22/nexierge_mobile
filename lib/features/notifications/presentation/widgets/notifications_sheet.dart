@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -131,7 +132,7 @@ class _Header extends ConsumerWidget {
           ),
           IconButton(
             tooltip: s.cancel,
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
             icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
           ),
         ],
@@ -155,7 +156,7 @@ class _ActionsRow extends ConsumerWidget {
       child: Row(
         children: [
           InkWell(
-            onTap: state.unreadCount == 0 ? null : controller.markAllAsRead,
+            onTap: state.unreadCount == 0 ? null : tapSound(controller.markAllAsRead),
             borderRadius: BorderRadius.circular(6),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),

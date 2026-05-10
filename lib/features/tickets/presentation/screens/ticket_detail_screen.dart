@@ -8,7 +8,9 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/ticket_detail.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
+import '../providers/my_tickets_list_controller.dart';
 import '../providers/ticket_detail_api_controller.dart';
+import '../providers/ticket_form_options_provider.dart';
 import '../widgets/detail/ticket_action_bar.dart';
 import '../widgets/detail/ticket_activity_timeline.dart';
 import '../widgets/detail/ticket_detail_app_bar.dart';
@@ -17,48 +19,89 @@ import '../widgets/detail/ticket_hero_card.dart';
 import '../widgets/detail/ticket_info_card.dart';
 import '../widgets/skeletons/ticket_detail_skeleton.dart';
 
-String _getTicketTitle(TicketDetail detail) {
-  if (detail.issueSummary.isNotEmpty) {
-    return detail.issueSummary;
-  } else if (detail.guestName.isNotEmpty) {
-    return detail.guestName;
-  } else if (detail.room.isNotEmpty) {
-    return detail.room;
-  } else {
-    return '—';
-  }
-}
-
-Ticket _mapToTicket(TicketDetail detail) {
+/// Builds the [Ticket] shown on the detail screen by *merging* two sources:
+///
+///   1. [cachedListTicket] — the same `Ticket` object the list card rendered
+///      (title, kind, source, priority, departmentName, kindData, etc.).
+///      This is the trusted source for everything the list already
+///      classified — the `/tickets/details` endpoint returns a much sparser
+///      payload that misclassifies kind/source for manual tickets.
+///   2. [detail] — the freshly-fetched `TicketDetail` from
+///      `/tickets/details`. Provides authoritative current `status`,
+///      `acknowledgedAt`, `issueDetails` (full body), and the activity
+///      events that the list payload doesn't carry.
+///
+/// When [cachedListTicket] is null (deep-link cold-start, list never
+/// loaded), we fall back to deriving fields from [detail] alone — using the
+/// cached departments map to at least resolve the dept name from id.
+Ticket _mergeTicket({
+  required TicketDetail detail,
+  required Ticket? cachedListTicket,
+  required Map<String, String> deptNamesById,
+}) {
+  final p = cachedListTicket;
+  final detailStatus = _mapStatus(detail.status);
+  final detailAccepted = detail.acknowledgedAt > 0
+      ? DateTime.fromMillisecondsSinceEpoch(detail.acknowledgedAt)
+      : null;
   return Ticket(
     id: detail.id,
-    code: detail.id.substring(0, 8),
-    title: _getTicketTitle(detail),
-    kind: _mapKind(detail.type),
-    status: _mapStatus(detail.status),
-    department: _mapDepartment(detail.departmentId),
-    room: Room(id: detail.room, number: detail.onbRoomNumber, floor: 0),
-    guest: Guest(id: detail.room, displayName: detail.guestName),
-    items: const [],
-    note: detail.issueDetails.isNotEmpty ? detail.issueDetails : null,
-    assigneeName: null,
-    priority: _mapPriority(detail.priority),
-    source: _mapSource(detail.source),
-    createdAt: DateTime.fromMillisecondsSinceEpoch(detail.createdAt),
-    acceptedAt: detail.acknowledgedAt > 0
-        ? DateTime.fromMillisecondsSinceEpoch(detail.acknowledgedAt)
-        : null,
-    doneAt: null,
-    eta: null,
+    code: p?.code ?? detail.id.substring(0, 8),
+    title: p?.title ?? _fallbackTitle(detail, deptNamesById),
+    kind: p?.kind ?? _mapKindFromType(detail.type),
+    status: detailStatus,
+    department: p?.department ?? Department.housekeeping,
+    departmentName: p?.departmentName ?? deptNamesById[detail.departmentId],
+    departmentEmoji: p?.departmentEmoji,
+    departmentIconUrl: p?.departmentIconUrl,
+    room: p?.room ?? Room(
+      id: detail.room,
+      number: detail.onbRoomNumber,
+      floor: 0,
+    ),
+    guest: p?.guest ??
+        (detail.guestName.isNotEmpty
+            ? Guest(id: detail.room, displayName: detail.guestName)
+            : null),
+    items: p?.items ?? const [],
+    note: detail.issueDetails.isNotEmpty ? detail.issueDetails : p?.note,
+    assigneeName: p?.assigneeName,
+    priority: p?.priority ?? _mapPriority(detail.priority),
+    source: p?.source ?? _mapSource(detail.source),
+    createdAt: p?.createdAt ??
+        DateTime.fromMillisecondsSinceEpoch(detail.createdAt),
+    acceptedAt: detailAccepted ?? p?.acceptedAt,
+    doneAt: p?.doneAt,
+    eta: p?.eta,
+    workStartedAt: p?.workStartedAt,
+    isTransitioning: false,
+    kindData: p?.kindData,
   );
 }
 
-Department _mapDepartment(String deptId) {
-  return Department.housekeeping;
+/// Best-effort title when the cached list ticket isn't available
+/// (deep-link). Prefers the detail's own summary, then department name from
+/// the cache, then room number. Mirrors the list controller's fallback
+/// chain spirit so cold-start titles look similar to warm-cache titles.
+String _fallbackTitle(
+  TicketDetail detail,
+  Map<String, String> deptNamesById,
+) {
+  if (detail.issueSummary.isNotEmpty) return detail.issueSummary;
+  final deptName = deptNamesById[detail.departmentId];
+  if (deptName != null && deptName.isNotEmpty) {
+    final type = detail.type.toUpperCase();
+    if (type == 'REQUEST') return '$deptName request';
+    if (type == 'CATALOG') return '$deptName order';
+    return deptName;
+  }
+  if (detail.onbRoomNumber.isNotEmpty) return 'Room ${detail.onbRoomNumber}';
+  if (detail.guestName.isNotEmpty) return detail.guestName;
+  return '—';
 }
 
 TicketStatus _mapStatus(String status) {
-  switch (status) {
+  switch (status.toUpperCase()) {
     case 'ACCEPTED':
       return TicketStatus.accepted;
     case 'NEW':
@@ -103,7 +146,10 @@ TicketSource _mapSource(String source) {
   }
 }
 
-TicketKind _mapKind(String type) {
+/// Coarse fallback used only when there's no cached list ticket. The list
+/// controller's `_mapKind` is richer (uses `ticketType` if present) — this
+/// only fires on deep-link cold-starts where TicketDetail is all we have.
+TicketKind _mapKindFromType(String type) {
   switch (type.toUpperCase()) {
     case 'REQUEST':
       return TicketKind.universal;
@@ -129,7 +175,19 @@ TicketKind _mapKind(String type) {
 /// cancel without explicit refreshes.
 class TicketDetailScreen extends ConsumerWidget {
   final String ticketId;
-  const TicketDetailScreen({super.key, required this.ticketId});
+
+  /// The list-built Ticket forwarded from the calling screen (when the
+  /// caller has it on hand). Skips the cache-lookup race entirely so the
+  /// detail header renders with the right kind/source/title from the first
+  /// frame. Other callers (notifications, activity row, dashboard tap) can
+  /// omit this and rely on `cachedTicketByIdProvider` to find the ticket.
+  final Ticket? presetTicket;
+
+  const TicketDetailScreen({
+    super.key,
+    required this.ticketId,
+    this.presetTicket,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -137,11 +195,29 @@ class TicketDetailScreen extends ConsumerWidget {
       () => ref.read(ticketIdProvider.notifier).state = ticketId,
     );
     final asyncTicket = ref.watch(ticketDetailApiControllerProvider);
+    // Reuse the SAME Ticket object the list card rendered. Preset (passed
+    // from list nav) wins; otherwise look it up across legacy + paged
+    // caches. This carries the already-classified kind / source / title /
+    // priority / kindData — none of which the sparse `/tickets/details`
+    // payload reliably carries.
+    final cachedListTicket =
+        presetTicket ?? ref.watch(cachedTicketByIdProvider(ticketId));
+    // Department name lookup: detail API only returns department_id, so we
+    // resolve the human name from the cached departments list (populated by
+    // ticketFormOptionsProvider) for cold-start deep-links where the list
+    // ticket isn't cached.
+    final deptNamesById = {
+      for (final d in ref.watch(apiDepartmentsProvider)) d.id: d.name,
+    };
     final c = context.themeColors;
     return Scaffold(
       backgroundColor: c.bgBase,
       body: asyncTicket.when(
-        data: (t) => _DetailBody(ticket: t),
+        data: (t) => _DetailBody(
+          ticket: t,
+          cachedListTicket: cachedListTicket,
+          deptNamesById: deptNamesById,
+        ),
         loading: () => const TicketDetailSkeleton(),
         error: (e, _) => _ErrorView(error: e.toString()),
       ),
@@ -151,9 +227,19 @@ class TicketDetailScreen extends ConsumerWidget {
 
 class _DetailBody extends StatefulWidget {
   final TicketDetail ticket;
-  const _DetailBody({required this.ticket});
+  final Ticket? cachedListTicket;
+  final Map<String, String> deptNamesById;
+  const _DetailBody({
+    required this.ticket,
+    required this.cachedListTicket,
+    required this.deptNamesById,
+  });
 
-  Ticket get mappedTicket => _mapToTicket(ticket);
+  Ticket get mappedTicket => _mergeTicket(
+        detail: ticket,
+        cachedListTicket: cachedListTicket,
+        deptNamesById: deptNamesById,
+      );
 
   @override
   State<_DetailBody> createState() => _DetailBodyState();
@@ -220,8 +306,8 @@ class _DetailsTab extends StatelessWidget {
       children: [
         TicketHeroCard(ticket: ticket),
         const SizedBox(height: 20),
-        TicketSectionLabel(label: s.ticketSectionGuestRoom),
-        TicketInfoCard(
+        CollapsibleTicketSection(
+          label: s.ticketSectionGuestRoom,
           rows: [
             TicketInfoRow(
               label: s.ticketFieldGuest,
@@ -241,6 +327,7 @@ class _DetailsTab extends StatelessWidget {
                 dotColor: _departmentDot(c, ticket.department),
                 label: ticket.department.label(s),
               ),
+              compactValue: ticket.department.label(s),
             ),
             TicketInfoRow(
               label: s.ticketFieldConversation,
@@ -249,12 +336,13 @@ class _DetailsTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
-        TicketSectionLabel(label: s.ticketSectionInformation),
-        TicketInfoCard(
+        CollapsibleTicketSection(
+          label: s.ticketSectionInformation,
           rows: [
             TicketInfoRow(
               label: s.ticketFieldStatus,
               trailing: _statusPill(context, ticket.status),
+              compactValue: _statusLabel(s, ticket.status),
             ),
             TicketInfoRow(
               label: s.ticketFieldTicketType,
@@ -274,6 +362,25 @@ class _DetailsTab extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Plain-text status label used in collapsed-section summaries (status
+  /// pill is a custom widget, can't be flattened to a string by itself).
+  String _statusLabel(AppLocalizations s, TicketStatus st) {
+    switch (st) {
+      case TicketStatus.accepted:
+        return s.ticketStatusBadgeAccepted;
+      case TicketStatus.inProgress:
+        return s.ticketStatusBadgeInProgress;
+      case TicketStatus.incoming:
+        return s.ticketStatusBadgeNew;
+      case TicketStatus.done:
+        return s.ticketStatusBadgeDone;
+      case TicketStatus.canceled:
+        return s.ticketStatusBadgeCancelled;
+      case TicketStatus.onHold:
+        return s.ticketStatusBadgeOnHold;
+    }
   }
 
   Widget _statusPill(BuildContext context, TicketStatus st) {

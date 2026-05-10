@@ -952,7 +952,7 @@ class _UniversalDetailsBottomBar extends StatelessWidget {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: onCancel,
+              onPressed: tapSound(onCancel, SoundCategory.back),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ColorPalette.textPrimary,
                 side: BorderSide(color: ColorPalette.opsBorder),
@@ -971,7 +971,7 @@ class _UniversalDetailsBottomBar extends StatelessWidget {
           Expanded(
             flex: 2,
             child: ElevatedButton(
-              onPressed: draft.canSubmit ? onSubmit : null,
+              onPressed: draft.canSubmit ? tapSound(onSubmit) : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorPalette.opsPurple,
                 foregroundColor: ColorPalette.white,

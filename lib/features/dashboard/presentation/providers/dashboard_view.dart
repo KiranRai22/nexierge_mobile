@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/time/server_clock.dart';
 import '../../../tickets/domain/entities/ticket_form_options.dart';
 import '../../../tickets/domain/models/department.dart';
 import '../../../tickets/domain/models/ticket.dart';
@@ -109,7 +110,7 @@ List<Ticket> _applyScope(
 }
 
 DashboardView _project(List<Ticket> tickets) {
-  final now = DateTime.now();
+  final now = ServerClock.now();
 
   final incoming = tickets
       .where((t) => t.status == TicketStatus.incoming)

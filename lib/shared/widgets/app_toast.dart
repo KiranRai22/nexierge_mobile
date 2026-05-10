@@ -24,7 +24,11 @@ enum ToastPosition { top, bottom }
 class AppToast {
   static OverlayEntry? _currentOverlay;
 
-  /// Show a toast notification
+  /// Show a toast notification.
+  ///
+  /// [onTap] is invoked when the user taps the toast body (not the close
+  /// button). The toast is auto-dismissed before the callback runs so
+  /// navigation triggered by [onTap] doesn't fight the overlay.
   static void show(
     BuildContext context, {
     required String title,
@@ -33,6 +37,7 @@ class AppToast {
     ToastPosition position = ToastPosition.top,
     Duration duration = const Duration(seconds: 3),
     VoidCallback? onClose,
+    VoidCallback? onTap,
   }) {
     // Remove existing toast if any
     hide();
@@ -53,23 +58,31 @@ class AppToast {
         right: 16,
         child: Material(
           color: Colors.transparent,
-          child: Container(
-            decoration: BoxDecoration(
-              color: palette.background,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: palette.border, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withValues(alpha: 0.3)
-                      : Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
+          child: InkWell(
+            onTap: onTap == null
+                ? null
+                : () {
+                    hide();
+                    onTap();
+                  },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: palette.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: palette.border, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Icon
@@ -132,6 +145,7 @@ class AppToast {
                   ),
                 ),
               ],
+            ),
             ),
           ),
         ),

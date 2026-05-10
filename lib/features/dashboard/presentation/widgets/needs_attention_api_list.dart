@@ -80,7 +80,7 @@ class _ViewAllButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     return InkWell(
-      onTap: onTap,
+      onTap: tapSound(onTap),
       borderRadius: BorderRadius.circular(6),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),

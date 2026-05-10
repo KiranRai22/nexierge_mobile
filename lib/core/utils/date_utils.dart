@@ -1,11 +1,13 @@
 import 'package:intl/intl.dart';
 
+import '../time/server_clock.dart';
+
 /// Comprehensive date/time utilities for consistent formatting
 /// and epoch time conversions throughout the application.
 abstract class AppDateUtils {
   /// Bucket [when] relative to [now] into `today` / `yesterday` / `older`.
   static DayBucket bucket(DateTime when, {DateTime? now}) {
-    final reference = now ?? DateTime.now();
+    final reference = now ?? ServerClock.now();
     final whenDay = DateTime(when.year, when.month, when.day);
     final today = DateTime(reference.year, reference.month, reference.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -18,7 +20,7 @@ abstract class AppDateUtils {
   /// `11m ago`, `3h ago`, `2d ago`. Anything older falls back to a short date
   /// like `Apr 12`.
   static String relative(DateTime when, {DateTime? now}) {
-    final reference = now ?? DateTime.now();
+    final reference = now ?? ServerClock.now();
     final delta = reference.difference(when);
     if (delta.inSeconds < 30) return 'Just now';
     if (delta.inMinutes < 1) return '${delta.inSeconds}s ago';
@@ -30,7 +32,7 @@ abstract class AppDateUtils {
 
   /// Short ETA-in-N-minutes label used inside cards (`ETA 3m`, `ETA 1h`).
   static String etaShort(DateTime eta, {DateTime? now}) {
-    final reference = now ?? DateTime.now();
+    final reference = now ?? ServerClock.now();
     final delta = eta.difference(reference);
     if (delta.isNegative) return 'Now';
     if (delta.inMinutes < 60) return 'ETA ${delta.inMinutes}m';
@@ -313,13 +315,13 @@ abstract class AppDateUtils {
 
   /// Check if date is in the future
   static bool isFuture(DateTime date, {DateTime? reference}) {
-    final now = reference ?? DateTime.now();
+    final now = reference ?? ServerClock.now();
     return date.isAfter(now);
   }
 
   /// Check if date is in the past
   static bool isPast(DateTime date, {DateTime? reference}) {
-    final now = reference ?? DateTime.now();
+    final now = reference ?? ServerClock.now();
     return date.isBefore(now);
   }
 

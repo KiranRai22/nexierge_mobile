@@ -42,21 +42,30 @@ class _AppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        border: Border(bottom: BorderSide(color: c.borderBase)),
-      ),
-      child: const Row(
-        children: [
-          ShimmerCircle(size: 36),
-          SizedBox(width: 12),
-          Expanded(child: ShimmerText(width: 120, height: 18)),
-          SizedBox(width: 12),
-          ShimmerCircle(size: 36),
-        ],
+    // Mirror the real `TicketDetailAppBar` (which wraps in
+    // `SafeArea(bottom: false)`) so the skeleton doesn't render under the
+    // status bar / notch on cold-start.
+    return Material(
+      color: c.bgBase,
+      child: SafeArea(
+        bottom: false,
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: c.bgBase,
+            border: Border(bottom: BorderSide(color: c.borderBase)),
+          ),
+          child: const Row(
+            children: [
+              ShimmerCircle(size: 36),
+              SizedBox(width: 12),
+              Expanded(child: ShimmerText(width: 120, height: 18)),
+              SizedBox(width: 12),
+              ShimmerCircle(size: 36),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -210,30 +219,39 @@ class _ActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        border: Border(top: BorderSide(color: c.borderBase)),
-      ),
-      child: Column(
-        children: [
-          const ShimmerContainer(
-            width: double.infinity,
-            height: 48,
-            borderRadius: 12,
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: const [
-              Expanded(child: ShimmerContainer(height: 44, borderRadius: 10)),
-              SizedBox(width: 8),
-              Expanded(child: ShimmerContainer(height: 44, borderRadius: 10)),
-              SizedBox(width: 8),
-              Expanded(child: ShimmerContainer(height: 44, borderRadius: 10)),
+    // Mirror the real `TicketActionBar` (which wraps in
+    // `SafeArea(top: false, minimum: EdgeInsets.fromLTRB(16, 8, 16, 12))`)
+    // so the skeleton doesn't sit under the home indicator on iOS.
+    return Material(
+      color: c.bgBase,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: c.bgBase,
+          border: Border(top: BorderSide(color: c.borderBase)),
+        ),
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            children: [
+              const ShimmerContainer(
+                width: double.infinity,
+                height: 48,
+                borderRadius: 12,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: const [
+                  Expanded(child: ShimmerContainer(height: 44, borderRadius: 10)),
+                  SizedBox(width: 8),
+                  Expanded(child: ShimmerContainer(height: 44, borderRadius: 10)),
+                  SizedBox(width: 8),
+                  Expanded(child: ShimmerContainer(height: 44, borderRadius: 10)),
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

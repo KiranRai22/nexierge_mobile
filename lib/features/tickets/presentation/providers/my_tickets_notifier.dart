@@ -6,7 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/my_ticket.dart';
+import '../../domain/models/ticket_change_event.dart';
+import 'ticket_event_bus.dart';
 import 'tickets_paged_notifier.dart';
+
+/// How long a ticket stays "highlighted" after a realtime create or status
+/// change. Drives the green-border emphasis on the card.
+const Duration kRecentChangeHighlightWindow = Duration(seconds: 5);
 
 /// Legacy state-tracking provider used by the shell to know whether the
 /// user is on the Tickets tab. The notifier no longer reads this — the
@@ -78,20 +84,38 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
   /// Realtime upsert. Replaces an existing ticket by id, or prepends if
   /// new. Records the observation timestamp in `statusChangedAt` so the
   /// "Today" filter sees the latest transition immediately.
+  ///
+  /// On every create or status transition, also:
+  ///   - stamps `recentChangeAt[id]` to drive the green-border highlight,
+  ///   - emits a [TicketChangeEvent] onto [TicketEventBus] for the toast +
+  ///     sound dispatcher to consume.
+  /// No-op field updates (e.g. assignee tweak) skip both — only meaningful
+  /// transitions cause UI noise.
   void upsertFromRealtime(MyTicket ticket) {
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
     final current = state.valueOrNull;
+    if (kDebugMode) {
+      debugPrint(
+        '[MyTicketsNotifier] upsertFromRealtime id=${ticket.id} '
+        'status=${ticket.status} hasState=${current != null}',
+      );
+    }
     if (current == null) {
-      // No baseline yet — store as the only ticket; initial fetch will
-      // merge once it lands.
-      final now = DateTime.now().millisecondsSinceEpoch;
       state = AsyncData(
         MyTicketsState(
           all: [ticket],
-          statusChangedAt: {ticket.id: now},
+          statusChangedAt: {ticket.id: nowMs},
           freshlyArrivedIds: {ticket.id},
+          recentChangeAt: {ticket.id: nowMs},
         ),
       );
       _scheduleFreshClear(ticket.id);
+      _scheduleRecentChangeClear(ticket.id);
+      _emitEvent(
+        kind: TicketChangeKind.created,
+        ticket: ticket,
+        oldStatus: null,
+      );
       return;
     }
 
@@ -104,33 +128,112 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
       next.insert(0, ticket);
     }
 
-    // Only stamp `statusChangedAt` when the status actually transitioned
-    // (or this is a brand new ticket). Avoids reshuffling the Today list
-    // on no-op updates like room number tweaks.
-    final stampedNow = existing == null || existing.status != ticket.status;
-    final nextStatusChangedAt = stampedNow
-        ? {
-            ...current.statusChangedAt,
-            ticket.id: DateTime.now().millisecondsSinceEpoch,
-          }
+    final isBrandNew = existing == null;
+    final isStatusChange = !isBrandNew && existing.status != ticket.status;
+    final isMeaningful = isBrandNew || isStatusChange;
+
+    final nextStatusChangedAt = isMeaningful
+        ? {...current.statusChangedAt, ticket.id: nowMs}
         : current.statusChangedAt;
 
     // Only mark as freshly arrived on a brand new id; status transitions on
     // existing tickets shouldn't re-trigger the slide-in animation.
-    final isBrandNew = existing == null;
     final nextFresh = isBrandNew
         ? {...current.freshlyArrivedIds, ticket.id}
         : current.freshlyArrivedIds;
+
+    final nextRecentChange = isMeaningful
+        ? {...current.recentChangeAt, ticket.id: nowMs}
+        : current.recentChangeAt;
+
+    if (kDebugMode) {
+      debugPrint(
+        '[MyTicketsNotifier] upsert resolved: '
+        'isBrandNew=$isBrandNew isStatusChange=$isStatusChange '
+        'oldStatus=${existing?.status} newStatus=${ticket.status} '
+        'todayBefore=${current.todayAllCount} '
+        'incomingBefore=${current.incomingCount}',
+      );
+    }
 
     state = AsyncData(
       current.copyWith(
         all: next,
         statusChangedAt: nextStatusChangedAt,
         freshlyArrivedIds: nextFresh,
+        recentChangeAt: nextRecentChange,
       ),
     );
 
+    if (kDebugMode) {
+      final s = state.valueOrNull!;
+      debugPrint(
+        '[MyTicketsNotifier] upsert applied: '
+        'todayAfter=${s.todayAllCount} '
+        'todayAccepted=${s.todayAcceptedCount} '
+        'todayInProgress=${s.todayInProgressCount} '
+        'todayOverdue=${s.todayOverdueCount} '
+        'incomingAfter=${s.incomingCount}',
+      );
+    }
+
     if (isBrandNew) _scheduleFreshClear(ticket.id);
+    if (isMeaningful) {
+      _scheduleRecentChangeClear(ticket.id);
+      _emitEvent(
+        kind: isBrandNew
+            ? TicketChangeKind.created
+            : TicketChangeKind.statusChanged,
+        ticket: ticket,
+        oldStatus: existing?.status,
+      );
+    }
+  }
+
+  void _emitEvent({
+    required TicketChangeKind kind,
+    required MyTicket ticket,
+    required String? oldStatus,
+  }) {
+    TicketEventBus.instance.emit(
+      TicketChangeEvent(
+        ticketId: ticket.id,
+        kind: kind,
+        at: DateTime.now(),
+        label: _labelFor(ticket),
+        oldStatus: oldStatus,
+        newStatus: ticket.status,
+      ),
+    );
+  }
+
+  String _labelFor(MyTicket t) {
+    final room = t.roomDetails?.onbRoomNumber ?? '';
+    if (room.isNotEmpty) return 'Room $room';
+    if (t.guestName.isNotEmpty) return t.guestName;
+    return '';
+  }
+
+  /// Drops [ticketId] from `recentChangeAt` after the highlight window. The
+  /// UI also defends against this via wall-clock comparison, but pruning
+  /// keeps the map from growing unbounded over a long session.
+  void _scheduleRecentChangeClear(String ticketId) {
+    Timer(kRecentChangeHighlightWindow, () {
+      try {
+        final s = state.valueOrNull;
+        if (s == null) return;
+        if (!s.recentChangeAt.containsKey(ticketId)) return;
+        // Only drop the entry if it hasn't been re-stamped by a newer event
+        // (re-highlight on subsequent transitions).
+        final stamp = s.recentChangeAt[ticketId]!;
+        final age = DateTime.now().millisecondsSinceEpoch - stamp;
+        if (age < kRecentChangeHighlightWindow.inMilliseconds) return;
+        final next = {...s.recentChangeAt}..remove(ticketId);
+        state = AsyncData(s.copyWith(recentChangeAt: next));
+      } catch (_) {
+        // Notifier disposed — drop silently.
+      }
+    });
   }
 
   /// Removes [ticketId] from `freshlyArrivedIds` after 3 seconds. Safe if
@@ -185,6 +288,18 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
 final isFreshlyArrivedProvider = Provider.family<bool, String>((ref, ticketId) {
   final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
   return state?.freshlyArrivedIds.contains(ticketId) ?? false;
+});
+
+/// Whether [ticketId] had a realtime create or status change within the
+/// last [kRecentChangeHighlightWindow]. Drives the green-border emphasis
+/// on [TicketCardNew]. Wall-clock guarded so a stale entry between the
+/// notifier-side prune timer and the next rebuild does not over-highlight.
+final isRecentlyChangedProvider = Provider.family<bool, String>((ref, ticketId) {
+  final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
+  final stamp = state?.recentChangeAt[ticketId];
+  if (stamp == null) return false;
+  final age = DateTime.now().millisecondsSinceEpoch - stamp;
+  return age < kRecentChangeHighlightWindow.inMilliseconds;
 });
 
 /// Persistent realtime-aware ticket list. Survives tab switches.
