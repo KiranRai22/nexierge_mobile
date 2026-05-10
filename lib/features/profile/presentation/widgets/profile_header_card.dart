@@ -7,6 +7,7 @@ import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/entities/user_profile.dart';
 
 class ProfileHeaderCard extends StatelessWidget {
@@ -116,8 +117,8 @@ class _Avatar extends StatelessWidget {
     final s = context.l10n;
     final c = context.themeColors;
     return SizedBox(
-      width: 96,
-      height: 96,
+      width: 128,
+      height: 128,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -125,8 +126,8 @@ class _Avatar extends StatelessWidget {
           ClipOval(
             child: uploading
                 ? Container(
-                    width: 96,
-                    height: 96,
+                    width: 128,
+                    height: 128,
                     color: ColorPalette.opsPurple,
                     alignment: Alignment.center,
                     child: const SizedBox(
@@ -141,27 +142,17 @@ class _Avatar extends StatelessWidget {
                 : avatarUrl != null && avatarUrl!.isNotEmpty
                 ? Image.network(
                     avatarUrl!,
-                    width: 96,
-                    height: 96,
+                    width: 128,
+                    height: 128,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) =>
                         _InitialsDisc(initials: initials),
                     loadingBuilder: (_, child, progress) {
                       if (progress == null) return child;
-                      return Container(
-                        width: 96,
-                        height: 96,
-                        color: ColorPalette.opsPurple,
-                        alignment: Alignment.center,
-                        child: const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                      );
+                      // Shimmer skeleton in place of a spinner — gives the
+                      // avatar slot a stable filled appearance while the
+                      // network image streams in.
+                      return const ShimmerCircle(size: 128);
                     },
                   )
                 : _InitialsDisc(initials: initials),
@@ -206,8 +197,8 @@ class _InitialsDisc extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 96,
-      height: 96,
+      width: 128,
+      height: 128,
       color: ColorPalette.opsPurple,
       alignment: Alignment.center,
       child: Text(

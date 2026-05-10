@@ -191,6 +191,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get retry => 'Reintentar';
 
   @override
+  String get refresh => 'Actualizar';
+
+  @override
   String get universalCatalogLoadError =>
       'No se pudieron cargar los servicios. Desliza para actualizar o toca reintentar.';
 

@@ -189,6 +189,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
+  String get refresh => 'Refresh';
+
+  @override
   String get universalCatalogLoadError =>
       'Couldn\'t load services. Pull to refresh or tap retry.';
 

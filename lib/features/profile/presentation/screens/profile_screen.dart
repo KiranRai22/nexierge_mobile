@@ -6,6 +6,8 @@ import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/utils/name_validator.dart';
+import '../../../../core/widgets/widget_manager.dart';
 import '../../../../core/utils/string_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/widgets/app_toast.dart';
@@ -99,7 +101,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         content: Text(body),
         actions: [
           TextButton(
-            onPressed: tapSound(() => Navigator.of(ctx).pop(false), SoundCategory.back),
+            onPressed: tapSound(
+              () => Navigator.of(ctx).pop(false),
+              SoundCategory.back,
+            ),
             child: Text(s.cancel),
           ),
           TextButton(
@@ -539,6 +544,8 @@ class _EditNameDialogState extends State<_EditNameDialog> {
   late final TextEditingController _firstCtl;
   late final TextEditingController _lastCtl;
   String? _errorText;
+  String? _firstError;
+  String? _lastError;
 
   @override
   void initState() {
@@ -554,45 +561,27 @@ class _EditNameDialogState extends State<_EditNameDialog> {
     super.dispose();
   }
 
-  /// Validates name according to rules:
-  /// - Only alphabets and single space allowed
-  /// - Cannot start with space or special characters
-  /// - Max 1 space between letters
-  /// - Min 3 characters
+  /// Validates name using the NameValidator utility
   String? _validateName(String value, String fieldName) {
-    final trimmed = value.trim();
+    return NameValidator.validateName(value, fieldName);
+  }
 
-    if (trimmed.length < 3) {
-      return '$fieldName must be at least 3 characters';
-    }
+  void _validateFields() {
+    setState(() {
+      _firstError = _validateName(_firstCtl.text, 'First name');
+      _lastError = _validateName(_lastCtl.text, 'Last name');
 
-    // Check if starts with space
-    if (value.startsWith(' ')) {
-      return '$fieldName cannot start with space';
-    }
-
-    // Check for valid characters (alphabets and single space only)
-    final validCharsRegex = RegExp(r'^[a-zA-Z]+( [a-zA-Z]+)*$');
-    if (!validCharsRegex.hasMatch(trimmed)) {
-      return '$fieldName can only contain letters and single spaces';
-    }
-
-    // Check for multiple consecutive spaces
-    if (trimmed.contains('  ')) {
-      return '$fieldName cannot have multiple spaces';
-    }
-
-    return null;
+      // Clear general error if both fields are valid
+      if (_firstError == null && _lastError == null) {
+        _errorText = null;
+      }
+    });
   }
 
   bool _isValid() {
-    final firstError = _validateName(_firstCtl.text, 'First name');
-    final lastError = _validateName(_lastCtl.text, 'Last name');
+    _validateFields();
 
-    if (firstError != null || lastError != null) {
-      setState(() {
-        _errorText = firstError ?? lastError;
-      });
+    if (_firstError != null || _lastError != null) {
       return false;
     }
 
@@ -608,13 +597,19 @@ class _EditNameDialogState extends State<_EditNameDialog> {
       return false;
     }
 
-    setState(() => _errorText = null);
     return true;
   }
 
   void _onSave() {
     if (_isValid()) {
-      Navigator.of(context).pop((_firstCtl.text.trim(), _lastCtl.text.trim()));
+      // Format names before saving
+      final formattedNames = NameValidator.formatFullName(
+        _firstCtl.text,
+        _lastCtl.text,
+      );
+      Navigator.of(
+        context,
+      ).pop((formattedNames['firstName']!, formattedNames['lastName']!));
     }
   }
 
@@ -634,12 +629,10 @@ class _EditNameDialogState extends State<_EditNameDialog> {
             textCapitalization: TextCapitalization.words,
             decoration: InputDecoration(
               labelText: s.profileFirstName,
-              errorText: _errorText?.contains('First') == true
-                  ? _errorText
-                  : null,
+              errorText: _firstError,
             ),
             autofocus: true,
-            onChanged: (_) => setState(() => _errorText = null),
+            onChanged: (_) => _validateFields(),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -647,11 +640,9 @@ class _EditNameDialogState extends State<_EditNameDialog> {
             textCapitalization: TextCapitalization.words,
             decoration: InputDecoration(
               labelText: s.profileLastName,
-              errorText: _errorText?.contains('Last') == true
-                  ? _errorText
-                  : null,
+              errorText: _lastError,
             ),
-            onChanged: (_) => setState(() => _errorText = null),
+            onChanged: (_) => _validateFields(),
           ),
           if (_errorText != null &&
               !_errorText!.contains('First') &&
@@ -668,31 +659,20 @@ class _EditNameDialogState extends State<_EditNameDialog> {
       actions: [
         Row(
           children: [
-            TextButton(
-              onPressed: tapSound(() => Navigator.of(context).pop(null), SoundCategory.back),
-              child: Text(
-                s.cancel,
-                style: TypographyManager.bodyMedium.copyWith(color: c.fgMuted),
+            AppOutlinedButton(
+              label: s.cancel,
+              onPressed: tapSound(
+                () => Navigator.of(context).pop(null),
+                SoundCategory.back,
               ),
+              width: 120,
             ),
-            const Spacer(),
-            ElevatedButton(
+            const SizedBox(width: 16),
+            AppPrimaryButton(
+              label: s.profileEditNameSave,
               onPressed: tapSound(_onSave),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: c.tagPurpleIcon,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(96, 44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                s.profileEditNameSave,
-                style: TypographyManager.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+              width: 120,
+              leadingIcon: const Icon(Icons.check, size: 18),
             ),
           ],
         ),

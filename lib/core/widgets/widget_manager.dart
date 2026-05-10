@@ -4,12 +4,13 @@ import '../i18n/l10n_extension.dart';
 import '../theme/color_palette.dart';
 import '../theme/typography_manager.dart';
 
-/// Full-width primary action button with optional loading state.
+/// Full-width primary action button with optional loading state and leading icon.
 class AppPrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final double? width;
+  final Widget? leadingIcon;
 
   const AppPrimaryButton({
     super.key,
@@ -17,6 +18,7 @@ class AppPrimaryButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.width,
+    this.leadingIcon,
   });
 
   @override
@@ -24,6 +26,13 @@ class AppPrimaryButton extends StatelessWidget {
     return SizedBox(
       width: width ?? double.infinity,
       child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: ColorPalette.black,
+          foregroundColor: ColorPalette.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
             ? const SizedBox(
@@ -34,7 +43,25 @@ class AppPrimaryButton extends StatelessWidget {
                   color: ColorPalette.white,
                 ),
               )
-            : Text(label),
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (leadingIcon != null) ...[
+                    IconTheme.merge(
+                      data: const IconThemeData(color: ColorPalette.white),
+                      child: leadingIcon!,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    label,
+                    style: TypographyManager.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: ColorPalette.white,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -58,8 +85,21 @@ class AppOutlinedButton extends StatelessWidget {
     return SizedBox(
       width: width ?? double.infinity,
       child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: ColorPalette.white,
+          foregroundColor: ColorPalette.black,
+          side: const BorderSide(color: ColorPalette.grey300),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
         onPressed: onPressed,
-        child: Text(label),
+        child: Text(
+          label,
+          style: TypographyManager.bodyMedium.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -162,8 +202,9 @@ class AppEmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               resolved,
-              style: TypographyManager.bodyMedium
-                  .copyWith(color: ColorPalette.textSecondary),
+              style: TypographyManager.bodyMedium.copyWith(
+                color: ColorPalette.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[
@@ -186,11 +227,7 @@ class AppErrorWidget extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
 
-  const AppErrorWidget({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
+  const AppErrorWidget({super.key, required this.message, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -208,8 +245,9 @@ class AppErrorWidget extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               message,
-              style: TypographyManager.bodyMedium
-                  .copyWith(color: ColorPalette.textSecondary),
+              style: TypographyManager.bodyMedium.copyWith(
+                color: ColorPalette.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[

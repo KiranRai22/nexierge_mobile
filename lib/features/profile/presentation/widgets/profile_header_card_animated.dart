@@ -8,6 +8,7 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/string_utils.dart';
+import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/entities/user_profile.dart';
 
 /// Animated header that shrinks on scroll.
@@ -326,20 +327,10 @@ class _Avatar extends StatelessWidget {
                         _InitialsDisc(initials: initials, size: size),
                     loadingBuilder: (_, child, progress) {
                       if (progress == null) return child;
-                      return Container(
-                        width: size,
-                        height: size,
-                        color: ColorPalette.opsPurple,
-                        alignment: Alignment.center,
-                        child: SizedBox(
-                          width: size * 0.25,
-                          height: size * 0.25,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        ),
-                      );
+                      // Shimmer skeleton in place of a spinner so the avatar
+                      // slot has a stable filled look while the network image
+                      // streams in. Sizes itself to the dynamic header size.
+                      return ShimmerCircle(size: size);
                     },
                   )
                 : _InitialsDisc(initials: initials, size: size),

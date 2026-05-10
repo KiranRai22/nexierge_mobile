@@ -6,6 +6,7 @@ import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
+import '../../../../core/widgets/widget_manager.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../domain/entities/service_catalog.dart';
 import '../providers/service_catalogs_provider.dart';
@@ -96,6 +97,8 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -113,9 +116,10 @@ class _EmptyView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          TextButton(
+          AppPrimaryButton(
+            label: s.refresh,
             onPressed: tapSound(onRefresh),
-            child: const Text('Refresh'),
+            width: 200,
           ),
         ],
       ),
@@ -131,6 +135,8 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -149,9 +155,10 @@ class _ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            AppPrimaryButton(
+              label: s.retry,
               onPressed: tapSound(onRetry),
-              child: const Text('Retry'),
+              width: 200,
             ),
           ],
         ),
