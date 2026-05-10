@@ -12,6 +12,44 @@ import '../../l10n/generated/app_localizations.dart';
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
   debugPrint('[FCM] Background: ${message.notification?.title}');
+
+  // Initialize local notifications for background message handling
+  final localNotifications = FlutterLocalNotificationsPlugin();
+
+  // Android initialization
+  const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const ios = DarwinInitializationSettings();
+  await localNotifications.initialize(
+    const InitializationSettings(android: android, iOS: ios),
+  );
+
+  // Show notification with custom sound
+  final title = message.notification?.title ?? 'Nexierge';
+  final body = message.notification?.body ?? '';
+
+  await localNotifications.show(
+    message.hashCode,
+    title,
+    body,
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'high_importance_channel_v2',
+        'Nexierge Notifications',
+        channelDescription: 'Important notifications from Nexierge',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('notification_sound'),
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        sound: 'notification_sound.caf',
+      ),
+    ),
+    payload: message.data.toString(),
+  );
 }
 
 /// FCM + local-notification bootstrap with i18n hooks.
@@ -110,7 +148,8 @@ class NotificationService {
     final s = LocaleAwareStrings.instance.strings;
     final androidPlugin = _localNotifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin == null) return;
 
     // Tear down obsolete channels so they don't linger in system settings.

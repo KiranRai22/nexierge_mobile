@@ -37,8 +37,10 @@ class DashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen>
+    with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+  late AnimationController _headerAnimationController;
 
   /// Maximum height of the stats sliver header — full 3-row grid plus its
   /// bottom padding. Generous enough to hold all four KPI cards with their
@@ -56,10 +58,73 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// bottom padding — total ~82, with a small buffer for fonts that scale.
   static const double _statsMinExtent = 88.0;
 
+  /// Current header state: 0.0 = expanded, 1.0 = collapsed
+  double _headerShrinkProgress = 0.0;
+
+  /// Whether header is fully collapsed (allows content scrolling)
+  bool _isHeaderCollapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _headerAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _headerAnimationController.addListener(() {
+      setState(() {
+        _headerShrinkProgress = _headerAnimationController.value;
+      });
+    });
+    _scrollController.addListener(_onScroll);
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _headerAnimationController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    final offset = _scrollController.offset;
+    final maxShrinkOffset = _statsMaxExtent - _statsMinExtent;
+
+    if (_isHeaderCollapsed) {
+      // When at top, allow header to expand
+      if (offset <= 0) {
+        _isHeaderCollapsed = false;
+        _headerShrinkProgress = 0.0;
+        _headerAnimationController.value = 0.0;
+        setState(() {});
+      }
+      return;
+    }
+
+    // Header is expanded - map scroll offset to header shrink progress
+    if (offset > 0) {
+      if (offset <= maxShrinkOffset) {
+        // During header collapse phase - animate header based on scroll
+        final progress = (offset / maxShrinkOffset).clamp(0.0, 1.0);
+        if (_headerShrinkProgress != progress) {
+          _headerShrinkProgress = progress;
+          _headerAnimationController.value = progress;
+          setState(() {});
+        }
+      } else {
+        // Header fully collapsed, mark as collapsed state
+        _isHeaderCollapsed = true;
+        _headerShrinkProgress = 1.0;
+        _headerAnimationController.value = 1.0;
+        setState(() {});
+      }
+    } else if (offset < 0 && _headerShrinkProgress > 0) {
+      // Overscroll up - expand header
+      _headerShrinkProgress = 0.0;
+      _headerAnimationController.value = 0.0;
+      setState(() {});
+    }
   }
 
   void _openNotifications(BuildContext context) {
@@ -222,6 +287,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         maxHeight: _statsMaxExtent,
                         minHeight: _statsMinExtent,
                         backgroundColor: c.bgSubtle,
+                        shrinkProgress: _headerShrinkProgress,
                         fullGrid: asyncCounts.when(
                           data: (counts) => DashboardStatsGrid(
                             incoming: counts.needsAcknowledgmentCount,
@@ -340,6 +406,7 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double maxHeight;
   final double minHeight;
   final Color backgroundColor;
+  final double shrinkProgress;
 
   _DashboardStatsHeaderDelegate({
     required this.fullGrid,
@@ -347,6 +414,7 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.maxHeight,
     required this.minHeight,
     required this.backgroundColor,
+    required this.shrinkProgress,
   });
 
   @override
@@ -361,8 +429,8 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final range = maxExtent - minExtent;
-    final t = range > 0 ? (shrinkOffset / range).clamp(0.0, 1.0) : 1.0;
+    // Use shrinkProgress from animation controller
+    final t = shrinkProgress.clamp(0.0, 1.0);
     return Container(
       color: backgroundColor,
       child: ClipRect(
@@ -416,6 +484,7 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
         oldDelegate.minHeight != minHeight ||
         oldDelegate.backgroundColor != backgroundColor ||
         oldDelegate.fullGrid != fullGrid ||
-        oldDelegate.compactStrip != compactStrip;
+        oldDelegate.compactStrip != compactStrip ||
+        oldDelegate.shrinkProgress != shrinkProgress;
   }
 }

@@ -11,6 +11,32 @@ import '../../../../core/utils/string_utils.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/entities/user_profile.dart';
 
+/// Controller for ProfileHeaderCardAnimated to programmatically trigger animations.
+class ProfileHeaderController {
+  _ProfileHeaderCardAnimatedState? _state;
+
+  void _attach(_ProfileHeaderCardAnimatedState state) {
+    _state = state;
+  }
+
+  void _detach() {
+    _state = null;
+  }
+
+  /// Triggers the header to collapse.
+  void collapse() {
+    _state?._snapToCollapsed();
+  }
+
+  /// Triggers the header to expand.
+  void expand() {
+    _state?._snapToExpanded();
+  }
+
+  /// Returns true if header is currently collapsed.
+  bool get isCollapsed => _state?._isCollapsed ?? false;
+}
+
 /// Animated header that shrinks on scroll.
 /// Starts as column (big avatar, name, role), shrinks to row (avatar | name+role).
 class ProfileHeaderCardAnimated extends StatefulWidget {
@@ -20,6 +46,7 @@ class ProfileHeaderCardAnimated extends StatefulWidget {
   final VoidCallback? onChangeAvatar;
   final VoidCallback? onEditName;
   final ScrollController scrollController;
+  final ProfileHeaderController? controller;
 
   const ProfileHeaderCardAnimated({
     super.key,
@@ -29,6 +56,7 @@ class ProfileHeaderCardAnimated extends StatefulWidget {
     this.onChangeAvatar,
     this.onEditName,
     required this.scrollController,
+    this.controller,
   });
 
   @override
@@ -36,29 +64,76 @@ class ProfileHeaderCardAnimated extends StatefulWidget {
       _ProfileHeaderCardAnimatedState();
 }
 
-class _ProfileHeaderCardAnimatedState extends State<ProfileHeaderCardAnimated> {
-  double _scrollOffset = 0;
+class _ProfileHeaderCardAnimatedState extends State<ProfileHeaderCardAnimated>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _shrinkAnimation;
+
+  bool _isCollapsed = false;
+  bool _isAnimating = false;
+
   static const double _shrinkThreshold = 50;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _shrinkAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _shrinkAnimation.addListener(() {
+      setState(() {});
+    });
     widget.scrollController.addListener(_onScroll);
+    widget.controller?._attach(this);
   }
 
   @override
   void dispose() {
+    widget.controller?._detach();
+    _animationController.dispose();
     widget.scrollController.removeListener(_onScroll);
     super.dispose();
   }
 
   void _onScroll() {
-    setState(() {
-      _scrollOffset = widget.scrollController.offset.clamp(0, _shrinkThreshold);
+    final offset = widget.scrollController.offset;
+
+    // If animating, don't process scroll
+    if (_isAnimating) return;
+
+    // Scroll down while expanded - snap to collapsed
+    if (offset > 0 && !_isCollapsed) {
+      _snapToCollapsed();
+    }
+    // Scroll up while collapsed and at top - snap to expanded
+    else if (offset <= 0 && _isCollapsed) {
+      _snapToExpanded();
+    }
+  }
+
+  void _snapToCollapsed() {
+    if (_isCollapsed || _isAnimating) return;
+    _isAnimating = true;
+    _animationController.forward().then((_) {
+      _isCollapsed = true;
+      _isAnimating = false;
     });
   }
 
-  double get _shrinkProgress => (_scrollOffset / _shrinkThreshold).clamp(0, 1);
+  void _snapToExpanded() {
+    if (!_isCollapsed || _isAnimating) return;
+    _isAnimating = true;
+    _animationController.reverse().then((_) {
+      _isCollapsed = false;
+      _isAnimating = false;
+    });
+  }
+
+  double get _shrinkProgress => _shrinkAnimation.value;
 
   @override
   Widget build(BuildContext context) {
