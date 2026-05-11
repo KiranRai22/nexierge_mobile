@@ -9,6 +9,13 @@ import '../../l10n/generated/app_localizations.dart';
 // Must be top-level — runs in an isolate when app is terminated. The isolate
 // has its own LocaleAwareStrings instance with the device-locale fallback,
 // which is good enough for the rare terminated-state path.
+//
+// IMPORTANT: For custom sound in background/terminated states, the server
+// must send FCM payload with: `sound: 'notification_sound'` (Android) and
+// `sound: 'notification_sound.caf'` (iOS). When FCM sends a `notification`
+// payload, the system handles the display and our code only runs for data-only
+// messages. The local notification shown here is a fallback for data-only
+// messages or when the system notification is suppressed.
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
   debugPrint('[FCM] Background: ${message.notification?.title}');
@@ -22,6 +29,23 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
   await localNotifications.initialize(
     const InitializationSettings(android: android, iOS: ios),
   );
+
+  // Create Android channel with custom sound for background notifications
+  final androidPlugin = localNotifications
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
+  if (androidPlugin != null) {
+    const channel = AndroidNotificationChannel(
+      'high_importance_channel_v2',
+      'Nexierge Notifications',
+      description: 'Important notifications from Nexierge',
+      importance: Importance.high,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound('notification_sound'),
+    );
+    await androidPlugin.createNotificationChannel(channel);
+  }
 
   // Show notification with custom sound
   final title = message.notification?.title ?? 'Nexierge';
