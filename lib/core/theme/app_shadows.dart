@@ -43,11 +43,6 @@ class AppShadows extends ThemeExtension<AppShadows> {
     ],
     card: [
       BoxShadow(
-        color: _black.withValues(alpha: 0.08),
-        offset: const Offset(0, 1),
-        blurRadius: 3,
-      ),
-      BoxShadow(
         color: _black.withValues(alpha: 0.04),
         offset: const Offset(0, 1),
         blurRadius: 2,
@@ -88,11 +83,6 @@ class AppShadows extends ThemeExtension<AppShadows> {
       ),
     ],
     card: [
-      BoxShadow(
-        color: _black.withValues(alpha: 0.32),
-        offset: const Offset(0, 1),
-        blurRadius: 3,
-      ),
       BoxShadow(
         color: _black.withValues(alpha: 0.20),
         offset: const Offset(0, 1),

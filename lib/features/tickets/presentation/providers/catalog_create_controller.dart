@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/string_utils.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../data/datasources/ticket_remote_data_source.dart';
 import '../../data/repositories/ticket_repository.dart';
@@ -229,9 +230,11 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
   }
 
   void clearRoom() => state = state.copyWith(clearRoom: true);
-  void setGuestName(String v) => state = state.copyWith(guestName: v);
+  void setGuestName(String v) =>
+      state = state.copyWith(guestName: StringUtils.capitalizeFirst(v));
   void setSource(TicketSource s) => state = state.copyWith(source: s);
-  void setNote(String v) => state = state.copyWith(note: v);
+  void setNote(String v) =>
+      state = state.copyWith(note: StringUtils.capitalizeFirst(v));
 
   // ── Submit ────────────────────────────────────────────────────────────────
   /// Submits the catalog order via the real `/service_catalogs/user_app/order/create`
@@ -244,7 +247,8 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
     if (!state.canSubmit) return null;
     state = state.copyWith(submitting: true);
     try {
-      final hotelId = ref
+      final hotelId =
+          ref
               .read(dashboardBootstrapControllerProvider)
               .valueOrNull
               ?.userProfile
@@ -291,45 +295,53 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
         if (group.type == OptionGroupType.singleSelect) {
           final picked = line.selectedOptions[group.id];
           if (picked != null) {
-            mods.add(CreateOrderModifierDto(
-              modifierId: picked.id,
-              modifierName: picked.name,
-              modifierQuantity: 1,
-              modifierPrice: picked.priceDelta,
-            ));
+            mods.add(
+              CreateOrderModifierDto(
+                modifierId: picked.id,
+                modifierName: picked.name,
+                modifierQuantity: 1,
+                modifierPrice: picked.priceDelta,
+              ),
+            );
           }
         } else {
           // multiAddOn: one entry per non-zero stepper.
           for (final option in group.options) {
             final qty = line.selectedAddOns['${group.id}:${option.id}'] ?? 0;
             if (qty <= 0) continue;
-            mods.add(CreateOrderModifierDto(
-              modifierId: option.id,
-              modifierName: option.name,
-              modifierQuantity: qty,
-              modifierPrice: option.priceDelta,
-            ));
+            mods.add(
+              CreateOrderModifierDto(
+                modifierId: option.id,
+                modifierName: option.name,
+                modifierQuantity: qty,
+                modifierPrice: option.priceDelta,
+              ),
+            );
           }
         }
 
         if (mods.isEmpty) continue;
 
-        groups.add(CreateOrderModifierGroupDto(
-          modifierGroupId: group.id,
-          modifierGroupName: group.name,
-          modifiers: mods,
-        ));
+        groups.add(
+          CreateOrderModifierGroupDto(
+            modifierGroupId: group.id,
+            modifierGroupName: group.name,
+            modifiers: mods,
+          ),
+        );
       }
 
       // No-options items get one entry per cart line. Items with options
       // are 1-unit per line by construction; for collapsed no-option
       // lines we still send a single item entry — the backend treats the
       // `quantity` semantic via repeated rows or downstream logic.
-      items.add(CreateOrderItemDto(
-        itemId: line.item.id,
-        specialInstructions: '',
-        modifierGroups: groups,
-      ));
+      items.add(
+        CreateOrderItemDto(
+          itemId: line.item.id,
+          specialInstructions: '',
+          modifierGroups: groups,
+        ),
+      );
     }
 
     return CreateCatalogOrderRequestDto(
@@ -348,7 +360,6 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
       items: items,
     );
   }
-
 }
 
 final catalogDraftControllerProvider =

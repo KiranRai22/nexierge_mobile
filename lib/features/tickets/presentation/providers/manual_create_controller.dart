@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/string_utils.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/ticket_form_options.dart';
@@ -82,7 +83,8 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
   @override
   ManualDraftState build() => const ManualDraftState();
 
-  void setSummary(String v) => state = state.copyWith(summary: v);
+  void setSummary(String v) =>
+      state = state.copyWith(summary: StringUtils.capitalizeFirst(v));
 
   /// Picker returns the `guest_stay_id`; we look up the row to also stamp
   /// the matching contact + display number + guest name in one shot.
@@ -107,7 +109,8 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
   void setDepartment(HotelDepartment d) =>
       state = state.copyWith(department: d);
   void setSource(TicketSource s) => state = state.copyWith(source: s);
-  void setNotes(String v) => state = state.copyWith(notes: v);
+  void setNotes(String v) =>
+      state = state.copyWith(notes: StringUtils.capitalizeFirst(v));
 
   Future<String?> submit() async {
     if (!state.canSubmit) return null;

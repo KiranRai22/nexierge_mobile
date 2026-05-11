@@ -66,6 +66,20 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
         selection: TextSelection.collapsed(offset: draft.guestName.length),
       );
     }
+    // Sync summary field with capitalized state value
+    if (_summaryCtl.text != draft.summary) {
+      _summaryCtl.value = TextEditingValue(
+        text: draft.summary,
+        selection: TextSelection.collapsed(offset: draft.summary.length),
+      );
+    }
+    // Sync notes field with capitalized state value
+    if (_notesCtl.text != draft.notes) {
+      _notesCtl.value = TextEditingValue(
+        text: draft.notes,
+        selection: TextSelection.collapsed(offset: draft.notes.length),
+      );
+    }
 
     return Column(
       children: [
@@ -99,8 +113,9 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
-                            final picked =
-                                await RoomPickerSheet.showCheckedIn(context);
+                            final picked = await RoomPickerSheet.showCheckedIn(
+                              context,
+                            );
                             if (picked != null) ctl.selectGuestStay(picked);
                           },
                           child: Container(
@@ -116,11 +131,14 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                                 Expanded(
                                   child: Text(
                                     draft.selectedRoomNumber != null
-                                        ? s.roomNumber(draft.selectedRoomNumber!)
+                                        ? s.roomNumber(
+                                            draft.selectedRoomNumber!,
+                                          )
                                         : s.roomPickerTitle,
                                     style: TypographyManager.bodyMedium
                                         .copyWith(
-                                          color: draft.selectedRoomNumber != null
+                                          color:
+                                              draft.selectedRoomNumber != null
                                               ? ColorPalette.textPrimary
                                               : ColorPalette.textSecondary,
                                         ),
@@ -401,7 +419,10 @@ class _ManualBottomBar extends StatelessWidget {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: tapSound(
+                () => Navigator.of(context).pop(),
+                SoundCategory.back,
+              ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ColorPalette.textPrimary,
                 side: BorderSide(color: ColorPalette.opsBorder),

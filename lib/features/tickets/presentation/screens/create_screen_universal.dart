@@ -107,17 +107,15 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
         Expanded(
           child: catalogAsync.when(
             loading: () => const CatalogGridSkeleton(),
-            error: (err, _) => _CatalogLoadError(
-              onRetry: () => refreshUniversalCatalog(ref),
-            ),
+            error: (err, _) =>
+                _CatalogLoadError(onRetry: () => refreshUniversalCatalog(ref)),
             data: (catalog) => RefreshIndicator(
               onRefresh: () => refreshUniversalCatalog(ref),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
                 ),
-                padding:
-                    EdgeInsets.fromLTRB(16, 0, 16, hasPicks ? 96 : 24),
+                padding: EdgeInsets.fromLTRB(16, 0, 16, hasPicks ? 96 : 24),
                 children: [
                   if (_query.isEmpty) ...[
                     for (final dept in catalog.departments)
@@ -175,10 +173,7 @@ class _CatalogLoadError extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => onRetry(),
-              child: Text(s.retry),
-            ),
+            ElevatedButton(onPressed: () => onRetry(), child: Text(s.retry)),
           ],
         ),
       ),
@@ -592,6 +587,13 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
         selection: TextSelection.collapsed(offset: draft.guestName.length),
       );
     }
+    // Sync notes field with capitalized state value
+    if (_notesCtl.text != draft.note) {
+      _notesCtl.value = TextEditingValue(
+        text: draft.note,
+        selection: TextSelection.collapsed(offset: draft.note.length),
+      );
+    }
 
     return Column(
       children: [
@@ -614,8 +616,9 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
-                            final picked =
-                                await RoomPickerSheet.showCheckedIn(context);
+                            final picked = await RoomPickerSheet.showCheckedIn(
+                              context,
+                            );
                             if (picked != null) ctl.selectRoom(picked);
                           },
                           child: Container(
@@ -632,12 +635,13 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                                   child: Text(
                                     draft.selectedRoomNumber != null
                                         ? s.roomNumber(
-                                            draft.selectedRoomNumber!)
+                                            draft.selectedRoomNumber!,
+                                          )
                                         : s.roomPickerTitle,
                                     style: TypographyManager.bodyMedium
                                         .copyWith(
-                                          color: draft.selectedRoomNumber !=
-                                                  null
+                                          color:
+                                              draft.selectedRoomNumber != null
                                               ? ColorPalette.textPrimary
                                               : ColorPalette.textSecondary,
                                         ),

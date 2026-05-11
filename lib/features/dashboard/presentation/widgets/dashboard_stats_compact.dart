@@ -102,7 +102,7 @@ class _CompactStatCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          decoration: CardDecoration.standard(
+          decoration: CardDecoration.raised(
             colors: c,
             borderRadius: BorderRadius.circular(12),
           ),

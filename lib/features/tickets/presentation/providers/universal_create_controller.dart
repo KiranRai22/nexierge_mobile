@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/utils/string_utils.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../domain/models/universal_catalog.dart';
@@ -38,9 +39,11 @@ class UniversalDraftState {
   /// guest_stay_id of the picked checked-in stay. Field name retained for
   /// state-shape stability with earlier versions of this controller.
   final String? selectedRoomId;
+
   /// contact_id of the guest on the picked stay. Used as the order's
   /// contact when posting `/universal_requests/order/create`.
   final String? contactId;
+
   /// Display room number from the picked stay (e.g. "204"). Rendered in
   /// the room field on the details step.
   final String? selectedRoomNumber;
@@ -73,8 +76,7 @@ class UniversalDraftState {
 
   int quantity(String itemId) => picks[itemId]?.quantity ?? 0;
 
-  int get totalUnits =>
-      picks.values.fold<int>(0, (acc, p) => acc + p.quantity);
+  int get totalUnits => picks.values.fold<int>(0, (acc, p) => acc + p.quantity);
 
   /// Auto-routed department inferred from the first picked item's
   /// backend department. Falls back to housekeeping when no items.
@@ -106,8 +108,9 @@ class UniversalDraftState {
     return UniversalDraftState(
       step: step ?? this.step,
       picks: picks ?? this.picks,
-      selectedRoomId:
-          clearRoom ? null : (selectedRoomId ?? this.selectedRoomId),
+      selectedRoomId: clearRoom
+          ? null
+          : (selectedRoomId ?? this.selectedRoomId),
       contactId: clearRoom ? null : (contactId ?? this.contactId),
       selectedRoomNumber: clearRoom
           ? null
@@ -141,7 +144,10 @@ class UniversalDraftController
     if (existing == null) return;
     final clamped = qty.clamp(1, 99);
     state = state.copyWith(
-      picks: {...state.picks, itemId: existing.copyWith(quantity: clamped)},
+      picks: {
+        ...state.picks,
+        itemId: existing.copyWith(quantity: clamped),
+      },
     );
   }
 
@@ -174,11 +180,13 @@ class UniversalDraftController
 
   void clearRoom() => state = state.copyWith(clearRoom: true);
 
-  void setGuestName(String v) => state = state.copyWith(guestName: v);
+  void setGuestName(String v) =>
+      state = state.copyWith(guestName: StringUtils.capitalizeFirst(v));
 
   void setSource(TicketSource s) => state = state.copyWith(source: s);
 
-  void setNote(String note) => state = state.copyWith(note: note);
+  void setNote(String note) =>
+      state = state.copyWith(note: StringUtils.capitalizeFirst(note));
 
   void goToDetails() {
     if (!state.canContinue) return;
@@ -214,13 +222,15 @@ class UniversalDraftController
     final universalRequestService = ref.read(universalRequestServiceProvider);
 
     final orderItems = state.picks.values
-        .map((pick) => OrderItemDto(
-              activeUniversalRequestId: pick.item.id,
-              guestNotes: state.note.trim(),
-              price: 0.0,
-              quantity: pick.quantity,
-              itemName: pick.item.title,
-            ))
+        .map(
+          (pick) => OrderItemDto(
+            activeUniversalRequestId: pick.item.id,
+            guestNotes: state.note.trim(),
+            price: 0.0,
+            quantity: pick.quantity,
+            itemName: pick.item.title,
+          ),
+        )
         .toList();
 
     try {
@@ -267,10 +277,10 @@ class UniversalDraftController
       s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 }
 
-final universalDraftControllerProvider = AutoDisposeNotifierProvider<
-    UniversalDraftController, UniversalDraftState>(
-  UniversalDraftController.new,
-);
+final universalDraftControllerProvider =
+    AutoDisposeNotifierProvider<UniversalDraftController, UniversalDraftState>(
+      UniversalDraftController.new,
+    );
 
 /// Available rooms (delegated to repo). Cheap getter; rebuilds rarely.
 final availableRoomsProvider = Provider<List<Room>>((ref) {

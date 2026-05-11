@@ -30,7 +30,7 @@ class ProfileHeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     return Container(
-      decoration: CardDecoration.standard(
+      decoration: CardDecoration.raised(
         colors: c,
         borderRadius: BorderRadius.circular(16),
       ),

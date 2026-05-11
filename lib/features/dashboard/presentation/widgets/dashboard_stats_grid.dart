@@ -216,7 +216,7 @@ class StatNoteCard extends StatelessWidget {
               },
         borderRadius: radius,
         child: Container(
-          decoration: CardDecoration.standard(colors: c, borderRadius: radius),
+          decoration: CardDecoration.raised(colors: c, borderRadius: radius),
           padding: EdgeInsets.all(isLarge ? 18 : 14),
           child: Semantics(
             label: '$badgeLabel $value',

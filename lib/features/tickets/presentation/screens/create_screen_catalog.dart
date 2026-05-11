@@ -1190,6 +1190,13 @@ class _CatalogStepDetailsState
         selection: TextSelection.collapsed(offset: draft.guestName.length),
       );
     }
+    // Sync notes field with capitalized state value
+    if (_notesCtl.text != draft.note) {
+      _notesCtl.value = TextEditingValue(
+        text: draft.note,
+        selection: TextSelection.collapsed(offset: draft.note.length),
+      );
+    }
 
     // selectedRoomId now stores the picked checked-in stay's guest_stay_id.
     // Look up the display row from the checked-in stays provider so we can
