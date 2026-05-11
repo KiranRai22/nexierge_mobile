@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/theme/typography_manager.dart';
 
@@ -99,7 +100,7 @@ _ToastPalette _palette(ToastSeverity severity) {
         fg: Color(0xFFB91C1C), // Dark red
         border: Color(0xFFFECACA), // Red border
         shadow: Color(0xFFEF4444),
-        icon: Icons.error_outline_rounded,
+        icon: LucideIcons.triangleAlert,
       );
     case ToastSeverity.info:
       return const _ToastPalette(

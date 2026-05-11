@@ -13,6 +13,7 @@ import '../../../data/repositories/ticket_repository.dart';
 import '../../../domain/entities/my_ticket.dart';
 import '../../../domain/models/ticket.dart';
 import '../../providers/my_tickets_notifier.dart';
+import '../../providers/ticket_busy_provider.dart';
 import '../acknowledge_ticket_bottom_sheet.dart';
 import '../cancel_ticket_bottom_sheet.dart';
 import '../change_due_time_bottom_sheet.dart';
@@ -44,10 +45,13 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   Future<void> _withGuard(Future<void> Function() task) async {
     if (_busy) return;
+    final ticketId = widget.ticket.id;
+    final busy = ref.read(ticketBusyProvider.notifier)..mark(ticketId);
     setState(() => _busy = true);
     try {
       await task();
     } finally {
+      busy.clear(ticketId);
       if (mounted) setState(() => _busy = false);
     }
   }
@@ -126,6 +130,12 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   Future<void> _onAcceptIncoming() async {
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedAccept;
+    // Detail screen uses the legacy show()/pop()-with-result pattern: the
+    // detail page itself pops after the optimistic transition, so we can't
+    // leave the sheet sitting on top during the API call (the sheet's
+    // Navigator.pop inside `_runOptimistic` would pop the sheet instead).
+    // The global busy mark inside `_withGuard` still blocks any background
+    // card from being tapped while the API is in flight.
     final result = await AcknowledgeTicketBottomSheet.show(
       context: context,
       ticketCode: t.code,
@@ -133,10 +143,6 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       hasGuest: t.guest != null,
     );
     if (result == null) return;
-
-    // Route through the dedicated acknowledge endpoints so the picked
-    // due-at and optional staff note actually reach the backend. The
-    // legacy `change_status` path drops both fields.
     final targetStatus = result.startImmediately ? 'IN_PROGRESS' : 'ACCEPTED';
     await _withGuard(
       () => _runOptimistic(
@@ -228,7 +234,6 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedMarkDone;
     final note = await MarkDoneBottomSheet.show(context);
-    // null = dismissed, '' or string = confirmed (note is optional)
     if (note == null) return;
     await _withGuard(
       () => _runOptimistic(

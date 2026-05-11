@@ -6,9 +6,13 @@ import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-class MarkDoneBottomSheet extends StatefulWidget {
-  const MarkDoneBottomSheet._();
+typedef MarkDoneConfirmCallback = Future<void> Function(String note);
 
+class MarkDoneBottomSheet extends StatefulWidget {
+  final MarkDoneConfirmCallback? onConfirm;
+  const MarkDoneBottomSheet._({this.onConfirm});
+
+  /// Legacy: pops with note string on confirm, null on dismiss.
   static Future<String?> show(BuildContext context) {
     return showModalBottomSheet<String>(
       context: context,
@@ -18,12 +22,27 @@ class MarkDoneBottomSheet extends StatefulWidget {
     );
   }
 
+  /// Keeps sheet open with spinner during [onConfirm]. Returns true on
+  /// success, null on dismiss.
+  static Future<bool?> showWithCallback(
+    BuildContext context, {
+    required MarkDoneConfirmCallback onConfirm,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => MarkDoneBottomSheet._(onConfirm: onConfirm),
+    );
+  }
+
   @override
   State<MarkDoneBottomSheet> createState() => _MarkDoneBottomSheetState();
 }
 
 class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
   final _noteCtl = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -31,12 +50,31 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
     super.dispose();
   }
 
+  Future<void> _handleConfirm() async {
+    final cb = widget.onConfirm;
+    final note = _noteCtl.text;
+    if (cb == null) {
+      Navigator.of(context).pop(note);
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await cb(note);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      if (mounted) setState(() => _submitting = false);
+      rethrow;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
+    return PopScope(
+      canPop: !_submitting,
+      child: Container(
       decoration: CardDecoration.subtle(
         colors: c,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -72,7 +110,9 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
               ),
               IconButton(
                 icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                onPressed: _submitting
+                    ? null
+                    : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -87,6 +127,7 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
           // Note field
           TextField(
             controller: _noteCtl,
+            enabled: !_submitting,
             maxLines: 4,
             style: TypographyManager.bodyMedium.copyWith(color: c.fgBase),
             decoration: InputDecoration(
@@ -117,7 +158,9 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                  onPressed: _submitting
+                      ? null
+                      : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: c.borderBase),
                     minimumSize: const Size.fromHeight(48),
@@ -137,8 +180,18 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: tapSound(() => Navigator.of(context).pop(_noteCtl.text)),
-                  icon: const Icon(LucideIcons.circleCheck, size: 18),
+                  onPressed: _submitting ? null : tapSound(_handleConfirm),
+                  icon: _submitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(LucideIcons.circleCheck, size: 18),
                   label: const Text('Mark as Done'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.buttonInverted,
@@ -157,6 +210,7 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
           ),
         ],
       ),
+    ),
     );
   }
 }

@@ -16,6 +16,7 @@ import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../providers/my_tickets_list_controller.dart';
 import '../providers/my_tickets_notifier.dart';
 import '../providers/session_providers.dart';
+import '../providers/ticket_busy_provider.dart';
 import '../providers/tickets_list_controller.dart';
 import '../providers/tickets_main_tab_provider.dart';
 import '../providers/tickets_paged_notifier.dart';
@@ -437,88 +438,81 @@ VoidCallback _acceptHandler(
   Ticket ticket,
 ) {
   return () async {
-    final result = await AcknowledgeTicketBottomSheet.show(
+    // Guard at the entry point too: if a previous tap is still in flight
+    // and the card overlay hasn't repainted yet, drop the second tap.
+    if (ref.read(ticketBusyProvider).contains(ticket.id)) return;
+
+    await AcknowledgeTicketBottomSheet.showWithCallback(
       context: context,
       ticketCode: ticket.code,
       ticketTitle: ticket.title,
       hasGuest: ticket.guest != null,
-    );
-    if (result == null || !context.mounted) return;
-
-    // The sheet now resolves the due-at epoch itself for any picked preset
-    // or custom date/time. Future dates are accepted — the today-only gate
-    // was dropped along with the sheet's "Accept & Start" gating.
-    final dueTimeMs = result.dueAtEpochMs;
-
-    try {
-      // Step 1: Mark ticket as transitioning (show shimmer effect)
-      for (final tab in kAllTicketsTabs) {
-        ref
-            .read(ticketsPagedProvider(specForTab(tab)).notifier)
-            .markTicketTransitioning(ticket.id);
-      }
-
-      // Step 2: Update tab counts immediately (optimistic update)
-      ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
-          .updateTabCountImmediate(delta: -1);
-
-      ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-          .updateTabCountImmediate(delta: 1);
-
-      // Step 3: Make API call
-      if (result.startImmediately) {
-        // Use acknowledge_and_start API
-        await ref
-            .read(ticketRepositoryProvider)
-            .acknowledgeAndStartTicket(
-              ticketId: ticket.id,
-              dueAt: dueTimeMs,
-              notes: result.notes,
-            );
-      } else {
-        // Use acknowledge API
-        await ref
-            .read(ticketRepositoryProvider)
-            .acknowledgeTicket(
-              ticketId: ticket.id,
-              dueAt: dueTimeMs,
-              notes: result.notes,
-            );
-      }
-
-      // Step 4: Update ticket status immediately (remove from incoming, add
-      // to today). Mirror the API call's target status so the optimistic
-      // local view matches what the server just persisted — picking
-      // "Accept & Start" lands the ticket in IN_PROGRESS, not ACCEPTED.
-      final optimisticStatus =
-          result.startImmediately ? 'IN_PROGRESS' : 'ACCEPTED';
-      ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
-          .updateTicketStatusImmediate(ticket.id, optimisticStatus);
-
-      ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-          .updateTicketStatusImmediate(ticket.id, optimisticStatus);
-
-      // Step 5: Refresh other providers as backup
-      ref.read(myTicketsNotifierProvider.notifier).refresh();
-    } catch (e) {
-      if (context.mounted) {
-        context.showFailure(e.toString());
-        // Revert optimistic updates on error
+      onConfirm: (result) async {
+        final busy = ref.read(ticketBusyProvider.notifier)..mark(ticket.id);
+        // Step 1: Mark ticket as transitioning (shimmer)
+        for (final tab in kAllTicketsTabs) {
+          ref
+              .read(ticketsPagedProvider(specForTab(tab)).notifier)
+              .markTicketTransitioning(ticket.id);
+        }
+        // Step 2: Optimistic tab count deltas
         ref
             .read(
               ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
             )
-            .updateTabCountImmediate(delta: 1);
-
+            .updateTabCountImmediate(delta: -1);
         ref
             .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-            .updateTabCountImmediate(delta: -1);
-      }
-    }
+            .updateTabCountImmediate(delta: 1);
+        try {
+          // Step 3: API
+          if (result.startImmediately) {
+            await ref
+                .read(ticketRepositoryProvider)
+                .acknowledgeAndStartTicket(
+                  ticketId: ticket.id,
+                  dueAt: result.dueAtEpochMs,
+                  notes: result.notes,
+                );
+          } else {
+            await ref
+                .read(ticketRepositoryProvider)
+                .acknowledgeTicket(
+                  ticketId: ticket.id,
+                  dueAt: result.dueAtEpochMs,
+                  notes: result.notes,
+                );
+          }
+          // Step 4: Optimistic status patch
+          final optimisticStatus = result.startImmediately
+              ? 'IN_PROGRESS'
+              : 'ACCEPTED';
+          ref
+              .read(
+                ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
+              )
+              .updateTicketStatusImmediate(ticket.id, optimisticStatus);
+          ref
+              .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+              .updateTicketStatusImmediate(ticket.id, optimisticStatus);
+          ref.read(myTicketsNotifierProvider.notifier).refresh();
+        } catch (e) {
+          // Revert optimistic count deltas on error and surface the toast.
+          ref
+              .read(
+                ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
+              )
+              .updateTabCountImmediate(delta: 1);
+          ref
+              .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+              .updateTabCountImmediate(delta: -1);
+          if (context.mounted) context.showFailure(e.toString());
+          rethrow; // Keep sheet open so user can retry / dismiss.
+        } finally {
+          busy.clear(ticket.id);
+        }
+      },
+    );
   };
 }
 
@@ -528,10 +522,8 @@ VoidCallback _openHandler(BuildContext context, Ticket ticket) {
       // Forward the list-built Ticket as a preset so the detail header /
       // type / source come straight from what the user just saw on the
       // card, no cache lookup race.
-      builder: (_) => TicketDetailScreen(
-        ticketId: ticket.id,
-        presetTicket: ticket,
-      ),
+      builder: (_) =>
+          TicketDetailScreen(ticketId: ticket.id, presetTicket: ticket),
     ),
   );
 }
@@ -541,35 +533,32 @@ Future<void> _startWorkHandler(
   WidgetRef ref,
   Ticket ticket,
 ) async {
-  final confirmed = await showStartWorkConfirmation(context: context);
-  if (confirmed != true || !context.mounted) return;
-
-  try {
-    // Step 1: Mark ticket as transitioning (show shimmer effect)
-    for (final tab in kAllTicketsTabs) {
-      ref
-          .read(ticketsPagedProvider(specForTab(tab)).notifier)
-          .markTicketTransitioning(ticket.id);
-    }
-
-    // Step 2: Update tab counts immediately (today -> today, count stays same)
-    // No count change needed for IN_PROGRESS transition
-
-    // Step 3: Make API call
-    await ref
-        .read(ticketRepositoryProvider)
-        .changeTicketStatus(ticketId: ticket.id, newStatus: 'IN_PROGRESS');
-
-    // Step 4: Update ticket status immediately
-    ref
-        .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-        .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
-
-    // Step 5: Refresh other providers as backup
-    ref.read(myTicketsNotifierProvider.notifier).refresh();
-  } catch (e) {
-    if (context.mounted) context.showFailure(e.toString());
-  }
+  if (ref.read(ticketBusyProvider).contains(ticket.id)) return;
+  await showStartWorkConfirmation(
+    context: context,
+    onConfirm: () async {
+      final busy = ref.read(ticketBusyProvider.notifier)..mark(ticket.id);
+      for (final tab in kAllTicketsTabs) {
+        ref
+            .read(ticketsPagedProvider(specForTab(tab)).notifier)
+            .markTicketTransitioning(ticket.id);
+      }
+      try {
+        await ref
+            .read(ticketRepositoryProvider)
+            .changeTicketStatus(ticketId: ticket.id, newStatus: 'IN_PROGRESS');
+        ref
+            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
+        ref.read(myTicketsNotifierProvider.notifier).refresh();
+      } catch (e) {
+        if (context.mounted) context.showFailure(e.toString());
+        rethrow;
+      } finally {
+        busy.clear(ticket.id);
+      }
+    },
+  );
 }
 
 Future<void> _markDoneHandler(
@@ -577,55 +566,47 @@ Future<void> _markDoneHandler(
   WidgetRef ref,
   Ticket ticket,
 ) async {
-  final note = await MarkDoneBottomSheet.show(context);
-  if (note == null || !context.mounted) return;
-
-  try {
-    // Step 1: Mark ticket as transitioning (show shimmer effect)
-    for (final tab in kAllTicketsTabs) {
-      ref
-          .read(ticketsPagedProvider(specForTab(tab)).notifier)
-          .markTicketTransitioning(ticket.id);
-    }
-
-    // Step 2: Update tab counts immediately (today -> done)
-    ref
-        .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-        .updateTabCountImmediate(delta: -1);
-
-    ref
-        .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
-        .updateTabCountImmediate(delta: 1);
-
-    // Step 3: Make API call
-    await ref
-        .read(ticketRepositoryProvider)
-        .markDoneWithNote(ticketId: ticket.id, resolutionNote: note);
-
-    // Step 4: Update ticket status immediately (remove from today, add to done)
-    ref
-        .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-        .updateTicketStatusImmediate(ticket.id, 'DONE');
-
-    ref
-        .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
-        .updateTicketStatusImmediate(ticket.id, 'DONE');
-
-    // Step 5: Refresh other providers as backup
-    ref.read(myTicketsNotifierProvider.notifier).refresh();
-  } catch (e) {
-    if (context.mounted) {
-      context.showFailure(e.toString());
-      // Revert optimistic updates on error
+  if (ref.read(ticketBusyProvider).contains(ticket.id)) return;
+  await MarkDoneBottomSheet.showWithCallback(
+    context,
+    onConfirm: (note) async {
+      final busy = ref.read(ticketBusyProvider.notifier)..mark(ticket.id);
+      for (final tab in kAllTicketsTabs) {
+        ref
+            .read(ticketsPagedProvider(specForTab(tab)).notifier)
+            .markTicketTransitioning(ticket.id);
+      }
       ref
           .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
-          .updateTabCountImmediate(delta: 1);
-
+          .updateTabCountImmediate(delta: -1);
       ref
           .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
-          .updateTabCountImmediate(delta: -1);
-    }
-  }
+          .updateTabCountImmediate(delta: 1);
+      try {
+        await ref
+            .read(ticketRepositoryProvider)
+            .markDoneWithNote(ticketId: ticket.id, resolutionNote: note);
+        ref
+            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .updateTicketStatusImmediate(ticket.id, 'DONE');
+        ref
+            .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
+            .updateTicketStatusImmediate(ticket.id, 'DONE');
+        ref.read(myTicketsNotifierProvider.notifier).refresh();
+      } catch (e) {
+        ref
+            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .updateTabCountImmediate(delta: 1);
+        ref
+            .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
+            .updateTabCountImmediate(delta: -1);
+        if (context.mounted) context.showFailure(e.toString());
+        rethrow;
+      } finally {
+        busy.clear(ticket.id);
+      }
+    },
+  );
 }
 
 /// Paginated tab list. One instance per tab — watches the matching
@@ -841,7 +822,7 @@ class _ErrorView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
       children: [
         Icon(
-          Icons.error_outline_rounded,
+          LucideIcons.triangleAlert,
           size: 56,
           color: context.themeColors.tagRedIcon,
         ),

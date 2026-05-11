@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../core/services/sound_manager.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 
@@ -8,8 +9,7 @@ import '../../../../../core/theme/typography_manager.dart';
 ///
 /// Renders two tabs (Details / Activity) with a thin selected underline
 /// matching the prototype. Owned by the parent `TabController`.
-class TicketDetailTabs extends StatelessWidget
-    implements PreferredSizeWidget {
+class TicketDetailTabs extends StatelessWidget implements PreferredSizeWidget {
   final TabController controller;
   const TicketDetailTabs({super.key, required this.controller});
 
@@ -41,6 +41,9 @@ class TicketDetailTabs extends StatelessWidget
             fontWeight: FontWeight.w600,
           ),
           unselectedLabelStyle: TypographyManager.textLabel,
+          onTap: (index) {
+            SoundManager.instance.play(SoundCategory.button);
+          },
           tabs: [
             Tab(text: s.ticketTabDetails, height: 42),
             Tab(text: s.ticketTabActivity, height: 42),

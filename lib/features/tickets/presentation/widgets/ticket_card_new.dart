@@ -13,6 +13,7 @@ import '../../../../core/time/server_clock.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/models/ticket.dart';
 import '../providers/my_tickets_notifier.dart';
+import '../providers/ticket_busy_provider.dart';
 
 /// Light green border used to highlight a ticket whose status just changed
 /// (or that just arrived). Visible for [kRecentChangeHighlightWindow]
@@ -73,6 +74,7 @@ class TicketCardNew extends ConsumerWidget {
     final isRecentlyChanged = ref.watch(
       isRecentlyChangedProvider(ticket.id),
     );
+    final isBusy = ref.watch(isTicketBusyProvider(ticket.id));
 
     // Highlighted border when the ticket was just created or its status
     // moved within the last few seconds (driven by the realtime layer).
@@ -130,16 +132,45 @@ class TicketCardNew extends ConsumerWidget {
       ),
     );
 
-    // Apply shimmer effect only when ticket is transitioning
+    // Busy overlay: in-flight status change → block taps, dim card, show
+    // spinner. Wraps either the shimmer or plain card output.
+    Widget result = cardContent;
     if (ticket.isTransitioning) {
-      return ShimmerWidget(
+      result = ShimmerWidget(
         baseColor: c.bgBase,
         highlightColor: c.bgHighlight,
-        child: cardContent,
+        child: result,
       );
     }
-
-    return cardContent;
+    if (isBusy) {
+      result = Stack(
+        children: [
+          AbsorbPointer(
+            absorbing: true,
+            child: Opacity(opacity: 0.5, child: result),
+          ),
+          Positioned.fill(
+            child: Center(
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: c.bgBase,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: c.borderBase),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(c.tagPurpleIcon),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return result;
   }
 }
 

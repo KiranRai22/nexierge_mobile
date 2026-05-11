@@ -2797,6 +2797,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm'**
   String get confirmTicketCta;
+
+  /// No description provided for @toastTapToView.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view'**
+  String get toastTapToView;
+
+  /// No description provided for @toastTabIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming'**
+  String get toastTabIncoming;
+
+  /// No description provided for @toastTabToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get toastTabToday;
+
+  /// No description provided for @toastTabDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get toastTabDone;
+
+  /// No description provided for @toastTicketTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type: {kind}'**
+  String toastTicketTypeLabel(String kind);
+
+  /// No description provided for @toastMovedToTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to {tab}'**
+  String toastMovedToTab(String tab);
+
+  /// No description provided for @toastLandedInTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Landed in {tab}'**
+  String toastLandedInTab(String tab);
+
+  /// No description provided for @toastDueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Due: {date}'**
+  String toastDueLabel(String date);
+
+  /// No description provided for @toastNewTicketTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New ticket'**
+  String get toastNewTicketTitle;
+
+  /// No description provided for @toastNewTicketsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} new tickets'**
+  String toastNewTicketsTitle(int count);
+
+  /// No description provided for @toastTicketAcceptedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket accepted'**
+  String get toastTicketAcceptedTitle;
+
+  /// No description provided for @toastTicketsAcceptedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tickets accepted'**
+  String toastTicketsAcceptedTitle(int count);
+
+  /// No description provided for @toastTicketStartedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket started'**
+  String get toastTicketStartedTitle;
+
+  /// No description provided for @toastTicketsStartedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tickets started'**
+  String toastTicketsStartedTitle(int count);
+
+  /// No description provided for @toastTicketOnHoldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket on hold'**
+  String get toastTicketOnHoldTitle;
+
+  /// No description provided for @toastTicketsOnHoldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tickets on hold'**
+  String toastTicketsOnHoldTitle(int count);
+
+  /// No description provided for @toastTicketDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket done'**
+  String get toastTicketDoneTitle;
+
+  /// No description provided for @toastTicketsDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tickets done'**
+  String toastTicketsDoneTitle(int count);
+
+  /// No description provided for @toastTicketClosedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket closed'**
+  String get toastTicketClosedTitle;
+
+  /// No description provided for @toastTicketsClosedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tickets closed'**
+  String toastTicketsClosedTitle(int count);
 }
 
 class _AppLocalizationsDelegate

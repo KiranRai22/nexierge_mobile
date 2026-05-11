@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
@@ -37,22 +38,22 @@ class AppBottomNav extends StatelessWidget {
               _slot(
                 context,
                 ShellTab.dashboard,
-                Icons.grid_view_rounded,
-                Icons.grid_view_rounded,
+                LucideIcons.grid2x2Check100,
+                LucideIcons.grid2x2,
                 s.navDashboard,
               ),
               _slot(
                 context,
                 ShellTab.tickets,
-                Icons.assignment_outlined,
-                Icons.assignment,
+                LucideIcons.ticket100,
+                LucideIcons.ticket,
                 s.navTickets,
               ),
               _slot(
                 context,
                 ShellTab.profile,
-                Icons.account_circle_outlined,
-                Icons.account_circle,
+                LucideIcons.userRound100,
+                LucideIcons.userRound,
                 s.navProfile,
               ),
             ],
@@ -73,29 +74,42 @@ class AppBottomNav extends StatelessWidget {
     final isActive = current == tab;
     final color = isActive ? c.tagPurpleIcon : c.fgMuted;
     return Expanded(
-      child: InkResponse(
-        onTap: () async {
-          await SoundManager.instance.play(SoundCategory.navigation);
-          onSelect(tab);
-        },
-        radius: 36,
-        child: Semantics(
-          label: label,
-          selected: isActive,
-          button: true,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(isActive ? active : inactive, size: 22, color: color),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TypographyManager.labelSmall.copyWith(
-                  color: color,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+      child: Container(
+        decoration: isActive
+            ? BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: c.tagPurpleIcon, width: 1),
                 ),
-              ),
-            ],
+              )
+            : null,
+        child: InkWell(
+          onTap: () async {
+            await SoundManager.instance.play(SoundCategory.navigation);
+            onSelect(tab);
+          },
+          customBorder: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(1),
+          ),
+          splashColor: c.fgMuted.withValues(alpha: 0.1),
+          highlightColor: c.fgMuted.withValues(alpha: 0.05),
+          child: Semantics(
+            label: label,
+            selected: isActive,
+            button: true,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(isActive ? active : inactive, size: 22, color: color),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TypographyManager.labelSmall.copyWith(
+                    color: color,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
@@ -54,12 +55,11 @@ Ticket _mergeTicket({
     departmentName: p?.departmentName ?? deptNamesById[detail.departmentId],
     departmentEmoji: p?.departmentEmoji,
     departmentIconUrl: p?.departmentIconUrl,
-    room: p?.room ?? Room(
-      id: detail.room,
-      number: detail.onbRoomNumber,
-      floor: 0,
-    ),
-    guest: p?.guest ??
+    room:
+        p?.room ??
+        Room(id: detail.room, number: detail.onbRoomNumber, floor: 0),
+    guest:
+        p?.guest ??
         (detail.guestName.isNotEmpty
             ? Guest(id: detail.room, displayName: detail.guestName)
             : null),
@@ -68,8 +68,8 @@ Ticket _mergeTicket({
     assigneeName: p?.assigneeName,
     priority: p?.priority ?? _mapPriority(detail.priority),
     source: p?.source ?? _mapSource(detail.source),
-    createdAt: p?.createdAt ??
-        DateTime.fromMillisecondsSinceEpoch(detail.createdAt),
+    createdAt:
+        p?.createdAt ?? DateTime.fromMillisecondsSinceEpoch(detail.createdAt),
     acceptedAt: detailAccepted ?? p?.acceptedAt,
     doneAt: p?.doneAt,
     eta: p?.eta,
@@ -83,10 +83,7 @@ Ticket _mergeTicket({
 /// (deep-link). Prefers the detail's own summary, then department name from
 /// the cache, then room number. Mirrors the list controller's fallback
 /// chain spirit so cold-start titles look similar to warm-cache titles.
-String _fallbackTitle(
-  TicketDetail detail,
-  Map<String, String> deptNamesById,
-) {
+String _fallbackTitle(TicketDetail detail, Map<String, String> deptNamesById) {
   if (detail.issueSummary.isNotEmpty) return detail.issueSummary;
   final deptName = deptNamesById[detail.departmentId];
   if (deptName != null && deptName.isNotEmpty) {
@@ -236,10 +233,10 @@ class _DetailBody extends StatefulWidget {
   });
 
   Ticket get mappedTicket => _mergeTicket(
-        detail: ticket,
-        cachedListTicket: cachedListTicket,
-        deptNamesById: deptNamesById,
-      );
+    detail: ticket,
+    cachedListTicket: cachedListTicket,
+    deptNamesById: deptNamesById,
+  );
 
   @override
   State<_DetailBody> createState() => _DetailBodyState();
@@ -489,7 +486,7 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline_rounded, size: 56, color: c.fgError),
+            Icon(LucideIcons.triangleAlert, size: 56, color: c.fgError),
             const SizedBox(height: 12),
             Text(
               context.l10n.unknownError,

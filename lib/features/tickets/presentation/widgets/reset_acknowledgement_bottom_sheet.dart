@@ -5,24 +5,59 @@ import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-class ResetAcknowledgementBottomSheet extends StatelessWidget {
-  const ResetAcknowledgementBottomSheet._();
+typedef ResetConfirmCallback = Future<void> Function();
+
+class ResetAcknowledgementBottomSheet extends StatefulWidget {
+  final ResetConfirmCallback? onConfirm;
+  const ResetAcknowledgementBottomSheet._({this.onConfirm});
 
   /// Returns true if user confirmed reset, null if dismissed.
-  static Future<bool?> show(BuildContext context) {
+  /// When [onConfirm] is provided, sheet stays open with spinner until
+  /// the callback resolves; pops with `true` only on success.
+  static Future<bool?> show(
+    BuildContext context, {
+    ResetConfirmCallback? onConfirm,
+  }) {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const ResetAcknowledgementBottomSheet._(),
+      builder: (_) => ResetAcknowledgementBottomSheet._(onConfirm: onConfirm),
     );
+  }
+
+  @override
+  State<ResetAcknowledgementBottomSheet> createState() =>
+      _ResetAcknowledgementBottomSheetState();
+}
+
+class _ResetAcknowledgementBottomSheetState
+    extends State<ResetAcknowledgementBottomSheet> {
+  bool _submitting = false;
+
+  Future<void> _handleConfirm() async {
+    final cb = widget.onConfirm;
+    if (cb == null) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await cb();
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      if (mounted) setState(() => _submitting = false);
+      rethrow;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
 
-    return Container(
+    return PopScope(
+      canPop: !_submitting,
+      child: Container(
       decoration: BoxDecoration(
         color: c.bgBase,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -58,7 +93,9 @@ class ResetAcknowledgementBottomSheet extends StatelessWidget {
               ),
               IconButton(
                 icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                onPressed: _submitting
+                    ? null
+                    : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -91,7 +128,9 @@ class ResetAcknowledgementBottomSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                  onPressed: _submitting
+                      ? null
+                      : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: c.borderBase),
                     minimumSize: const Size.fromHeight(48),
@@ -111,8 +150,18 @@ class ResetAcknowledgementBottomSheet extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: tapSound(() => Navigator.of(context).pop(true)),
-                  icon: const Icon(LucideIcons.rotateCcw, size: 18),
+                  onPressed: _submitting ? null : tapSound(_handleConfirm),
+                  icon: _submitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(LucideIcons.rotateCcw, size: 18),
                   label: const Text('Reset'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.tagRedIcon,
@@ -131,6 +180,7 @@ class ResetAcknowledgementBottomSheet extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

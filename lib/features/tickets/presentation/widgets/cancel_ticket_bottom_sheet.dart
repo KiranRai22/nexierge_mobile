@@ -6,16 +6,33 @@ import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-class CancelTicketBottomSheet extends StatefulWidget {
-  const CancelTicketBottomSheet._();
+typedef CancelConfirmCallback = Future<void> Function(String reason);
 
-  /// Returns the cancellation reason string, or null if dismissed.
+class CancelTicketBottomSheet extends StatefulWidget {
+  final CancelConfirmCallback? onConfirm;
+  const CancelTicketBottomSheet._({this.onConfirm});
+
+  /// Legacy: returns the reason on confirm, null on dismiss.
   static Future<String?> show(BuildContext context) {
     return showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const CancelTicketBottomSheet._(),
+    );
+  }
+
+  /// Keeps sheet open with spinner during [onConfirm]. Returns true on
+  /// success, null on dismiss.
+  static Future<bool?> showWithCallback(
+    BuildContext context, {
+    required CancelConfirmCallback onConfirm,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CancelTicketBottomSheet._(onConfirm: onConfirm),
     );
   }
 
@@ -26,6 +43,7 @@ class CancelTicketBottomSheet extends StatefulWidget {
 
 class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
   final _reasonCtl = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -33,14 +51,34 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
     super.dispose();
   }
 
-  bool get _canConfirm => _reasonCtl.text.trim().isNotEmpty;
+  bool get _canConfirm =>
+      !_submitting && _reasonCtl.text.trim().isNotEmpty;
+
+  Future<void> _handleConfirm() async {
+    final reason = _reasonCtl.text.trim();
+    final cb = widget.onConfirm;
+    if (cb == null) {
+      Navigator.of(context).pop(reason);
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await cb(reason);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      if (mounted) setState(() => _submitting = false);
+      rethrow;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
+    return PopScope(
+      canPop: !_submitting,
+      child: Container(
       decoration: CardDecoration.subtle(
         colors: c,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -76,7 +114,9 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
               ),
               IconButton(
                 icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                onPressed: _submitting
+                    ? null
+                    : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -91,6 +131,7 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
           // Reason field (required)
           TextField(
             controller: _reasonCtl,
+            enabled: !_submitting,
             maxLines: 4,
             onChanged: (_) => setState(() {}),
             style: TypographyManager.bodyMedium.copyWith(color: c.fgBase),
@@ -122,7 +163,9 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                  onPressed: _submitting
+                      ? null
+                      : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: c.borderBase),
                     minimumSize: const Size.fromHeight(48),
@@ -142,14 +185,22 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _canConfirm
-                      ? tapSound(() => Navigator.of(context).pop(_reasonCtl.text.trim()))
-                      : null,
-                  icon: Icon(
-                    LucideIcons.circleX,
-                    size: 18,
-                    color: _canConfirm ? Colors.white : c.fgMuted,
-                  ),
+                  onPressed: _canConfirm ? tapSound(_handleConfirm) : null,
+                  icon: _submitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Icon(
+                          LucideIcons.circleX,
+                          size: 18,
+                          color: _canConfirm ? Colors.white : c.fgMuted,
+                        ),
                   label: const Text('Confirm Cancel'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.tagRedIcon,
@@ -169,6 +220,7 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
           ),
         ],
       ),
+    ),
     );
   }
 }

@@ -116,7 +116,7 @@ class AppToast {
                           style: TypographyManager.bodySmall.copyWith(
                             color: palette.subtitle,
                           ),
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],

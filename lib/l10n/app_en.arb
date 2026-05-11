@@ -749,5 +749,55 @@
   "@confirmTicketItemsHeading": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "confirmTicketCta": "Confirm"
+  "confirmTicketCta": "Confirm",
+  "toastTapToView": "Tap to view",
+  "toastTabIncoming": "Incoming",
+  "toastTabToday": "Today",
+  "toastTabDone": "Done",
+  "toastTicketTypeLabel": "Type: {kind}",
+  "@toastTicketTypeLabel": {
+    "placeholders": { "kind": { "type": "String" } }
+  },
+  "toastMovedToTab": "Moved to {tab}",
+  "@toastMovedToTab": {
+    "placeholders": { "tab": { "type": "String" } }
+  },
+  "toastLandedInTab": "Landed in {tab}",
+  "@toastLandedInTab": {
+    "placeholders": { "tab": { "type": "String" } }
+  },
+  "toastDueLabel": "Due: {date}",
+  "@toastDueLabel": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "toastNewTicketTitle": "New ticket",
+  "toastNewTicketsTitle": "{count} new tickets",
+  "@toastNewTicketsTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketAcceptedTitle": "Ticket accepted",
+  "toastTicketsAcceptedTitle": "{count} tickets accepted",
+  "@toastTicketsAcceptedTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketStartedTitle": "Ticket started",
+  "toastTicketsStartedTitle": "{count} tickets started",
+  "@toastTicketsStartedTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketOnHoldTitle": "Ticket on hold",
+  "toastTicketsOnHoldTitle": "{count} tickets on hold",
+  "@toastTicketsOnHoldTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketDoneTitle": "Ticket done",
+  "toastTicketsDoneTitle": "{count} tickets done",
+  "@toastTicketsDoneTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketClosedTitle": "Ticket closed",
+  "toastTicketsClosedTitle": "{count} tickets closed",
+  "@toastTicketsClosedTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

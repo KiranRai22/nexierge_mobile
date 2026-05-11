@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../i18n/l10n_extension.dart';
 import '../theme/color_palette.dart';
@@ -184,7 +185,7 @@ class AppEmptyState extends StatelessWidget {
   const AppEmptyState({
     super.key,
     this.message,
-    this.icon = Icons.inbox_outlined,
+    this.icon = LucideIcons.inbox,
     this.actionLabel,
     this.onAction,
   });
@@ -238,7 +239,7 @@ class AppErrorWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.error_outline,
+              LucideIcons.triangleAlert,
               size: 64,
               color: ColorPalette.error,
             ),

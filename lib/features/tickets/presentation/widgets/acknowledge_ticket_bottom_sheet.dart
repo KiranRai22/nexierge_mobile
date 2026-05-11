@@ -48,7 +48,11 @@ class AcknowledgeTicketResult {
 /// confirm button uses the inverted button color, and the custom-time
 /// row collapses to a compact toggle that expands into a purple info
 /// card when a date is picked.
+typedef AcknowledgeConfirmCallback =
+    Future<void> Function(AcknowledgeTicketResult);
+
 class AcknowledgeTicketBottomSheet {
+  /// Legacy: pops with the picked result on confirm; caller fires the API.
   static Future<AcknowledgeTicketResult?> show({
     required BuildContext context,
     required String ticketCode,
@@ -66,17 +70,41 @@ class AcknowledgeTicketBottomSheet {
       ),
     );
   }
+
+  /// Keeps the sheet open with a spinner on the confirm button while
+  /// [onConfirm] runs the API call. Pops with `true` only on success.
+  static Future<bool?> showWithCallback({
+    required BuildContext context,
+    required String ticketCode,
+    required String ticketTitle,
+    required bool hasGuest,
+    required AcknowledgeConfirmCallback onConfirm,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AcknowledgeTicketSheetBody(
+        ticketCode: ticketCode,
+        ticketTitle: ticketTitle,
+        hasGuest: hasGuest,
+        onConfirm: onConfirm,
+      ),
+    );
+  }
 }
 
 class _AcknowledgeTicketSheetBody extends StatefulWidget {
   final String ticketCode;
   final String ticketTitle;
   final bool hasGuest;
+  final AcknowledgeConfirmCallback? onConfirm;
 
   const _AcknowledgeTicketSheetBody({
     required this.ticketCode,
     required this.ticketTitle,
     required this.hasGuest,
+    this.onConfirm,
   });
 
   @override
@@ -207,28 +235,43 @@ class _AcknowledgeTicketSheetBodyState
 
   Future<void> _handleAcknowledge({bool startImmediately = false}) async {
     if (_submitting) return;
-    setState(() => _submitting = true);
-    if (!mounted) return;
 
     final note = _noteController.text.trim();
-    Navigator.of(context).pop(
-      AcknowledgeTicketResult(
-        mode: _isCustomDateTime ? 'custom' : 'preset',
-        minutesFromNow: _isCustomDateTime ? null : _selectedMinutes,
-        customDateTime: _customDateTime,
-        readyByLabel: _readyByLabel,
-        buttonLabel: 'Acknowledge $_buttonTimeLabel',
-        startImmediately: startImmediately,
-        notes: note.isEmpty ? null : note,
-        dueAtEpochMs: _effectiveDueDateTime.millisecondsSinceEpoch,
-      ),
+    final result = AcknowledgeTicketResult(
+      mode: _isCustomDateTime ? 'custom' : 'preset',
+      minutesFromNow: _isCustomDateTime ? null : _selectedMinutes,
+      customDateTime: _customDateTime,
+      readyByLabel: _readyByLabel,
+      buttonLabel: 'Acknowledge $_buttonTimeLabel',
+      startImmediately: startImmediately,
+      notes: note.isEmpty ? null : note,
+      dueAtEpochMs: _effectiveDueDateTime.millisecondsSinceEpoch,
     );
+
+    final cb = widget.onConfirm;
+    if (cb == null) {
+      setState(() => _submitting = true);
+      if (!mounted) return;
+      Navigator.of(context).pop(result);
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      await cb(result);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      if (mounted) setState(() => _submitting = false);
+      rethrow;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    return Container(
+    return PopScope(
+      canPop: !_submitting,
+      child: Container(
       decoration: CardDecoration.subtle(
         colors: c,
         borderRadius: const BorderRadius.only(
@@ -363,6 +406,7 @@ class _AcknowledgeTicketSheetBodyState
           SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 24),
         ],
       ),
+    ),
     );
   }
 

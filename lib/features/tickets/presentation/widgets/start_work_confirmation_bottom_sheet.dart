@@ -5,13 +5,47 @@ import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-class StartWorkConfirmationBottomSheet extends StatelessWidget {
-  const StartWorkConfirmationBottomSheet._();
+/// Optional async callback. If provided, the sheet keeps itself open
+/// with a spinner on the confirm button until [onConfirm] resolves; the
+/// sheet pops with `true` only on success. If null, the sheet pops with
+/// `true` immediately on tap (legacy behaviour).
+typedef SheetConfirmCallback = Future<void> Function();
+
+class StartWorkConfirmationBottomSheet extends StatefulWidget {
+  final SheetConfirmCallback? onConfirm;
+  const StartWorkConfirmationBottomSheet._({this.onConfirm});
+
+  @override
+  State<StartWorkConfirmationBottomSheet> createState() =>
+      _StartWorkConfirmationBottomSheetState();
+}
+
+class _StartWorkConfirmationBottomSheetState
+    extends State<StartWorkConfirmationBottomSheet> {
+  bool _submitting = false;
+
+  Future<void> _handleConfirm() async {
+    final cb = widget.onConfirm;
+    if (cb == null) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await cb();
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      if (mounted) setState(() => _submitting = false);
+      rethrow;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    return Container(
+    return PopScope(
+      canPop: !_submitting,
+      child: Container(
       decoration: BoxDecoration(
         color: c.bgBase,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -117,7 +151,9 @@ class StartWorkConfirmationBottomSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                    onPressed: _submitting
+                        ? null
+                        : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: c.borderBase),
                       shape: RoundedRectangleBorder(
@@ -137,8 +173,18 @@ class StartWorkConfirmationBottomSheet extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: tapSound(() => Navigator.of(context).pop(true)),
-                    icon: const Icon(LucideIcons.circlePlay, size: 18),
+                    onPressed: _submitting ? null : tapSound(_handleConfirm),
+                    icon: _submitting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Icon(LucideIcons.circlePlay, size: 18),
                     label: const Text('Start Work'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.buttonInverted,
@@ -159,17 +205,26 @@ class StartWorkConfirmationBottomSheet extends StatelessWidget {
           const SizedBox(height: 24),
         ],
       ),
+    ),
     );
   }
 }
 
 /// Shows the Start Work confirmation sheet.
-/// Returns true if confirmed, null if dismissed.
-Future<bool?> showStartWorkConfirmation({required BuildContext context}) {
+///
+/// If [onConfirm] is provided the sheet stays open with a spinner on the
+/// primary button until the callback completes; it pops with `true` only
+/// on success. Throwing inside [onConfirm] keeps the sheet open so the
+/// user can retry. With no callback it pops with `true` on tap (legacy).
+Future<bool?> showStartWorkConfirmation({
+  required BuildContext context,
+  SheetConfirmCallback? onConfirm,
+}) {
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) => const StartWorkConfirmationBottomSheet._(),
+    builder: (context) =>
+        StartWorkConfirmationBottomSheet._(onConfirm: onConfirm),
   );
 }

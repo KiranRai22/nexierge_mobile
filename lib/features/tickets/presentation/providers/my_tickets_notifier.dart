@@ -203,6 +203,8 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
         label: _labelFor(ticket),
         oldStatus: oldStatus,
         newStatus: ticket.status,
+        ticketKind: ticket.type,
+        dueAt: ticket.dueAt,
       ),
     );
   }

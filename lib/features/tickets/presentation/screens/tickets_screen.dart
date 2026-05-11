@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/language_picker_sheet.dart';
@@ -433,7 +434,7 @@ class _ErrorView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
       children: [
         const Icon(
-          Icons.error_outline_rounded,
+          LucideIcons.triangleAlert,
           size: 56,
           color: ColorPalette.statusOverdue,
         ),

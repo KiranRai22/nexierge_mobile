@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/color_palette.dart';
@@ -21,8 +22,7 @@ class ActivityRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -45,43 +45,43 @@ class ActivityRow extends StatelessWidget {
     switch (t) {
       case ActivityType.created:
         return (
-          icon: Icons.add_circle_outline_rounded,
+          icon: LucideIcons.circlePlus,
           bg: ColorPalette.activityCreatedBg,
           fg: ColorPalette.activityCreatedFg,
         );
       case ActivityType.accepted:
         return (
-          icon: Icons.check_circle_outline_rounded,
+          icon: LucideIcons.circleCheck,
           bg: ColorPalette.activityAcceptedBg,
           fg: ColorPalette.activityAcceptedFg,
         );
       case ActivityType.done:
         return (
-          icon: Icons.task_alt_rounded,
+          icon: LucideIcons.circleCheckBig,
           bg: ColorPalette.activityDoneBg,
           fg: ColorPalette.activityDoneFg,
         );
       case ActivityType.overdue:
         return (
-          icon: Icons.report_gmailerrorred_rounded,
+          icon: LucideIcons.circleAlert,
           bg: ColorPalette.activityOverdueBg,
           fg: ColorPalette.activityOverdueFg,
         );
       case ActivityType.cancelled:
         return (
-          icon: Icons.cancel_outlined,
+          icon: LucideIcons.circleX,
           bg: ColorPalette.activityCancelledBg,
           fg: ColorPalette.activityCancelledFg,
         );
       case ActivityType.note:
         return (
-          icon: Icons.sticky_note_2_outlined,
+          icon: LucideIcons.stickyNote,
           bg: ColorPalette.activityNoteBg,
           fg: ColorPalette.activityNoteFg,
         );
       case ActivityType.reassigned:
         return (
-          icon: Icons.swap_horiz_rounded,
+          icon: LucideIcons.arrowLeftRight,
           bg: ColorPalette.activityReassignedBg,
           fg: ColorPalette.activityReassignedFg,
         );

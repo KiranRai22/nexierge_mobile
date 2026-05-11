@@ -11,15 +11,33 @@ class ChangeDueResult {
   const ChangeDueResult({required this.newDueAt, required this.reason});
 }
 
-class ChangeDueTimeBottomSheet extends StatefulWidget {
-  const ChangeDueTimeBottomSheet._();
+typedef ChangeDueConfirmCallback = Future<void> Function(ChangeDueResult);
 
+class ChangeDueTimeBottomSheet extends StatefulWidget {
+  final ChangeDueConfirmCallback? onConfirm;
+  const ChangeDueTimeBottomSheet._({this.onConfirm});
+
+  /// Legacy: pops with [ChangeDueResult] on confirm, null on dismiss.
   static Future<ChangeDueResult?> show(BuildContext context) {
     return showModalBottomSheet<ChangeDueResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const ChangeDueTimeBottomSheet._(),
+    );
+  }
+
+  /// Keeps sheet open with spinner during [onConfirm]. Returns true on
+  /// success, null on dismiss.
+  static Future<bool?> showWithCallback(
+    BuildContext context, {
+    required ChangeDueConfirmCallback onConfirm,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ChangeDueTimeBottomSheet._(onConfirm: onConfirm),
     );
   }
 
@@ -40,7 +58,28 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
 
   int? _selectedMinutes;
   DateTime? _customDue;
+  bool _submitting = false;
   final _reasonCtl = TextEditingController();
+
+  Future<void> _handleConfirm() async {
+    final result = ChangeDueResult(
+      newDueAt: _resolvedDue.millisecondsSinceEpoch,
+      reason: _reasonCtl.text.trim(),
+    );
+    final cb = widget.onConfirm;
+    if (cb == null) {
+      Navigator.of(context).pop(result);
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await cb(result);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      if (mounted) setState(() => _submitting = false);
+      rethrow;
+    }
+  }
 
   @override
   void dispose() {
@@ -57,6 +96,7 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
   }
 
   bool get _canSave =>
+      !_submitting &&
       (_selectedMinutes != null || _customDue != null) &&
       _reasonCtl.text.trim().isNotEmpty;
 
@@ -98,7 +138,9 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
     final c = context.themeColors;
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
+    return PopScope(
+      canPop: !_submitting,
+      child: Container(
       decoration: BoxDecoration(
         color: c.bgBase,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -134,7 +176,9 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
               ),
               IconButton(
                 icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-                onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                onPressed: _submitting
+                    ? null
+                    : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -292,7 +336,9 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                  onPressed: _submitting
+                      ? null
+                      : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: c.borderBase),
                     minimumSize: const Size.fromHeight(48),
@@ -312,15 +358,7 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _canSave
-                      ? tapSound(() => Navigator.of(context).pop(
-                            ChangeDueResult(
-                              newDueAt:
-                                  _resolvedDue.millisecondsSinceEpoch,
-                              reason: _reasonCtl.text.trim(),
-                            ),
-                          ))
-                      : null,
+                  onPressed: _canSave ? tapSound(_handleConfirm) : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.buttonInverted,
                     foregroundColor: c.fgOnInverted,
@@ -333,13 +371,24 @@ class _ChangeDueTimeBottomSheetState extends State<ChangeDueTimeBottomSheet> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: const Text('Save'),
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('Save'),
                 ),
               ),
             ],
           ),
         ],
       ),
+    ),
     );
   }
 }

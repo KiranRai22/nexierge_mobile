@@ -619,5 +619,55 @@
   "@confirmTicketItemsHeading": {
     "placeholders": { "count": { "type": "int" } }
   },
-  "confirmTicketCta": "Confirmar"
+  "confirmTicketCta": "Confirmar",
+  "toastTapToView": "Toca para ver",
+  "toastTabIncoming": "Entrantes",
+  "toastTabToday": "Hoy",
+  "toastTabDone": "Hechos",
+  "toastTicketTypeLabel": "Tipo: {kind}",
+  "@toastTicketTypeLabel": {
+    "placeholders": { "kind": { "type": "String" } }
+  },
+  "toastMovedToTab": "Movido a {tab}",
+  "@toastMovedToTab": {
+    "placeholders": { "tab": { "type": "String" } }
+  },
+  "toastLandedInTab": "Llegó a {tab}",
+  "@toastLandedInTab": {
+    "placeholders": { "tab": { "type": "String" } }
+  },
+  "toastDueLabel": "Vence: {date}",
+  "@toastDueLabel": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "toastNewTicketTitle": "Nuevo ticket",
+  "toastNewTicketsTitle": "{count} tickets nuevos",
+  "@toastNewTicketsTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketAcceptedTitle": "Ticket aceptado",
+  "toastTicketsAcceptedTitle": "{count} tickets aceptados",
+  "@toastTicketsAcceptedTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketStartedTitle": "Ticket iniciado",
+  "toastTicketsStartedTitle": "{count} tickets iniciados",
+  "@toastTicketsStartedTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketOnHoldTitle": "Ticket en espera",
+  "toastTicketsOnHoldTitle": "{count} tickets en espera",
+  "@toastTicketsOnHoldTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketDoneTitle": "Ticket terminado",
+  "toastTicketsDoneTitle": "{count} tickets terminados",
+  "@toastTicketsDoneTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "toastTicketClosedTitle": "Ticket cerrado",
+  "toastTicketsClosedTitle": "{count} tickets cerrados",
+  "@toastTicketsClosedTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

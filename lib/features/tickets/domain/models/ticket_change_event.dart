@@ -28,6 +28,14 @@ class TicketChangeEvent {
   /// guest name). Used by the toast subtitle. Empty string when unknown.
   final String label;
 
+  /// Ticket type (MANUAL / CATALOG / UNIVERSAL — server-side `type` field).
+  /// Empty string when unknown. Drives the "Type: …" line in toast.
+  final String ticketKind;
+
+  /// Due-at epoch in milliseconds. `0` when the ticket has no due time
+  /// (or the field wasn't sent by the server). Drives the "Due: …" line.
+  final int dueAt;
+
   const TicketChangeEvent({
     required this.ticketId,
     required this.kind,
@@ -35,5 +43,7 @@ class TicketChangeEvent {
     required this.label,
     this.oldStatus,
     this.newStatus,
+    this.ticketKind = '',
+    this.dueAt = 0,
   });
 }

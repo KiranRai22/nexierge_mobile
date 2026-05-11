@@ -1563,4 +1563,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirmTicketCta => 'Confirm';
+
+  @override
+  String get toastTapToView => 'Tap to view';
+
+  @override
+  String get toastTabIncoming => 'Incoming';
+
+  @override
+  String get toastTabToday => 'Today';
+
+  @override
+  String get toastTabDone => 'Done';
+
+  @override
+  String toastTicketTypeLabel(String kind) {
+    return 'Type: $kind';
+  }
+
+  @override
+  String toastMovedToTab(String tab) {
+    return 'Moved to $tab';
+  }
+
+  @override
+  String toastLandedInTab(String tab) {
+    return 'Landed in $tab';
+  }
+
+  @override
+  String toastDueLabel(String date) {
+    return 'Due: $date';
+  }
+
+  @override
+  String get toastNewTicketTitle => 'New ticket';
+
+  @override
+  String toastNewTicketsTitle(int count) {
+    return '$count new tickets';
+  }
+
+  @override
+  String get toastTicketAcceptedTitle => 'Ticket accepted';
+
+  @override
+  String toastTicketsAcceptedTitle(int count) {
+    return '$count tickets accepted';
+  }
+
+  @override
+  String get toastTicketStartedTitle => 'Ticket started';
+
+  @override
+  String toastTicketsStartedTitle(int count) {
+    return '$count tickets started';
+  }
+
+  @override
+  String get toastTicketOnHoldTitle => 'Ticket on hold';
+
+  @override
+  String toastTicketsOnHoldTitle(int count) {
+    return '$count tickets on hold';
+  }
+
+  @override
+  String get toastTicketDoneTitle => 'Ticket done';
+
+  @override
+  String toastTicketsDoneTitle(int count) {
+    return '$count tickets done';
+  }
+
+  @override
+  String get toastTicketClosedTitle => 'Ticket closed';
+
+  @override
+  String toastTicketsClosedTitle(int count) {
+    return '$count tickets closed';
+  }
 }
