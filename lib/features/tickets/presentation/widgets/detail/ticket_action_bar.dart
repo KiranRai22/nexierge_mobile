@@ -500,12 +500,19 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
             // here previously is now inside the sheet, so the action bar
             // matches the inline list-card flow.
             if (t.status == TicketStatus.incoming) ...[
+              // [ACCEPT_AND_START_FLOW] NEW tickets used to open the
+              // acknowledge bottom sheet via _onAcceptIncoming and show
+              // s.ticketActionAccept. New flow: direct Accept & Start →
+              // IN_PROGRESS, no sheet.
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: _busy ? null : tapSound(_onAcceptIncoming),
-                  icon: const Icon(LucideIcons.check, size: 18),
-                  label: Text(s.ticketActionAccept),
+                  // onPressed: _busy ? null : tapSound(_onAcceptIncoming),
+                  // icon: const Icon(LucideIcons.check, size: 18),
+                  // label: Text(s.ticketActionAccept),
+                  onPressed: _busy ? null : tapSound(_onAcceptAndStart),
+                  icon: const Icon(LucideIcons.play, size: 18),
+                  label: Text(s.ticketActionAcceptAndStart),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.buttonInverted,
                     foregroundColor: c.fgOnInverted,

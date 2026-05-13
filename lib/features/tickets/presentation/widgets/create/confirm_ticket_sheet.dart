@@ -14,26 +14,51 @@ import '../../screens/create_screen.dart' show formatMoney;
 
 /// Confirm Ticket bottom sheet shown before submission.
 ///
-/// Returns `true` when the user taps Confirm; `null` otherwise.
+/// Stays open while [onConfirm] runs (loader on the Confirm button), then
+/// pops returning the awaited result. Returns `null` if the user cancels.
 class ConfirmTicketSheet {
-  static Future<bool?> show(BuildContext context) {
+  static Future<bool?> show(
+    BuildContext context, {
+    required Future<bool> Function() onConfirm,
+  }) {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: ColorPalette.opsSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => const _ConfirmBody(),
+      builder: (_) => _ConfirmBody(onConfirm: onConfirm),
     );
   }
 }
 
-class _ConfirmBody extends ConsumerWidget {
-  const _ConfirmBody();
+class _ConfirmBody extends ConsumerStatefulWidget {
+  final Future<bool> Function() onConfirm;
+  const _ConfirmBody({required this.onConfirm});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ConfirmBody> createState() => _ConfirmBodyState();
+}
+
+class _ConfirmBodyState extends ConsumerState<_ConfirmBody> {
+  bool _submitting = false;
+
+  Future<void> _handleConfirm() async {
+    if (_submitting) return;
+    setState(() => _submitting = true);
+    bool ok = false;
+    try {
+      ok = await widget.onConfirm();
+    } finally {
+      if (mounted) Navigator.of(context).pop(ok);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final s = context.l10n;
     final draft = ref.watch(catalogDraftControllerProvider);
     final catalog = draft.catalog;
@@ -94,7 +119,7 @@ class _ConfirmBody extends ConsumerWidget {
           child: Column(
             children: [
               const _Handle(),
-              _Header(onClose: () => Navigator.of(context).pop()),
+              _Header(onClose: _submitting ? () {} : () => Navigator.of(context).pop()),
               Expanded(
                 child: ListView(
                   physics: const BouncingScrollPhysics(),
@@ -120,7 +145,9 @@ class _ConfirmBody extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+                        onPressed: _submitting
+                            ? null
+                            : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: ColorPalette.textPrimary,
                           side: BorderSide(color: ColorPalette.opsBorder),
@@ -139,7 +166,7 @@ class _ConfirmBody extends ConsumerWidget {
                     Expanded(
                       flex: 2,
                       child: ElevatedButton(
-                        onPressed: tapSound(() => Navigator.of(context).pop(true)),
+                        onPressed: _submitting ? null : tapSound(_handleConfirm),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: ColorPalette.textPrimary,
                           foregroundColor: ColorPalette.white,
@@ -151,7 +178,16 @@ class _ConfirmBody extends ConsumerWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        child: Text(s.confirmTicketCta),
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: ColorPalette.white,
+                                ),
+                              )
+                            : Text(s.confirmTicketCta),
                       ),
                     ),
                   ],

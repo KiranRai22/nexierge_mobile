@@ -169,6 +169,19 @@
       "elapsed": { "type": "String", "example": "8h 30m 12s" }
     }
   },
+  "ticketResolutionTimeLabel": "Resolution Time",
+  "ticketResolutionTimeValue": "{time} remaining",
+  "@ticketResolutionTimeValue": {
+    "placeholders": {
+      "time": { "type": "String", "example": "30 mins" }
+    }
+  },
+  "ticketResolutionTimeOverdue": "{time} overdue",
+  "@ticketResolutionTimeOverdue": {
+    "placeholders": {
+      "time": { "type": "String", "example": "15 mins" }
+    }
+  },
   "ticketActionStartWork": "Start Work",
   "ticketActionAccept": "Accept Ticket",
   "ticketActionAcceptAndStart": "Accept & Start",
@@ -298,7 +311,7 @@
 
   "createNewTitle": "Create new",
   "createNewSubtitle": "What kind of ticket are you creating?",
-  "createUniversalTitle": "Universal",
+  "createUniversalTitle": "Universal Ticket",
   "createUniversalDesc": "Towels, pillows, toiletries — quick operational asks",
   "createCatalogTitle": "Catalog",
   "createCatalogDesc": "Room service, spa, bar — anything a guest is paying for",
@@ -633,7 +646,7 @@
 
   "createSearchHint": "Search requests...",
   "createCustomButton": "+ Custom",
-  "createCatalogNavTitle": "Catalog",
+  "createCatalogNavTitle": "Catalog Ticket",
   "createManualNavTitle": "Create ticket",
   "createCatalogSelectHeading": "Select a catalog",
   "createCatalogSelectSubheading": "Choose from your hotel's service catalogs",

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:nexierge/core/utils/string_utils.dart';
+// import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
@@ -34,11 +36,13 @@ class DashboardStatsCompact extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
+    final s = context.l10n;
     return Row(
       children: [
         Expanded(
           child: _CompactStatCard(
-            icon: LucideIcons.bell,
+            // icon: LucideIcons.bell,
+            label: s.dashboardNeedsAcknowledgment,
             count: incoming,
             color: c.tagNeutralIcon,
             onTap: onTapIncoming,
@@ -47,7 +51,8 @@ class DashboardStatsCompact extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _CompactStatCard(
-            icon: LucideIcons.play,
+            // icon: LucideIcons.play,
+            label: s.dashboardInProgressLabel,
             count: inProgress,
             color: c.tagPurpleIcon,
             onTap: onTapInProgress,
@@ -56,7 +61,8 @@ class DashboardStatsCompact extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _CompactStatCard(
-            icon: LucideIcons.triangleAlert,
+            // icon: LucideIcons.triangleAlert,
+            label: s.dashboardOverdueLabel,
             count: overdue,
             color: overdue > 0 ? c.tagRedIcon : c.tagOrangeIcon,
             onTap: onTapOverdue,
@@ -65,7 +71,8 @@ class DashboardStatsCompact extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _CompactStatCard(
-            icon: LucideIcons.clock,
+            // icon: LucideIcons.clock,
+            label: s.dashboardNotStartedLabel,
             count: accepted,
             color: c.tagBlueIcon,
             onTap: onTapAccepted,
@@ -77,13 +84,15 @@ class DashboardStatsCompact extends StatelessWidget {
 }
 
 class _CompactStatCard extends StatelessWidget {
-  final IconData icon;
+  // final IconData icon;
+  final String label;
   final int count;
   final Color color;
   final VoidCallback onTap;
 
   const _CompactStatCard({
-    required this.icon,
+    // required this.icon,
+    required this.label,
     required this.count,
     required this.color,
     required this.onTap,
@@ -106,14 +115,25 @@ class _CompactStatCard extends StatelessWidget {
             colors: c,
             borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           child: Column(
             children: [
-              Icon(icon, size: 20, color: color),
+              // Icon(icon, size: 20, color: color),
+              // const SizedBox(height: 4),
+              Text(
+                StringUtils.capitalizeWords(label),
+                style: TypographyManager.textCaption.copyWith(
+                  color: c.fgMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 4),
               Text(
                 '$count',
-                style: TypographyManager.textBodyStrong.copyWith(
+                style: TypographyManager.textTitle.copyWith(
                   color: c.fgBase,
                   fontWeight: FontWeight.w700,
                 ),

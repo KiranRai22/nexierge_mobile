@@ -23,6 +23,9 @@ class FilterDepartmentSheet {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.5,
+      ),
       builder: (_) => const _FilterSheetBody(),
     );
   }
@@ -73,21 +76,23 @@ class _FilterSheetBodyState extends ConsumerState<_FilterSheetBody> {
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final s = context.l10n;
     return Padding(
       padding: EdgeInsets.only(bottom: viewInsets),
       child: SafeArea(
         top: false,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           children: [
             _Header(
-              subtitle: _subtitle(context.l10n),
+              subtitle: _subtitle(s),
               onClose: () => Navigator.of(context).pop(),
             ),
-            _DeptList(
-              selected: _draft,
-              onToggle: _toggle,
-              onSelectAll: _selectAll,
+            // Fixed Select All button below subtitle
+            _SelectAllButton(onSelectAll: _selectAll),
+            const Divider(height: 1),
+            Expanded(
+              child: _DeptList(selected: _draft, onToggle: _toggle),
             ),
             _Footer(onClear: _clear, onApply: _apply),
           ],
@@ -111,6 +116,51 @@ class _Handle extends StatelessWidget {
         color: c.borderBase,
         borderRadius: BorderRadius.circular(2),
       ),
+    );
+  }
+}
+
+class _SelectAllButton extends ConsumerWidget {
+  final ValueChanged<List<HotelDepartment>> onSelectAll;
+
+  const _SelectAllButton({required this.onSelectAll});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    final asyncDepts = ref.watch(apiDepartmentsAsyncProvider);
+
+    return asyncDepts.when(
+      data: (depts) {
+        if (depts.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: tapSound(
+                () => onSelectAll(depts),
+                SoundCategory.preference,
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                s.filterActionSelectAll,
+                style: TypographyManager.bodySmall.copyWith(
+                  color: c.tagPurpleIcon,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }
@@ -169,13 +219,8 @@ class _Header extends StatelessWidget {
 class _DeptList extends ConsumerWidget {
   final Set<HotelDepartment> selected;
   final ValueChanged<HotelDepartment> onToggle;
-  final ValueChanged<List<HotelDepartment>> onSelectAll;
 
-  const _DeptList({
-    required this.selected,
-    required this.onToggle,
-    required this.onSelectAll,
-  });
+  const _DeptList({required this.selected, required this.onToggle});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -196,50 +241,43 @@ class _DeptList extends ConsumerWidget {
             ),
           );
         }
-        return Flexible(
-          child: ListView.builder(
-            shrinkWrap: true,
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            itemCount: depts.length,
-            itemBuilder: (context, i) {
-              final dept = depts[i];
-              final isOn = selected.contains(dept);
+        return ListView.builder(
+          shrinkWrap: false,
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          itemCount: depts.length,
+          itemBuilder: (context, i) {
+            final dept = depts[i];
+            final isOn = selected.contains(dept);
 
-              return InkWell(
-                onTap: tapSound(() => onToggle(dept), SoundCategory.preference),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  child: Row(
-                    children: [
-                      _CustomCheckbox(
-                        isChecked: isOn,
-                        activeColor: c.tagPurpleIcon,
-                        inactiveColor: c.borderBase,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          dept.name,
-                          style: TypographyManager.bodyMedium.copyWith(
-                            color: c.fgBase,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                      if (i == depts.length - 1)
-                        TextButton(
-                          onPressed: tapSound(() => onSelectAll(depts), SoundCategory.preference),
-                          child: Text(s.filterActionSelectAll),
-                        ),
-                    ],
-                  ),
+            return InkWell(
+              onTap: tapSound(() => onToggle(dept), SoundCategory.preference),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
                 ),
-              );
-            },
-          ),
+                child: Row(
+                  children: [
+                    _CustomCheckbox(
+                      isChecked: isOn,
+                      activeColor: c.tagPurpleIcon,
+                      inactiveColor: c.borderBase,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        dept.name,
+                        style: TypographyManager.bodyMedium.copyWith(
+                          color: c.fgBase,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
       loading: () => const Padding(

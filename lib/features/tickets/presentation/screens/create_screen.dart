@@ -53,9 +53,11 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
   void initState() {
     super.initState();
     _tabs = TabController(
-      length: 3,
+      length: 2, // Universal and Catalog only (Manual disabled)
       vsync: this,
-      initialIndex: widget.initialTab.index,
+      initialIndex: widget.initialTab == CreateTab.manual
+          ? 0
+          : widget.initialTab.index,
     );
     _lastTabIndex = _tabs.index;
     _tabs.addListener(_onTabChanged);
@@ -190,7 +192,7 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
         children: const [
           _UniversalTabBody(),
           _CatalogTabBody(),
-          _ManualTabBody(),
+          // _ManualTabBody(), // Manual creation temporarily disabled
         ],
       ),
     );
@@ -318,7 +320,7 @@ class _CreateTabBar extends StatelessWidget {
     final entries = <(int, String, String)>[
       (0, '🔔', s.createUniversalTitle),
       (1, '🛒', s.createCatalogNavTitle),
-      (2, '✏️', s.createManualTitle),
+      // (2, '✏️', s.createManualTitle), // Manual creation temporarily disabled
     ];
     return AnimatedBuilder(
       animation: controller,

@@ -83,6 +83,9 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
   @override
   ManualDraftState build() => const ManualDraftState();
 
+  /// Reset to initial state for consecutive ticket creation.
+  void reset() => state = const ManualDraftState();
+
   void setSummary(String v) =>
       state = state.copyWith(summary: StringUtils.capitalizeFirst(v));
 

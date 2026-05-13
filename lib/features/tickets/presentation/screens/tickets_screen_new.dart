@@ -311,7 +311,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       TicketsMainTab.incoming: state.incomingCount,
       TicketsMainTab.today: state.todayAllCount,
       TicketsMainTab.backlog: state.backlogAllCount,
-      TicketsMainTab.done: state.doneCount,
+      TicketsMainTab.done: state.todayDoneCount,
     };
   }
 
@@ -320,11 +320,15 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   Map<String, int> _todayFilterCounts() {
     final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
     if (state == null) {
-      return const {'all': 0, 'accepted': 0, 'inprogress': 0, 'overdue': 0};
+      // [ACCEPT_AND_START_FLOW] Accepted bucket removed — all NEW tickets go
+      // straight to IN_PROGRESS now, so the chip is gone.
+      // return const {'all': 0, 'accepted': 0, 'inprogress': 0, 'overdue': 0};
+      return const {'all': 0, 'inprogress': 0, 'overdue': 0};
     }
     return {
       'all': state.todayAllCount,
-      'accepted': state.todayAcceptedCount,
+      // [ACCEPT_AND_START_FLOW] removed
+      // 'accepted': state.todayAcceptedCount,
       'inprogress': state.todayInProgressCount,
       'overdue': state.todayOverdueCount,
     };
@@ -335,11 +339,14 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   Map<String, int> _backlogFilterCounts() {
     final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
     if (state == null) {
-      return const {'all': 0, 'accepted': 0, 'inprogress': 0, 'overdue': 0};
+      // [ACCEPT_AND_START_FLOW] Accepted bucket removed.
+      // return const {'all': 0, 'accepted': 0, 'inprogress': 0, 'overdue': 0};
+      return const {'all': 0, 'inprogress': 0, 'overdue': 0};
     }
     return {
       'all': state.backlogAllCount,
-      'accepted': state.backlogAcceptedCount,
+      // [ACCEPT_AND_START_FLOW] removed
+      // 'accepted': state.backlogAcceptedCount,
       'inprogress': state.backlogInProgressCount,
       'overdue': state.backlogOverdueCount,
     };
@@ -432,6 +439,13 @@ bool _isTransitionedToday(MyTicket t) {
 /// Builds an `onAccept` handler that opens the acknowledge sheet and
 /// applies the resulting status change. When the user picks
 /// "Accept & Start" the ticket goes straight to IN_PROGRESS.
+// [ACCEPT_AND_START_FLOW] Was: open AcknowledgeTicketBottomSheet to let
+// the user pick ETA / notes / Accept vs Accept & Start. New flow: tap on
+// the card's button calls acknowledgeAndStartTicket directly with a 15-min
+// default due window — no sheet, no intermediate ACCEPTED state.
+//
+// Original implementation kept below (commented) for reference.
+/*
 VoidCallback _acceptHandler(
   BuildContext context,
   WidgetRef ref,
@@ -513,6 +527,62 @@ VoidCallback _acceptHandler(
         }
       },
     );
+  };
+}
+*/
+
+VoidCallback _acceptHandler(
+  BuildContext context,
+  WidgetRef ref,
+  Ticket ticket,
+) {
+  return () async {
+    if (ref.read(ticketBusyProvider).contains(ticket.id)) return;
+    final busy = ref.read(ticketBusyProvider.notifier)..mark(ticket.id);
+    for (final tab in kAllTicketsTabs) {
+      ref
+          .read(ticketsPagedProvider(specForTab(tab)).notifier)
+          .markTicketTransitioning(ticket.id);
+    }
+    ref
+        .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
+        .updateTabCountImmediate(delta: -1);
+    ref
+        .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+        .updateTabCountImmediate(delta: 1);
+    try {
+      final dueAt = ServerClock.now()
+          .add(const Duration(minutes: 15))
+          .millisecondsSinceEpoch;
+      await ref
+          .read(ticketRepositoryProvider)
+          .acknowledgeAndStartTicket(
+            ticketId: ticket.id,
+            dueAt: dueAt,
+            notes: null,
+          );
+      ref
+          .read(
+            ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
+          )
+          .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
+      ref
+          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+          .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
+      ref.read(myTicketsNotifierProvider.notifier).refresh();
+    } catch (e) {
+      ref
+          .read(
+            ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
+          )
+          .updateTabCountImmediate(delta: 1);
+      ref
+          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+          .updateTabCountImmediate(delta: -1);
+      if (context.mounted) context.showFailure(e.toString());
+    } finally {
+      busy.clear(ticket.id);
+    }
   };
 }
 

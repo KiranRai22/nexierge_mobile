@@ -71,9 +71,7 @@ class TicketCardNew extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.themeColors;
-    final isRecentlyChanged = ref.watch(
-      isRecentlyChangedProvider(ticket.id),
-    );
+    final isRecentlyChanged = ref.watch(isRecentlyChangedProvider(ticket.id));
     final isBusy = ref.watch(isTicketBusyProvider(ticket.id));
 
     // Highlighted border when the ticket was just created or its status
@@ -113,6 +111,9 @@ class TicketCardNew extends ConsumerWidget {
                   const SizedBox(height: 6),
                   // Room row: icon + room + department
                   _RoomRow(ticket: ticket),
+                  const SizedBox(height: 4),
+                  // Resolution time row (only when inProgress)
+                  _ResolutionTimeRow(ticket: ticket),
                   const SizedBox(height: 12),
                   // Inner card with avatar, details
                   _InnerCard(ticket: ticket),
@@ -268,14 +269,23 @@ class _TitleRow extends StatelessWidget {
         _KindDot(ticket: ticket),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            _buildTitle(context, ticket),
-            style: TypographyManager.cardTitle.copyWith(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _buildTitle(context, ticket),
+                style: TypographyManager.cardTitle.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              // Elapsed time for new/incoming tickets
+              if (ticket.status == TicketStatus.incoming)
+                _ElapsedTimeRow(ticket: ticket),
+            ],
           ),
         ),
         const SizedBox(width: 8),
@@ -283,7 +293,7 @@ class _TitleRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _TimeDisplay(ticket: ticket),
+            _StatusPill(ticket: ticket),
             if (catalog != null && catalog.grandTotal > 0) ...[
               const SizedBox(height: 2),
               Text(
@@ -460,6 +470,133 @@ class _TimeDisplayState extends State<_TimeDisplay> {
   }
 }
 
+/// Status pill for the top-right of the ticket card.
+/// Shows status with appropriate colors (OVERDUE in red if ticket.isOverdue).
+class _StatusPill extends StatelessWidget {
+  final Ticket ticket;
+  const _StatusPill({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+
+    final bool isOverdue = ticket.isOverdue;
+    final String label;
+    final Color bg;
+    final Color fg;
+
+    if (isOverdue) {
+      label = 'OVERDUE';
+      bg = c.tagRedBg;
+      fg = c.tagRedText;
+    } else {
+      switch (ticket.status) {
+        case TicketStatus.incoming:
+          label = s.ticketStatusBadgeNew;
+          bg = c.tagBlueBg;
+          fg = c.tagBlueText;
+        case TicketStatus.accepted:
+          label = s.ticketStatusBadgeAccepted;
+          bg = c.tagGreenBg;
+          fg = c.tagGreenText;
+        case TicketStatus.inProgress:
+          label = s.ticketStatusBadgeInProgress;
+          bg = c.tagGreenBg;
+          fg = c.tagGreenText;
+        case TicketStatus.onHold:
+          label = s.ticketStatusBadgeOnHold;
+          bg = c.tagPurpleBg;
+          fg = c.tagPurpleText;
+        case TicketStatus.done:
+          label = s.ticketStatusBadgeDone;
+          bg = c.tagNeutralBg;
+          fg = c.tagNeutralText;
+        case TicketStatus.canceled:
+          label = s.ticketStatusBadgeCancelled;
+          bg = c.tagRedBg;
+          fg = c.tagRedText;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TypographyManager.labelSmall.copyWith(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          color: fg,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+}
+
+/// Elapsed time row for new/incoming tickets.
+/// Shows timer icon + time elapsed since ticket creation.
+class _ElapsedTimeRow extends StatefulWidget {
+  final Ticket ticket;
+  const _ElapsedTimeRow({required this.ticket});
+
+  @override
+  State<_ElapsedTimeRow> createState() => _ElapsedTimeRowState();
+}
+
+class _ElapsedTimeRowState extends State<_ElapsedTimeRow> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tick every second while ticket is incoming
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatElapsed(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    final s = d.inSeconds % 60;
+    if (h > 0) return '${h}h ${m}m ${s}s';
+    return '${m}m ${s}s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final elapsed = DateTime.now().difference(widget.ticket.createdAt);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(LucideIcons.timer, size: 12, color: c.fgMuted),
+        const SizedBox(width: 4),
+        Text(
+          _formatElapsed(elapsed),
+          style: TypographyManager.bodySmall.copyWith(
+            color: c.fgMuted,
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _RoomRow extends StatelessWidget {
   final Ticket ticket;
   const _RoomRow({required this.ticket});
@@ -474,6 +611,97 @@ class _RoomRow extends StatelessWidget {
         Text(
           '${ticket.room.number} · ${_departmentLabel(context, ticket)}',
           style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
+        ),
+      ],
+    );
+  }
+}
+
+/// Resolution time row: shows live countdown timer "Resolution Time: Xh Ym Zs"
+/// Only visible when ticket status is inProgress. Auto-updates every second.
+class _ResolutionTimeRow extends StatefulWidget {
+  final Ticket ticket;
+  const _ResolutionTimeRow({required this.ticket});
+
+  @override
+  State<_ResolutionTimeRow> createState() => _ResolutionTimeRowState();
+}
+
+class _ResolutionTimeRowState extends State<_ResolutionTimeRow> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ResolutionTimeRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (widget.ticket.status == TicketStatus.inProgress &&
+        widget.ticket.eta != null) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration d) {
+    if (d.isNegative) d = Duration.zero;
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    if (h > 0) return '${h}h ${m}m ${s}s';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+
+    // Only show for in-progress tickets with an ETA
+    if (widget.ticket.status != TicketStatus.inProgress ||
+        widget.ticket.eta == null) {
+      return const SizedBox.shrink();
+    }
+
+    final now = ServerClock.now();
+    final remaining = widget.ticket.eta!.difference(now);
+    final isOverdue = remaining.isNegative;
+
+    // Format: Xh Ym Zs or show overdue time
+    final timeText = isOverdue
+        ? _formatDuration(remaining.abs())
+        : _formatDuration(remaining);
+
+    return Row(
+      children: [
+        Icon(
+          LucideIcons.timer,
+          size: 14,
+          color: isOverdue ? c.tagRedText : c.fgMuted,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${s.ticketResolutionTimeLabel}: $timeText ${isOverdue ? "overdue" : ""}',
+          style: TypographyManager.bodySmall.copyWith(
+            color: isOverdue ? c.tagRedText : c.fgMuted,
+            fontWeight: isOverdue ? FontWeight.w600 : FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -517,10 +745,15 @@ class _UniversalInnerBlock extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _RoundThumbnail(
-            imageUrl: data.thumbnailUrl,
-            emoji: data.emoji ?? '•',
-            size: 40,
+          // Bolt icon for universal requests (matching create ticket sheet)
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: c.tagBlueBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.bolt_outlined, size: 22, color: c.fgBase),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -695,10 +928,7 @@ class _StackedThumbnails extends StatelessWidget {
     final c = context.themeColors;
     final visible = imageUrls.take(3).toList();
     if (visible.isEmpty) {
-      return _RoundThumbnail(
-        imageUrl: null,
-        emoji: fallbackEmoji,
-      );
+      return _RoundThumbnail(imageUrl: null, emoji: fallbackEmoji);
     }
     const tileSize = 36.0;
     const overlap = 16.0;
@@ -783,11 +1013,7 @@ class _TypeTag extends StatelessWidget {
         s.ticketKindUniversal,
       ),
       TicketKind.catalog => (c.tagBlueBg, c.tagBlueText, s.ticketKindPaid),
-      TicketKind.manual => (
-        c.bgSubtle,
-        c.fgMuted,
-        s.ticketKindManual,
-      ),
+      TicketKind.manual => (c.bgSubtle, c.fgMuted, s.ticketKindManual),
     };
 
     return Container(
@@ -828,7 +1054,11 @@ class _ActionButton extends StatelessWidget {
       TicketStatus.inProgress => _buildMarkDoneButton(c, onMarkDone),
       TicketStatus.accepted => _buildStartWorkButton(c, onStartWork),
       TicketStatus.onHold => _buildScheduledBadge(c, s.ticketStatusBadgeOnHold),
-      _ => _buildAcceptButton(c, onAccept),
+      // [ACCEPT_AND_START_FLOW] Old: NEW cards showed an "Accept" button that
+      // opened the acknowledge bottom sheet. New flow: NEW cards show a single
+      // "Accept & Start" button that transitions directly to IN_PROGRESS.
+      // _ => _buildAcceptButton(c, onAccept),
+      _ => _buildAcceptAndStartButton(c, onAccept),
     };
   }
 
@@ -875,6 +1105,40 @@ class _ActionButton extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   s.actionAcceptShort,
+                  style: TypographyManager.labelSmall.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // [ACCEPT_AND_START_FLOW] New button for NEW-status cards. Replaces
+  // _buildAcceptButton in the build switch.
+  Widget _buildAcceptAndStartButton(AppColors c, VoidCallback? onTap) {
+    return Builder(
+      builder: (context) {
+        final s = context.l10n;
+        return GestureDetector(
+          onTap: tapSound(onTap),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: c.tagPurpleIcon,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LucideIcons.play, size: 14, color: Colors.white),
+                const SizedBox(width: 4),
+                Text(
+                  s.ticketActionAcceptAndStart,
                   style: TypographyManager.labelSmall.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,

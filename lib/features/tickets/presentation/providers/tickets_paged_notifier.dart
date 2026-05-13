@@ -444,7 +444,14 @@ final _kBacklogSpec = TicketsPagedSpec(
   localPredicate: _isNotTransitionedToday,
 );
 
-const _kDoneSpec = TicketsPagedSpec(statuses: ['DONE']);
+/// Done server spec: status DONE with client-side date filter so only
+/// tickets completed today are shown. Uses `confirmedAt` (when available)
+/// or falls back to `lastTransitionAt` / `acknowledgedAt` to determine
+/// the completion timestamp.
+final _kDoneSpec = TicketsPagedSpec(
+  statuses: const ['DONE'],
+  localPredicate: _isDoneToday,
+);
 
 /// Bucket predicate: ticket's `due_at` falls on today's local calendar.
 /// Mirrors [MyTicketsState._changedToday] so badge counts match paged list
@@ -460,6 +467,17 @@ bool _isTransitionedToday(MyTicket t) =>
     _isSameLocalDay(t.dueAt, DateTime.now());
 
 bool _isNotTransitionedToday(MyTicket t) => !_isTransitionedToday(t);
+
+/// True when [t] is a DONE ticket and was completed (confirmed) today.
+/// Uses `confirmedAt` when available, falls back to `lastTransitionAt`
+/// or `acknowledgedAt` to determine the completion timestamp.
+bool _isDoneToday(MyTicket t) {
+  if (!t.isDone) return false;
+  final completedAt = t.confirmedAt > 0
+      ? t.confirmedAt
+      : (t.lastTransitionAt > 0 ? t.lastTransitionAt : t.acknowledgedAt);
+  return _isSameLocalDay(completedAt, DateTime.now());
+}
 
 /// AsyncNotifier provider, parameterised by spec. Each tab uses its own
 /// const spec so Riverpod gives back a stable instance.

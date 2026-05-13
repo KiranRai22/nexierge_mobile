@@ -42,8 +42,10 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
         context.showFailure(context.l10n.serverError);
         return;
       }
-      Navigator.of(context).pop(true);
       context.showSuccess(context.l10n.createSuccessToast);
+      // Close create screen after successful ticket creation
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(true);
     } on AppException catch (e) {
       if (!mounted) return;
       context.showFailure(e.localizedMessage(context.l10n));

@@ -442,6 +442,19 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get ticketResolutionTimeLabel => 'Tiempo de resolución';
+
+  @override
+  String ticketResolutionTimeValue(String time) {
+    return '$time restante';
+  }
+
+  @override
+  String ticketResolutionTimeOverdue(String time) {
+    return '$time retrasado';
+  }
+
+  @override
   String get ticketActionStartWork => 'Comenzar';
 
   @override
@@ -653,7 +666,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createNewSubtitle => '¿Qué tipo de ticket vas a crear?';
 
   @override
-  String get createUniversalTitle => 'Universal';
+  String get createUniversalTitle => 'Ticket Universal';
 
   @override
   String get createUniversalDesc =>
@@ -1311,7 +1324,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createCustomButton => '+ Personalizado';
 
   @override
-  String get createCatalogNavTitle => 'Catálogo';
+  String get createCatalogNavTitle => 'Ticket Catálogo';
 
   @override
   String get createManualNavTitle => 'Crear ticket';

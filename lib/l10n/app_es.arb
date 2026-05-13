@@ -165,7 +165,7 @@
 
   "createNewTitle": "Crear nuevo",
   "createNewSubtitle": "¿Qué tipo de ticket vas a crear?",
-  "createUniversalTitle": "Universal",
+  "createUniversalTitle": "Ticket Universal",
   "createUniversalDesc": "Toallas, almohadas, artículos de aseo — peticiones rápidas",
   "createCatalogTitle": "Catálogo",
   "createCatalogDesc": "Servicio de habitaciones, spa, bar — todo lo que el huésped pague",
@@ -449,6 +449,19 @@
       "elapsed": { "type": "String", "example": "8h 30m 12s" }
     }
   },
+  "ticketResolutionTimeLabel": "Tiempo de resolución",
+  "ticketResolutionTimeValue": "{time} restante",
+  "@ticketResolutionTimeValue": {
+    "placeholders": {
+      "time": { "type": "String", "example": "30 mins" }
+    }
+  },
+  "ticketResolutionTimeOverdue": "{time} retrasado",
+  "@ticketResolutionTimeOverdue": {
+    "placeholders": {
+      "time": { "type": "String", "example": "15 mins" }
+    }
+  },
   "ticketActionStartWork": "Comenzar",
   "ticketActionAccept": "Aceptar ticket",
   "ticketActionAcceptAndStart": "Aceptar e iniciar",
@@ -507,7 +520,7 @@
 
   "createSearchHint": "Buscar solicitudes...",
   "createCustomButton": "+ Personalizado",
-  "createCatalogNavTitle": "Catálogo",
+  "createCatalogNavTitle": "Ticket Catálogo",
   "createManualNavTitle": "Crear ticket",
   "createCatalogSelectHeading": "Seleccionar catálogo",
   "createCatalogSelectSubheading": "Elige de los catálogos de servicio del hotel",

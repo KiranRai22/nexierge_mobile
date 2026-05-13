@@ -70,7 +70,9 @@ class TicketsFilterChips extends StatelessWidget {
         // (All/Accepted/In Progress/Overdue), inverted date predicate.
         return [
           _FilterOption('all', s.activityTypeAll),
-          _FilterOption('accepted', s.statusAccepted),
+          // [ACCEPT_AND_START_FLOW] Accepted chip removed — NEW tickets now
+          // skip the ACCEPTED state entirely (Accept & Start → IN_PROGRESS).
+          // _FilterOption('accepted', s.statusAccepted),
           _FilterOption('inprogress', s.statusInProgress),
           _FilterOption('overdue', s.statusOverdue, isDanger: true),
         ];

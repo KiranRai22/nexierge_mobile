@@ -9,6 +9,7 @@ import '../../../../core/theme/typography_manager.dart';
 import '../../../auth/presentation/providers/auth_session_controller.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart'
     as auth_ctrl;
+import 'logout_confirmation_bottom_sheet.dart';
 
 /// Full-width destructive CTA at the bottom of the profile screen. Confirms
 /// before signing out, then clears the auth session — the FCM device token
@@ -31,25 +32,7 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
 
   Future<void> _confirmAndSignOut(BuildContext context) async {
     if (_busy) return;
-    final s = context.l10n;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(s.profileLogoutConfirmTitle),
-        content: Text(s.profileLogoutConfirmBody),
-        actions: [
-          TextButton(
-            onPressed: tapSound(() => Navigator.of(dialogContext).pop(false), SoundCategory.back),
-            child: Text(s.profileLogoutConfirmCancel),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: ColorPalette.primary),
-            onPressed: tapSound(() => Navigator.of(dialogContext).pop(true)),
-            child: Text(s.profileLogoutConfirmAction),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await LogoutConfirmationBottomSheet.show(context);
     if (confirmed != true) return;
     if (!mounted) return;
 

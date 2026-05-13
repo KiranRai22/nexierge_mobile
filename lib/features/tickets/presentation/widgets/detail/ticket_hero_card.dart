@@ -13,63 +13,17 @@ import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../domain/models/department.dart';
 import '../../../domain/models/ticket.dart';
 
-/// Hero card under the tabs: tool icon · title · live elapsed timer.
+/// Hero card under the tabs: tool icon · title · status pill.
 ///
-/// The elapsed counter ticks every second and is computed from the most
-/// meaningful "started" timestamp (`acceptedAt` if present, else
-/// `createdAt`). Stops ticking on done/cancelled.
-class TicketHeroCard extends StatefulWidget {
+/// Shows a status pill (New, In Progress, Overdue, etc.) with proper colors
+/// and a resolution time chip in the right column.
+class TicketHeroCard extends StatelessWidget {
   final Ticket ticket;
   const TicketHeroCard({super.key, required this.ticket});
 
   @override
-  State<TicketHeroCard> createState() => _TicketHeroCardState();
-}
-
-class _TicketHeroCardState extends State<TicketHeroCard> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _maybeStartTimer();
-  }
-
-  @override
-  void didUpdateWidget(covariant TicketHeroCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _maybeStartTimer();
-  }
-
-  void _maybeStartTimer() {
-    _timer?.cancel();
-    if (_isLive) {
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
-    }
-  }
-
-  bool get _isLive {
-    final s = widget.ticket.status;
-    return s != TicketStatus.done && s != TicketStatus.canceled;
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  DateTime get _start => widget.ticket.acceptedAt ?? widget.ticket.createdAt;
-
-  DateTime get _end => widget.ticket.doneAt ?? ServerClock.now();
-
-  @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final s = context.l10n;
-    final elapsed = _end.difference(_start);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: CardDecoration.standard(
@@ -90,7 +44,7 @@ class _TicketHeroCardState extends State<TicketHeroCard> {
             ),
             alignment: Alignment.center,
             child: Icon(
-              _kindIcon(widget.ticket.department),
+              _kindIcon(ticket.department),
               size: 20,
               color: c.fgBase,
             ),
@@ -102,40 +56,20 @@ class _TicketHeroCardState extends State<TicketHeroCard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  widget.ticket.title,
+                  ticket.title,
                   style: TypographyManager.textBodyStrong.copyWith(
                     color: c.fgBase,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(LucideIcons.clock, size: 14, color: c.fgMuted),
-                    const SizedBox(width: 4),
-                    Text(
-                      s.ticketElapsed(_format(elapsed)),
-                      style: TypographyManager.textMeta.copyWith(
-                        color: c.fgMuted,
-                      ),
-                    ),
-                  ],
-                ),
+                _ElapsedTimeRow(ticket: ticket),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          // Right column: ticket-kind chip on top, status chip below.
-          // Vertically centered via parent Row's CrossAxisAlignment.center.
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _KindPill(kind: widget.ticket.kind),
-              const SizedBox(height: 4),
-              _StatusPill(status: widget.ticket.status),
-            ],
-          ),
+          // Right column: ticket kind pill (Manual/Universal/Paid)
+          _KindPill(kind: ticket.kind),
         ],
       ),
     );
@@ -157,21 +91,87 @@ class _TicketHeroCardState extends State<TicketHeroCard> {
         return LucideIcons.bell;
     }
   }
+}
 
-  String _format(Duration d) {
-    if (d.isNegative) d = Duration.zero;
+/// Elapsed/overdue time row showing live timer.
+/// Shows elapsed time for new, overdue time for overdue tickets.
+class _ElapsedTimeRow extends StatefulWidget {
+  final Ticket ticket;
+  const _ElapsedTimeRow({required this.ticket});
+
+  @override
+  State<_ElapsedTimeRow> createState() => _ElapsedTimeRowState();
+}
+
+class _ElapsedTimeRowState extends State<_ElapsedTimeRow> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatElapsed(Duration d) {
     final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final sec = d.inSeconds.remainder(60);
-    if (h > 0) return '${h}h ${m}m ${sec}s';
-    if (m > 0) return '${m}m ${sec}s';
-    return '${sec}s';
+    final m = d.inMinutes % 60;
+    final s = d.inSeconds % 60;
+    if (h > 0) return '${h}h ${m}m ${s}s';
+    return '${m}m ${s}s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+
+    // For overdue tickets, show overdue elapsed time with red timer
+    if (widget.ticket.isOverdue && widget.ticket.eta != null) {
+      final overdue = ServerClock.now().difference(widget.ticket.eta!);
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LucideIcons.timer, size: 12, color: c.tagRedText),
+          const SizedBox(width: 4),
+          Text(
+            'Overdue: ${_formatElapsed(overdue)}',
+            style: TypographyManager.bodySmall.copyWith(
+              color: c.tagRedText,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // For all other tickets, show elapsed time from creation
+    final elapsed = ServerClock.now().difference(widget.ticket.createdAt);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(LucideIcons.timer, size: 12, color: c.fgMuted),
+        const SizedBox(width: 4),
+        Text(
+          'Elapsed Time: ${_formatElapsed(elapsed)}',
+          style: TypographyManager.bodySmall.copyWith(
+            color: c.fgMuted,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 }
 
-/// Kind chip — same visual language as the list-card `_KindChip`
-/// (universal / catalog="Paid" / manual). Colours come from
-/// [ColorPalette.chip*Bg/Fg] so list and detail render identically.
+/// Ticket kind pill showing Manual/Universal/Paid.
+/// Uses the same color scheme as before.
 class _KindPill extends StatelessWidget {
   final TicketKind kind;
   const _KindPill({required this.kind});
@@ -214,75 +214,6 @@ class _KindPill extends StatelessWidget {
           fontSize: 10.5,
           fontWeight: FontWeight.w600,
           color: spec.fg,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-}
-
-/// Status chip — colour-mapped to status. Sits under [_KindPill] in the
-/// hero card's right column. Uses the same theme tokens as the inline
-/// status pill in the Ticket Information section so the two pills match.
-class _StatusPill extends StatelessWidget {
-  final TicketStatus status;
-  const _StatusPill({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    final s = context.l10n;
-    final ({Color bg, Color fg, String label}) data;
-    switch (status) {
-      case TicketStatus.accepted:
-        data = (
-          bg: c.tagGreenBg,
-          fg: c.tagGreenText,
-          label: s.ticketStatusBadgeAccepted,
-        );
-      case TicketStatus.inProgress:
-        data = (
-          bg: c.tagGreenBg,
-          fg: c.tagGreenText,
-          label: s.ticketStatusBadgeInProgress,
-        );
-      case TicketStatus.incoming:
-        data = (
-          bg: c.tagBlueBg,
-          fg: c.tagBlueText,
-          label: s.ticketStatusBadgeNew,
-        );
-      case TicketStatus.done:
-        data = (
-          bg: c.tagNeutralBg,
-          fg: c.tagNeutralText,
-          label: s.ticketStatusBadgeDone,
-        );
-      case TicketStatus.canceled:
-        data = (
-          bg: c.tagRedBg,
-          fg: c.tagRedText,
-          label: s.ticketStatusBadgeCancelled,
-        );
-      case TicketStatus.onHold:
-        data = (
-          bg: c.tagPurpleBg,
-          fg: c.tagPurpleText,
-          label: s.ticketStatusBadgeOnHold,
-        );
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: data.bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        data.label,
-        style: TypographyManager.labelSmall.copyWith(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
-          color: data.fg,
           letterSpacing: 0.3,
         ),
       ),

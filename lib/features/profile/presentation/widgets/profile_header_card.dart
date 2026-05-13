@@ -125,20 +125,7 @@ class _Avatar extends StatelessWidget {
           // Avatar circle
           ClipOval(
             child: uploading
-                ? Container(
-                    width: 128,
-                    height: 128,
-                    color: ColorPalette.opsPurple,
-                    alignment: Alignment.center,
-                    child: const SizedBox(
-                      width: 32,
-                      height: 32,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )
+                ? const ShimmerCircle(size: 128)
                 : avatarUrl != null && avatarUrl!.isNotEmpty
                 ? Image.network(
                     avatarUrl!,

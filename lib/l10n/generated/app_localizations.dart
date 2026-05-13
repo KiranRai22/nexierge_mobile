@@ -920,6 +920,24 @@ abstract class AppLocalizations {
   /// **'{elapsed} elapsed'**
   String ticketElapsed(String elapsed);
 
+  /// No description provided for @ticketResolutionTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution Time'**
+  String get ticketResolutionTimeLabel;
+
+  /// No description provided for @ticketResolutionTimeValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} remaining'**
+  String ticketResolutionTimeValue(String time);
+
+  /// No description provided for @ticketResolutionTimeOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} overdue'**
+  String ticketResolutionTimeOverdue(String time);
+
   /// No description provided for @ticketActionStartWork.
   ///
   /// In en, this message translates to:
@@ -1289,7 +1307,7 @@ abstract class AppLocalizations {
   /// No description provided for @createUniversalTitle.
   ///
   /// In en, this message translates to:
-  /// **'Universal'**
+  /// **'Universal Ticket'**
   String get createUniversalTitle;
 
   /// No description provided for @createUniversalDesc.
@@ -2381,7 +2399,7 @@ abstract class AppLocalizations {
   /// No description provided for @createCatalogNavTitle.
   ///
   /// In en, this message translates to:
-  /// **'Catalog'**
+  /// **'Catalog Ticket'**
   String get createCatalogNavTitle;
 
   /// No description provided for @createManualNavTitle.

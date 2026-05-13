@@ -110,6 +110,12 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
   @override
   CatalogDraftState build() => const CatalogDraftState();
 
+  /// Reset to initial state for consecutive ticket creation.
+  void reset() {
+    _lineCounter = 0;
+    state = const CatalogDraftState();
+  }
+
   // ── Navigation ────────────────────────────────────────────────────────────
   void selectCatalog(Catalog catalog) {
     state = state.copyWith(

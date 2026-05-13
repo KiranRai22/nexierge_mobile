@@ -55,13 +55,14 @@ class CreateNewSheet extends StatelessWidget {
               title: s.createCatalogTitle,
               description: s.createCatalogDesc,
             ),
-            _Option(
-              choice: CreateChoice.manual,
-              icon: Icons.assignment_outlined,
-              tint: c.tagOrangeBg,
-              title: s.createManualTitle,
-              description: s.createManualDesc,
-            ),
+            // Manual creation temporarily disabled
+            // _Option(
+            //   choice: CreateChoice.manual,
+            //   icon: Icons.assignment_outlined,
+            //   tint: c.tagOrangeBg,
+            //   title: s.createManualTitle,
+            //   description: s.createManualDesc,
+            // ),
             const SizedBox(height: 12),
             const _HintFooter(),
             const SizedBox(height: 16),

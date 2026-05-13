@@ -287,7 +287,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         maxHeight: _statsMaxExtent,
                         minHeight: _statsMinExtent,
                         backgroundColor: c.bgSubtle,
-                        shrinkProgress: _headerShrinkProgress,
                         fullGrid: asyncCounts.when(
                           data: (counts) => DashboardStatsGrid(
                             incoming: counts.needsAcknowledgmentCount,
@@ -406,7 +405,6 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double maxHeight;
   final double minHeight;
   final Color backgroundColor;
-  final double shrinkProgress;
 
   _DashboardStatsHeaderDelegate({
     required this.fullGrid,
@@ -414,7 +412,6 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.maxHeight,
     required this.minHeight,
     required this.backgroundColor,
-    required this.shrinkProgress,
   });
 
   @override
@@ -429,16 +426,16 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    // Use shrinkProgress from animation controller
-    final t = shrinkProgress.clamp(0.0, 1.0);
+    // Calculate shrink progress from offset (0.0 = expanded, 1.0 = collapsed)
+    final maxShrinkOffset = maxHeight - minHeight;
+    final t = (shrinkOffset / maxShrinkOffset).clamp(0.0, 1.0);
     return Container(
       color: backgroundColor,
       child: ClipRect(
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            // Full grid — top-aligned in the header zone, fades out as the
-            // header shrinks. IgnorePointer flips once it's mostly gone so
-            // taps don't land on invisible cards.
+            // Full grid — fades out as header shrinks
             Positioned(
               top: 0,
               left: 0,
@@ -454,13 +451,11 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
                 ),
               ),
             ),
-            // Compact strip — anchored to the bottom (always inside the
-            // pinned `minExtent` band), fades in symmetrically.
+            // Compact strip — anchored to bottom of header, fades in
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              height: minExtent,
               child: IgnorePointer(
                 ignoring: t < 0.5,
                 child: Opacity(
@@ -484,7 +479,6 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
         oldDelegate.minHeight != minHeight ||
         oldDelegate.backgroundColor != backgroundColor ||
         oldDelegate.fullGrid != fullGrid ||
-        oldDelegate.compactStrip != compactStrip ||
-        oldDelegate.shrinkProgress != shrinkProgress;
+        oldDelegate.compactStrip != compactStrip;
   }
 }

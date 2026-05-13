@@ -138,4 +138,4 @@ class _TabItem extends StatelessWidget {
   }
 }
 
-enum TicketsMainTab { incoming, today, backlog, done }
+enum TicketsMainTab { incoming, today, done, backlog }

@@ -569,8 +569,12 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
         .read(universalDraftControllerProvider.notifier)
         .submit();
     if (id == null || !mounted) return;
-    Navigator.of(context).pop(true);
     context.showSuccess(context.l10n.createSuccessToast);
+    // Reset to go back to universal selection screen for next ticket
+    // Delay slightly to let toast show and AnimatedSwitcher transition smoothly
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
+    ref.read(universalDraftControllerProvider.notifier).reset();
   }
 
   @override

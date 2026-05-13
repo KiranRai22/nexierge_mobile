@@ -1166,12 +1166,27 @@ class _CatalogStepDetailsState
   }
 
   Future<void> _submit() async {
-    final confirmed = await ConfirmTicketSheet.show(context);
-    if (confirmed != true || !mounted) return;
-    final id = await ref.read(catalogDraftControllerProvider.notifier).submit();
-    if (id == null || !mounted) return;
-    Navigator.of(context).pop(true);
-    context.showSuccess(context.l10n.createSuccessToast);
+    final ctl = ref.read(catalogDraftControllerProvider.notifier);
+    String? errorMsg;
+    final ok = await ConfirmTicketSheet.show(
+      context,
+      onConfirm: () async {
+        try {
+          final id = await ctl.submit();
+          return id != null;
+        } catch (e) {
+          errorMsg = e.toString();
+          return false;
+        }
+      },
+    );
+    if (!mounted || ok == null) return;
+    if (ok) {
+      context.showSuccess(context.l10n.createSuccessToast);
+      ctl.reset();
+    } else {
+      context.showFailure(errorMsg ?? context.l10n.unknownError);
+    }
   }
 
   @override

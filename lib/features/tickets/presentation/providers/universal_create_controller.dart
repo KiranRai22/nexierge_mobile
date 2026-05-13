@@ -129,6 +129,9 @@ class UniversalDraftController
   @override
   UniversalDraftState build() => const UniversalDraftState();
 
+  /// Reset to initial state for consecutive ticket creation.
+  void reset() => state = const UniversalDraftState();
+
   void togglePick(UniversalItem item) {
     final next = {...state.picks};
     if (next.containsKey(item.id)) {
