@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
+import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/name_validator.dart';
@@ -431,6 +432,51 @@ class _ProfileBodyState extends State<_ProfileBody> {
               ProfilePreferencesSection(),
               const SizedBox(height: 24),
               const ProfileLogoutButton(),
+              const SizedBox(height: 16),
+              // Terms & Conditions and Privacy Policy buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        // TODO: Navigate to Terms & Conditions
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ColorPalette.opsPurple,
+                        side: const BorderSide(color: ColorPalette.opsPurple),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Terms & Conditions',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        // TODO: Navigate to Privacy Policy
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: ColorPalette.opsPurple,
+                        side: const BorderSide(color: ColorPalette.opsPurple),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: const Text(
+                        'Privacy Policy',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const ProfileFooter(version: '1.0.0'),
             ],
           ),
