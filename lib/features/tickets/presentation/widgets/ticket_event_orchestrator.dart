@@ -145,14 +145,12 @@ class _TicketEventOrchestratorState
     switch (tab) {
       case TicketsMainTab.incoming:
         return s.toastTabIncoming;
-      case TicketsMainTab.today:
-        return s.toastTabToday;
+      case TicketsMainTab.inProgress:
+        return s.subTabInProgress;
+      case TicketsMainTab.backlog:
+        return s.subTabBacklog;
       case TicketsMainTab.done:
         return s.toastTabDone;
-      case TicketsMainTab.backlog:
-        // No bucket currently routes to backlog; fall back to "Today" so
-        // the toast subtitle stays readable if that mapping ever changes.
-        return s.toastTabToday;
     }
   }
 
@@ -175,9 +173,7 @@ class _TicketEventOrchestratorState
       'Nov',
       'Dec',
     ];
-    final hour12 = dt.hour == 0
-        ? 12
-        : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+    final hour12 = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
     final minute = dt.minute.toString().padLeft(2, '0');
     final period = dt.hour >= 12 ? 'PM' : 'AM';
     final now = DateTime.now();
@@ -189,13 +185,13 @@ class _TicketEventOrchestratorState
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<TicketChangeEvent>>(
-      ticketEventStreamProvider,
-      (_, next) {
-        final event = next.valueOrNull;
-        if (event != null) _onEvent(event);
-      },
-    );
+    ref.listen<AsyncValue<TicketChangeEvent>>(ticketEventStreamProvider, (
+      _,
+      next,
+    ) {
+      final event = next.valueOrNull;
+      if (event != null) _onEvent(event);
+    });
     return widget.child;
   }
 }
@@ -219,7 +215,7 @@ extension on _ToastBucket {
       case _ToastBucket.accepted:
       case _ToastBucket.inProgress:
       case _ToastBucket.onHold:
-        return TicketsMainTab.today;
+        return TicketsMainTab.inProgress;
       case _ToastBucket.done:
       case _ToastBucket.canceledOrExpired:
         return TicketsMainTab.done;
@@ -261,7 +257,9 @@ extension on _ToastBucket {
   String title(AppLocalizations s, int count) {
     switch (this) {
       case _ToastBucket.newTicket:
-        return count == 1 ? s.toastNewTicketTitle : s.toastNewTicketsTitle(count);
+        return count == 1
+            ? s.toastNewTicketTitle
+            : s.toastNewTicketsTitle(count);
       case _ToastBucket.accepted:
         return count == 1
             ? s.toastTicketAcceptedTitle

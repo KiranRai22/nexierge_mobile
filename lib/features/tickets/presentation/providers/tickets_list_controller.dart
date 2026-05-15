@@ -82,23 +82,24 @@ final ticketsSearchQueryProvider = StateProvider.autoDispose<String>(
 
 /// Reactive view model from v2 paged providers. Derives KPI counts
 /// from the v2 tabs and computes overdue tickets locally.
+/// Status-based model: incoming, inProgress, backlog, done.
 final ticketsListProvider = Provider.autoDispose<TicketsListView>((ref) {
   final incomingState = ref.watch(
     ticketsPagedProvider(specForTab(TicketsTab.incoming)),
   );
   final inProgressState = ref.watch(
-    ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)),
+    ticketsPagedProvider(specForTab(TicketsTab.inProgress)),
   );
-  final todayDoneState = ref.watch(
-    ticketsPagedProvider(specForTab(TicketsTab.todayDone)),
-  );
+  // Note: todayDoneState removed in status-based model.
+  // Use doneState for completed tickets (history).
 
   final incomingItems =
       incomingState.valueOrNull?.items.cast<Ticket>() ?? const [];
   final inProgressItems =
       inProgressState.valueOrNull?.items.cast<Ticket>() ?? const [];
-  final completedTodayItems =
-      todayDoneState.valueOrNull?.items.cast<Ticket>() ?? const [];
+  // completedTodayItems removed - status-based model doesn't track
+  // today's done separately. Done tab has All/Today filters instead.
+  final completedTodayItems = <Ticket>[];
 
   final kpiIncoming = incomingState.valueOrNull?.itemsTotal ?? 0;
   final kpiInProgress = inProgressState.valueOrNull?.itemsTotal ?? 0;

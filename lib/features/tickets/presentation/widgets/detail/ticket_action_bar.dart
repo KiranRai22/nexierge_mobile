@@ -93,7 +93,10 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         content: Text(s.ticketActionHoldConfirmMessage),
         actions: [
           TextButton(
-            onPressed: tapSound(() => Navigator.of(ctx).pop(false), SoundCategory.back),
+            onPressed: tapSound(
+              () => Navigator.of(ctx).pop(false),
+              SoundCategory.back,
+            ),
             child: Text(s.ticketActionCancel),
           ),
           ElevatedButton(
@@ -132,23 +135,34 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   }
 
   // ────────── ACCEPT (NEW → IN_PROGRESS) ──────────
-  // Direct accept-and-start flow: no bottom sheet, immediate action with
-  // default 15-minute due time. Matches the quick card accept-and-start behavior.
+  // Shows Start Work confirmation bottom sheet, then calls API to move
+  // ticket to IN_PROGRESS. Matches the card accept-and-start behavior.
 
   Future<void> _onAcceptIncoming() async {
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedAccept;
-    // V2: single "Start" action → IN_PROGRESS via /ticketsv2/start/{id}.
-    // Use 15-minute default due time like the card quick action.
-    final dueAt = ServerClock.now().add(const Duration(minutes: 15));
-    await _withGuard(
-      () => _runOptimistic(
-        newStatus: 'IN_PROGRESS',
-        apiCall: () => ref
-            .read(ticketRepositoryProvider)
-            .startTicketV2(ticketId: t.id, dueAt: dueAt),
-        failureMessage: failureMsg,
-      ),
+
+    // Show Start Work confirmation bottom sheet first
+    await showStartWorkConfirmation(
+      context: context,
+      onConfirm: () async {
+        // V2: single "Start" action → IN_PROGRESS via /ticketsv2/start/{id}.
+        // Use 15-minute default due time like the card quick action.
+        final dueAt = ServerClock.now().add(const Duration(minutes: 15));
+        await _withGuard(
+          () => _runOptimistic(
+            newStatus: 'IN_PROGRESS',
+            apiCall: () => ref
+                .read(ticketRepositoryProvider)
+                .startTicketV2(ticketId: t.id, dueAt: dueAt),
+            failureMessage: failureMsg,
+          ),
+        );
+        // Navigate back to tickets list after successful start
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      },
     );
   }
 
@@ -326,7 +340,9 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
     await _withGuard(() async {
       try {
-        await ref.read(ticketRepositoryProvider).changeTicketStatus(
+        await ref
+            .read(ticketRepositoryProvider)
+            .changeTicketStatus(
               ticketId: t.id,
               newStatus: 'CANCELED',
               resolutionNote: reason,
@@ -546,31 +562,35 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
                     child: _SecondaryButton(
                       icon: LucideIcons.calendar,
                       label: s.ticketActionChangeDue,
-                      onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+                      onTap: _busy
+                          ? null
+                          : tapSound(_onChangeDue, SoundCategory.preference),
                     ),
                   ),
                   if (showCancel) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _SecondaryButton(
-                      icon: LucideIcons.circleX,
-                      label: s.ticketActionCancel,
-                      onTap: _busy ? null : tapSound(_onCancel, SoundCategory.back),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _SecondaryButton(
+                        icon: LucideIcons.circleX,
+                        label: s.ticketActionCancel,
+                        onTap: _busy
+                            ? null
+                            : tapSound(_onCancel, SoundCategory.back),
+                      ),
                     ),
-                  ),
-                ],
-                if (showReset) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _SecondaryButton(
-                      icon: LucideIcons.rotateCcw,
-                      label: s.ticketActionReset,
-                      onTap: _busy ? null : tapSound(_onReset),
+                  ],
+                  if (showReset) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _SecondaryButton(
+                        icon: LucideIcons.rotateCcw,
+                        label: s.ticketActionReset,
+                        onTap: _busy ? null : tapSound(_onReset),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
-            ),
+              ),
             ],
             // if (showHold) ...[
             //   const SizedBox(height: 8),

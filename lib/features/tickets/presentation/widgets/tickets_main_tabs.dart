@@ -53,8 +53,8 @@ class TicketsMainTabs extends StatelessWidget {
     switch (tab) {
       case TicketsMainTab.incoming:
         return s.subTabIncoming;
-      case TicketsMainTab.today:
-        return s.subTabToday;
+      case TicketsMainTab.inProgress:
+        return s.subTabInProgress;
       case TicketsMainTab.backlog:
         return s.subTabBacklog;
       case TicketsMainTab.done:
@@ -138,4 +138,4 @@ class _TabItem extends StatelessWidget {
   }
 }
 
-enum TicketsMainTab { incoming, today, done, backlog }
+enum TicketsMainTab { incoming, inProgress, backlog, done }

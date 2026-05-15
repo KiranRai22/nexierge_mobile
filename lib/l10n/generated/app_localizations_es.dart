@@ -261,6 +261,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get subTabToday => 'Hoy';
 
   @override
+  String get subTabInProgress => 'En Curso';
+
+  @override
   String get subTabBacklog => 'Pendientes';
 
   @override
@@ -273,7 +276,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sectionInProgress => 'EN CURSO';
 
   @override
-  String get sectionCompletedToday => 'COMPLETADOS HOY';
+  String get sectionCompletedToday => 'Hechos';
 
   @override
   String get ticketStatusBadgeOnHold => 'En espera';
@@ -1229,10 +1232,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionAcceptShort => 'Aceptar';
 
   @override
-  String get filterNewestFirst => 'Más reciente primero';
+  String get filterNewestFirst => 'Más reciente';
 
   @override
-  String get filterOldestFirst => 'Más antiguo primero';
+  String get filterOldestFirst => 'Más antiguo';
 
   @override
   String get filterThisWeek => 'Esta semana';

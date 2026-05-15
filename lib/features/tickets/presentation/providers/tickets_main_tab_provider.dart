@@ -2,14 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../widgets/tickets_main_tabs.dart';
 
-/// Provider for the selected main tab (Incoming, Today, Scheduled, Done).
-/// Default is Today — the operator's day-of view.
+/// Provider for the selected main tab (Incoming, In Progress, Backlog, Done).
+/// Default is In Progress — the operator's primary working view.
 final ticketsMainTabProvider = StateProvider<TicketsMainTab>((ref) {
-  return TicketsMainTab.today;
+  return TicketsMainTab.inProgress;
 });
 
-/// Provider for the selected filter within the current main tab
-/// Default is 'all' so the All chip is selected initially on Today tab
+/// Provider for the selected filter within the current main tab.
+/// Default is 'newest' for newest-first sort on all tabs.
 final ticketsFilterProvider = StateProvider<String?>((ref) {
-  return 'all';
+  return 'newest';
 });

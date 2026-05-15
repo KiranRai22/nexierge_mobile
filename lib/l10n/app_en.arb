@@ -94,12 +94,13 @@
 
   "subTabIncoming": "Incoming",
   "subTabToday": "Today",
+  "subTabInProgress": "In Progress",
   "subTabBacklog": "Backlog",
   "subTabDone": "Done",
 
   "sectionIncomingNow": "INCOMING NOW",
   "sectionInProgress": "IN PROGRESS",
-  "sectionCompletedToday": "COMPLETED TODAY",
+  "sectionCompletedToday": "Done",
 
   "ticketStatusBadgeOnHold": "On hold",
 
@@ -610,8 +611,8 @@
   },
   "actionAcceptShort": "Accept",
 
-  "filterNewestFirst": "Newest first",
-  "filterOldestFirst": "Oldest first",
+  "filterNewestFirst": "Newest",
+  "filterOldestFirst": "Oldest",
   "filterThisWeek": "This week",
   "filterThisMonth": "This month",
 

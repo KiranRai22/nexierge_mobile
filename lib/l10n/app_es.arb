@@ -89,12 +89,13 @@
 
   "subTabIncoming": "Entrantes",
   "subTabToday": "Hoy",
+  "subTabInProgress": "En Curso",
   "subTabBacklog": "Pendientes",
   "subTabDone": "Hechos",
 
   "sectionIncomingNow": "ENTRANTES AHORA",
   "sectionInProgress": "EN CURSO",
-  "sectionCompletedToday": "COMPLETADOS HOY",
+  "sectionCompletedToday": "Hechos",
 
   "ticketStatusBadgeOnHold": "En espera",
 
@@ -407,8 +408,8 @@
   },
   "actionAcceptShort": "Aceptar",
 
-  "filterNewestFirst": "Más reciente primero",
-  "filterOldestFirst": "Más antiguo primero",
+  "filterNewestFirst": "Más reciente",
+  "filterOldestFirst": "Más antiguo",
   "filterThisWeek": "Esta semana",
   "filterThisMonth": "Este mes",
 

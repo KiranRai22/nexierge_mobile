@@ -38,7 +38,12 @@ class TicketsFilterChips extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         children: filters.map((filter) {
           final isSelected = selectedFilter == filter.key;
-          final count = filterCounts?[filter.key];
+          // Only show counts for 'all' and 'today' filters on Done tab
+          // Newest/Oldest are sort filters and don't show counts
+          final showCount = filter.key == 'all' || filter.key == 'today';
+          final count = (showCount && filterCounts != null)
+              ? filterCounts![filter.key]
+              : null;
           return Padding(
             padding: const EdgeInsets.only(right: 6),
             child: _FilterChip(
@@ -60,32 +65,41 @@ class TicketsFilterChips extends StatelessWidget {
   ) {
     switch (tab) {
       case TicketsMainTab.incoming:
+      case TicketsMainTab.inProgress:
+      case TicketsMainTab.backlog:
+        // Status-based tabs: only newest/oldest sort filters
         return [
           _FilterOption('newest', s.filterNewestFirst),
           _FilterOption('oldest', s.filterOldestFirst),
         ];
-      case TicketsMainTab.today:
-        return [
-          _FilterOption('all', s.activityTypeAll),
-          // [ACCEPT_AND_START_FLOW] Accepted chip removed — NEW tickets now
-          // skip the ACCEPTED state entirely (Accept & Start → IN_PROGRESS).
-          // _FilterOption('accepted', s.statusAccepted),
-          _FilterOption('inprogress', s.statusInProgress),
-          _FilterOption('overdue', s.statusOverdue, isDanger: true),
-          _FilterOption('done', s.statusDone),
-        ];
-      case TicketsMainTab.backlog:
-        return [
-          _FilterOption('all', s.activityTypeAll),
-          _FilterOption('inprogress', s.statusInProgress),
-          _FilterOption('overdue', s.statusOverdue, isDanger: true),
-        ];
       case TicketsMainTab.done:
-        // ENHANCEMENT: Hide filters for done tab for now
-        return [];
+        // Done tab: All (history), Today (done today), Newest, Oldest
+        return [
+          _FilterOption('all', s.activityTypeAll),
+          _FilterOption('today', s.subTabToday),
+          _FilterOption('newest', s.filterNewestFirst),
+          _FilterOption('oldest', s.filterOldestFirst),
+        ];
     }
   }
 }
+
+// ─── LEGACY: Today/Backlog sub-filters (2026-05-16) ───────────────
+// Status-based model removed Today tab with sub-filters.
+// Kept for reference:
+// case TicketsMainTab.today:
+//   return [
+//     _FilterOption('all', s.activityTypeAll),
+//     _FilterOption('inprogress', s.statusInProgress),
+//     _FilterOption('overdue', s.statusOverdue, isDanger: true),
+//     _FilterOption('done', s.statusDone),
+//   ];
+// case TicketsMainTab.backlog:
+//   return [
+//     _FilterOption('all', s.activityTypeAll),
+//     _FilterOption('inprogress', s.statusInProgress),
+//     _FilterOption('overdue', s.statusOverdue, isDanger: true),
+//   ];
 
 class _FilterOption {
   final String key;

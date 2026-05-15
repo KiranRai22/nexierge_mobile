@@ -17,14 +17,16 @@ import 'session_providers.dart';
 /// "Oldest" filter chip flips this to oldest-first.
 enum TicketsSortOrder { newestFirst, oldestFirst }
 
-/// Identifier for one of the five logical ticket lists (v2). Used by the
-/// realtime listener to pick which provider to push events into.
+/// Identifier for the ticket lists (status-based).
+/// Used by the realtime listener to pick which provider to push events into.
 ///
-/// ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
-/// Replaced by ticketsv2 5-tab model. Kept for reference.
-/// Old enum: enum TicketsTab { incoming, today, backlog, done }
+/// ─── STATUS-BASED MODEL (2026-05-16) ─────────────────────────────
+/// Tabs aligned with ticket status: Incoming (NEW), In Progress (IN_PROGRESS),
+/// Backlog (BACKLOG), Done (DONE). Done tab has two variants:
+/// - done: History (all done tickets)
+/// - doneToday: Tickets completed today
 /// ─────────────────────────────────────────────────────────────────
-enum TicketsTab { incoming, todayInProgress, todayDone, backlog, doneHistory }
+enum TicketsTab { incoming, inProgress, backlog, done, doneToday }
 
 /// Configuration for a paged ticket list — turns each tab into a
 /// declarative spec the notifier uses to call the API and decide whether
@@ -66,18 +68,19 @@ class TicketsPagedSpec {
   });
 
   /// V2 endpoint tab this spec drives.
+  /// Done tab uses separate specs for history (done) and today (doneToday).
   TicketsV2Tab get v2Tab {
     switch (tab) {
       case TicketsTab.incoming:
         return TicketsV2Tab.incoming;
-      case TicketsTab.todayInProgress:
+      case TicketsTab.inProgress:
         return TicketsV2Tab.inProgress;
-      case TicketsTab.todayDone:
-        return TicketsV2Tab.doneToday;
       case TicketsTab.backlog:
         return TicketsV2Tab.backlog;
-      case TicketsTab.doneHistory:
+      case TicketsTab.done:
         return TicketsV2Tab.doneHistory;
+      case TicketsTab.doneToday:
+        return TicketsV2Tab.doneToday;
     }
   }
 
@@ -352,14 +355,13 @@ class TicketsPagedNotifier
     switch (_spec.tab) {
       case TicketsTab.incoming:
         return status == 'NEW';
-      case TicketsTab.todayInProgress:
+      case TicketsTab.inProgress:
         return status == 'IN_PROGRESS';
-      case TicketsTab.todayDone:
-        return status == 'DONE' && _isDoneToday(t);
       case TicketsTab.backlog:
         // Server-curated — never matches locally.
         return false;
-      case TicketsTab.doneHistory:
+      case TicketsTab.done:
+      case TicketsTab.doneToday:
         return status == 'DONE';
     }
   }
@@ -483,10 +485,10 @@ class TicketsPagedNotifier
 // ─────────────────────────────────────────────────────────────────
 
 const _kIncomingSpec = TicketsPagedSpec(tab: TicketsTab.incoming);
-const _kTodayInProgressSpec = TicketsPagedSpec(tab: TicketsTab.todayInProgress);
-const _kTodayDoneSpec = TicketsPagedSpec(tab: TicketsTab.todayDone);
+const _kInProgressSpec = TicketsPagedSpec(tab: TicketsTab.inProgress);
 const _kBacklogSpec = TicketsPagedSpec(tab: TicketsTab.backlog);
-const _kDoneHistorySpec = TicketsPagedSpec(tab: TicketsTab.doneHistory);
+const _kDoneSpec = TicketsPagedSpec(tab: TicketsTab.done);
+const _kDoneTodaySpec = TicketsPagedSpec(tab: TicketsTab.doneToday);
 
 /// Bucket predicate: ticket's timestamp falls on today's local calendar.
 bool _isSameLocalDay(int epochMs, DateTime now) {
@@ -516,18 +518,19 @@ final ticketsPagedProvider =
     >(TicketsPagedNotifier.new);
 
 /// Tab → spec used to look up the provider in the screen and listener.
+/// Status-based model: incoming, inProgress, backlog, done, doneToday.
 TicketsPagedSpec specForTab(TicketsTab tab) {
   switch (tab) {
     case TicketsTab.incoming:
       return _kIncomingSpec;
-    case TicketsTab.todayInProgress:
-      return _kTodayInProgressSpec;
-    case TicketsTab.todayDone:
-      return _kTodayDoneSpec;
+    case TicketsTab.inProgress:
+      return _kInProgressSpec;
     case TicketsTab.backlog:
       return _kBacklogSpec;
-    case TicketsTab.doneHistory:
-      return _kDoneHistorySpec;
+    case TicketsTab.done:
+      return _kDoneSpec;
+    case TicketsTab.doneToday:
+      return _kDoneTodaySpec;
   }
 }
 

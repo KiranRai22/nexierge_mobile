@@ -51,10 +51,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     // active — it's a persistent, session-scoped notifier.
     ref.read(ticketsTabActiveProvider.notifier).state = tab == ShellTab.tickets;
 
-    // When user selects tickets from bottom nav, always show Today tab with All filter
+    // When user selects tickets from bottom nav, show In Progress tab (default)
     if (tab == ShellTab.tickets) {
-      ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
-      ref.read(ticketsFilterProvider.notifier).state = 'all';
+      ref.read(ticketsMainTabProvider.notifier).state =
+          TicketsMainTab.inProgress;
+      ref.read(ticketsFilterProvider.notifier).state = 'newest';
     }
   }
 
@@ -63,7 +64,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     if (!mounted || !submitted) return;
     setState(() => _current = ShellTab.tickets);
     ref.read(ticketsTabActiveProvider.notifier).state = true;
-    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.inProgress;
     // Realtime usually pushes the new ticket within a few hundred ms, but
     // pull as a safety net in case the WS round-trip is slow or the
     // server's emit was missed.

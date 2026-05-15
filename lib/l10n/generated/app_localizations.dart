@@ -566,6 +566,12 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get subTabToday;
 
+  /// No description provided for @subTabInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get subTabInProgress;
+
   /// No description provided for @subTabBacklog.
   ///
   /// In en, this message translates to:
@@ -593,7 +599,7 @@ abstract class AppLocalizations {
   /// No description provided for @sectionCompletedToday.
   ///
   /// In en, this message translates to:
-  /// **'COMPLETED TODAY'**
+  /// **'Done'**
   String get sectionCompletedToday;
 
   /// No description provided for @ticketStatusBadgeOnHold.
@@ -2231,13 +2237,13 @@ abstract class AppLocalizations {
   /// No description provided for @filterNewestFirst.
   ///
   /// In en, this message translates to:
-  /// **'Newest first'**
+  /// **'Newest'**
   String get filterNewestFirst;
 
   /// No description provided for @filterOldestFirst.
   ///
   /// In en, this message translates to:
-  /// **'Oldest first'**
+  /// **'Oldest'**
   String get filterOldestFirst;
 
   /// No description provided for @filterThisWeek.

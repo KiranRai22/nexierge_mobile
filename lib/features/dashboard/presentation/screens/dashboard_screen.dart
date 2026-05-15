@@ -156,24 +156,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   void _navigateToInProgress() {
-    // Navigate to tickets page, select today tab and inprogress filter
+    // Navigate to tickets page, select In Progress tab
     widget.onSwitchTab(ShellTab.tickets);
-    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
-    ref.read(ticketsFilterProvider.notifier).state = 'inprogress';
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.inProgress;
+    ref.read(ticketsFilterProvider.notifier).state = 'newest';
   }
 
   void _navigateToOverdue() {
-    // Navigate to tickets page, select today tab and overdue filter
+    // Navigate to In Progress tab (overdue items are shown there)
     widget.onSwitchTab(ShellTab.tickets);
-    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
-    ref.read(ticketsFilterProvider.notifier).state = 'overdue';
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.inProgress;
+    ref.read(ticketsFilterProvider.notifier).state = 'newest';
   }
 
   void _navigateToNotStarted() {
-    // Navigate to tickets page, select today tab and accepted filter
+    // Navigate to Incoming tab (new tickets awaiting acceptance)
     widget.onSwitchTab(ShellTab.tickets);
-    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
-    ref.read(ticketsFilterProvider.notifier).state = 'accepted';
+    ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.incoming;
+    ref.read(ticketsFilterProvider.notifier).state = 'newest';
   }
 
   bool _resolveDark(BuildContext context, ThemeMode? mode) {
