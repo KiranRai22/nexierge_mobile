@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/my_ticket.dart';
+import 'session_providers.dart';
 
 /// Sort direction for the ticket list. Newest-first is the default; the
 /// "Oldest" filter chip flips this to oldest-first.
@@ -533,3 +534,30 @@ TicketsPagedSpec specForTab(TicketsTab tab) {
 /// All v2 tabs — used by the realtime listener to broadcast events
 /// into every paged provider that's currently alive.
 const List<TicketsTab> kAllTicketsTabs = TicketsTab.values;
+
+/// Creates a [TicketsPagedSpec] for the given tab with the department filter
+/// applied from [departmentFilterProvider]. This ensures API requests include
+/// the selected department filter.
+///
+/// The API only supports a single department filter, so when multiple
+/// departments are selected, we use the first one's ID. For full multi-select
+/// support, the backend would need to accept a list of department IDs.
+final ticketsPagedSpecProvider = Provider.family<TicketsPagedSpec, TicketsTab>((
+  ref,
+  tab,
+) {
+  final baseSpec = specForTab(tab);
+  final selectedDepts = ref.watch(departmentFilterProvider);
+
+  // API only supports single department; use first selected or null for all
+  final departmentId = selectedDepts.isNotEmpty ? selectedDepts.first.id : null;
+
+  return TicketsPagedSpec(
+    tab: baseSpec.tab,
+    perPage: baseSpec.perPage,
+    departmentId: departmentId,
+    createdAtStartDate: baseSpec.createdAtStartDate,
+    createdAtEndDate: baseSpec.createdAtEndDate,
+    ticketType: baseSpec.ticketType,
+  );
+});

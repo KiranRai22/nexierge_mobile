@@ -27,9 +27,7 @@ class UniversalRequestService {
     try {
       final response = await _dio.get(
         url,
-        options: Options(
-          headers: {'accept': 'application/json'},
-        ),
+        options: Options(headers: {'accept': 'application/json'}),
       );
       final status = response.statusCode ?? 0;
       if (status < 200 || status >= 300) {
@@ -56,12 +54,16 @@ class UniversalRequestService {
   }) async {
     try {
       print('[UniversalRequestService] Creating order at: $_endpoint');
-      
+
       final orderRequest = UniversalRequestOrderDto(
         guestStayId: guestStayId,
         contactId: contactId,
         hotelId: hotelId,
         orderItems: orderItems,
+      );
+
+      print(
+        '[UniversalRequestService] Payload: ${jsonEncode(orderRequest.toJson())}',
       );
 
       final response = await _dio.post(
@@ -75,7 +77,9 @@ class UniversalRequestService {
         ),
       );
 
-      print('[UniversalRequestService] Response status: ${response.statusCode}');
+      print(
+        '[UniversalRequestService] Response status: ${response.statusCode}',
+      );
       print('[UniversalRequestService] Response data: ${response.data}');
 
       final data = response.data;
@@ -150,7 +154,9 @@ class UniversalRequestService {
 }
 
 /// Riverpod provider for UniversalRequestService
-final universalRequestServiceProvider = Provider<UniversalRequestService>((ref) {
+final universalRequestServiceProvider = Provider<UniversalRequestService>((
+  ref,
+) {
   final dio = ref.watch(authedDioProvider);
   return UniversalRequestService(dio);
 });

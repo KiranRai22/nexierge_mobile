@@ -620,6 +620,7 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
+                            SoundManager.instance.play(SoundCategory.button);
                             final picked = await RoomPickerSheet.showCheckedIn(
                               context,
                             );
@@ -788,7 +789,7 @@ class _UniversalSummaryCard extends StatelessWidget {
                 ),
               ),
               GestureDetector(
-                onTap: onEdit,
+                onTap: tapSound(onEdit, SoundCategory.preference),
                 behavior: HitTestBehavior.opaque,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

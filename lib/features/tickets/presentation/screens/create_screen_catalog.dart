@@ -848,12 +848,14 @@ class _CartLineRow extends StatelessWidget {
           icon: Icons.edit_outlined,
           color: ColorPalette.opsPurpleDark,
           onTap: onEdit,
+          soundCategory: SoundCategory.preference,
         ),
         const SizedBox(width: 4),
         _LineActionIcon(
           icon: Icons.delete_outline_rounded,
           color: ColorPalette.error,
           onTap: onDelete,
+          soundCategory: SoundCategory.back,
         ),
       ],
     );
@@ -864,16 +866,18 @@ class _LineActionIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
+  final SoundCategory soundCategory;
   const _LineActionIcon({
     required this.icon,
     required this.color,
     required this.onTap,
+    this.soundCategory = SoundCategory.button,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: tapSound(onTap, soundCategory),
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
         width: 28,
@@ -1242,6 +1246,7 @@ class _CatalogStepDetailsState
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
+                            SoundManager.instance.play(SoundCategory.button);
                             final picked = await RoomPickerSheet.showCheckedIn(
                               context,
                             );
@@ -1474,7 +1479,7 @@ class _CatalogSummaryCard extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: onEdit,
+                  onTap: tapSound(onEdit, SoundCategory.preference),
                   behavior: HitTestBehavior.opaque,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

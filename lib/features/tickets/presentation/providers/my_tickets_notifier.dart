@@ -210,9 +210,10 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
   }
 
   String _labelFor(MyTicket t) {
+    final title = t.issueSummary.trim();
+    if (title.isNotEmpty) return title;
     final room = t.roomDetails?.onbRoomNumber ?? '';
     if (room.isNotEmpty) return 'Room $room';
-    if (t.guestName.isNotEmpty) return t.guestName;
     return '';
   }
 
@@ -296,7 +297,10 @@ final isFreshlyArrivedProvider = Provider.family<bool, String>((ref, ticketId) {
 /// last [kRecentChangeHighlightWindow]. Drives the green-border emphasis
 /// on [TicketCardNew]. Wall-clock guarded so a stale entry between the
 /// notifier-side prune timer and the next rebuild does not over-highlight.
-final isRecentlyChangedProvider = Provider.family<bool, String>((ref, ticketId) {
+final isRecentlyChangedProvider = Provider.family<bool, String>((
+  ref,
+  ticketId,
+) {
   final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
   final stamp = state?.recentChangeAt[ticketId];
   if (stamp == null) return false;

@@ -97,7 +97,8 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
     await Future<void>.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
     final tab = _ticketsTabFromMain(ref.read(ticketsMainTabProvider));
-    await ref.read(ticketsPagedProvider(specForTab(tab)).notifier).refresh();
+    final spec = ref.read(ticketsPagedSpecProvider(tab));
+    await ref.read(ticketsPagedProvider(spec).notifier).refresh();
   }
 
   /// Check if a tab has filters available
@@ -306,18 +307,34 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   /// match the server-reported itemsTotal. Falls back to zero while loading.
   Map<TicketsMainTab, int> _calculateTabCounts() {
     // V2: Read from paged providers instead of legacy myTicketsNotifier
-    final incomingState = ref.watch(
-      ticketsPagedProvider(specForTab(TicketsTab.incoming)),
-    ).valueOrNull;
-    final inProgressState = ref.watch(
-      ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)),
-    ).valueOrNull;
-    final backlogState = ref.watch(
-      ticketsPagedProvider(specForTab(TicketsTab.backlog)),
-    ).valueOrNull;
-    final doneState = ref.watch(
-      ticketsPagedProvider(specForTab(TicketsTab.doneHistory)),
-    ).valueOrNull;
+    final incomingState = ref
+        .watch(
+          ticketsPagedProvider(
+            ref.watch(ticketsPagedSpecProvider(TicketsTab.incoming)),
+          ),
+        )
+        .valueOrNull;
+    final inProgressState = ref
+        .watch(
+          ticketsPagedProvider(
+            ref.watch(ticketsPagedSpecProvider(TicketsTab.todayInProgress)),
+          ),
+        )
+        .valueOrNull;
+    final backlogState = ref
+        .watch(
+          ticketsPagedProvider(
+            ref.watch(ticketsPagedSpecProvider(TicketsTab.backlog)),
+          ),
+        )
+        .valueOrNull;
+    final doneState = ref
+        .watch(
+          ticketsPagedProvider(
+            ref.watch(ticketsPagedSpecProvider(TicketsTab.doneHistory)),
+          ),
+        )
+        .valueOrNull;
 
     return {
       TicketsMainTab.incoming: incomingState?.itemsTotal ?? 0,
@@ -333,12 +350,20 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   /// (from inProgress provider) + Done (from doneToday provider).
   Map<String, int> _todayFilterCounts() {
     // V2: Derive from inProgress + doneToday paged providers
-    final inProgressState = ref.watch(
-      ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)),
-    ).valueOrNull;
-    final doneTodayState = ref.watch(
-      ticketsPagedProvider(specForTab(TicketsTab.todayDone)),
-    ).valueOrNull;
+    final inProgressState = ref
+        .watch(
+          ticketsPagedProvider(
+            ref.watch(ticketsPagedSpecProvider(TicketsTab.todayInProgress)),
+          ),
+        )
+        .valueOrNull;
+    final doneTodayState = ref
+        .watch(
+          ticketsPagedProvider(
+            ref.watch(ticketsPagedSpecProvider(TicketsTab.todayDone)),
+          ),
+        )
+        .valueOrNull;
 
     if (inProgressState == null && doneTodayState == null) {
       return const {'all': 0, 'inprogress': 0, 'overdue': 0, 'done': 0};
@@ -364,9 +389,13 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   /// while the cache is still loading.
   Map<String, int> _backlogFilterCounts() {
     // V2: Derive from backlog paged provider
-    final backlogState = ref.watch(
-      ticketsPagedProvider(specForTab(TicketsTab.backlog)),
-    ).valueOrNull;
+    final backlogState = ref
+        .watch(
+          ticketsPagedProvider(
+            ref.watch(ticketsPagedSpecProvider(TicketsTab.backlog)),
+          ),
+        )
+        .valueOrNull;
 
     if (backlogState == null) {
       return const {'all': 0, 'inprogress': 0, 'overdue': 0};
@@ -397,9 +426,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
     // on the active filter chip (all/inprogress/overdue use todayInProgress;
     // done uses todayDone).
     final filter = ref.watch(ticketsFilterProvider);
-    return _PagedTicketsTabList(
-      tab: _ticketsTabFromMain(mainTab, filter),
-    );
+    return _PagedTicketsTabList(tab: _ticketsTabFromMain(mainTab, filter));
   }
 }
 
@@ -608,15 +635,22 @@ VoidCallback _acceptHandler(
     if (ref.read(ticketBusyProvider).contains(ticket.id)) return;
     final busy = ref.read(ticketBusyProvider.notifier)..mark(ticket.id);
     for (final tab in kAllTicketsTabs) {
+      final spec = ref.read(ticketsPagedSpecProvider(tab));
       ref
-          .read(ticketsPagedProvider(specForTab(tab)).notifier)
+          .read(ticketsPagedProvider(spec).notifier)
           .markTicketTransitioning(ticket.id);
     }
+    final incomingSpec = ref.read(
+      ticketsPagedSpecProvider(TicketsTab.incoming),
+    );
+    final todayInProgressSpec = ref.read(
+      ticketsPagedSpecProvider(TicketsTab.todayInProgress),
+    );
     ref
-        .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
+        .read(ticketsPagedProvider(incomingSpec).notifier)
         .updateTabCountImmediate(delta: -1);
     ref
-        .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+        .read(ticketsPagedProvider(todayInProgressSpec).notifier)
         .updateTabCountImmediate(delta: 1);
     try {
       final dueAt = ServerClock.now()
@@ -630,22 +664,18 @@ VoidCallback _acceptHandler(
             notes: null,
           );
       ref
-          .read(
-            ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
-          )
+          .read(ticketsPagedProvider(incomingSpec).notifier)
           .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
       ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+          .read(ticketsPagedProvider(todayInProgressSpec).notifier)
           .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
       ref.read(myTicketsNotifierProvider.notifier).refresh();
     } catch (e) {
       ref
-          .read(
-            ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
-          )
+          .read(ticketsPagedProvider(incomingSpec).notifier)
           .updateTabCountImmediate(delta: 1);
       ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+          .read(ticketsPagedProvider(todayInProgressSpec).notifier)
           .updateTabCountImmediate(delta: -1);
       if (context.mounted) context.showFailure(e.toString());
     } finally {
@@ -677,16 +707,20 @@ Future<void> _startWorkHandler(
     onConfirm: () async {
       final busy = ref.read(ticketBusyProvider.notifier)..mark(ticket.id);
       for (final tab in kAllTicketsTabs) {
+        final spec = ref.read(ticketsPagedSpecProvider(tab));
         ref
-            .read(ticketsPagedProvider(specForTab(tab)).notifier)
+            .read(ticketsPagedProvider(spec).notifier)
             .markTicketTransitioning(ticket.id);
       }
+      final todayInProgressSpec = ref.read(
+        ticketsPagedSpecProvider(TicketsTab.todayInProgress),
+      );
       try {
         await ref
             .read(ticketRepositoryProvider)
             .changeTicketStatus(ticketId: ticket.id, newStatus: 'IN_PROGRESS');
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+            .read(ticketsPagedProvider(todayInProgressSpec).notifier)
             .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
         ref.read(myTicketsNotifierProvider.notifier).refresh();
       } catch (e) {
@@ -710,33 +744,40 @@ Future<void> _markDoneHandler(
     onConfirm: (note) async {
       final busy = ref.read(ticketBusyProvider.notifier)..mark(ticket.id);
       for (final tab in kAllTicketsTabs) {
+        final spec = ref.read(ticketsPagedSpecProvider(tab));
         ref
-            .read(ticketsPagedProvider(specForTab(tab)).notifier)
+            .read(ticketsPagedProvider(spec).notifier)
             .markTicketTransitioning(ticket.id);
       }
+      final todayInProgressSpec = ref.read(
+        ticketsPagedSpecProvider(TicketsTab.todayInProgress),
+      );
+      final doneHistorySpec = ref.read(
+        ticketsPagedSpecProvider(TicketsTab.doneHistory),
+      );
       ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+          .read(ticketsPagedProvider(todayInProgressSpec).notifier)
           .updateTabCountImmediate(delta: -1);
       ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.doneHistory)).notifier)
+          .read(ticketsPagedProvider(doneHistorySpec).notifier)
           .updateTabCountImmediate(delta: 1);
       try {
         await ref
             .read(ticketRepositoryProvider)
             .markDoneWithNote(ticketId: ticket.id, resolutionNote: note);
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+            .read(ticketsPagedProvider(todayInProgressSpec).notifier)
             .updateTicketStatusImmediate(ticket.id, 'DONE');
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.doneHistory)).notifier)
+            .read(ticketsPagedProvider(doneHistorySpec).notifier)
             .updateTicketStatusImmediate(ticket.id, 'DONE');
         ref.read(myTicketsNotifierProvider.notifier).refresh();
       } catch (e) {
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+            .read(ticketsPagedProvider(todayInProgressSpec).notifier)
             .updateTabCountImmediate(delta: 1);
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.doneHistory)).notifier)
+            .read(ticketsPagedProvider(doneHistorySpec).notifier)
             .updateTabCountImmediate(delta: -1);
         if (context.mounted) context.showFailure(e.toString());
         rethrow;
@@ -781,15 +822,14 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
     final pos = _scrollCtl.position;
     // Trigger when within ~3 ticket cards (~300px) of the bottom.
     if (pos.pixels >= pos.maxScrollExtent - 300) {
-      ref
-          .read(ticketsPagedProvider(specForTab(widget.tab)).notifier)
-          .loadNextPage();
+      final spec = ref.read(ticketsPagedSpecProvider(widget.tab));
+      ref.read(ticketsPagedProvider(spec).notifier).loadNextPage();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final spec = specForTab(widget.tab);
+    final spec = ref.watch(ticketsPagedSpecProvider(widget.tab));
     final asyncState = ref.watch(ticketsPagedProvider(spec));
 
     // Keep sort order in sync with the filter chip ('newest'/'oldest').
@@ -802,7 +842,10 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
     // Sync sort order after build to prevent infinite loop
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(ticketsPagedProvider(spec).notifier).setSortOrder(order);
+        final currentSpec = ref.read(ticketsPagedSpecProvider(widget.tab));
+        ref
+            .read(ticketsPagedProvider(currentSpec).notifier)
+            .setSortOrder(order);
       }
     });
 
@@ -848,9 +891,11 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
             }
             final ticket = tickets[index];
             return RepaintBoundary(
+              key: ValueKey('ticket_card_${ticket.id}'),
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TicketCardNew(
+                  key: ValueKey('ticket_${ticket.id}'),
                   ticket: ticket,
                   onTap: _openHandler(context, ticket),
                   onAccept: _acceptHandler(context, ref, ticket),

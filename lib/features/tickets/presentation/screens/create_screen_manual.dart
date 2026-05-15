@@ -115,6 +115,7 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
+                            SoundManager.instance.play(SoundCategory.button);
                             final picked = await RoomPickerSheet.showCheckedIn(
                               context,
                             );
@@ -304,6 +305,7 @@ class _DepartmentField extends ConsumerWidget {
       onTap: isLoading
           ? null
           : () async {
+              SoundManager.instance.play(SoundCategory.button);
               final pickedId = await DepartmentPickerSheet.show(context);
               if (pickedId != null) {
                 final picked = depts.firstWhere((d) => d.id == pickedId);
@@ -367,7 +369,7 @@ class _SourceChips extends StatelessWidget {
         final (src, emoji, label) = entry;
         final isSelected = selected == src;
         return GestureDetector(
-          onTap: () => onSelect(src),
+          onTap: tapSound(() => onSelect(src), SoundCategory.preference),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 140),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

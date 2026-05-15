@@ -24,8 +24,8 @@ class TicketChangeEvent {
   /// Status after the change. Null for [TicketChangeKind.deleted].
   final String? newStatus;
 
-  /// Best-effort user-facing label for the ticket (room number, code, or
-  /// guest name). Used by the toast subtitle. Empty string when unknown.
+  /// Best-effort user-facing label for the ticket (issue summary / title,
+  /// falling back to room number). Used by the toast subtitle. Empty string when unknown.
   final String label;
 
   /// Ticket type (MANUAL / CATALOG / UNIVERSAL — server-side `type` field).
