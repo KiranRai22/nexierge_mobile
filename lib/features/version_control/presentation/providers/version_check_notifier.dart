@@ -1,0 +1,85 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/services/app_info_service.dart';
+import '../../data/repositories/version_control_repository_impl.dart';
+import '../../domain/entities/app_version.dart';
+
+/// Result of comparing the installed version against the server's latest.
+sealed class VersionCheckResult {
+  const VersionCheckResult();
+}
+
+/// App is up to date — no action required.
+class VersionUpToDate extends VersionCheckResult {
+  const VersionUpToDate();
+}
+
+/// A newer version is available but the user can choose to update later.
+class VersionUpdateOptional extends VersionCheckResult {
+  final AppVersion version;
+  const VersionUpdateOptional(this.version);
+}
+
+/// A newer version is required — the user cannot proceed without updating.
+class VersionUpdateForced extends VersionCheckResult {
+  final AppVersion version;
+  const VersionUpdateForced(this.version);
+}
+
+/// Checks the backend version-control API once per session and exposes the
+/// result as [AsyncValue<VersionCheckResult>]. The notifier is persistent
+/// (no autoDispose) because it gates app usage for force updates.
+class VersionCheckNotifier
+    extends AsyncNotifier<VersionCheckResult> {
+  @override
+  Future<VersionCheckResult> build() async {
+    return _check();
+  }
+
+  Future<VersionCheckResult> _check() async {
+    try {
+      final repo = ref.read(versionControlRepositoryProvider);
+      final appInfo = ref.read(appInfoServiceProvider);
+
+      final latest = await repo.fetchLatestVersion();
+
+      // Pick the version string for the running platform.
+      final serverVersion =
+          Platform.isIOS ? latest.iosVersion : latest.androidVersion;
+
+      if (serverVersion.isEmpty) {
+        return const VersionUpToDate();
+      }
+
+      if (!appInfo.isOutdated(serverVersion)) {
+        return const VersionUpToDate();
+      }
+
+      return latest.updateType == UpdateType.force
+          ? VersionUpdateForced(latest)
+          : VersionUpdateOptional(latest);
+    } catch (e, st) {
+      debugPrint('[VersionCheck] Failed: $e\n$st');
+      // On any error (network, server, etc.) treat as up-to-date so the
+      // operator is never blocked by a transient failure.
+      return const VersionUpToDate();
+    }
+  }
+
+  Future<void> recheck() async {
+    state = const AsyncLoading<VersionCheckResult>().copyWithPrevious(state);
+    state = AsyncData(await _check());
+  }
+
+  /// Store URL for the running platform, falling back to an empty string.
+  String storeUrl(AppVersion version) =>
+      Platform.isIOS ? version.iosLink : version.androidLink;
+}
+
+final versionCheckProvider =
+    AsyncNotifierProvider<VersionCheckNotifier, VersionCheckResult>(
+      VersionCheckNotifier.new,
+    );

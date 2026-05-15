@@ -1,3 +1,9 @@
+// ─── V2 TICKETS SCREEN (2026-05-14) ────────────────────────────
+// Implements the v2 5-tab model with 4 main tabs (Incoming, Today,
+// Backlog, Done) and nested Today sub-tabs (All, In Progress, Overdue).
+// Uses v2 paged providers for KPI counts and filtering.
+// ─────────────────────────────────────────────────────────────────
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -26,7 +32,6 @@ import '../widgets/tickets_top_bar.dart';
 import '../widgets/tickets_main_tabs.dart';
 import '../widgets/tickets_filter_chips.dart';
 import '../widgets/filter_department_sheet.dart';
-import '../widgets/acknowledge_ticket_bottom_sheet.dart';
 import '../widgets/mark_done_bottom_sheet.dart';
 import '../widgets/start_work_confirmation_bottom_sheet.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
@@ -129,6 +134,9 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       if (prev == next) return;
       switch (next) {
         case TicketsMainTab.today:
+          // Reset Today to 'all' filter (shows todayInProgress + todayDone combined)
+          ref.read(ticketsFilterProvider.notifier).state = 'all';
+          break;
         case TicketsMainTab.backlog:
           ref.read(ticketsFilterProvider.notifier).state = 'all';
           break;
@@ -294,61 +302,87 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
     );
   }
 
-  /// Top-tab badge counts. Sourced from the realtime cache so they always
-  /// match the filter-chip counts on the Today tab. Falls back to zero
-  /// while the cache is still loading.
+  /// Top-tab badge counts. Sourced from v2 paged providers so they always
+  /// match the server-reported itemsTotal. Falls back to zero while loading.
   Map<TicketsMainTab, int> _calculateTabCounts() {
-    final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
-    if (state == null) {
-      return const {
-        TicketsMainTab.incoming: 0,
-        TicketsMainTab.today: 0,
-        TicketsMainTab.backlog: 0,
-        TicketsMainTab.done: 0,
-      };
-    }
+    // V2: Read from paged providers instead of legacy myTicketsNotifier
+    final incomingState = ref.watch(
+      ticketsPagedProvider(specForTab(TicketsTab.incoming)),
+    ).valueOrNull;
+    final inProgressState = ref.watch(
+      ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)),
+    ).valueOrNull;
+    final backlogState = ref.watch(
+      ticketsPagedProvider(specForTab(TicketsTab.backlog)),
+    ).valueOrNull;
+    final doneState = ref.watch(
+      ticketsPagedProvider(specForTab(TicketsTab.doneHistory)),
+    ).valueOrNull;
+
     return {
-      TicketsMainTab.incoming: state.incomingCount,
-      TicketsMainTab.today: state.todayAllCount,
-      TicketsMainTab.backlog: state.backlogAllCount,
-      TicketsMainTab.done: state.todayDoneCount,
+      TicketsMainTab.incoming: incomingState?.itemsTotal ?? 0,
+      // Today badge = inProgress only (not including doneToday)
+      TicketsMainTab.today: inProgressState?.itemsTotal ?? 0,
+      TicketsMainTab.backlog: backlogState?.itemsTotal ?? 0,
+      TicketsMainTab.done: doneState?.itemsTotal ?? 0,
     };
   }
 
-  /// Today filter-chip counts derived from the realtime cache. Returns
-  /// zeroes while the cache is still loading.
+  /// Today filter-chip counts from v2 paged providers. Returns zeroes
+  /// while the cache is still loading. Includes All, In Progress, Overdue
+  /// (from inProgress provider) + Done (from doneToday provider).
   Map<String, int> _todayFilterCounts() {
-    final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
-    if (state == null) {
-      // [ACCEPT_AND_START_FLOW] Accepted bucket removed — all NEW tickets go
-      // straight to IN_PROGRESS now, so the chip is gone.
-      // return const {'all': 0, 'accepted': 0, 'inprogress': 0, 'overdue': 0};
-      return const {'all': 0, 'inprogress': 0, 'overdue': 0};
+    // V2: Derive from inProgress + doneToday paged providers
+    final inProgressState = ref.watch(
+      ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)),
+    ).valueOrNull;
+    final doneTodayState = ref.watch(
+      ticketsPagedProvider(specForTab(TicketsTab.todayDone)),
+    ).valueOrNull;
+
+    if (inProgressState == null && doneTodayState == null) {
+      return const {'all': 0, 'inprogress': 0, 'overdue': 0, 'done': 0};
     }
+
+    final inProgressCount = (inProgressState?.items ?? [])
+        .where((t) => !t.isOverdue)
+        .length;
+    final overdueCount = (inProgressState?.items ?? [])
+        .where((t) => t.isOverdue)
+        .length;
+    final doneCount = doneTodayState?.itemsTotal ?? 0;
+
     return {
-      'all': state.todayAllCount,
-      // [ACCEPT_AND_START_FLOW] removed
-      // 'accepted': state.todayAcceptedCount,
-      'inprogress': state.todayInProgressCount,
-      'overdue': state.todayOverdueCount,
+      'all': (inProgressState?.itemsTotal ?? 0) + doneCount,
+      'inprogress': inProgressCount,
+      'overdue': overdueCount,
+      'done': doneCount,
     };
   }
 
-  /// Backlog filter-chip counts — mirrors [_todayFilterCounts] for the
-  /// non-today bucket. Same chip keys so the chip widget needs no changes.
+  /// Backlog filter-chip counts from v2 paged provider. Returns zeroes
+  /// while the cache is still loading.
   Map<String, int> _backlogFilterCounts() {
-    final state = ref.watch(myTicketsNotifierProvider).valueOrNull;
-    if (state == null) {
-      // [ACCEPT_AND_START_FLOW] Accepted bucket removed.
-      // return const {'all': 0, 'accepted': 0, 'inprogress': 0, 'overdue': 0};
+    // V2: Derive from backlog paged provider
+    final backlogState = ref.watch(
+      ticketsPagedProvider(specForTab(TicketsTab.backlog)),
+    ).valueOrNull;
+
+    if (backlogState == null) {
       return const {'all': 0, 'inprogress': 0, 'overdue': 0};
     }
+
+    final inProgressCount = backlogState.items
+        .where((t) => t.isInProgress && !t.isOverdue)
+        .length;
+    final overdueCount = backlogState.items
+        .where((t) => t.isInProgress && t.isOverdue)
+        .length;
+
     return {
-      'all': state.backlogAllCount,
-      // [ACCEPT_AND_START_FLOW] removed
-      // 'accepted': state.backlogAcceptedCount,
-      'inprogress': state.backlogInProgressCount,
-      'overdue': state.backlogOverdueCount,
+      'all': backlogState.itemsTotal,
+      'inprogress': inProgressCount,
+      'overdue': overdueCount,
     };
   }
 
@@ -357,78 +391,112 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   }
 
   Widget _buildList(TicketsMainTab mainTab) {
-    // All three tabs are paginated against `/tickets/get_my_tickets`. The list
+    // All tabs are paginated against `/ticketsv2` endpoints. The list
     // widget watches the paged provider for its tab and triggers
-    // infinite scroll near the end.
-    return _PagedTicketsTabList(tab: _ticketsTabFromMain(mainTab));
+    // infinite scroll near the end. For Today, the tab selection depends
+    // on the active filter chip (all/inprogress/overdue use todayInProgress;
+    // done uses todayDone).
+    final filter = ref.watch(ticketsFilterProvider);
+    return _PagedTicketsTabList(
+      tab: _ticketsTabFromMain(mainTab, filter),
+    );
   }
 }
 
-TicketsTab _ticketsTabFromMain(TicketsMainTab mainTab) {
+/// Map TicketsMainTab to the corresponding v2 TicketsTab.
+/// For Today tab: if filter=='done', use todayDone provider; otherwise use
+/// todayInProgress (filtering via _applyTodaySubFilter for inprogress/overdue).
+TicketsTab _ticketsTabFromMain(TicketsMainTab mainTab, [String? todayFilter]) {
   switch (mainTab) {
     case TicketsMainTab.incoming:
       return TicketsTab.incoming;
     case TicketsMainTab.today:
-      return TicketsTab.today;
+      // V2: Today tab switches providers based on filter chip
+      if (todayFilter == 'done') {
+        return TicketsTab.todayDone;
+      } else {
+        // all/inprogress/overdue filters are applied client-side via
+        // _applyTodaySubFilter on the todayInProgress provider
+        return TicketsTab.todayInProgress;
+      }
     case TicketsMainTab.backlog:
       return TicketsTab.backlog;
     case TicketsMainTab.done:
-      return TicketsTab.done;
+      return TicketsTab.doneHistory;
   }
 }
 
 /// Narrows the Today / Backlog tab's already-fetched items down to the
-/// chip the operator picked. Incoming and Done tabs are passthrough — their
-/// chips are sort-only or absent.
+/// chip the operator picked. Other tabs (Incoming, Done, Done History) are passthrough.
 ///
-/// Day predicate is `last_transition_at` (or its fallback) within today.
-/// Today = predicate true; Backlog = predicate false. Overdue is its own
-/// bucket and is mutually exclusive with Accepted / In Progress in both.
+/// For Today:
+/// - todayInProgress (filter: all/inprogress/overdue): server-side IN_PROGRESS,
+///   client narrows by overdue flag
+/// - todayDone (filter: done): server-side DONE completed today, no narrowing
 List<MyTicket> _applyTodaySubFilter(
   TicketsTab tab,
   List<MyTicket> items,
   String? filter,
 ) {
-  final bool Function(MyTicket) dayPredicate;
+  // V2: Apply local filtering on top of server-side tabs.
+  // - todayInProgress: items are already filtered server-side to IN_PROGRESS
+  // - todayDone: items are already filtered server-side to DONE (today only)
+  // - backlog: items are server-curated, no day-boundary filtering needed
+  // - incoming: NEW status, no filtering needed
+  // - doneHistory: DONE status across all time, no filtering needed
+
+  // For todayInProgress and backlog, the filter chips let users narrow
+  // further (all / inprogress / overdue). todayDone has no local filtering.
+  // Other tabs are passthrough.
   switch (tab) {
-    case TicketsTab.today:
-      dayPredicate = _isTransitionedToday;
-      break;
-    case TicketsTab.backlog:
-      dayPredicate = (t) => !_isTransitionedToday(t);
-      break;
-    case TicketsTab.incoming:
-    case TicketsTab.done:
+    case TicketsTab.todayInProgress:
+      // Filter by chip: all / inprogress / overdue
+      switch (filter) {
+        case 'inprogress':
+          return items
+              .where((t) => t.isInProgress && !t.isOverdue)
+              .toList(growable: false);
+        case 'overdue':
+          return items
+              .where((t) => t.isInProgress && t.isOverdue)
+              .toList(growable: false);
+        case 'all':
+        case null:
+        case 'done': // Shouldn't reach here; done uses todayDone tab
+        default:
+          return items;
+      }
+    case TicketsTab.todayDone:
+      // No local filtering — server pre-filtered to DONE (today only)
       return items;
-  }
-  final scoped = items.where(dayPredicate).toList(growable: false);
-  switch (filter) {
-    case 'accepted':
-      return scoped
-          .where((t) => t.isAccepted && !t.isOverdue)
-          .toList(growable: false);
-    case 'inprogress':
-      return scoped
-          .where((t) => t.isInProgress && !t.isOverdue)
-          .toList(growable: false);
-    case 'overdue':
-      return scoped
-          .where((t) => (t.isAccepted || t.isInProgress) && t.isOverdue)
-          .toList(growable: false);
-    case 'all':
-    case null:
-    default:
-      return scoped
-          .where((t) => t.isAccepted || t.isInProgress)
-          .toList(growable: false);
+    case TicketsTab.backlog:
+      // Filter by chip: all / inprogress / overdue
+      switch (filter) {
+        case 'inprogress':
+          return items
+              .where((t) => t.isInProgress && !t.isOverdue)
+              .toList(growable: false);
+        case 'overdue':
+          return items
+              .where((t) => t.isInProgress && t.isOverdue)
+              .toList(growable: false);
+        case 'all':
+        case null:
+        default:
+          return items;
+      }
+    case TicketsTab.incoming:
+    case TicketsTab.doneHistory:
+      // No local filtering — server-filtered or sort-only chips
+      return items;
   }
 }
 
-/// True when [t]'s `due_at` is on today's local calendar. Today/Backlog
-/// bucketing is driven by due date, not by `last_transition_at` — so a
-/// non-status patch (e.g. change-due-time pushing due to next week) does
-/// NOT pull a backlog ticket into Today. Tickets with no due (`dueAt == 0`)
-/// are never Today.
+// ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
+// V2: Local day bucketing logic no longer needed — server returns
+// distinct tabs (todayInProgress vs backlog) with pre-filtered items.
+// ─────────────────────────────────────────────────────────────────
+// ignore: unused_element
 bool _isTransitionedToday(MyTicket t) {
   if (t.dueAt <= 0) return false;
   final dt = DateTime.fromMillisecondsSinceEpoch(t.dueAt).toLocal();
@@ -476,7 +544,7 @@ VoidCallback _acceptHandler(
             )
             .updateTabCountImmediate(delta: -1);
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
             .updateTabCountImmediate(delta: 1);
         try {
           // Step 3: API
@@ -507,7 +575,7 @@ VoidCallback _acceptHandler(
               )
               .updateTicketStatusImmediate(ticket.id, optimisticStatus);
           ref
-              .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+              .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
               .updateTicketStatusImmediate(ticket.id, optimisticStatus);
           ref.read(myTicketsNotifierProvider.notifier).refresh();
         } catch (e) {
@@ -518,7 +586,7 @@ VoidCallback _acceptHandler(
               )
               .updateTabCountImmediate(delta: 1);
           ref
-              .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+              .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
               .updateTabCountImmediate(delta: -1);
           if (context.mounted) context.showFailure(e.toString());
           rethrow; // Keep sheet open so user can retry / dismiss.
@@ -548,7 +616,7 @@ VoidCallback _acceptHandler(
         .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
         .updateTabCountImmediate(delta: -1);
     ref
-        .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+        .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
         .updateTabCountImmediate(delta: 1);
     try {
       final dueAt = ServerClock.now()
@@ -567,7 +635,7 @@ VoidCallback _acceptHandler(
           )
           .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
       ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+          .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
           .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
       ref.read(myTicketsNotifierProvider.notifier).refresh();
     } catch (e) {
@@ -577,7 +645,7 @@ VoidCallback _acceptHandler(
           )
           .updateTabCountImmediate(delta: 1);
       ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+          .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
           .updateTabCountImmediate(delta: -1);
       if (context.mounted) context.showFailure(e.toString());
     } finally {
@@ -618,7 +686,7 @@ Future<void> _startWorkHandler(
             .read(ticketRepositoryProvider)
             .changeTicketStatus(ticketId: ticket.id, newStatus: 'IN_PROGRESS');
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
             .updateTicketStatusImmediate(ticket.id, 'IN_PROGRESS');
         ref.read(myTicketsNotifierProvider.notifier).refresh();
       } catch (e) {
@@ -647,28 +715,28 @@ Future<void> _markDoneHandler(
             .markTicketTransitioning(ticket.id);
       }
       ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+          .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
           .updateTabCountImmediate(delta: -1);
       ref
-          .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
+          .read(ticketsPagedProvider(specForTab(TicketsTab.doneHistory)).notifier)
           .updateTabCountImmediate(delta: 1);
       try {
         await ref
             .read(ticketRepositoryProvider)
             .markDoneWithNote(ticketId: ticket.id, resolutionNote: note);
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
             .updateTicketStatusImmediate(ticket.id, 'DONE');
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
+            .read(ticketsPagedProvider(specForTab(TicketsTab.doneHistory)).notifier)
             .updateTicketStatusImmediate(ticket.id, 'DONE');
         ref.read(myTicketsNotifierProvider.notifier).refresh();
       } catch (e) {
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.today)).notifier)
+            .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
             .updateTabCountImmediate(delta: 1);
         ref
-            .read(ticketsPagedProvider(specForTab(TicketsTab.done)).notifier)
+            .read(ticketsPagedProvider(specForTab(TicketsTab.doneHistory)).notifier)
             .updateTabCountImmediate(delta: -1);
         if (context.mounted) context.showFailure(e.toString());
         rethrow;

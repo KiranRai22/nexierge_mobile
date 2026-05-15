@@ -2935,6 +2935,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} tickets closed'**
   String toastTicketsClosedTitle(int count);
+
+  /// No description provided for @updateDialogForceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Required'**
+  String get updateDialogForceTitle;
+
+  /// No description provided for @updateDialogForceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A critical update is available. Please update the app to continue.'**
+  String get updateDialogForceBody;
+
+  /// No description provided for @updateDialogOptionalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Available'**
+  String get updateDialogOptionalTitle;
+
+  /// No description provided for @updateDialogOptionalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version of the app is available with improvements and bug fixes.'**
+  String get updateDialogOptionalBody;
+
+  /// No description provided for @updateDialogUpdateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Now'**
+  String get updateDialogUpdateNow;
+
+  /// No description provided for @updateDialogRemindLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind Me Later'**
+  String get updateDialogRemindLater;
 }
 
 class _AppLocalizationsDelegate

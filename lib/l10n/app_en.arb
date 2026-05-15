@@ -812,5 +812,12 @@
   "toastTicketsClosedTitle": "{count} tickets closed",
   "@toastTicketsClosedTitle": {
     "placeholders": { "count": { "type": "int" } }
-  }
+  },
+
+  "updateDialogForceTitle": "Update Required",
+  "updateDialogForceBody": "A critical update is available. Please update the app to continue.",
+  "updateDialogOptionalTitle": "Update Available",
+  "updateDialogOptionalBody": "A new version of the app is available with improvements and bug fixes.",
+  "updateDialogUpdateNow": "Update Now",
+  "updateDialogRemindLater": "Remind Me Later"
 }

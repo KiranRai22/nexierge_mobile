@@ -1,3 +1,10 @@
+// ─── V2 TICKET ACTION BAR (2026-05-14) ──────────────────────────
+// Implements v2 ticket status transitions: NEW → IN_PROGRESS → DONE,
+// plus hold/resume, cancel, and reset actions. Replaces v1 separate
+// acknowledge and start paths with unified "Start" action.
+// See internal LEGACY-V1 markers for removed v1 paths.
+// ─────────────────────────────────────────────────────────────────
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -143,36 +150,32 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       hasGuest: t.guest != null,
     );
     if (result == null) return;
-    final targetStatus = result.startImmediately ? 'IN_PROGRESS' : 'ACCEPTED';
+    // V2: single "Start" action → IN_PROGRESS via /ticketsv2/start/{id}.
+    final dueAt =
+        DateTime.fromMillisecondsSinceEpoch(result.dueAtEpochMs);
     await _withGuard(
       () => _runOptimistic(
-        newStatus: targetStatus,
-        apiCall: () => result.startImmediately
-            ? ref.read(ticketRepositoryProvider).acknowledgeAndStartTicket(
-                  ticketId: t.id,
-                  dueAt: result.dueAtEpochMs,
-                  notes: result.notes,
-                )
-            : ref.read(ticketRepositoryProvider).acknowledgeTicket(
-                  ticketId: t.id,
-                  dueAt: result.dueAtEpochMs,
-                  notes: result.notes,
-                ),
+        newStatus: 'IN_PROGRESS',
+        apiCall: () => ref
+            .read(ticketRepositoryProvider)
+            .startTicketV2(ticketId: t.id, dueAt: dueAt),
         failureMessage: failureMsg,
       ),
     );
   }
 
-  // ────────── ACCEPT ONLY (NEW → ACCEPTED) ──────────
-  // Bypasses the sheet — defaults to a 15-minute due window. Used by the
-  // two-button row when the ticket is already past-due so the user just
-  // wants a quick acknowledge.
-
+  // ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
+  // Replaced by ticketsv2 5-tab model. Kept for reference.
+  // Accept-only / Accept-and-Start were two separate paths from NEW. V2
+  // collapses them into a single Start action (handled in
+  // _onAcceptIncoming above via startTicketV2).
+  // ─────────────────────────────────────────────────────────────────
+  // ignore: unused_element
   Future<void> _onAcceptOnly() async {
+    /*
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedAccept;
     final dueTime = ServerClock.now().add(const Duration(minutes: 15));
-
     await _withGuard(
       () => _runOptimistic(
         newStatus: 'ACCEPTED',
@@ -186,15 +189,15 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         failureMessage: failureMsg,
       ),
     );
+    */
   }
 
-  // ────────── ACCEPT AND START (NEW → IN_PROGRESS) ──────────
-
+  // ignore: unused_element
   Future<void> _onAcceptAndStart() async {
+    /*
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedAccept;
     final dueTime = ServerClock.now().add(const Duration(minutes: 15));
-
     await _withGuard(
       () => _runOptimistic(
         newStatus: 'IN_PROGRESS',
@@ -208,10 +211,14 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         failureMessage: failureMsg,
       ),
     );
+    */
   }
 
   // ────────── START WORK (ACCEPTED → IN_PROGRESS) ──────────
-
+  // ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
+  // V2 has no ACCEPTED state — this branch is unreachable. Kept for
+  // safety in case a legacy ACCEPTED ticket is opened.
+  // ─────────────────────────────────────────────────────────────────
   Future<void> _onStartWork() async {
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedStartWork;
@@ -238,9 +245,10 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     await _withGuard(
       () => _runOptimistic(
         newStatus: 'DONE',
+        // V2: /ticketsv2/done/{id} with resolution_notes body.
         apiCall: () => ref
             .read(ticketRepositoryProvider)
-            .markDoneWithNote(ticketId: t.id, resolutionNote: note),
+            .completeTicketV2(ticketId: t.id, resolutionNote: note),
         failureMessage: failureMsg,
       ),
     );
@@ -507,11 +515,16 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  // onPressed: _busy ? null : tapSound(_onAcceptIncoming),
-                  // icon: const Icon(LucideIcons.check, size: 18),
-                  // label: Text(s.ticketActionAccept),
-                  onPressed: _busy ? null : tapSound(_onAcceptAndStart),
+                  // ─── LEGACY-V1 (2026-05-14) ──────────────────────────────
+                  // Old direct accept-and-start path (no sheet, 15-min default).
+                  // V2 reintroduces the acknowledge sheet so the operator can
+                  // pick a due_at, then calls startTicketV2.
+                  // onPressed: _busy ? null : tapSound(_onAcceptAndStart),
+                  // ─────────────────────────────────────────────────────────
+                  onPressed: _busy ? null : tapSound(_onAcceptIncoming),
                   icon: const Icon(LucideIcons.play, size: 18),
+                  // TODO(i18n): consider a dedicated "Start" key; reusing
+                  // existing AcceptAndStart label until l10n catalog is updated.
                   label: Text(s.ticketActionAcceptAndStart),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.buttonInverted,

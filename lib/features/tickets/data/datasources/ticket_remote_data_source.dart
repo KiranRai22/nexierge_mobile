@@ -75,6 +75,81 @@ abstract class TicketRemoteDataSource {
     String? notes,
   });
 
+  // ─── Tickets V2 ────────────────────────────────────────────────────────
+  // Per-status list endpoints. Response shape == v1 [TicketsPageDto].
+  // Common query: page, per_page, hotel_id (required); optional
+  // source, department, ticket_type, created_at_start_date, created_at_end_date.
+
+  Future<TicketsPageDto> getTicketsV2New({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  });
+
+  Future<TicketsPageDto> getTicketsV2Backlog({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  });
+
+  Future<TicketsPageDto> getTicketsV2InProgress({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  });
+
+  Future<TicketsPageDto> getTicketsV2DoneToday({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  });
+
+  Future<TicketsPageDto> getTicketsV2DoneHistory({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  });
+
+  /// POST /ticketsv2/start/{id} — moves NEW → IN_PROGRESS. Body `{due_at}`
+  /// in UTC ISO-8601 (`2026-05-14T15:00:00Z`).
+  Future<void> startTicketV2({
+    required String ticketId,
+    required DateTime dueAt,
+  });
+
+  /// POST /ticketsv2/done/{id} — moves IN_PROGRESS → DONE. Body carries
+  /// the same resolution payload as the v1 mark-done path so the backend
+  /// can persist `resolution_notes` unchanged.
+  Future<void> completeTicketV2({
+    required String ticketId,
+    String? resolutionNote,
+  });
+
   /// Get all service catalogs for a hotel
   Future<List<ServiceCatalogDto>> getServiceCatalogs({required String hotelId});
 
@@ -359,6 +434,172 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     final url = APIEndpoints.ticketsAcknowledgeAndStart(ticketId);
     debugPrint('[TicketRemoteDataSource] acknowledgeAndStartTicket: $url');
     await _dio.post(url, data: {'due_at': dueAt, 'notes': notes});
+  }
+
+  // ─── Tickets V2 implementations ──────────────────────────────────────
+
+  Future<TicketsPageDto> _fetchTicketsV2Page({
+    required String url,
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  }) async {
+    final q = <String, dynamic>{
+      'hotel_id': hotelId,
+      'page': page,
+      'per_page': perPage,
+    };
+    if (departmentId != null) q['department'] = departmentId;
+    if (source != null) q['source'] = source;
+    if (ticketType != null) q['ticket_type'] = ticketType;
+    if (createdAtStartDate != null) q['created_at_start_date'] = createdAtStartDate;
+    if (createdAtEndDate != null) q['created_at_end_date'] = createdAtEndDate;
+
+    debugPrint('[TicketRemoteDataSource][v2] GET $url params=$q');
+    final res = await _dio.get(url, queryParameters: q);
+    return TicketsPageDto.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  @override
+  Future<TicketsPageDto> getTicketsV2New({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  }) => _fetchTicketsV2Page(
+        url: APIEndpoints.ticketsV2New,
+        hotelId: hotelId,
+        page: page,
+        perPage: perPage,
+        departmentId: departmentId,
+        source: source,
+        ticketType: ticketType,
+        createdAtStartDate: createdAtStartDate,
+        createdAtEndDate: createdAtEndDate,
+      );
+
+  @override
+  Future<TicketsPageDto> getTicketsV2Backlog({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  }) => _fetchTicketsV2Page(
+        url: APIEndpoints.ticketsV2Backlog,
+        hotelId: hotelId,
+        page: page,
+        perPage: perPage,
+        departmentId: departmentId,
+        source: source,
+        ticketType: ticketType,
+        createdAtStartDate: createdAtStartDate,
+        createdAtEndDate: createdAtEndDate,
+      );
+
+  @override
+  Future<TicketsPageDto> getTicketsV2InProgress({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  }) => _fetchTicketsV2Page(
+        url: APIEndpoints.ticketsV2InProgress,
+        hotelId: hotelId,
+        page: page,
+        perPage: perPage,
+        departmentId: departmentId,
+        source: source,
+        ticketType: ticketType,
+        createdAtStartDate: createdAtStartDate,
+        createdAtEndDate: createdAtEndDate,
+      );
+
+  @override
+  Future<TicketsPageDto> getTicketsV2DoneToday({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  }) => _fetchTicketsV2Page(
+        url: APIEndpoints.ticketsV2DoneToday,
+        hotelId: hotelId,
+        page: page,
+        perPage: perPage,
+        departmentId: departmentId,
+        source: source,
+        ticketType: ticketType,
+        createdAtStartDate: createdAtStartDate,
+        createdAtEndDate: createdAtEndDate,
+      );
+
+  @override
+  Future<TicketsPageDto> getTicketsV2DoneHistory({
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  }) => _fetchTicketsV2Page(
+        url: APIEndpoints.ticketsV2DoneHistory,
+        hotelId: hotelId,
+        page: page,
+        perPage: perPage,
+        departmentId: departmentId,
+        source: source,
+        ticketType: ticketType,
+        createdAtStartDate: createdAtStartDate,
+        createdAtEndDate: createdAtEndDate,
+      );
+
+  @override
+  Future<void> startTicketV2({
+    required String ticketId,
+    required DateTime dueAt,
+  }) async {
+    final url = APIEndpoints.ticketsV2Start(ticketId);
+    final iso = dueAt.toUtc().toIso8601String();
+    debugPrint('[TicketRemoteDataSource][v2] startTicketV2 $url due_at=$iso');
+    await _dio.post(url, data: {'due_at': iso});
+  }
+
+  @override
+  Future<void> completeTicketV2({
+    required String ticketId,
+    String? resolutionNote,
+  }) async {
+    final url = APIEndpoints.ticketsV2Done(ticketId);
+    final note = (resolutionNote != null && resolutionNote.isNotEmpty)
+        ? resolutionNote
+        : null;
+    debugPrint('[TicketRemoteDataSource][v2] completeTicketV2 $url note=$note');
+    await _dio.post(url, data: {
+      'tickets_v2_id': ticketId,
+      'resolution_notes': note,
+    });
   }
 
   @override

@@ -67,11 +67,42 @@ abstract class APIEndpoints {
 
   // Tickets
   static const String ticketsDetails = '$_host/api:bAt3sLZU/tickets/details';
+
+  // ─── LEGACY-V1 (2026-05-14) ─────────────────────────────────────────────
+  // `get_my_tickets` replaced by per-status ticketsv2 endpoints below.
+  // Kept active for rollback safety until v2 is stable. Do not remove.
   static const String ticketsGetMyTickets =
       '$_host/api:bAt3sLZU/tickets/get_my_tickets';
+  // ────────────────────────────────────────────────────────────────────────
+
   static const String ticketsAddGetDepartmentsAndRooms =
       '$_host/api:bAt3sLZU/tickets/add/get_departnents_and_rooms';
   static const String ticketsManual = '$_host/api:t_TeioyT/tickets/manual';
+
+  // ---------------------------------------------------------------------------
+  // Tickets V2 — per-status list endpoints + start/done actions.
+  // Common query params: page, per_page, hotel_id (mandatory); optional
+  // source, department, ticket_type, created_at_start_date, created_at_end_date.
+  // Response shape identical to v1 paginated list.
+  // ---------------------------------------------------------------------------
+
+  static const String _ticketsV2Base = '$_host/api:t_TeioyT/ticketsv2';
+
+  static const String ticketsV2New = '$_ticketsV2Base/new';
+  static const String ticketsV2Backlog = '$_ticketsV2Base/backlog';
+  static const String ticketsV2InProgress = '$_ticketsV2Base/in_progress';
+  static const String ticketsV2DoneToday = '$_ticketsV2Base/done';
+  static const String ticketsV2DoneHistory = '$_ticketsV2Base/done/history';
+
+  /// POST `/ticketsv2/start/{id}` — body `{due_at: <UTC ISO>}`.
+  /// Moves NEW → IN_PROGRESS, assigns current user.
+  static String ticketsV2Start(String ticketId) =>
+      '$_ticketsV2Base/start/$ticketId';
+
+  /// POST `/ticketsv2/done/{id}` — body carries existing resolution payload
+  /// `{resolution_notes, resolution_code?, ...}`. Moves IN_PROGRESS → DONE.
+  static String ticketsV2Done(String ticketId) =>
+      '$_ticketsV2Base/done/$ticketId';
 
   /// Base path for `/tickets/change_status/{id}` — append the ticket id
   /// to form the full URL. Body carries `{tickets_v2_id, new_status}`.
@@ -90,6 +121,11 @@ abstract class APIEndpoints {
       '$_host/api:t_TeioyT/tickets/change_due_time';
   static String ticketsChangeDueTime(String ticketId) =>
       '$ticketsChangeDueTimeBase/$ticketId';
+
+  // ─── LEGACY-V1 (2026-05-14) ─────────────────────────────────────────────
+  // `acknowledge` + `acknowledge_and_start` replaced by ticketsv2 `start`.
+  // Kept active for rollback safety; remove after v2 stable.
+  // ────────────────────────────────────────────────────────────────────────
 
   /// Base path for `/tickets/acknowledge/{id}` — append the ticket id
   /// to form the full URL. Body carries `{due_at, notes}`.
@@ -123,6 +159,9 @@ abstract class APIEndpoints {
 
   // Languages
   static const String languagesAll = '$baseUrl/languages/all';
+
+  // Version control — GET, requires auth token
+  static const String versionControl = '$_host/api:bAt3sLZU/version_control';
 
   // ---------------------------------------------------------------------------
   // Timeouts & headers

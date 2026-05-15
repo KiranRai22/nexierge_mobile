@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'core/i18n/app_locale.dart';
 import 'core/i18n/locale_controller.dart';
 import 'core/network/api_client.dart';
 import 'core/providers/sound_preferences_provider.dart';
+import 'core/services/app_info_service.dart';
 import 'core/services/device_token_service.dart';
 import 'core/services/firebase_service.dart';
 import 'core/services/notification_service.dart';
@@ -22,6 +25,10 @@ import 'features/dashboard/domain/entities/dashboard_bootstrap_state.dart';
 import 'features/dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import 'features/dashboard/presentation/screens/dashboard_shimmer_screen.dart';
 import 'features/shell/presentation/screens/home_shell.dart';
+import 'features/version_control/presentation/providers/version_check_notifier.dart';
+import 'features/version_control/presentation/services/update_notification_service.dart';
+import 'features/version_control/presentation/widgets/force_update_gate.dart';
+import 'features/version_control/presentation/widgets/optional_update_sheet.dart';
 import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
@@ -38,6 +45,15 @@ Future<void> main() async {
 
   // FCM + local notifications bootstrap
   await NotificationService.instance.initialize();
+
+  // Update-nudge notification channel (separate from FCM channel)
+  await UpdateNotificationService.instance.initialize();
+
+  // Read real app version from native platform once at startup
+  final appInfo = await AppInfoService.create();
+  debugPrint(
+    '[AppInfo] version=${appInfo.version} build=${appInfo.buildNumber}',
+  );
 
   // Initialize sound manager for UI sounds
   await SoundManager.instance.initialize();
@@ -71,6 +87,8 @@ Future<void> main() async {
           (ref) =>
               ref.watch(authSessionControllerProvider).valueOrNull?.authToken,
         ),
+        // Seed the real app version synchronously so every provider can read it.
+        appInfoServiceProvider.overrideWithValue(appInfo),
       ],
       child: const MyApp(),
     ),
@@ -125,6 +143,37 @@ class MyApp extends ConsumerWidget {
       }
     });
 
+    // Version-check: runs once per session after bootstrap is complete.
+    // Force-update is handled by wrapping HomeShell in ForceUpdateGate.
+    // Optional update shows a local notification (once per version) and a
+    // bottom-sheet on first app open after the version check lands.
+    ref.listen<AsyncValue<VersionCheckResult>>(versionCheckProvider, (_, next) {
+      final result = next.valueOrNull;
+      if (result == null) return;
+
+      if (result is VersionUpdateOptional) {
+        final platformVersion = Platform.isIOS
+            ? result.version.iosVersion
+            : result.version.androidVersion;
+        final notifier = ref.read(versionCheckProvider.notifier);
+        // Fire-and-forget local notification (debounced per version)
+        UpdateNotificationService.instance.showIfNeeded(
+          version: result.version,
+          platformVersion: platformVersion,
+        );
+        // Show in-app sheet once (after first frame)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final ctx = _navigatorKey.currentContext;
+          if (ctx == null || !ctx.mounted) return;
+          OptionalUpdateSheet.show(
+            ctx,
+            version: result.version,
+            storeUrl: notifier.storeUrl(result.version),
+          );
+        });
+      }
+    });
+
     return MaterialApp(
       title: StringManager.appName,
       debugShowCheckedModeBanner: false,
@@ -141,13 +190,15 @@ class MyApp extends ConsumerWidget {
       // 2. No session → Login
       // 3. Session + Bootstrap loading → Shimmer
       // 4. Session + Bootstrap complete → HomeShell
-      home: _resolveHome(session, bootstrap),
+      navigatorKey: _navigatorKey,
+      home: _resolveHome(session, bootstrap, ref),
     );
   }
 
   Widget _resolveHome(
     AsyncValue<AuthSession?> session,
     AsyncValue<DashboardBootstrapState> bootstrap,
+    WidgetRef ref,
   ) {
     return session.when(
       loading: () => const _AuthBootstrapSplash(),
@@ -161,7 +212,18 @@ class MyApp extends ConsumerWidget {
           error: (_, __) => const DashboardShimmerScreen(), // Retry via UI
           data: (state) {
             if (state.isComplete) {
-              return const HomeShell();
+              final versionResult = ref.watch(versionCheckProvider);
+              final result = versionResult.valueOrNull;
+              final notifier = ref.read(versionCheckProvider.notifier);
+              final forced = result is VersionUpdateForced ? result : null;
+              return ForceUpdateGate(
+                isForced: forced != null,
+                version: forced?.version,
+                storeUrl: forced != null
+                    ? notifier.storeUrl(forced.version)
+                    : '',
+                child: const HomeShell(),
+              );
             }
             return const DashboardShimmerScreen();
           },
@@ -170,6 +232,10 @@ class MyApp extends ConsumerWidget {
     );
   }
 }
+
+/// Single navigator key so we can push the optional-update sheet from the
+/// version-check listener without requiring a BuildContext.
+final _navigatorKey = GlobalKey<NavigatorState>();
 
 class _AuthBootstrapSplash extends StatelessWidget {
   const _AuthBootstrapSplash();

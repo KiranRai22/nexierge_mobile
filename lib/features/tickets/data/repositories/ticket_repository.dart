@@ -9,6 +9,16 @@ import '../../domain/entities/service_catalog.dart';
 import '../../domain/entities/ticket_detail.dart';
 import '../../domain/entities/ticket_form_options.dart';
 
+/// Identifies which v2 list endpoint to call. The repo maps each to the
+/// matching `getTicketsV2*` data-source method.
+enum TicketsV2Tab {
+  incoming, // /ticketsv2/new
+  backlog, // /ticketsv2/backlog
+  inProgress, // /ticketsv2/in_progress (drives Today)
+  doneToday, // /ticketsv2/done (drives Today→Done sub-tab)
+  doneHistory, // /ticketsv2/done/history (drives primary Done tab)
+}
+
 /// Page of tickets returned by the paginated `/tickets/get_my_tickets`
 /// endpoint.
 class TicketsPageResult {
@@ -114,6 +124,35 @@ abstract class TicketRepository {
     required String ticketId,
     required int dueAt,
     String? notes,
+  });
+
+  // ─── Tickets V2 ───────────────────────────────────────────────────────
+  // Per-status paginated lists. Response shape identical to v1 — same
+  // domain mapping used in [fetchTicketsPage] is reused below.
+
+  Future<TicketsPageResult> fetchTicketsV2Page({
+    required TicketsV2Tab tab,
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  });
+
+  /// POST /ticketsv2/start/{id}. [dueAt] is sent as UTC ISO-8601.
+  Future<void> startTicketV2({
+    required String ticketId,
+    required DateTime dueAt,
+  });
+
+  /// POST /ticketsv2/done/{id}. Body carries `resolution_notes` (same as
+  /// legacy [markDoneWithNote]).
+  Future<void> completeTicketV2({
+    required String ticketId,
+    String? resolutionNote,
   });
 
   /// Submits a catalog (paid) order via
@@ -527,6 +566,224 @@ class _TicketRepositoryImpl implements TicketRepository {
         ticketId: ticketId,
         dueAt: dueAt,
         notes: notes,
+      );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  // ─── Tickets V2 implementations ─────────────────────────────────────
+
+  TicketsPageResult _mapTicketsPageDto(TicketsPageDto dto) {
+    final names = <String, String>{};
+    final items = dto.items.map((d) {
+      final dept = d.department;
+      final deptId = (dept?['id'] as String?) ??
+          (dept?['department_id'] as String?) ??
+          '';
+      final deptName = (dept?['name'] as String?) ?? '';
+      final deptCode = (dept?['code'] as String?) ?? '';
+      final deptMobileIcon = (dept?['mobile_icon'] as String?) ?? '';
+      final deptIcon = dept?['icon'] as Map?;
+      final deptIconUrl = (deptIcon?['url'] as String?) ?? '';
+      if (deptId.isNotEmpty && deptName.isNotEmpty) names[d.id] = deptName;
+      final roomData = d.roomData;
+      final roomDetails = roomData != null
+          ? RoomDetails(
+              id: (roomData['id'] as String?) ?? '',
+              onbRoomNumber: (roomData['onb_room_number'] as String?) ?? '',
+              floorId: (roomData['floor_id'] as String?) ?? '',
+              onbRoomTypeId: (roomData['onb_room_type_id'] as String?) ?? '',
+            )
+          : null;
+      final universalItems = d.universalDetails
+          .map((u) => UniversalTicketItem(
+                id: u.id,
+                item: u.item,
+                emoji: u.emoji,
+                thumbnailUrl: u.thumbnailUrl,
+                nameI18n: u.nameI18n,
+              ))
+          .toList(growable: false);
+      final catalogDetails = d.catalogDetails == null
+          ? null
+          : CatalogTicketDetails(
+              catalogName: d.catalogDetails!.catalogName,
+              logoUrl: d.catalogDetails!.logoUrl,
+              brandColorHex: d.catalogDetails!.brandColorHex,
+              grandTotal: d.catalogDetails!.grandTotal,
+              currency: d.catalogDetails!.currency,
+              items: d.catalogDetails!.items
+                  .map((i) => CatalogTicketItem(
+                        itemName: i.itemName,
+                        imageUrl: i.imageUrl,
+                      ))
+                  .toList(growable: false),
+            );
+      final manualDetails = d.manualDetails == null
+          ? null
+          : ManualTicketDetails(
+              summary: d.manualDetails!.summary,
+              details: d.manualDetails!.details,
+            );
+      return MyTicket(
+        id: d.id,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
+        lastTransitionAt: d.lastTransitionAt,
+        slaBreached: d.slaBreached,
+        hotelId: d.hotelId,
+        departmentId: deptId,
+        departmentName: deptName.isEmpty ? null : deptName,
+        departmentMobileIcon: deptMobileIcon.isEmpty ? null : deptMobileIcon,
+        departmentIconUrl: deptIconUrl.isEmpty ? null : deptIconUrl,
+        departmentCode: deptCode.isEmpty ? null : deptCode,
+        assignedToUserId: d.assignedToUserId,
+        createdByUserId: d.createdByUserId,
+        createdByAi: d.createdByAi,
+        type: d.type,
+        ticketType: d.ticketType,
+        status: d.status,
+        dueAt: d.dueAt,
+        category: d.category,
+        priority: d.priority,
+        issueSummary: d.issueSummary,
+        issueDetails: d.issueDetails,
+        isIncident: d.isIncident,
+        incidentNotes: d.incidentNotes,
+        room: d.room,
+        guestName: d.guestName,
+        acknowledgedByUserId: d.acknowledgedByUserId,
+        acknowledgedAt: d.acknowledgedAt,
+        resolutionCode: d.resolutionCode,
+        resolutionNotes: d.resolutionNotes,
+        confirmedAt: d.confirmedAt,
+        closedAt: d.closedAt is String ? d.closedAt as String : null,
+        roomDetails: roomDetails,
+        isTransitioning: false,
+        universalItems: universalItems,
+        catalogDetails: catalogDetails,
+        manualDetails: manualDetails,
+      );
+    }).toList(growable: false);
+    return TicketsPageResult(
+      items: items,
+      curPage: dto.curPage,
+      nextPage: dto.nextPage,
+      itemsTotal: dto.itemsTotal,
+      departmentNameById: names,
+    );
+  }
+
+  @override
+  Future<TicketsPageResult> fetchTicketsV2Page({
+    required TicketsV2Tab tab,
+    required String hotelId,
+    required int page,
+    required int perPage,
+    String? departmentId,
+    String? source,
+    String? ticketType,
+    int? createdAtStartDate,
+    int? createdAtEndDate,
+  }) async {
+    try {
+      final TicketsPageDto dto;
+      switch (tab) {
+        case TicketsV2Tab.incoming:
+          dto = await _remote.getTicketsV2New(
+            hotelId: hotelId,
+            page: page,
+            perPage: perPage,
+            departmentId: departmentId,
+            source: source,
+            ticketType: ticketType,
+            createdAtStartDate: createdAtStartDate,
+            createdAtEndDate: createdAtEndDate,
+          );
+          break;
+        case TicketsV2Tab.backlog:
+          dto = await _remote.getTicketsV2Backlog(
+            hotelId: hotelId,
+            page: page,
+            perPage: perPage,
+            departmentId: departmentId,
+            source: source,
+            ticketType: ticketType,
+            createdAtStartDate: createdAtStartDate,
+            createdAtEndDate: createdAtEndDate,
+          );
+          break;
+        case TicketsV2Tab.inProgress:
+          dto = await _remote.getTicketsV2InProgress(
+            hotelId: hotelId,
+            page: page,
+            perPage: perPage,
+            departmentId: departmentId,
+            source: source,
+            ticketType: ticketType,
+            createdAtStartDate: createdAtStartDate,
+            createdAtEndDate: createdAtEndDate,
+          );
+          break;
+        case TicketsV2Tab.doneToday:
+          dto = await _remote.getTicketsV2DoneToday(
+            hotelId: hotelId,
+            page: page,
+            perPage: perPage,
+            departmentId: departmentId,
+            source: source,
+            ticketType: ticketType,
+            createdAtStartDate: createdAtStartDate,
+            createdAtEndDate: createdAtEndDate,
+          );
+          break;
+        case TicketsV2Tab.doneHistory:
+          dto = await _remote.getTicketsV2DoneHistory(
+            hotelId: hotelId,
+            page: page,
+            perPage: perPage,
+            departmentId: departmentId,
+            source: source,
+            ticketType: ticketType,
+            createdAtStartDate: createdAtStartDate,
+            createdAtEndDate: createdAtEndDate,
+          );
+          break;
+      }
+      return _mapTicketsPageDto(dto);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> startTicketV2({
+    required String ticketId,
+    required DateTime dueAt,
+  }) async {
+    try {
+      await _remote.startTicketV2(ticketId: ticketId, dueAt: dueAt);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> completeTicketV2({
+    required String ticketId,
+    String? resolutionNote,
+  }) async {
+    try {
+      await _remote.completeTicketV2(
+        ticketId: ticketId,
+        resolutionNote: resolutionNote,
       );
     } on DioException catch (e) {
       throw mapDioError(e);

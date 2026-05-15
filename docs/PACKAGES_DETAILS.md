@@ -238,6 +238,24 @@ Last updated: 2026-04-26.
 
 ## i18n status (2026-04-26)
 
+### `package_info_plus`
+- **Package name:** `package_info_plus`
+- **Version:** `^8.1.2`
+- **Owner:** Flutter Community (fluttercommunity.dev)
+- **License:** BSD-3-Clause
+- **Description:** Exposes the app's `version` (semver) and `buildNumber` from the native platform (iOS `Info.plist` / Android `build.gradle`). BSD-3-Clause permits commercial and closed-source use.
+- **Why we use it:** Required to compare the installed app version against the server-side version_control API for the auto-update feature, and to display real version info in the profile footer and login screen.
+
+### `url_launcher`
+- **Package name:** `url_launcher`
+- **Version:** `^6.3.1`
+- **Owner:** Flutter team (flutter.dev)
+- **License:** BSD-3-Clause
+- **Description:** Opens URLs in the system browser or native app (including App Store / Play Store deep links). BSD-3-Clause permits commercial and closed-source use.
+- **Why we use it:** Used to redirect users to the App Store / Play Store from the force-update and optional-update prompts.
+
+---
+
 All planned i18n packages are now landed and documented above:
 
 - ✅ `flutter_localizations` — added.

@@ -65,14 +65,18 @@ class TicketsFilterChips extends StatelessWidget {
           _FilterOption('oldest', s.filterOldestFirst),
         ];
       case TicketsMainTab.today:
-      case TicketsMainTab.backlog:
-        // Backlog reuses Today's chip set — same buckets
-        // (All/Accepted/In Progress/Overdue), inverted date predicate.
         return [
           _FilterOption('all', s.activityTypeAll),
           // [ACCEPT_AND_START_FLOW] Accepted chip removed — NEW tickets now
           // skip the ACCEPTED state entirely (Accept & Start → IN_PROGRESS).
           // _FilterOption('accepted', s.statusAccepted),
+          _FilterOption('inprogress', s.statusInProgress),
+          _FilterOption('overdue', s.statusOverdue, isDanger: true),
+          _FilterOption('done', s.statusDone),
+        ];
+      case TicketsMainTab.backlog:
+        return [
+          _FilterOption('all', s.activityTypeAll),
           _FilterOption('inprogress', s.statusInProgress),
           _FilterOption('overdue', s.statusOverdue, isDanger: true),
         ];

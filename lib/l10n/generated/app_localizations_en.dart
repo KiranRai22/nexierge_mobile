@@ -1656,4 +1656,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String toastTicketsClosedTitle(int count) {
     return '$count tickets closed';
   }
+
+  @override
+  String get updateDialogForceTitle => 'Update Required';
+
+  @override
+  String get updateDialogForceBody =>
+      'A critical update is available. Please update the app to continue.';
+
+  @override
+  String get updateDialogOptionalTitle => 'Update Available';
+
+  @override
+  String get updateDialogOptionalBody =>
+      'A new version of the app is available with improvements and bug fixes.';
+
+  @override
+  String get updateDialogUpdateNow => 'Update Now';
+
+  @override
+  String get updateDialogRemindLater => 'Remind Me Later';
 }

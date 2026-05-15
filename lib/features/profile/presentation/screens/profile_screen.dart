@@ -15,6 +15,7 @@ import '../../../../shared/widgets/app_toast.dart';
 import '../../data/services/image_picker_service.dart';
 import '../../data/services/media_permission_service.dart';
 import '../../domain/entities/user_profile.dart';
+import '../../../../core/services/app_info_service.dart';
 import '../providers/user_profile_controller.dart';
 import '../widgets/change_profile_picture_sheet.dart';
 import '../providers/profile_section_expansion_provider.dart';
@@ -192,6 +193,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             updatingName: _updatingName,
             onChangeAvatar: _onChangeAvatar,
             onEditName: () => _onEditName(profile),
+            versionLabel: ref.read(appInfoServiceProvider).versionLabel,
           ),
         ),
       ),
@@ -207,6 +209,7 @@ class _ProfileBody extends StatefulWidget {
   final bool updatingName;
   final VoidCallback onChangeAvatar;
   final VoidCallback onEditName;
+  final String versionLabel;
 
   const _ProfileBody({
     required this.profile,
@@ -214,6 +217,7 @@ class _ProfileBody extends StatefulWidget {
     required this.updatingName,
     required this.onChangeAvatar,
     required this.onEditName,
+    required this.versionLabel,
   });
 
   @override
@@ -477,7 +481,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
                   ),
                 ],
               ),
-              const ProfileFooter(version: '1.0.0'),
+              ProfileFooter(version: widget.versionLabel),
             ],
           ),
         ),

@@ -1,3 +1,10 @@
+// ─── V2 TICKETS PAGED NOTIFIER (2026-05-14) ──────────────────────
+// Implements the ticketsv2 5-tab model with dedicated paged providers
+// per tab: incoming, todayInProgress, todayDone, backlog, doneHistory.
+// Replaces legacy v1 single-list model with local status bucketing.
+// See internal LEGACY-V1 markers for removed v1 code paths.
+// ─────────────────────────────────────────────────────────────────
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,22 +16,22 @@ import '../../domain/entities/my_ticket.dart';
 /// "Oldest" filter chip flips this to oldest-first.
 enum TicketsSortOrder { newestFirst, oldestFirst }
 
-/// Identifier for one of the four logical ticket lists. Used by the
+/// Identifier for one of the five logical ticket lists (v2). Used by the
 /// realtime listener to pick which provider to push events into.
-enum TicketsTab { incoming, today, backlog, done }
+///
+/// ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
+/// Replaced by ticketsv2 5-tab model. Kept for reference.
+/// Old enum: enum TicketsTab { incoming, today, backlog, done }
+/// ─────────────────────────────────────────────────────────────────
+enum TicketsTab { incoming, todayInProgress, todayDone, backlog, doneHistory }
 
 /// Configuration for a paged ticket list — turns each tab into a
 /// declarative spec the notifier uses to call the API and decide whether
 /// realtime events match.
 @immutable
 class TicketsPagedSpec {
-  /// Server-side `status[]=` filter values.
-  final List<String> statuses;
-
-  /// Optional in-memory predicate applied after fetch and on realtime
-  /// upserts. Today tab uses this to require created_at AND
-  /// last_transition_at to fall within today.
-  final bool Function(MyTicket t)? localPredicate;
+  /// Which v2 list endpoint this spec maps to.
+  final TicketsTab tab;
 
   /// Items per page on this tab. Mobile default is 10.
   final int perPage;
@@ -42,15 +49,56 @@ class TicketsPagedSpec {
   /// Server-side ticket_type filter.
   final String? ticketType;
 
+  // ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
+  // Replaced by ticketsv2 5-tab model. Kept for reference.
+  // final List<String> statuses;
+  // final bool Function(MyTicket t)? localPredicate;
+  // ─────────────────────────────────────────────────────────────────
+
   const TicketsPagedSpec({
-    required this.statuses,
-    this.localPredicate,
+    required this.tab,
     this.perPage = 10,
     this.departmentId,
     this.createdAtStartDate,
     this.createdAtEndDate,
     this.ticketType,
   });
+
+  /// V2 endpoint tab this spec drives.
+  TicketsV2Tab get v2Tab {
+    switch (tab) {
+      case TicketsTab.incoming:
+        return TicketsV2Tab.incoming;
+      case TicketsTab.todayInProgress:
+        return TicketsV2Tab.inProgress;
+      case TicketsTab.todayDone:
+        return TicketsV2Tab.doneToday;
+      case TicketsTab.backlog:
+        return TicketsV2Tab.backlog;
+      case TicketsTab.doneHistory:
+        return TicketsV2Tab.doneHistory;
+    }
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is TicketsPagedSpec &&
+      other.tab == tab &&
+      other.perPage == perPage &&
+      other.departmentId == departmentId &&
+      other.createdAtStartDate == createdAtStartDate &&
+      other.createdAtEndDate == createdAtEndDate &&
+      other.ticketType == ticketType;
+
+  @override
+  int get hashCode => Object.hash(
+    tab,
+    perPage,
+    departmentId,
+    createdAtStartDate,
+    createdAtEndDate,
+    ticketType,
+  );
 }
 
 /// State for a paged ticket list. Carries the loaded items in their
@@ -102,10 +150,6 @@ class TicketsPageState {
 }
 
 /// Generic paged ticket list, parameterised by [TicketsPagedSpec].
-///
-/// Page 1 is loaded eagerly when the hotel id becomes available. The
-/// notifier exposes [loadNextPage], [refresh], and [applyRealtimeUpsert]
-/// for the realtime listener to call.
 class TicketsPagedNotifier
     extends FamilyAsyncNotifier<TicketsPageState, TicketsPagedSpec> {
   late TicketRepository _repo;
@@ -118,7 +162,7 @@ class TicketsPagedNotifier
 
     final hotelId = _hotelId();
     debugPrint(
-      '[TicketsPagedNotifier] build: hotelId=$hotelId, spec=${_spec.statuses}',
+      '[TicketsPagedNotifier] build: hotelId=$hotelId, tab=${_spec.tab}',
     );
     if (hotelId == null) {
       debugPrint(
@@ -146,36 +190,33 @@ class TicketsPagedNotifier
     required int page,
     required String hotelId,
   }) async {
-    final res = await _repo.fetchTicketsPage(
+    final res = await _repo.fetchTicketsV2Page(
+      tab: _spec.v2Tab,
       hotelId: hotelId,
-      statuses: _spec.statuses,
       page: page,
       perPage: _spec.perPage,
       departmentId: _spec.departmentId,
+      ticketType: _spec.ticketType,
       createdAtStartDate: _spec.createdAtStartDate,
       createdAtEndDate: _spec.createdAtEndDate,
-      ticketType: _spec.ticketType,
     );
-    final filtered = _spec.localPredicate == null
-        ? res.items
-        : res.items.where(_spec.localPredicate!).toList(growable: false);
+    debugPrint(
+      '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
+      'page=$page got=${res.items.length} total=${res.itemsTotal} '
+      'nextPage=${res.nextPage}',
+    );
     final current = state.valueOrNull;
     final merged = page == 1
-        ? filtered
-        : _mergeUniqueById(current?.items ?? const [], filtered);
+        ? res.items
+        : _mergeUniqueById(current?.items ?? const [], res.items);
     final sorted = _sort(
       merged,
       current?.sortOrder ?? TicketsSortOrder.newestFirst,
     );
-    // When client-side filtering is applied, use filtered count for itemsTotal
-    // so the UI count matches the actual displayed items.
-    final effectiveTotal = _spec.localPredicate != null && page == 1
-        ? filtered.length
-        : res.itemsTotal;
     return TicketsPageState(
       items: sorted,
       nextPage: res.nextPage,
-      itemsTotal: effectiveTotal,
+      itemsTotal: res.itemsTotal,
       isLoadingMore: false,
       sortOrder: current?.sortOrder ?? TicketsSortOrder.newestFirst,
       freshlyArrivedIds: current?.freshlyArrivedIds ?? const {},
@@ -212,31 +253,32 @@ class TicketsPagedNotifier
     }
   }
 
-  /// Switch the sort order and re-sort in memory. Doesn't refetch — the
-  /// next paged fetch will return server-sorted data anyway, and the
-  /// merge keeps order consistent.
   Future<void> setSortOrder(TicketsSortOrder order) async {
     final current = state.valueOrNull;
     if (current == null) return;
     if (current.sortOrder == order) return;
-    // Defer to avoid modifying state during build.
     await Future.microtask(() {});
     state = AsyncData(
       current.copyWith(sortOrder: order, items: _sort(current.items, order)),
     );
   }
 
-  /// Apply a realtime upsert respecting this provider's filter and sort.
+  /// Apply a realtime upsert respecting this provider's v2 tab membership.
   ///
-  /// - If the ticket no longer matches the filter (e.g. status moved on),
-  ///   it is removed from the list.
-  /// - If it matches and is already loaded, it is updated in place and
-  ///   re-sorted.
-  /// - If it matches and is new, it is inserted at the top (newest-first)
-  ///   or bottom (oldest-first). The next paged fetch will re-sort.
+  /// Membership rules (per v2 5-tab model):
+  ///   - incoming: status == 'NEW'
+  ///   - todayInProgress: status == 'IN_PROGRESS'
+  ///   - todayDone: status == 'DONE' AND completed today
+  ///   - backlog: server-owned. NEVER add via realtime; the listener
+  ///     will trigger a refetch separately.
+  ///   - doneHistory: status == 'DONE' (cumulative)
   void applyRealtimeUpsert(MyTicket ticket) {
     final current = state.valueOrNull;
     if (current == null) return;
+
+    // Backlog tab is server-owned; we cannot infer membership locally.
+    // The realtime listener invalidates this provider on its own.
+    if (_spec.tab == TicketsTab.backlog) return;
 
     final matches = _matchesFilter(ticket);
     final existingIndex = current.items.indexWhere((t) => t.id == ticket.id);
@@ -244,7 +286,6 @@ class TicketsPagedNotifier
     if (!matches) {
       if (existingIndex < 0) return;
       final next = [...current.items]..removeAt(existingIndex);
-      // Decrease itemsTotal since ticket no longer matches this tab's filter
       final newTotal = (current.itemsTotal > 0)
           ? current.itemsTotal - 1
           : current.itemsTotal - 1;
@@ -260,11 +301,9 @@ class TicketsPagedNotifier
       nextItems = current.sortOrder == TicketsSortOrder.newestFirst
           ? [ticket, ...current.items]
           : [...current.items, ticket];
-      // Increase itemsTotal since this is a new ticket for this tab
       newItemsTotal = current.itemsTotal + 1;
     } else {
       nextItems = [...current.items];
-      // Ensure transitioning state is cleared when socket confirmation arrives
       final updatedTicket = ticket.copyWith(isTransitioning: false);
       nextItems[existingIndex] = updatedTicket;
       nextItems = _sort(nextItems, current.sortOrder);
@@ -285,8 +324,6 @@ class TicketsPagedNotifier
     if (isBrandNew) _scheduleFreshClear(ticket.id);
   }
 
-  /// Apply a realtime delete — drops the ticket from the loaded items
-  /// if present.
   void applyRealtimeDelete(String ticketId) {
     final current = state.valueOrNull;
     if (current == null) return;
@@ -296,7 +333,6 @@ class TicketsPagedNotifier
         ? ({...current.freshlyArrivedIds}..remove(ticketId))
         : current.freshlyArrivedIds;
 
-    // Decrease itemsTotal since ticket was deleted
     final newTotal = (current.itemsTotal > 0)
         ? current.itemsTotal - 1
         : current.itemsTotal - 1;
@@ -311,12 +347,20 @@ class TicketsPagedNotifier
   }
 
   bool _matchesFilter(MyTicket t) {
-    final statusOk = _spec.statuses.any(
-      (s) => s.toUpperCase() == t.status.toUpperCase(),
-    );
-    if (!statusOk) return false;
-    if (_spec.localPredicate == null) return true;
-    return _spec.localPredicate!(t);
+    final status = t.status.toUpperCase();
+    switch (_spec.tab) {
+      case TicketsTab.incoming:
+        return status == 'NEW';
+      case TicketsTab.todayInProgress:
+        return status == 'IN_PROGRESS';
+      case TicketsTab.todayDone:
+        return status == 'DONE' && _isDoneToday(t);
+      case TicketsTab.backlog:
+        // Server-curated — never matches locally.
+        return false;
+      case TicketsTab.doneHistory:
+        return status == 'DONE';
+    }
   }
 
   List<MyTicket> _mergeUniqueById(
@@ -356,7 +400,6 @@ class TicketsPagedNotifier
     });
   }
 
-  /// Mark a ticket as transitioning (for shimmer effect)
   void markTicketTransitioning(String ticketId) {
     final current = state.valueOrNull;
     if (current == null) return;
@@ -371,7 +414,6 @@ class TicketsPagedNotifier
     state = AsyncData(current.copyWith(items: updatedItems));
   }
 
-  /// Update ticket status immediately (optimistic update)
   void updateTicketStatusImmediate(String ticketId, String newStatus) {
     final current = state.valueOrNull;
     if (current == null) return;
@@ -384,14 +426,12 @@ class TicketsPagedNotifier
       status: newStatus,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
       lastTransitionAt: DateTime.now().millisecondsSinceEpoch,
-      isTransitioning: true, // Keep shimmer effect until socket confirmation
+      isTransitioning: true,
     );
 
-    // Check if ticket still matches this tab's filter
     final matchesFilter = _matchesFilter(updatedTicket);
 
     if (!matchesFilter) {
-      // Ticket no longer belongs to this tab, remove it and update count
       final nextItems = [...current.items]..removeAt(index);
       final newTotal = (current.itemsTotal > 0)
           ? current.itemsTotal - 1
@@ -400,14 +440,12 @@ class TicketsPagedNotifier
         current.copyWith(items: nextItems, itemsTotal: newTotal),
       );
     } else {
-      // Update ticket in place
       final updatedItems = [...current.items];
       updatedItems[index] = updatedTicket;
       state = AsyncData(current.copyWith(items: updatedItems));
     }
   }
 
-  /// Update tab count immediately when ticket moves between tabs
   void updateTabCountImmediate({required int delta}) {
     final current = state.valueOrNull;
     if (current == null) return;
@@ -423,54 +461,43 @@ class TicketsPagedNotifier
 // Specs + providers per tab
 // ──────────────────────────────────────────────────────────────────────
 
-const _kIncomingSpec = TicketsPagedSpec(statuses: ['NEW']);
+// ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
+// Replaced by ticketsv2 5-tab model. Kept for reference.
+// const _kIncomingSpec = TicketsPagedSpec(statuses: ['NEW']);
+// final _kTodaySpec = TicketsPagedSpec(
+//   statuses: const ['ACCEPTED', 'IN_PROGRESS'],
+//   localPredicate: _isTransitionedToday,
+// );
+// final _kBacklogSpec = TicketsPagedSpec(
+//   statuses: const ['ACCEPTED', 'IN_PROGRESS'],
+//   localPredicate: _isNotTransitionedToday,
+// );
+// final _kDoneSpec = TicketsPagedSpec(
+//   statuses: const ['DONE'],
+//   localPredicate: _isDoneToday,
+// );
+// bool _isTransitionedToday(MyTicket t) =>
+//     _isSameLocalDay(t.dueAt, DateTime.now());
+// bool _isNotTransitionedToday(MyTicket t) => !_isTransitionedToday(t);
+// ─────────────────────────────────────────────────────────────────
 
-/// Today server spec: status IN [ACCEPTED, IN_PROGRESS]. Date filtering is
-/// applied client-side using `last_transition_at` semantics — see
-/// `MyTicketsState._changedToday`. We deliberately don't filter by
-/// `created_at` server-side since "today" means "something happened today
-/// on this ticket", not "created today".
-final _kTodaySpec = TicketsPagedSpec(
-  statuses: const ['ACCEPTED', 'IN_PROGRESS'],
-  localPredicate: _isTransitionedToday,
-);
+const _kIncomingSpec = TicketsPagedSpec(tab: TicketsTab.incoming);
+const _kTodayInProgressSpec = TicketsPagedSpec(tab: TicketsTab.todayInProgress);
+const _kTodayDoneSpec = TicketsPagedSpec(tab: TicketsTab.todayDone);
+const _kBacklogSpec = TicketsPagedSpec(tab: TicketsTab.backlog);
+const _kDoneHistorySpec = TicketsPagedSpec(tab: TicketsTab.doneHistory);
 
-/// Backlog server spec: same statuses as Today (still active work) but the
-/// inverse date predicate — `last_transition_at` is NOT today. Carryover
-/// from previous days. Server-side same status filter; the date split is
-/// purely client-side so a single `/get_my_tickets` page covers both tabs.
-final _kBacklogSpec = TicketsPagedSpec(
-  statuses: const ['ACCEPTED', 'IN_PROGRESS'],
-  localPredicate: _isNotTransitionedToday,
-);
-
-/// Done server spec: status DONE with client-side date filter so only
-/// tickets completed today are shown. Uses `confirmedAt` (when available)
-/// or falls back to `lastTransitionAt` / `acknowledgedAt` to determine
-/// the completion timestamp.
-final _kDoneSpec = TicketsPagedSpec(
-  statuses: const ['DONE'],
-  localPredicate: _isDoneToday,
-);
-
-/// Bucket predicate: ticket's `due_at` falls on today's local calendar.
-/// Mirrors [MyTicketsState._changedToday] so badge counts match paged list
-/// contents. Tickets with no due_at (`dueAt == 0`) are never Today —
-/// they fall into Backlog when active.
+/// Bucket predicate: ticket's timestamp falls on today's local calendar.
 bool _isSameLocalDay(int epochMs, DateTime now) {
   if (epochMs <= 0) return false;
   final dt = DateTime.fromMillisecondsSinceEpoch(epochMs).toLocal();
   return dt.year == now.year && dt.month == now.month && dt.day == now.day;
 }
 
-bool _isTransitionedToday(MyTicket t) =>
-    _isSameLocalDay(t.dueAt, DateTime.now());
-
-bool _isNotTransitionedToday(MyTicket t) => !_isTransitionedToday(t);
-
 /// True when [t] is a DONE ticket and was completed (confirmed) today.
 /// Uses `confirmedAt` when available, falls back to `lastTransitionAt`
 /// or `acknowledgedAt` to determine the completion timestamp.
+/// Used for todayDone realtime routing.
 bool _isDoneToday(MyTicket t) {
   if (!t.isDone) return false;
   final completedAt = t.confirmedAt > 0
@@ -479,8 +506,7 @@ bool _isDoneToday(MyTicket t) {
   return _isSameLocalDay(completedAt, DateTime.now());
 }
 
-/// AsyncNotifier provider, parameterised by spec. Each tab uses its own
-/// const spec so Riverpod gives back a stable instance.
+/// AsyncNotifier provider, parameterised by spec.
 final ticketsPagedProvider =
     AsyncNotifierProvider.family<
       TicketsPagedNotifier,
@@ -493,15 +519,17 @@ TicketsPagedSpec specForTab(TicketsTab tab) {
   switch (tab) {
     case TicketsTab.incoming:
       return _kIncomingSpec;
-    case TicketsTab.today:
-      return _kTodaySpec;
+    case TicketsTab.todayInProgress:
+      return _kTodayInProgressSpec;
+    case TicketsTab.todayDone:
+      return _kTodayDoneSpec;
     case TicketsTab.backlog:
       return _kBacklogSpec;
-    case TicketsTab.done:
-      return _kDoneSpec;
+    case TicketsTab.doneHistory:
+      return _kDoneHistorySpec;
   }
 }
 
-/// All four specs — used by the realtime listener to broadcast events
+/// All v2 tabs — used by the realtime listener to broadcast events
 /// into every paged provider that's currently alive.
 const List<TicketsTab> kAllTicketsTabs = TicketsTab.values;

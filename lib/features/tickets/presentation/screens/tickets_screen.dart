@@ -1,6 +1,11 @@
+// ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
+// Dashboard-era tickets screen. Replaced by tickets_screen_new.dart
+// which implements the v2 5-tab model. Kept for reference and
+// compatibility during transition.
+// ─────────────────────────────────────────────────────────────────
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/language_picker_sheet.dart';
@@ -140,64 +145,54 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
             // Quick filter chips (All / Accepted / In Progress / Overdue)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: asyncList.when(
-                data: (v) {
-                  final allCount =
-                      v.incomingNow.length +
-                      v.inProgress.length +
-                      v.completedToday.length;
-                  final acceptedCount = v.inProgress
-                      .where((t) => t.status == TicketStatus.accepted)
-                      .length;
-                  final inProgressCount = v.inProgress
-                      .where((t) => t.status == TicketStatus.inProgress)
-                      .length;
-                  final overdueCount = v.kpiOverdue;
-                  return SizedBox(
-                    height: 40,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        TicketsFilterChip(
-                          label: context.l10n.activityTypeAll,
-                          count: allCount,
-                          selected: true,
-                        ),
-                        const SizedBox(width: 8),
-                        TicketsFilterChip(
-                          label: context.l10n.statusAccepted,
-                          count: acceptedCount,
-                        ),
-                        const SizedBox(width: 8),
-                        TicketsFilterChip(
-                          label: context.l10n.statusInProgress,
-                          count: inProgressCount,
-                        ),
-                        const SizedBox(width: 8),
-                        TicketsFilterChip(
-                          label: context.l10n.statusOverdue,
-                          count: overdueCount,
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
+              child: () {
+                final allCount =
+                    asyncList.incomingNow.length +
+                    asyncList.inProgress.length +
+                    asyncList.completedToday.length;
+                final acceptedCount = asyncList.inProgress
+                    .where((t) => t.status == TicketStatus.accepted)
+                    .length;
+                final inProgressCount = asyncList.inProgress
+                    .where((t) => t.status == TicketStatus.inProgress)
+                    .length;
+                final overdueCount = asyncList.kpiOverdue;
+                return SizedBox(
+                  height: 40,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      TicketsFilterChip(
+                        label: context.l10n.activityTypeAll,
+                        count: allCount,
+                        selected: true,
+                      ),
+                      const SizedBox(width: 8),
+                      TicketsFilterChip(
+                        label: context.l10n.statusAccepted,
+                        count: acceptedCount,
+                      ),
+                      const SizedBox(width: 8),
+                      TicketsFilterChip(
+                        label: context.l10n.statusInProgress,
+                        count: inProgressCount,
+                      ),
+                      const SizedBox(width: 8),
+                      TicketsFilterChip(
+                        label: context.l10n.statusOverdue,
+                        count: overdueCount,
+                      ),
+                    ],
+                  ),
+                );
+              }(),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: asyncList.when(
-                data: (v) => KpiStrip(
-                  incoming: v.kpiIncoming,
-                  inProgress: v.kpiInProgress,
-                  overdue: v.kpiOverdue,
-                ),
-                loading: () =>
-                    const KpiStrip(incoming: 0, inProgress: 0, overdue: 0),
-                error: (_, __) =>
-                    const KpiStrip(incoming: 0, inProgress: 0, overdue: 0),
+              child: KpiStrip(
+                incoming: asyncList.kpiIncoming,
+                inProgress: asyncList.kpiInProgress,
+                overdue: asyncList.kpiOverdue,
               ),
             ),
             Padding(
@@ -212,11 +207,7 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
               child: RefreshIndicator(
                 onRefresh: _refresh,
                 color: ColorPalette.opsPurple,
-                child: asyncList.when(
-                  data: (v) => _TicketsList(view: v),
-                  loading: () => const _LoadingList(),
-                  error: (e, st) => _ErrorView(error: e.toString()),
-                ),
+                child: _TicketsList(view: asyncList.forSubTab(subTab)),
               ),
             ),
           ],
@@ -376,29 +367,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _LoadingList extends StatelessWidget {
-  const _LoadingList();
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-      itemCount: 4,
-      itemBuilder: (_, __) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Container(
-          height: 92,
-          decoration: BoxDecoration(
-            color: ColorPalette.opsSurfaceSubtle,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: ColorPalette.opsBorder),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _EmptyView extends StatelessWidget {
   const _EmptyView();
 
@@ -417,38 +385,6 @@ class _EmptyView extends StatelessWidget {
               color: ColorPalette.textSecondary,
             ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String error;
-  const _ErrorView({required this.error});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
-      children: [
-        const Icon(
-          LucideIcons.triangleAlert,
-          size: 56,
-          color: ColorPalette.statusOverdue,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          context.l10n.unknownError,
-          style: TypographyManager.bodyMedium,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          error,
-          style: TypographyManager.bodySmall,
-          textAlign: TextAlign.center,
         ),
       ],
     );

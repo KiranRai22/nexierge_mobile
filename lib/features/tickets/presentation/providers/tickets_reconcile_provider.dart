@@ -1,3 +1,9 @@
+// ─── V2 RECONCILE PROVIDER (2026-05-14) ────────────────────────
+// Reconciliation layer for missed realtime events on socket reconnect
+// and app resume. Triggers refetch of all v2 paged tabs + counts.
+// Ensures missed events surface within seconds without user action.
+// ─────────────────────────────────────────────────────────────────
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +12,7 @@ import '../../../../core/services/realtime/socket_connection_status.dart';
 import '../../../../core/services/realtime/xano_notification_channel.dart';
 import '../../../dashboard/presentation/providers/dashboard_counts_controller.dart';
 import 'my_tickets_notifier.dart';
+import 'tickets_paged_notifier.dart';
 
 /// Reconciliation layer for ticket state. Realtime socket frames are
 /// best-effort — events can be lost while disconnected, while the app is
@@ -57,10 +64,19 @@ final ticketsReconcileProvider = Provider<void>((ref) {
 
 void _reconcile(Ref ref, {required String reason}) {
   if (kDebugMode) debugPrint('[TicketsReconcile] reason=$reason → refresh');
-  // Refetch the legacy notifier (it also refetches every paged tab) and
-  // invalidate the dashboard counts so the next read pulls /dashboard/numbers.
-  ref.read(myTicketsNotifierProvider.notifier).refresh();
+  // V2: invalidate every paged ticket provider so each v2 tab refetches
+  // from its server-curated endpoint. Counts likewise invalidated.
+  for (final tab in kAllTicketsTabs) {
+    ref.invalidate(ticketsPagedProvider(specForTab(tab)));
+  }
   ref.invalidate(dashboardCountsControllerProvider);
+  // ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
+  // Replaced by ticketsv2 5-tab model. Kept for reference.
+  // ref.read(myTicketsNotifierProvider.notifier).refresh();
+  // ─────────────────────────────────────────────────────────────────
+  // Silence unused-import lint when legacy notifier is no longer read.
+  // ignore: unnecessary_statements
+  myTicketsNotifierProvider;
 }
 
 class _ResumeObserver extends WidgetsBindingObserver {

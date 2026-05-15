@@ -1,3 +1,10 @@
+// ─── V2 REALTIME LISTENER (2026-05-14) ──────────────────────────
+// Consumes Xano WebSocket ticket events and applies them to:
+//   - myTicketsNotifierProvider (legacy realtime state)
+//   - ticketsPagedProvider for each v2 tab (membership-aware upserts)
+// Handles debounced refreshes for server-curated tabs (backlog, counts).
+// ─────────────────────────────────────────────────────────────────
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -37,6 +44,21 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
     });
   }
 
+  // Backlog is server-curated — membership cannot be inferred locally.
+  // Debounce a refetch of the backlog paged provider per ~600ms window so a
+  // burst of socket frames maps to a single /ticketsv2/backlog request.
+  Timer? backlogDebounce;
+  void scheduleBacklogRefresh() {
+    backlogDebounce?.cancel();
+    backlogDebounce = Timer(const Duration(milliseconds: 600), () {
+      ref
+          .read(
+            ticketsPagedProvider(specForTab(TicketsTab.backlog)).notifier,
+          )
+          .refresh();
+    });
+  }
+
   final sub = socket.messageStream.listen(
     (raw) {
       final event = parseTicketRealtimeEvent(raw);
@@ -52,6 +74,9 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
                 .applyRealtimeUpsert(ticket);
           }
           scheduleCountsRefresh();
+          // Backlog is server-curated; force a debounced refetch so it stays
+          // in sync with status changes that may have shifted membership.
+          scheduleBacklogRefresh();
           // If the user is viewing this ticket's detail, pull the latest
           // payload so the activity timeline picks up the new transition
           // entry the backend just emitted.
@@ -67,6 +92,7 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
                 .applyRealtimeDelete(ticketId);
           }
           scheduleCountsRefresh();
+          scheduleBacklogRefresh();
       }
     },
     onError: (Object e) {
@@ -76,6 +102,7 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
 
   ref.onDispose(() {
     countsDebounce?.cancel();
+    backlogDebounce?.cancel();
     sub.cancel();
   });
 
