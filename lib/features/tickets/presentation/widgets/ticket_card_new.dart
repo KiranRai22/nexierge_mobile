@@ -697,7 +697,7 @@ class _ResolutionTimeRowState extends State<_ResolutionTimeRow> {
         ),
         const SizedBox(width: 4),
         Text(
-          '${s.ticketResolutionTimeLabel}: $timeText ${isOverdue ? "overdue" : ""}',
+          '${s.ticketResolutionTimeLabel}: $timeText ${isOverdue ? "" : ""}',
           style: TypographyManager.bodySmall.copyWith(
             color: isOverdue ? c.tagRedText : c.fgMuted,
             fontWeight: isOverdue ? FontWeight.w600 : FontWeight.w500,

@@ -560,7 +560,7 @@ class _MiniStepper extends StatelessWidget {
             border: Border.all(color: ColorPalette.opsBorder),
           ),
           child: InkWell(
-            onTap: value > 0 ? onMinus : null,
+            onTap: value > 0 ? tapSound(onMinus, SoundCategory.button) : null,
             borderRadius: BorderRadius.circular(6),
             child: Icon(
               Icons.remove_rounded,
@@ -586,7 +586,7 @@ class _MiniStepper extends StatelessWidget {
           borderRadius: BorderRadius.circular(6),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: onPlus,
+            onTap: tapSound(onPlus, SoundCategory.button),
             child: const SizedBox(
               width: 28,
               height: 28,

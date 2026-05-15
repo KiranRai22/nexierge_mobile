@@ -21,7 +21,6 @@ import '../../../domain/entities/my_ticket.dart';
 import '../../../domain/models/ticket.dart';
 import '../../providers/my_tickets_notifier.dart';
 import '../../providers/ticket_busy_provider.dart';
-import '../acknowledge_ticket_bottom_sheet.dart';
 import '../cancel_ticket_bottom_sheet.dart';
 import '../change_due_time_bottom_sheet.dart';
 import '../mark_done_bottom_sheet.dart';
@@ -35,7 +34,7 @@ import '../start_work_confirmation_bottom_sheet.dart';
 ///   [ Change Due ] [ Cancel ] [ Reset ]  <- secondary outline row
 ///
 /// Primary action label is driven by [Ticket.status]:
-///   - incoming  -> Accept (opens Acknowledge sheet)
+///   - incoming  -> Accept & Start (direct, no sheet)
 ///   - accepted  -> Start Work
 ///   - inProgress -> Mark as Done
 ///   - done/cancelled -> hidden
@@ -132,27 +131,16 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     );
   }
 
-  // ────────── ACCEPT (NEW → ACCEPTED or IN_PROGRESS) ──────────
+  // ────────── ACCEPT (NEW → IN_PROGRESS) ──────────
+  // Direct accept-and-start flow: no bottom sheet, immediate action with
+  // default 15-minute due time. Matches the quick card accept-and-start behavior.
 
   Future<void> _onAcceptIncoming() async {
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedAccept;
-    // Detail screen uses the legacy show()/pop()-with-result pattern: the
-    // detail page itself pops after the optimistic transition, so we can't
-    // leave the sheet sitting on top during the API call (the sheet's
-    // Navigator.pop inside `_runOptimistic` would pop the sheet instead).
-    // The global busy mark inside `_withGuard` still blocks any background
-    // card from being tapped while the API is in flight.
-    final result = await AcknowledgeTicketBottomSheet.show(
-      context: context,
-      ticketCode: t.code,
-      ticketTitle: t.guest?.displayName ?? '',
-      hasGuest: t.guest != null,
-    );
-    if (result == null) return;
     // V2: single "Start" action → IN_PROGRESS via /ticketsv2/start/{id}.
-    final dueAt =
-        DateTime.fromMillisecondsSinceEpoch(result.dueAtEpochMs);
+    // Use 15-minute default due time like the card quick action.
+    final dueAt = ServerClock.now().add(const Duration(minutes: 15));
     await _withGuard(
       () => _runOptimistic(
         newStatus: 'IN_PROGRESS',
@@ -502,25 +490,13 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // NEW tickets: a single full-width "Accept Ticket" button. Tapping
-            // opens the acknowledge bottom sheet (date/time + optional note +
-            // Accept / Accept & Start choice). The two-button split that was
-            // here previously is now inside the sheet, so the action bar
-            // matches the inline list-card flow.
+            // NEW tickets: a single full-width "Accept & Start" button.
+            // Direct flow: no bottom sheet, immediately starts the ticket
+            // with a default 15-minute due time (matches card quick action).
             if (t.status == TicketStatus.incoming) ...[
-              // [ACCEPT_AND_START_FLOW] NEW tickets used to open the
-              // acknowledge bottom sheet via _onAcceptIncoming and show
-              // s.ticketActionAccept. New flow: direct Accept & Start →
-              // IN_PROGRESS, no sheet.
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  // ─── LEGACY-V1 (2026-05-14) ──────────────────────────────
-                  // Old direct accept-and-start path (no sheet, 15-min default).
-                  // V2 reintroduces the acknowledge sheet so the operator can
-                  // pick a due_at, then calls startTicketV2.
-                  // onPressed: _busy ? null : tapSound(_onAcceptAndStart),
-                  // ─────────────────────────────────────────────────────────
                   onPressed: _busy ? null : tapSound(_onAcceptIncoming),
                   icon: const Icon(LucideIcons.play, size: 18),
                   // TODO(i18n): consider a dedicated "Start" key; reusing

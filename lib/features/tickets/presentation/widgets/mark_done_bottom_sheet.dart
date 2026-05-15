@@ -217,7 +217,7 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
                             ),
                           )
                         : const Icon(LucideIcons.circleCheck, size: 18),
-                    label: const Text('Mark as Done'),
+                    label: const Text('Mark Done'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.buttonInverted,
                       foregroundColor: c.fgOnInverted,

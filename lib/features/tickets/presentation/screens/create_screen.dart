@@ -226,7 +226,11 @@ class _CreateAppBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: Row(
         children: [
-          _CircleIconButton(icon: Icons.arrow_back_rounded, onPressed: onBack),
+          _CircleIconButton(
+            icon: Icons.arrow_back_rounded,
+            onPressed: onBack,
+            soundCategory: SoundCategory.back,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -289,7 +293,12 @@ class _CreateAppBar extends StatelessWidget {
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
-  const _CircleIconButton({required this.icon, required this.onPressed});
+  final SoundCategory soundCategory;
+  const _CircleIconButton({
+    required this.icon,
+    required this.onPressed,
+    this.soundCategory = SoundCategory.button,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +307,7 @@ class _CircleIconButton extends StatelessWidget {
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onPressed,
+        onTap: tapSound(onPressed, soundCategory),
         customBorder: const CircleBorder(),
         child: SizedBox(
           width: 36,
@@ -370,7 +379,7 @@ class _SegmentCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.card),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),

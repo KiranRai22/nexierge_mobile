@@ -136,7 +136,7 @@ class _CatalogSelectorCard extends StatelessWidget {
       color: ColorPalette.opsSurface,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.card),
         borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -953,7 +953,7 @@ class _CircleAddButton extends StatelessWidget {
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.button),
         customBorder: const CircleBorder(),
         child: const SizedBox(
           width: 36,
@@ -1015,7 +1015,7 @@ class _StepperBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: tapSound(onTap, SoundCategory.button),
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(
         width: 32,
@@ -1040,7 +1040,7 @@ class _StepperPlus extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap: tapSound(onTap, SoundCategory.button),
         child: const SizedBox(
           width: 32,
           height: 32,

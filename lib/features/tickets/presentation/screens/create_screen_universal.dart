@@ -227,7 +227,7 @@ class _SelectionInfoBar extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: onClearAll,
+            onTap: tapSound(onClearAll, SoundCategory.back),
             behavior: HitTestBehavior.opaque,
             child: Text(
               s.createSelectionBarClearAll,
@@ -256,7 +256,7 @@ class _StickyContinueCta extends StatelessWidget {
       top: false,
       minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: ElevatedButton(
-        onPressed: onTap,
+        onPressed: tapSound(onTap, SoundCategory.button),
         style: ElevatedButton.styleFrom(
           backgroundColor: ColorPalette.opsPurple,
           foregroundColor: ColorPalette.white,
@@ -371,7 +371,7 @@ class _UniversalItemTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: onToggle,
+          onTap: tapSound(onToggle, SoundCategory.card),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             width: double.infinity,
@@ -516,7 +516,7 @@ class _StepperButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap,
+      onTap: onTap != null ? tapSound(onTap!, SoundCategory.button) : null,
       borderRadius: BorderRadius.circular(6),
       child: SizedBox(
         width: 26,
