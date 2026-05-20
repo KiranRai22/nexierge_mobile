@@ -61,14 +61,16 @@ abstract class TicketRemoteDataSource {
     String? resolutionNote,
   });
 
-  /// POST /tickets/acknowledge/{id} — accepts a ticket with optional due time and notes
+  /// @Deprecated('Use startTicketV2 instead')
+  @Deprecated('Use startTicketV2 instead')
   Future<void> acknowledgeTicket({
     required String ticketId,
     required int dueAt,
     String? notes,
   });
 
-  /// POST /tickets/acknowledge_and_start/{id} — accepts and starts a ticket with optional due time and notes
+  /// @Deprecated('Use startTicketV2 instead')
+  @Deprecated('Use startTicketV2 instead')
   Future<void> acknowledgeAndStartTicket({
     required String ticketId,
     required int dueAt,
@@ -148,6 +150,28 @@ abstract class TicketRemoteDataSource {
   Future<void> completeTicketV2({
     required String ticketId,
     String? resolutionNote,
+  });
+
+  /// POST /ticketsv2/backlog/{id} — moves ticket to backlog.
+  /// Body: `{tickets_v2_id, reason}`
+  Future<void> moveToBacklogV2({
+    required String ticketId,
+    required String reason,
+  });
+
+  /// POST /ticketsv2/add_time/{id} — adds additional time to ticket SLA.
+  /// Body: `{tickets_v2_id, reason, extension_minutes?}`
+  Future<void> addTimeV2({
+    required String ticketId,
+    required String reason,
+    int? extensionMinutes,
+  });
+
+  /// POST /ticketsv2/reset_acknowledge/{id} — resets ticket acknowledgement.
+  /// Body: `{tickets_v2_id, reason}`
+  Future<void> resetAcknowledgeV2({
+    required String ticketId,
+    required String reason,
   });
 
   /// Get all service catalogs for a hotel
@@ -389,15 +413,18 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required int newDueAt,
     required String reason,
   }) async {
-    final url = APIEndpoints.ticketsChangeDueTime(ticketId);
-    debugPrint('[TicketRemoteDataSource] changeDueTime: PATCH $url');
-    // Backend expects `due_at` as a string ms timestamp (not int).
-    await _dio.patch(
+    final url = APIEndpoints.ticketsV2AddTime(ticketId);
+    debugPrint('[TicketRemoteDataSource][v2] addTime: POST $url');
+    // V2 endpoint uses extension_minutes instead of absolute due_at
+    // Calculate extension from current time to newDueAt
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final extensionMinutes = ((newDueAt - now) / 60000).round();
+    await _dio.post(
       url,
       data: {
-        'due_at': newDueAt.toString(),
+        'tickets_v2_id': ticketId,
         'reason': reason,
-        'hotel_id': hotelId,
+        'extension_minutes': extensionMinutes > 0 ? extensionMinutes : 30,
       },
     );
   }
@@ -599,6 +626,50 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     await _dio.post(url, data: {
       'tickets_v2_id': ticketId,
       'resolution_notes': note,
+    });
+  }
+
+  @override
+  Future<void> moveToBacklogV2({
+    required String ticketId,
+    required String reason,
+  }) async {
+    final url = APIEndpoints.ticketsV2BacklogMove(ticketId);
+    debugPrint('[TicketRemoteDataSource][v2] moveToBacklogV2 $url reason=$reason');
+    await _dio.post(url, data: {
+      'tickets_v2_id': ticketId,
+      'reason': reason,
+    });
+  }
+
+  @override
+  Future<void> addTimeV2({
+    required String ticketId,
+    required String reason,
+    int? extensionMinutes,
+  }) async {
+    final url = APIEndpoints.ticketsV2AddTime(ticketId);
+    final payload = <String, dynamic>{
+      'tickets_v2_id': ticketId,
+      'reason': reason,
+    };
+    if (extensionMinutes != null) {
+      payload['extension_minutes'] = extensionMinutes;
+    }
+    debugPrint('[TicketRemoteDataSource][v2] addTimeV2 $url payload=$payload');
+    await _dio.post(url, data: payload);
+  }
+
+  @override
+  Future<void> resetAcknowledgeV2({
+    required String ticketId,
+    required String reason,
+  }) async {
+    final url = APIEndpoints.ticketsV2ResetAcknowledge(ticketId);
+    debugPrint('[TicketRemoteDataSource][v2] resetAcknowledgeV2 $url reason=$reason');
+    await _dio.post(url, data: {
+      'tickets_v2_id': ticketId,
+      'reason': reason,
     });
   }
 

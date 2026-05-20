@@ -66,19 +66,15 @@ class TicketsFilterChips extends StatelessWidget {
         ];
       case TicketsMainTab.today:
         return [
-          _FilterOption('all', s.activityTypeAll),
-          // [ACCEPT_AND_START_FLOW] Accepted chip removed — NEW tickets now
-          // skip the ACCEPTED state entirely (Accept & Start → IN_PROGRESS).
-          // _FilterOption('accepted', s.statusAccepted),
-          _FilterOption('inprogress', s.statusInProgress),
+          _FilterOption('active', s.statusActive),
           _FilterOption('overdue', s.statusOverdue, isDanger: true),
-          _FilterOption('done', s.statusDone),
+          _FilterOption('newest', s.filterNewestFirst),
+          _FilterOption('oldest', s.filterOldestFirst),
         ];
       case TicketsMainTab.backlog:
         return [
-          _FilterOption('all', s.activityTypeAll),
-          _FilterOption('inprogress', s.statusInProgress),
-          _FilterOption('overdue', s.statusOverdue, isDanger: true),
+          _FilterOption('newest', s.filterNewestFirst),
+          _FilterOption('oldest', s.filterOldestFirst),
         ];
       case TicketsMainTab.done:
         // ENHANCEMENT: Hide filters for done tab for now

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nexierge/features/dashboard/data/datasources/dashboard_remote_data_source.dart';
 
@@ -7,6 +6,7 @@ import '../../../auth/data/services/auth_me_service.dart';
 import '../../../auth/domain/entities/user_profile.dart' as auth;
 import '../../../auth/presentation/providers/user_profile_controller.dart'
     as auth_ctrl;
+import '../../../version_control/presentation/providers/version_check_notifier.dart';
 import '../../data/datasources/dashboard_remote_data_source.dart'
     as dashboard_dto;
 import '../../data/services/dashboard_data_service.dart';
@@ -31,24 +31,14 @@ class DashboardBootstrapController
     _dashboardRemote = ref.read(dashboardRemoteDataSourceProvider);
     _dataService = DashboardDataService();
 
-    debugPrint('[DashboardBootstrapController] build: Starting bootstrap');
-
     // Check if we have cached data that's still fresh
     final isComplete = await _dataService.isBootstrapComplete();
     if (isComplete) {
-      debugPrint('[DashboardBootstrapController] Using cached bootstrap data');
       final cached = await _loadFromCache();
       if (cached.hasAllData) {
-        debugPrint(
-          '[DashboardBootstrapController] Bootstrap complete from cache',
-        );
         return cached.copyWith(isComplete: true);
       }
     }
-
-    debugPrint(
-      '[DashboardBootstrapController] Bootstrap not complete, returning empty state',
-    );
     // Start with empty state - loading happens via runBootstrap()
     return DashboardBootstrapState.empty;
   }
@@ -63,15 +53,10 @@ class DashboardBootstrapController
     );
 
     try {
-      debugPrint(
-        '[DashboardBootstrapController] Step 1: Fetching user profile from me_user...',
-      );
-      final userStopwatch = Stopwatch()..start();
 
       // Step 1: Call me_user FIRST to get user profile (includes userId)
       final userProfileDto = await _fetchUserProfile();
 
-      userStopwatch.stop();
       if (userProfileDto == null) {
         throw Exception('Failed to fetch user profile from me_user API');
       }
@@ -79,27 +64,14 @@ class DashboardBootstrapController
       final userProfile = userProfileDto.toEntity();
       final effectiveHotelUserId = hotelUserId ?? userProfile.id;
 
-      debugPrint(
-        '[DashboardBootstrapController] User profile fetched in ${userStopwatch.elapsedMilliseconds}ms'
-        '\n  - userId: $effectiveHotelUserId'
-        '\n  - email: ${userProfile.email}',
-      );
-
       if (effectiveHotelUserId.isEmpty) {
         throw Exception('User profile does not contain userId');
       }
 
       // Step 2: Now call dashboard/numbers with the userId
-      debugPrint(
-        '[DashboardBootstrapController] Step 2: Fetching dashboard numbers...',
-      );
-      final numbersStopwatch = Stopwatch()..start();
-
       final dashboardNumbersDto = await _fetchDashboardNumbers(
         effectiveHotelUserId,
       );
-
-      numbersStopwatch.stop();
 
       final dashboardNumbers = dashboardNumbersDto != null
           ? DashboardNumbers(
@@ -110,14 +82,6 @@ class DashboardBootstrapController
               notStarted: dashboardNumbersDto.notStarted ?? '',
             )
           : null;
-
-      debugPrint(
-        '[DashboardBootstrapController] Dashboard numbers fetched in ${numbersStopwatch.elapsedMilliseconds}ms'
-        '\n  - needsAcknowledgement: ${dashboardNumbers?.needsAcknowledgement}'
-        '\n  - inprogress: ${dashboardNumbers?.inprogress}'
-        '\n  - overdue: ${dashboardNumbers?.overdue}'
-        '\n  - notStarted: ${dashboardNumbers?.notStarted}',
-      );
 
       // Save to local storage
       await _saveToCache(
@@ -134,9 +98,9 @@ class DashboardBootstrapController
         ),
       );
 
-      debugPrint('[DashboardBootstrapController] Bootstrap complete');
+      // Trigger version check after successful authentication and bootstrap
+      ref.read(versionCheckProvider.notifier).checkAfterAuth();
     } catch (e, st) {
-      debugPrint('[DashboardBootstrapController] Bootstrap failed: $e');
       state = AsyncError(e, st);
     }
   }
@@ -145,8 +109,7 @@ class DashboardBootstrapController
   Future<UserProfileDto?> _fetchUserProfile() async {
     try {
       return await _authMeService.fetchMe();
-    } catch (e) {
-      debugPrint('[DashboardBootstrapController] Me user API failed: $e');
+    } catch (_) {
       return null;
     }
   }
@@ -157,8 +120,7 @@ class DashboardBootstrapController
   ) async {
     try {
       return await _dashboardRemote.getNumbers(hotelUserId: hotelUserId);
-    } catch (e) {
-      debugPrint('[DashboardBootstrapController] Numbers API failed: $e');
+    } catch (_) {
       return null;
     }
   }
@@ -188,10 +150,7 @@ class DashboardBootstrapController
         await _dataService.saveDashboardNumbers(dashboardNumbers);
       }
       await _dataService.markBootstrapComplete();
-      debugPrint('[DashboardBootstrapController] Data cached successfully');
-    } catch (e) {
-      debugPrint('[DashboardBootstrapController] Failed to cache data: $e');
-    }
+    } catch (_) {}
   }
 
   /// Clear all cached bootstrap data (called on logout)

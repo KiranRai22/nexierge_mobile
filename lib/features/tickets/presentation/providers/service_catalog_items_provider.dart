@@ -56,16 +56,42 @@ CatalogItem _mapItemDtoToCatalogItem(ServiceCatalogItemDto dto) {
     basePrice: dto.price,
     optionGroups: groups,
     imageUrl: imageUrl,
+    category: dto.categoryName,
   );
 }
 
 /// Async provider that fetches all items for a given catalog id.
+/// Fetches all pages until no more items are returned.
 final serviceCatalogItemsProvider = FutureProvider.family
     .autoDispose<List<CatalogItem>, String>((ref, catalogId) async {
       if (catalogId.isEmpty) return const [];
-      debugPrint('[serviceCatalogItemsProvider] fetching for $catalogId');
+      debugPrint('[serviceCatalogItemsProvider] fetching all items for $catalogId');
       final repo = ref.read(ticketRepositoryProvider);
-      final dtos = await repo.fetchServiceCatalogItems(catalogId: catalogId);
-      debugPrint('[serviceCatalogItemsProvider] fetched ${dtos.length} items');
-      return dtos.map(_mapItemDtoToCatalogItem).toList(growable: false);
+
+      // Fetch all pages until empty
+      final allItems = <CatalogItem>[];
+      final seenIds = <String>{}; // Track IDs to avoid duplicates
+      int page = 0;
+      while (true) {
+        final dtos = await repo.fetchServiceCatalogItems(catalogId: catalogId, page: page);
+        debugPrint('[serviceCatalogItemsProvider] Page $page: fetched ${dtos.length} items');
+        if (dtos.isEmpty) break;
+        
+        // Filter out duplicates and add new items
+        for (final dto in dtos) {
+          if (!seenIds.contains(dto.id)) {
+            seenIds.add(dto.id);
+            allItems.add(_mapItemDtoToCatalogItem(dto));
+          } else {
+            debugPrint('[serviceCatalogItemsProvider] Skipping duplicate item: ${dto.id} - ${dto.name}');
+          }
+        }
+        
+        page++;
+        // Safety limit - max 10 pages (1000 items at 100 per page)
+        if (page > 10) break;
+      }
+
+      debugPrint('[serviceCatalogItemsProvider] Total unique items: ${allItems.length} (duplicates skipped: ${seenIds.length - allItems.length})');
+      return allItems;
     });

@@ -112,14 +112,16 @@ abstract class TicketRepository {
     String? resolutionNote,
   });
 
-  /// Accepts a ticket with due time and optional notes
+  /// @Deprecated('Use startTicketV2 instead')
+  @Deprecated('Use startTicketV2 instead')
   Future<void> acknowledgeTicket({
     required String ticketId,
     required int dueAt,
     String? notes,
   });
 
-  /// Accepts and starts a ticket with due time and optional notes
+  /// @Deprecated('Use startTicketV2 instead')
+  @Deprecated('Use startTicketV2 instead')
   Future<void> acknowledgeAndStartTicket({
     required String ticketId,
     required int dueAt,
@@ -153,6 +155,25 @@ abstract class TicketRepository {
   Future<void> completeTicketV2({
     required String ticketId,
     String? resolutionNote,
+  });
+
+  /// POST /ticketsv2/backlog/{id}. Moves ticket to backlog.
+  Future<void> moveToBacklogV2({
+    required String ticketId,
+    required String reason,
+  });
+
+  /// POST /ticketsv2/add_time/{id}. Adds time to ticket SLA.
+  Future<void> addTimeV2({
+    required String ticketId,
+    required String reason,
+    int? extensionMinutes,
+  });
+
+  /// POST /ticketsv2/reset_acknowledge/{id}. Resets ticket acknowledgement.
+  Future<void> resetAcknowledgeV2({
+    required String ticketId,
+    required String reason,
   });
 
   /// Submits a catalog (paid) order via
@@ -784,6 +805,59 @@ class _TicketRepositoryImpl implements TicketRepository {
       await _remote.completeTicketV2(
         ticketId: ticketId,
         resolutionNote: resolutionNote,
+      );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> moveToBacklogV2({
+    required String ticketId,
+    required String reason,
+  }) async {
+    try {
+      await _remote.moveToBacklogV2(
+        ticketId: ticketId,
+        reason: reason,
+      );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> addTimeV2({
+    required String ticketId,
+    required String reason,
+    int? extensionMinutes,
+  }) async {
+    try {
+      await _remote.addTimeV2(
+        ticketId: ticketId,
+        reason: reason,
+        extensionMinutes: extensionMinutes,
+      );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> resetAcknowledgeV2({
+    required String ticketId,
+    required String reason,
+  }) async {
+    try {
+      await _remote.resetAcknowledgeV2(
+        ticketId: ticketId,
+        reason: reason,
       );
     } on DioException catch (e) {
       throw mapDioError(e);

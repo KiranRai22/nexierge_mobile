@@ -20,7 +20,7 @@ class _VersionControlRemoteDataSourceImpl
     final response = await _dio.get(APIEndpoints.versionControl);
     if (response.statusCode != 200) {
       throw Exception(
-        '[VersionControl] Unexpected status ${response.statusCode}',
+        'Unexpected status ${response.statusCode}',
       );
     }
     final data = response.data as Map<String, dynamic>;

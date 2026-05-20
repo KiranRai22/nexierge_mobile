@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/app_info_service.dart';
+import '../../../auth/presentation/providers/auth_session_controller.dart';
 import '../../data/repositories/version_control_repository_impl.dart';
 import '../../domain/entities/app_version.dart';
 
@@ -41,11 +41,19 @@ class VersionCheckNotifier
 
   Future<VersionCheckResult> _check() async {
     try {
+      // Wait for authentication to be available
+      final authSession = ref.read(authSessionControllerProvider);
+      final authSessionValue = authSession.valueOrNull;
+      final authUser = authSessionValue?.user;
+
+      if (authUser == null && authSessionValue?.authToken.isNotEmpty != true) {
+        return const VersionUpToDate();
+      }
+
       final repo = ref.read(versionControlRepositoryProvider);
       final appInfo = ref.read(appInfoServiceProvider);
-
       final latest = await repo.fetchLatestVersion();
-
+      
       // Pick the version string for the running platform.
       final serverVersion =
           Platform.isIOS ? latest.iosVersion : latest.androidVersion;
@@ -54,15 +62,15 @@ class VersionCheckNotifier
         return const VersionUpToDate();
       }
 
-      if (!appInfo.isOutdated(serverVersion)) {
+      final isOutdated = appInfo.isOutdated(serverVersion);
+      if (!isOutdated) {
         return const VersionUpToDate();
       }
 
       return latest.updateType == UpdateType.force
           ? VersionUpdateForced(latest)
           : VersionUpdateOptional(latest);
-    } catch (e, st) {
-      debugPrint('[VersionCheck] Failed: $e\n$st');
+    } catch (_) {
       // On any error (network, server, etc.) treat as up-to-date so the
       // operator is never blocked by a transient failure.
       return const VersionUpToDate();
@@ -72,6 +80,11 @@ class VersionCheckNotifier
   Future<void> recheck() async {
     state = const AsyncLoading<VersionCheckResult>().copyWithPrevious(state);
     state = AsyncData(await _check());
+  }
+
+  /// Trigger version check after authentication completes
+  Future<void> checkAfterAuth() async {
+    await recheck();
   }
 
   /// Store URL for the running platform, falling back to an empty string.

@@ -104,6 +104,20 @@ abstract class APIEndpoints {
   static String ticketsV2Done(String ticketId) =>
       '$_ticketsV2Base/done/$ticketId';
 
+  /// POST `/ticketsv2/backlog/{id}` — body `{reason: <string>}`. Moves to backlog.
+  static String ticketsV2BacklogMove(String ticketId) =>
+      '$_ticketsV2Base/backlog/$ticketId';
+
+  /// POST `/ticketsv2/add_time/{id}` — adds additional time to ticket SLA.
+  /// Body: `{tickets_v2_id, reason, extension_minutes?}`
+  static String ticketsV2AddTime(String ticketId) =>
+      '$_ticketsV2Base/add_time/$ticketId';
+
+  /// POST `/ticketsv2/reset_acknowledge/{id}` — body `{reason: <string>}`.
+  /// Resets ticket acknowledgement.
+  static String ticketsV2ResetAcknowledge(String ticketId) =>
+      '$_ticketsV2Base/reset_acknowledge/$ticketId';
+
   /// Base path for `/tickets/change_status/{id}` — append the ticket id
   /// to form the full URL. Body carries `{tickets_v2_id, new_status}`.
   static const String ticketsChangeStatusBase =
@@ -113,31 +127,34 @@ abstract class APIEndpoints {
 
   static const String ticketsCancel = '$_host/api:bAt3sLZU/tickets/cancel';
 
-  /// Base path for `PATCH /tickets/change_due_time/{id}` — append the ticket
-  /// id to form the full URL. Body carries
-  /// `{due_at: <ms_string>, reason, hotel_id}`. Replaces the legacy
-  /// `tickets/change_due` POST endpoint.
+  /// @Deprecated('Use ticketsV2AddTime instead')
+  /// Legacy PATCH endpoint for changing due time.
+  @Deprecated('Use ticketsV2AddTime instead')
   static const String ticketsChangeDueTimeBase =
       '$_host/api:t_TeioyT/tickets/change_due_time';
+  @Deprecated('Use ticketsV2AddTime instead')
   static String ticketsChangeDueTime(String ticketId) =>
       '$ticketsChangeDueTimeBase/$ticketId';
 
-  // ─── LEGACY-V1 (2026-05-14) ─────────────────────────────────────────────
-  // `acknowledge` + `acknowledge_and_start` replaced by ticketsv2 `start`.
-  // Kept active for rollback safety; remove after v2 stable.
+  // ─── DEPRECATED V1 (2026-05-20) ───────────────────────────────────────────
+  // These endpoints are deprecated. Use V2 equivalents:
+  // - `acknowledge` / `acknowledge_and_start` → `ticketsV2Start`
+  // Scheduled for removal after 30 days of V2 stability.
   // ────────────────────────────────────────────────────────────────────────
 
-  /// Base path for `/tickets/acknowledge/{id}` — append the ticket id
-  /// to form the full URL. Body carries `{due_at, notes}`.
+  /// @Deprecated('Use ticketsV2Start instead')
+  @Deprecated('Use ticketsV2Start instead')
   static const String ticketsAcknowledgeBase =
       '$_host/api:t_TeioyT/tickets/acknowledge';
+  @Deprecated('Use ticketsV2Start instead')
   static String ticketsAcknowledge(String ticketId) =>
       '$ticketsAcknowledgeBase/$ticketId';
 
-  /// Base path for `/tickets/acknowledge_and_start/{id}` — append the ticket id
-  /// to form the full URL. Body carries `{due_at, notes}`.
+  /// @Deprecated('Use ticketsV2Start instead')
+  @Deprecated('Use ticketsV2Start instead')
   static const String ticketsAcknowledgeAndStartBase =
       '$_host/api:t_TeioyT/tickets/acknowledge_and_start';
+  @Deprecated('Use ticketsV2Start instead')
   static String ticketsAcknowledgeAndStart(String ticketId) =>
       '$ticketsAcknowledgeAndStartBase/$ticketId';
 

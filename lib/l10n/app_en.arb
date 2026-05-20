@@ -93,7 +93,8 @@
   "kpiOverdue": "OVERDUE",
 
   "subTabIncoming": "Incoming",
-  "subTabToday": "Today",
+  "subTabToday": "In Progress",
+  "subTabOverdue": "Overdue",
   "subTabBacklog": "Backlog",
   "subTabDone": "Done",
 
@@ -110,6 +111,7 @@
   "statusUnassigned": "Unassigned",
   "statusAccepted": "Accepted",
   "statusInProgress": "In progress",
+  "statusActive": "Active",
   "statusDone": "Done",
   "statusCancelled": "Cancelled",
   "statusOverdue": "Overdue",
@@ -170,6 +172,7 @@
     }
   },
   "ticketResolutionTimeLabel": "Resolution Time",
+  "ticketElapsedTimeLabel": "Elapsed Time",
   "ticketResolutionTimeValue": "{time} remaining",
   "@ticketResolutionTimeValue": {
     "placeholders": {
@@ -610,8 +613,8 @@
   },
   "actionAcceptShort": "Accept",
 
-  "filterNewestFirst": "Newest first",
-  "filterOldestFirst": "Oldest first",
+  "filterNewestFirst": "Newest",
+  "filterOldestFirst": "Oldest",
   "filterThisWeek": "This week",
   "filterThisMonth": "This month",
 
@@ -766,6 +769,7 @@
   "toastTapToView": "Tap to view",
   "toastTabIncoming": "Incoming",
   "toastTabToday": "Today",
+  "toastTabOverdue": "Overdue",
   "toastTabDone": "Done",
   "toastTicketTypeLabel": "Type: {kind}",
   "@toastTicketTypeLabel": {

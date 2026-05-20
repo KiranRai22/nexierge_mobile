@@ -337,102 +337,104 @@ class _ProfileBodyState extends State<_ProfileBody> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              ProfileInfoSection(
-                key: const ValueKey(ProfileSectionId.hotel),
-                sectionId: ProfileSectionId.hotel,
-                title: 'Hotel Details',
-                summary: _buildHotelSummary(widget.profile),
-                rows: [
-                  if (widget.profile.hotelBusinessEmail != null &&
-                      widget.profile.hotelBusinessEmail!.isNotEmpty)
-                    ProfileInfoRow(
-                      label: 'Business Email',
-                      value: widget.profile.hotelBusinessEmail!,
-                    ),
-                  if (widget.profile.hotelBusinessPhone != null &&
-                      widget.profile.hotelBusinessPhone!.isNotEmpty)
-                    ProfileInfoRow(
-                      label: 'Business Phone',
-                      value: widget.profile.hotelBusinessPhone!,
-                    ),
-                  if (widget.profile.hotelWebsite != null &&
-                      widget.profile.hotelWebsite!.isNotEmpty)
-                    ProfileInfoRow(
-                      label: 'Website',
-                      value: widget.profile.hotelWebsite!,
-                    ),
-                  if (widget.profile.hotelAddress != null &&
-                      widget.profile.hotelAddress!.isNotEmpty)
-                    ProfileInfoRow(
-                      label: 'Address',
-                      value: widget.profile.hotelAddress!,
-                    ),
-                  if (widget.profile.hotelTimezone != null &&
-                      widget.profile.hotelTimezone!.isNotEmpty)
-                    ProfileInfoRow(
-                      label: 'Timezone',
-                      value: widget.profile.hotelTimezone!,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              ProfileInfoSection(
-                key: const ValueKey(ProfileSectionId.subscription),
-                sectionId: ProfileSectionId.subscription,
-                title: 'Subscription',
-                summary: _buildSubscriptionSummary(widget.profile),
-                rows: [
-                  ProfileInfoRow(
-                    label: 'Plan',
-                    value: widget.profile.subscriptionPlan ?? 'Not available',
-                  ),
-                  ProfileInfoRow(
-                    label: 'Status',
-                    value: widget.profile.subscriptionActive ?? false
-                        ? 'Active'
-                        : 'Inactive',
-                  ),
-                  if (widget.profile.subscriptionStartDate != null)
-                    ProfileInfoRow(
-                      label: 'Start Date',
-                      value: _formatDate(widget.profile.subscriptionStartDate!),
-                    ),
-                  if (widget.profile.subscriptionEndDate != null)
-                    ProfileInfoRow(
-                      label: 'End Date',
-                      value: _formatDate(widget.profile.subscriptionEndDate!),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              ProfileInfoSection(
-                key: const ValueKey(ProfileSectionId.systemAccess),
-                sectionId: ProfileSectionId.systemAccess,
-                title: 'System Access',
-                summary: _buildAccessSummary(widget.profile),
-                rows: [
-                  ProfileInfoRow(
-                    label: 'Login Method',
-                    value: widget.profile.authMethod ?? 'Password',
-                  ),
-                  ProfileInfoRow(
-                    label: 'Interface Access',
-                    value: widget.profile.interfaceAccess ?? 'Web',
-                  ),
-                  if (widget.profile.hubAccess.isNotEmpty)
-                    ProfileInfoRow(
-                      label: 'Hub Access',
-                      value: widget.profile.hubAccess.join(', '),
-                    ),
-                  if (widget.profile.lastLoginAt != null)
-                    ProfileInfoRow(
-                      label: 'Last Login',
-                      value: _formatDate(widget.profile.lastLoginAt!),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              // ── Hotel Details (hidden) ─────────────────────────────────────
+              // ProfileInfoSection(
+              //   key: const ValueKey(ProfileSectionId.hotel),
+              //   sectionId: ProfileSectionId.hotel,
+              //   title: 'Hotel Details',
+              //   summary: _buildHotelSummary(widget.profile),
+              //   rows: [
+              //     if (widget.profile.hotelBusinessEmail != null &&
+              //         widget.profile.hotelBusinessEmail!.isNotEmpty)
+              //       ProfileInfoRow(
+              //         label: 'Business Email',
+              //         value: widget.profile.hotelBusinessEmail!,
+              //       ),
+              //     if (widget.profile.hotelBusinessPhone != null &&
+              //         widget.profile.hotelBusinessPhone!.isNotEmpty)
+              //       ProfileInfoRow(
+              //         label: 'Business Phone',
+              //         value: widget.profile.hotelBusinessPhone!,
+              //       ),
+              //     if (widget.profile.hotelWebsite != null &&
+              //         widget.profile.hotelWebsite!.isNotEmpty)
+              //       ProfileInfoRow(
+              //         label: 'Website',
+              //         value: widget.profile.hotelWebsite!,
+              //       ),
+              //     if (widget.profile.hotelAddress != null &&
+              //         widget.profile.hotelAddress!.isNotEmpty)
+              //       ProfileInfoRow(
+              //         label: 'Address',
+              //         value: widget.profile.hotelAddress!,
+              //       ),
+              //     if (widget.profile.hotelTimezone != null &&
+              //         widget.profile.hotelTimezone!.isNotEmpty)
+              //       ProfileInfoRow(
+              //         label: 'Timezone',
+              //         value: widget.profile.hotelTimezone!,
+              //       ),
+              //   ],
+              // ),
+              // const SizedBox(height: 24),
+              // ── Subscription (hidden) ─────────────────────────────────────────
+              // ProfileInfoSection(
+              //   key: const ValueKey(ProfileSectionId.subscription),
+              //   sectionId: ProfileSectionId.subscription,
+              //   title: 'Subscription',
+              //   summary: _buildSubscriptionSummary(widget.profile),
+              //   rows: [
+              //     ProfileInfoRow(
+              //       label: 'Plan',
+              //       value: widget.profile.subscriptionPlan ?? 'Not available',
+              //     ),
+              //     ProfileInfoRow(
+              //       label: 'Status',
+              //       value: widget.profile.subscriptionActive ?? false
+              //           ? 'Active'
+              //           : 'Inactive',
+              //     ),
+              //     if (widget.profile.subscriptionStartDate != null)
+              //       ProfileInfoRow(
+              //         label: 'Start Date',
+              //         value: _formatDate(widget.profile.subscriptionStartDate!),
+              //       ),
+              //     if (widget.profile.subscriptionEndDate != null)
+              //       ProfileInfoRow(
+              //         label: 'End Date',
+              //         value: _formatDate(widget.profile.subscriptionEndDate!),
+              //       ),
+              //   ],
+              // ),
+              // const SizedBox(height: 24),
+              // ── System Access (hidden) ────────────────────────────────────────
+              // ProfileInfoSection(
+              //   key: const ValueKey(ProfileSectionId.systemAccess),
+              //   sectionId: ProfileSectionId.systemAccess,
+              //   title: 'System Access',
+              //   summary: _buildAccessSummary(widget.profile),
+              //   rows: [
+              //     ProfileInfoRow(
+              //       label: 'Login Method',
+              //       value: widget.profile.authMethod ?? 'Password',
+              //     ),
+              //     ProfileInfoRow(
+              //       label: 'Interface Access',
+              //       value: widget.profile.interfaceAccess ?? 'Web',
+              //     ),
+              //     if (widget.profile.hubAccess.isNotEmpty)
+              //       ProfileInfoRow(
+              //         label: 'Hub Access',
+              //         value: widget.profile.hubAccess.join(', '),
+              //       ),
+              //     if (widget.profile.lastLoginAt != null)
+              //       ProfileInfoRow(
+              //         label: 'Last Login',
+              //         value: _formatDate(widget.profile.lastLoginAt!),
+              //       ),
+              //   ],
+              // ),
+              // const SizedBox(height: 24),
               ProfilePreferencesSection(),
               const SizedBox(height: 24),
               const ProfileLogoutButton(),

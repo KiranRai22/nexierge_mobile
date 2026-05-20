@@ -258,7 +258,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get subTabIncoming => 'Entrantes';
 
   @override
-  String get subTabToday => 'Hoy';
+  String get subTabToday => 'En Progreso';
+
+  @override
+  String get subTabOverdue => 'Vencidos';
 
   @override
   String get subTabBacklog => 'Pendientes';
@@ -298,6 +301,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get statusInProgress => 'En curso';
+
+  @override
+  String get statusActive => 'Activo';
 
   @override
   String get statusDone => 'Hecho';
@@ -443,6 +449,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ticketResolutionTimeLabel => 'Tiempo de resolución';
+
+  @override
+  String get ticketElapsedTimeLabel => 'Tiempo transcurrido';
 
   @override
   String ticketResolutionTimeValue(String time) {
@@ -1229,10 +1238,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionAcceptShort => 'Aceptar';
 
   @override
-  String get filterNewestFirst => 'Más reciente primero';
+  String get filterNewestFirst => 'Nuevo';
 
   @override
-  String get filterOldestFirst => 'Más antiguo primero';
+  String get filterOldestFirst => 'Antiguo';
 
   @override
   String get filterThisWeek => 'Esta semana';
@@ -1595,6 +1604,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get toastTabToday => 'Hoy';
+
+  @override
+  String get toastTabOverdue => 'Vencidos';
 
   @override
   String get toastTabDone => 'Hechos';

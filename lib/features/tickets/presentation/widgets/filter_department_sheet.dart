@@ -353,7 +353,9 @@ class _Footer extends StatelessWidget {
               ),
               child: Text(
                 context.l10n.filterActionClear,
-                style: TypographyManager.bodyMedium,
+                style: TypographyManager.bodyMedium.copyWith(
+                  color: c.fgBase, // Use theme-aware color for dark mode
+                ),
               ),
             ),
           ),

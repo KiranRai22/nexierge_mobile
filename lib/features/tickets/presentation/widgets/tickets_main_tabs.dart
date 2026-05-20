@@ -6,7 +6,7 @@ import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-/// Full-width tabs for Incoming, Today, Scheduled, Done with counts
+/// Full-width tabs for Incoming, In Progress, Backlog, Done with counts
 class TicketsMainTabs extends StatelessWidget {
   final TicketsMainTab selectedTab;
   final ValueChanged<TicketsMainTab> onChanged;

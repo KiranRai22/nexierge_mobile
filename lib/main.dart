@@ -27,6 +27,7 @@ import 'features/dashboard/presentation/screens/dashboard_shimmer_screen.dart';
 import 'features/shell/presentation/screens/home_shell.dart';
 import 'features/version_control/presentation/providers/version_check_notifier.dart';
 import 'features/version_control/presentation/services/update_notification_service.dart';
+import 'features/version_control/presentation/widgets/force_update_bottom_sheet.dart';
 import 'features/version_control/presentation/widgets/force_update_gate.dart';
 import 'features/version_control/presentation/widgets/optional_update_sheet.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -51,9 +52,6 @@ Future<void> main() async {
 
   // Read real app version from native platform once at startup
   final appInfo = await AppInfoService.create();
-  debugPrint(
-    '[AppInfo] version=${appInfo.version} build=${appInfo.buildNumber}',
-  );
 
   // Initialize sound manager for UI sounds
   await SoundManager.instance.initialize();
@@ -68,15 +66,10 @@ Future<void> main() async {
     token = await NotificationService.instance.getFCMToken().timeout(
       const Duration(seconds: 5),
     );
-  } catch (e) {
-    debugPrint('[DeviceToken] Failed to fetch: $e');
-  }
+  } catch (_) {}
   if (token != null) {
     await DeviceTokenService.saveToken(token);
   }
-  debugPrint(
-    '[DeviceToken] Saved to preferences: ${token != null ? 'present' : 'null'}',
-  );
 
   runApp(
     ProviderScope(
@@ -126,9 +119,6 @@ class MyApp extends ConsumerWidget {
       // When session changes from null to authenticated, trigger bootstrap
       if (prevSession == null && nextSession != null) {
         final userId = nextSession.user?.id;
-        debugPrint(
-          '[MyApp] New session detected, triggering bootstrap with userId: $userId',
-        );
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ref
               .read(dashboardBootstrapControllerProvider.notifier)
@@ -138,7 +128,6 @@ class MyApp extends ConsumerWidget {
 
       // When session is cleared (logout), clear bootstrap data
       if (prevSession != null && nextSession == null) {
-        debugPrint('[MyApp] Session cleared, resetting bootstrap...');
         ref.read(dashboardBootstrapControllerProvider.notifier).clearCache();
       }
     });
@@ -156,11 +145,14 @@ class MyApp extends ConsumerWidget {
             ? result.version.iosVersion
             : result.version.androidVersion;
         final notifier = ref.read(versionCheckProvider.notifier);
+        final storeUrl = notifier.storeUrl(result.version);
+
         // Fire-and-forget local notification (debounced per version)
         UpdateNotificationService.instance.showIfNeeded(
           version: result.version,
           platformVersion: platformVersion,
         );
+
         // Show in-app sheet once (after first frame)
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final ctx = _navigatorKey.currentContext;
@@ -168,7 +160,21 @@ class MyApp extends ConsumerWidget {
           OptionalUpdateSheet.show(
             ctx,
             version: result.version,
-            storeUrl: notifier.storeUrl(result.version),
+            storeUrl: storeUrl,
+          );
+        });
+      } else if (result is VersionUpdateForced) {
+        final notifier = ref.read(versionCheckProvider.notifier);
+        final storeUrl = notifier.storeUrl(result.version);
+
+        // Show non-dismissable force update bottom sheet (after first frame)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final ctx = _navigatorKey.currentContext;
+          if (ctx == null || !ctx.mounted) return;
+          ForceUpdateBottomSheet.show(
+            ctx,
+            version: result.version,
+            storeUrl: storeUrl,
           );
         });
       }

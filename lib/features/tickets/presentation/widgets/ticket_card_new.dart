@@ -106,14 +106,23 @@ class TicketCardNew extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Title row: dot + title + timer
+                  // Title row: dot + title + status
                   _TitleRow(ticket: ticket),
                   const SizedBox(height: 6),
-                  // Room row: icon + room + department
+                  // Room row: icon + room + department + price
                   _RoomRow(ticket: ticket),
                   const SizedBox(height: 4),
-                  // Resolution time row (only when inProgress)
-                  _ResolutionTimeRow(ticket: ticket),
+                  // Countdown timer for ACTIVE inProgress tickets only (not overdue)
+                  if (ticket.status == TicketStatus.inProgress &&
+                      ticket.eta != null &&
+                      !ticket.isOverdue)
+                    _CountdownTimer(ticket: ticket),
+                  // Elapsed time row for incoming tickets
+                  if (ticket.status == TicketStatus.incoming)
+                    _ElapsedTimeRow(ticket: ticket),
+                  // Elapsed time row for OVERDUE inProgress tickets
+                  if (ticket.status == TicketStatus.inProgress && ticket.isOverdue)
+                    _OverdueElapsedRow(ticket: ticket),
                   const SizedBox(height: 12),
                   // Inner card with avatar, details
                   _InnerCard(ticket: ticket),
@@ -260,52 +269,25 @@ class _TitleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final catalog = ticket.kindData is CatalogKindData
-        ? ticket.kindData as CatalogKindData
-        : null;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _KindDot(ticket: ticket),
         const SizedBox(width: 8),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _buildTitle(context, ticket),
-                style: TypographyManager.cardTitle.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              // Elapsed time for new/incoming tickets
-              if (ticket.status == TicketStatus.incoming)
-                _ElapsedTimeRow(ticket: ticket),
-            ],
+          child: Text(
+            _buildTitle(context, ticket),
+            style: TypographyManager.cardTitle.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              color: c.fgBase, // Use theme-aware color for dark mode
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _StatusPill(ticket: ticket),
-            if (catalog != null && catalog.grandTotal > 0) ...[
-              const SizedBox(height: 2),
-              Text(
-                _formatMoney(catalog.grandTotal, catalog.currency),
-                style: TypographyManager.bodySmall.copyWith(
-                  color: c.fgBase,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ],
-        ),
+        _StatusPill(ticket: ticket),
       ],
     );
   }
@@ -604,30 +586,47 @@ class _RoomRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
+    final catalog = ticket.kindData is CatalogKindData
+        ? ticket.kindData as CatalogKindData
+        : null;
+
     return Row(
       children: [
+        // Left: Room info
         Icon(LucideIcons.doorOpen, size: 14, color: c.fgMuted),
         const SizedBox(width: 4),
         Text(
           '${ticket.room.number} · ${_departmentLabel(context, ticket)}',
           style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
         ),
+        const Spacer(),
+        // Right: Price (for catalog tickets with price)
+        if (catalog != null && catalog.grandTotal > 0)
+          Text(
+            _formatMoney(catalog.grandTotal, catalog.currency),
+            style: TypographyManager.bodySmall.copyWith(
+              color: c.fgBase,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
       ],
     );
   }
 }
 
-/// Resolution time row: shows live countdown timer "Resolution Time: Xh Ym Zs"
-/// Only visible when ticket status is inProgress. Auto-updates every second.
-class _ResolutionTimeRow extends StatefulWidget {
+/// Live countdown timer row for inProgress tickets.
+/// Shows remaining time counting down (e.g., "14m 32s") in gray.
+/// When overdue, shows elapsed time in red.
+/// Updates every second.
+class _CountdownTimer extends StatefulWidget {
   final Ticket ticket;
-  const _ResolutionTimeRow({required this.ticket});
+  const _CountdownTimer({required this.ticket});
 
   @override
-  State<_ResolutionTimeRow> createState() => _ResolutionTimeRowState();
+  State<_CountdownTimer> createState() => _CountdownTimerState();
 }
 
-class _ResolutionTimeRowState extends State<_ResolutionTimeRow> {
+class _CountdownTimerState extends State<_CountdownTimer> {
   Timer? _timer;
 
   @override
@@ -637,7 +636,95 @@ class _ResolutionTimeRowState extends State<_ResolutionTimeRow> {
   }
 
   @override
-  void didUpdateWidget(covariant _ResolutionTimeRow oldWidget) {
+  void didUpdateWidget(covariant _CountdownTimer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (widget.ticket.eta != null) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatDuration(Duration d) {
+    if (d.isNegative) d = Duration.zero;
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    // Always show seconds for live countdown effect
+    if (h > 0) return '${h}h ${m}m ${s}s';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+
+    final eta = widget.ticket.eta;
+    if (eta == null) return const SizedBox.shrink();
+
+    final now = ServerClock.now();
+    final remaining = eta.difference(now);
+    final isOverdue = remaining.isNegative;
+
+    final timeText = _formatDuration(isOverdue ? remaining.abs() : remaining);
+    final textColor = isOverdue ? c.tagRedText : c.fgMuted;
+    final iconColor = isOverdue ? c.tagRedText : c.fgMuted;
+
+    return Row(
+      children: [
+        Icon(
+          LucideIcons.timer,
+          size: 14,
+          color: iconColor,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${s.ticketResolutionTimeLabel}: $timeText',
+          style: TypographyManager.bodySmall.copyWith(
+            color: textColor,
+            fontWeight: isOverdue ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Elapsed time row for overdue In Progress tickets.
+/// Shows elapsed time in red (e.g., "Elapsed Time: 44m 19s")
+/// Only visible when ticket is overdue. Auto-updates every second.
+class _OverdueElapsedRow extends StatefulWidget {
+  final Ticket ticket;
+  const _OverdueElapsedRow({required this.ticket});
+
+  @override
+  State<_OverdueElapsedRow> createState() => _OverdueElapsedRowState();
+}
+
+class _OverdueElapsedRowState extends State<_OverdueElapsedRow> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _OverdueElapsedRow oldWidget) {
     super.didUpdateWidget(oldWidget);
     _startTimer();
   }
@@ -683,27 +770,72 @@ class _ResolutionTimeRowState extends State<_ResolutionTimeRow> {
     final remaining = widget.ticket.eta!.difference(now);
     final isOverdue = remaining.isNegative;
 
-    // Format: Xh Ym Zs or show overdue time
-    final timeText = isOverdue
-        ? _formatDuration(remaining.abs())
-        : _formatDuration(remaining);
+    // Only show for overdue tickets
+    if (!isOverdue) {
+      return const SizedBox.shrink();
+    }
+
+    // Calculate elapsed time (how long since it became overdue)
+    final elapsed = remaining.abs();
+    final elapsedText = _formatDuration(elapsed);
 
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           LucideIcons.timer,
           size: 14,
-          color: isOverdue ? c.tagRedText : c.fgMuted,
+          color: c.tagRedText,
         ),
         const SizedBox(width: 4),
         Text(
-          '${s.ticketResolutionTimeLabel}: $timeText ${isOverdue ? "" : ""}',
+          '${s.ticketElapsedTimeLabel}: $elapsedText',
           style: TypographyManager.bodySmall.copyWith(
-            color: isOverdue ? c.tagRedText : c.fgMuted,
-            fontWeight: isOverdue ? FontWeight.w600 : FontWeight.w500,
+            color: c.tagRedText,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Green chip showing the original resolution time that was allocated
+class _OriginalResolutionChip extends StatelessWidget {
+  final String text;
+
+  const _OriginalResolutionChip({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: c.tagGreenBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.tagGreenBorder, width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            LucideIcons.clock,
+            size: 12,
+            color: c.tagGreenText,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TypographyManager.bodySmall.copyWith(
+              color: c.tagGreenText,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -982,10 +1114,19 @@ class _BottomRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+
     return Row(
       children: [
+        // Left side: Type tag
         _TypeTag(kind: ticket.kind),
+        const SizedBox(width: 8),
+        // Middle: Resolution time chip (for inProgress with ETA)
+        if (ticket.status == TicketStatus.inProgress && ticket.eta != null)
+          _ResolutionChip(ticket: ticket),
         const Spacer(),
+        // Right side: Action button
         _ActionButton(
           ticket: ticket,
           onAccept: onAccept,
@@ -994,6 +1135,80 @@ class _BottomRow extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// Static resolution time chip showing original expected time (e.g., "15m")
+/// Always displayed in green. Only shown for incoming, inProgress, and backlog.
+class _ResolutionChip extends StatelessWidget {
+  final Ticket ticket;
+  const _ResolutionChip({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+
+    // Don't show for done tickets
+    if (ticket.status == TicketStatus.done) {
+      return const SizedBox.shrink();
+    }
+
+    // Calculate original resolution time: dueAt - acknowledgedAt/workStartedAt
+    final originalResolution = _calculateOriginalResolutionTime();
+    if (originalResolution == null || originalResolution.inMinutes <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    final timeText = _formatDuration(originalResolution);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: c.tagGreenBg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            LucideIcons.timer,
+            size: 12,
+            color: c.tagGreenText,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            timeText,
+            style: TypographyManager.labelSmall.copyWith(
+              color: c.tagGreenText,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Calculate original resolution time: dueAt - (workStartedAt/acceptedAt/createdAt)
+  /// For incoming tickets, use createdAt since it hasn't been accepted yet
+  Duration? _calculateOriginalResolutionTime() {
+    final eta = ticket.eta;
+    // Priority: workStartedAt > acceptedAt > createdAt (for incoming)
+    final startedAt = ticket.workStartedAt ?? ticket.acceptedAt;
+    // For incoming tickets without acceptedAt, use createdAt
+    final effectiveStartAt = startedAt ??
+        (ticket.status == TicketStatus.incoming ? ticket.createdAt : null);
+
+    if (eta == null || effectiveStartAt == null) return null;
+    return eta.difference(effectiveStartAt);
+  }
+
+  String _formatDuration(Duration d) {
+    if (d.isNegative) d = Duration.zero;
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    if (h > 0 && m > 0) return '${h}h ${m}m';
+    if (h > 0) return '${h}h';
+    return '${m}m';
   }
 }
 

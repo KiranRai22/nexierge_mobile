@@ -10,6 +10,21 @@ String formatMoney(double v) {
   return '\$${v.toStringAsFixed(2)}';
 }
 
+/// Helper class to represent either a category header or an item in the grouped list
+class _GroupedListItem {
+  final String? category; // Set for headers, null for items
+  final CatalogItem? item; // Set for items, null for headers
+  final bool isHeader;
+
+  const _GroupedListItem.header(this.category)
+      : item = null,
+        isHeader = true;
+
+  const _GroupedListItem.item(this.item)
+      : category = null,
+        isHeader = false;
+}
+
 class _CatalogTabBody extends ConsumerWidget {
   const _CatalogTabBody();
 
@@ -415,6 +430,32 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
         .toList(growable: false);
   }
 
+  /// Groups items by category, inserting headers between groups
+  List<_GroupedListItem> _groupItemsByCategory(List<CatalogItem> items) {
+    // Group by category (null/empty categories go to 'Other')
+    final groups = <String, List<CatalogItem>>{};
+    for (final item in items) {
+      final category = item.category?.isNotEmpty == true ? item.category! : 'Other';
+      groups.putIfAbsent(category, () => []);
+      groups[category]!.add(item);
+    }
+
+    // Sort categories alphabetically
+    final sortedCategories = groups.keys.toList()..sort();
+
+    // Build list with headers
+    final result = <_GroupedListItem>[];
+    for (final category in sortedCategories) {
+      // Add header
+      result.add(_GroupedListItem.header(category));
+      // Add items in this category
+      for (final item in groups[category]!) {
+        result.add(_GroupedListItem.item(item));
+      }
+    }
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
@@ -492,7 +533,10 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                   ref.invalidate(serviceCatalogItemsProvider(catalog.id)),
             ),
             data: (allItems) {
+              debugPrint('[CreateScreenCatalog] Catalog: ${catalog?.name}, ID: ${catalog?.id}');
+              debugPrint('[CreateScreenCatalog] API returned ${allItems.length} items');
               final items = _filtered(allItems);
+              debugPrint('[CreateScreenCatalog] After filtering: ${items.length} items (query: "$_query")');
               if (items.isEmpty) {
                 return Center(
                   child: Padding(
@@ -509,41 +553,63 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                   ),
                 );
               }
+              
+              // Group items by category
+              final groupedItems = _groupItemsByCategory(items);
+              
               return RefreshIndicator(
                 onRefresh: () async =>
                     ref.invalidate(serviceCatalogItemsProvider(catalog.id)),
-                child: ListView.separated(
+                child: ListView.builder(
                   physics: const BouncingScrollPhysics(
                     parent: AlwaysScrollableScrollPhysics(),
                   ),
                   padding: EdgeInsets.fromLTRB(16, 0, 16, hasCart ? 88 : 24),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemCount: groupedItems.length,
                   itemBuilder: (_, i) {
-                    final item = items[i];
-                    return _CatalogMenuCard(
-                      item: item,
-                      draft: draft,
-                      onAdd: () {
-                        if (item.hasOptions) {
-                          _onAddOptionedItem(item);
-                        } else {
-                          ctl.setItemQuantity(
-                            item,
-                            draft.quantityFor(item.id) + 1,
-                          );
-                        }
-                      },
-                      onIncrement: () => ctl.setItemQuantity(
-                        item,
-                        draft.quantityFor(item.id) + 1,
+                    final groupedItem = groupedItems[i];
+                    
+                    // Category header
+                    if (groupedItem.isHeader) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 8),
+                        child: Text(
+                          groupedItem.category ?? 'Other',
+                          style: TypographyManager.sectionOverline.copyWith(
+                            color: ColorPalette.textSecondary,
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    // Regular item card
+                    final item = groupedItem.item!;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _CatalogMenuCard(
+                        item: item,
+                        draft: draft,
+                        onAdd: () {
+                          if (item.hasOptions) {
+                            _onAddOptionedItem(item);
+                          } else {
+                            ctl.setItemQuantity(
+                              item,
+                              draft.quantityFor(item.id) + 1,
+                            );
+                          }
+                        },
+                        onIncrement: () => ctl.setItemQuantity(
+                          item,
+                          draft.quantityFor(item.id) + 1,
+                        ),
+                        onDecrement: () => ctl.setItemQuantity(
+                          item,
+                          draft.quantityFor(item.id) - 1,
+                        ),
+                        onEditLine: _onEditLine,
+                        onDeleteLine: (l) => ctl.removeLine(l.id),
                       ),
-                      onDecrement: () => ctl.setItemQuantity(
-                        item,
-                        draft.quantityFor(item.id) - 1,
-                      ),
-                      onEditLine: _onEditLine,
-                      onDeleteLine: (l) => ctl.removeLine(l.id),
                     );
                   },
                 ),

@@ -38,6 +38,9 @@ class CatalogItem {
   /// When present, the menu card shows this instead of the emoji tile.
   final String? imageUrl;
 
+  /// Category name for grouping items (e.g., "Drinks", "Main Course")
+  final String? category;
+
   const CatalogItem({
     required this.id,
     required this.name,
@@ -46,6 +49,7 @@ class CatalogItem {
     required this.basePrice,
     this.optionGroups = const [],
     this.imageUrl,
+    this.category,
   });
 
   bool get hasOptions => optionGroups.isNotEmpty;

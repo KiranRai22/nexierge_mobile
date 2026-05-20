@@ -88,7 +88,8 @@
   "kpiOverdue": "VENCIDOS",
 
   "subTabIncoming": "Entrantes",
-  "subTabToday": "Hoy",
+  "subTabToday": "En Progreso",
+  "subTabOverdue": "Vencidos",
   "subTabBacklog": "Pendientes",
   "subTabDone": "Hechos",
 
@@ -105,6 +106,7 @@
   "statusUnassigned": "Sin asignar",
   "statusAccepted": "Aceptado",
   "statusInProgress": "En curso",
+  "statusActive": "Activo",
   "statusDone": "Hecho",
   "statusCancelled": "Cancelado",
   "statusOverdue": "Vencido",
@@ -407,8 +409,8 @@
   },
   "actionAcceptShort": "Aceptar",
 
-  "filterNewestFirst": "Más reciente primero",
-  "filterOldestFirst": "Más antiguo primero",
+  "filterNewestFirst": "Nuevo",
+  "filterOldestFirst": "Antiguo",
   "filterThisWeek": "Esta semana",
   "filterThisMonth": "Este mes",
 
@@ -450,6 +452,7 @@
     }
   },
   "ticketResolutionTimeLabel": "Tiempo de resolución",
+  "ticketElapsedTimeLabel": "Tiempo transcurrido",
   "ticketResolutionTimeValue": "{time} restante",
   "@ticketResolutionTimeValue": {
     "placeholders": {
@@ -636,6 +639,7 @@
   "toastTapToView": "Toca para ver",
   "toastTabIncoming": "Entrantes",
   "toastTabToday": "Hoy",
+  "toastTabOverdue": "Vencidos",
   "toastTabDone": "Hechos",
   "toastTicketTypeLabel": "Tipo: {kind}",
   "@toastTicketTypeLabel": {

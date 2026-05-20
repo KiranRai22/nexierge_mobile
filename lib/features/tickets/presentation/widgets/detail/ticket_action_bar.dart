@@ -132,8 +132,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   }
 
   // ────────── ACCEPT (NEW → IN_PROGRESS) ──────────
-  // Direct accept-and-start flow: no bottom sheet, immediate action with
-  // default 15-minute due time. Matches the quick card accept-and-start behavior.
+  // Shows confirmation bottom sheet before starting work.
 
   Future<void> _onAcceptIncoming() async {
     final t = widget.ticket;
@@ -141,72 +140,26 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     // V2: single "Start" action → IN_PROGRESS via /ticketsv2/start/{id}.
     // Use 15-minute default due time like the card quick action.
     final dueAt = ServerClock.now().add(const Duration(minutes: 15));
-    await _withGuard(
-      () => _runOptimistic(
-        newStatus: 'IN_PROGRESS',
-        apiCall: () => ref
-            .read(ticketRepositoryProvider)
-            .startTicketV2(ticketId: t.id, dueAt: dueAt),
-        failureMessage: failureMsg,
-      ),
-    );
-  }
 
-  // ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
-  // Replaced by ticketsv2 5-tab model. Kept for reference.
-  // Accept-only / Accept-and-Start were two separate paths from NEW. V2
-  // collapses them into a single Start action (handled in
-  // _onAcceptIncoming above via startTicketV2).
-  // ─────────────────────────────────────────────────────────────────
-  // ignore: unused_element
-  Future<void> _onAcceptOnly() async {
-    /*
-    final t = widget.ticket;
-    final failureMsg = context.l10n.ticketActionFailedAccept;
-    final dueTime = ServerClock.now().add(const Duration(minutes: 15));
-    await _withGuard(
-      () => _runOptimistic(
-        newStatus: 'ACCEPTED',
-        apiCall: () => ref
-            .read(ticketRepositoryProvider)
-            .acknowledgeTicket(
-              ticketId: t.id,
-              dueAt: dueTime.millisecondsSinceEpoch,
-              notes: null,
-            ),
-        failureMessage: failureMsg,
-      ),
+    await showStartWorkConfirmation(
+      context: context,
+      onConfirm: () async {
+        await _withGuard(
+          () => _runOptimistic(
+            newStatus: 'IN_PROGRESS',
+            apiCall: () => ref
+                .read(ticketRepositoryProvider)
+                .startTicketV2(ticketId: t.id, dueAt: dueAt),
+            failureMessage: failureMsg,
+          ),
+        );
+      },
     );
-    */
-  }
-
-  // ignore: unused_element
-  Future<void> _onAcceptAndStart() async {
-    /*
-    final t = widget.ticket;
-    final failureMsg = context.l10n.ticketActionFailedAccept;
-    final dueTime = ServerClock.now().add(const Duration(minutes: 15));
-    await _withGuard(
-      () => _runOptimistic(
-        newStatus: 'IN_PROGRESS',
-        apiCall: () => ref
-            .read(ticketRepositoryProvider)
-            .acknowledgeAndStartTicket(
-              ticketId: t.id,
-              dueAt: dueTime.millisecondsSinceEpoch,
-              notes: null,
-            ),
-        failureMessage: failureMsg,
-      ),
-    );
-    */
   }
 
   // ────────── START WORK (ACCEPTED → IN_PROGRESS) ──────────
-  // ─── LEGACY-V1 (2026-05-14) ──────────────────────────────────────
-  // V2 has no ACCEPTED state — this branch is unreachable. Kept for
-  // safety in case a legacy ACCEPTED ticket is opened.
-  // ─────────────────────────────────────────────────────────────────
+  // LEGACY-V1: V2 has no ACCEPTED state — this branch is unreachable.
+  // Kept for safety in case a legacy ACCEPTED ticket is opened.
   Future<void> _onStartWork() async {
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedStartWork;
@@ -342,6 +295,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   }
 
   // ────────── RESET ──────────
+  // V2: POST /ticketsv2/reset_acknowledge/{id} with reason.
 
   Future<void> _onReset() async {
     final t = widget.ticket;
@@ -352,7 +306,10 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       try {
         await ref
             .read(ticketRepositoryProvider)
-            .changeTicketStatus(ticketId: t.id, newStatus: 'NEW');
+            .resetAcknowledgeV2(
+              ticketId: t.id,
+              reason: 'Reset by user',
+            );
         _patchStatus(t.id, 'NEW');
         if (!mounted) return;
         Navigator.of(context).pop();

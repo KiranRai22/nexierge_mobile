@@ -221,26 +221,27 @@ class MyTicket {
   }
 
   /// Check if ticket is NEW (incoming)
-  bool get isIncoming => status == 'NEW';
+  bool get isIncoming => status.toUpperCase() == 'NEW';
 
   /// Check if ticket is ACCEPTED
-  bool get isAccepted => status == 'ACCEPTED';
+  bool get isAccepted => status.toUpperCase() == 'ACCEPTED';
 
   /// Check if ticket is in progress
-  bool get isInProgress => status == 'IN_PROGRESS';
+  bool get isInProgress => status.toUpperCase() == 'IN_PROGRESS';
 
   /// Check if ticket is on hold (rendered as "Scheduled" in the UI)
-  bool get isOnHold => status == 'ON_HOLD';
+  bool get isOnHold => status.toUpperCase() == 'ON_HOLD';
 
   /// Check if ticket is done
-  bool get isDone => status == 'DONE';
+  bool get isDone => status.toUpperCase() == 'DONE';
 
   /// Check if ticket is canceled. Accepts both spellings during the
   /// rollout — backend authoritative is `CANCELED`.
-  bool get isCanceled => status == 'CANCELED' || status == 'CANCELLED';
+  bool get isCanceled =>
+      status.toUpperCase() == 'CANCELED' || status.toUpperCase() == 'CANCELLED';
 
   /// Check if ticket is expired (server-driven, no client transition).
-  bool get isExpired => status == 'EXPIRED';
+  bool get isExpired => status.toUpperCase() == 'EXPIRED';
 
   /// Check if ticket is overdue.
   ///

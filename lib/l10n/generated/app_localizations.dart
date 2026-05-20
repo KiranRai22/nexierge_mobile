@@ -563,8 +563,14 @@ abstract class AppLocalizations {
   /// No description provided for @subTabToday.
   ///
   /// In en, this message translates to:
-  /// **'Today'**
+  /// **'In Progress'**
   String get subTabToday;
+
+  /// No description provided for @subTabOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get subTabOverdue;
 
   /// No description provided for @subTabBacklog.
   ///
@@ -643,6 +649,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'In progress'**
   String get statusInProgress;
+
+  /// No description provided for @statusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get statusActive;
 
   /// No description provided for @statusDone.
   ///
@@ -925,6 +937,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resolution Time'**
   String get ticketResolutionTimeLabel;
+
+  /// No description provided for @ticketElapsedTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Elapsed Time'**
+  String get ticketElapsedTimeLabel;
 
   /// No description provided for @ticketResolutionTimeValue.
   ///
@@ -2231,13 +2249,13 @@ abstract class AppLocalizations {
   /// No description provided for @filterNewestFirst.
   ///
   /// In en, this message translates to:
-  /// **'Newest first'**
+  /// **'Newest'**
   String get filterNewestFirst;
 
   /// No description provided for @filterOldestFirst.
   ///
   /// In en, this message translates to:
-  /// **'Oldest first'**
+  /// **'Oldest'**
   String get filterOldestFirst;
 
   /// No description provided for @filterThisWeek.
@@ -2833,6 +2851,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today'**
   String get toastTabToday;
+
+  /// No description provided for @toastTabOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get toastTabOverdue;
 
   /// No description provided for @toastTabDone.
   ///

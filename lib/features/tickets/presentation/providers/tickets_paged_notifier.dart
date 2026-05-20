@@ -24,7 +24,7 @@ enum TicketsSortOrder { newestFirst, oldestFirst }
 /// Replaced by ticketsv2 5-tab model. Kept for reference.
 /// Old enum: enum TicketsTab { incoming, today, backlog, done }
 /// ─────────────────────────────────────────────────────────────────
-enum TicketsTab { incoming, todayInProgress, todayDone, backlog, doneHistory }
+enum TicketsTab { incoming, todayInProgress, overdue, todayDone, backlog, doneHistory }
 
 /// Configuration for a paged ticket list — turns each tab into a
 /// declarative spec the notifier uses to call the API and decide whether
@@ -71,6 +71,9 @@ class TicketsPagedSpec {
       case TicketsTab.incoming:
         return TicketsV2Tab.incoming;
       case TicketsTab.todayInProgress:
+        return TicketsV2Tab.inProgress;
+      case TicketsTab.overdue:
+        // Overdue uses same endpoint as inProgress, filtered client-side
         return TicketsV2Tab.inProgress;
       case TicketsTab.todayDone:
         return TicketsV2Tab.doneToday;
@@ -191,6 +194,10 @@ class TicketsPagedNotifier
     required int page,
     required String hotelId,
   }) async {
+    debugPrint(
+      '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
+      'departmentId=${_spec.departmentId} page=$page',
+    );
     final res = await _repo.fetchTicketsV2Page(
       tab: _spec.v2Tab,
       hotelId: hotelId,
@@ -203,7 +210,7 @@ class TicketsPagedNotifier
     );
     debugPrint(
       '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
-      'page=$page got=${res.items.length} total=${res.itemsTotal} '
+      'departmentId=${_spec.departmentId} page=$page got=${res.items.length} total=${res.itemsTotal} '
       'nextPage=${res.nextPage}',
     );
     final current = state.valueOrNull;
@@ -353,7 +360,12 @@ class TicketsPagedNotifier
       case TicketsTab.incoming:
         return status == 'NEW';
       case TicketsTab.todayInProgress:
+        // Fetch ALL IN_PROGRESS tickets (both active and overdue)
+        // Active/Overdue filtering happens client-side via _applyTodaySubFilter
         return status == 'IN_PROGRESS';
+      case TicketsTab.overdue:
+        // Overdue filter for realtime updates - matches overdue IN_PROGRESS
+        return status == 'IN_PROGRESS' && t.isOverdue;
       case TicketsTab.todayDone:
         return status == 'DONE' && _isDoneToday(t);
       case TicketsTab.backlog:
@@ -484,6 +496,7 @@ class TicketsPagedNotifier
 
 const _kIncomingSpec = TicketsPagedSpec(tab: TicketsTab.incoming);
 const _kTodayInProgressSpec = TicketsPagedSpec(tab: TicketsTab.todayInProgress);
+const _kOverdueSpec = TicketsPagedSpec(tab: TicketsTab.overdue);
 const _kTodayDoneSpec = TicketsPagedSpec(tab: TicketsTab.todayDone);
 const _kBacklogSpec = TicketsPagedSpec(tab: TicketsTab.backlog);
 const _kDoneHistorySpec = TicketsPagedSpec(tab: TicketsTab.doneHistory);
@@ -522,6 +535,8 @@ TicketsPagedSpec specForTab(TicketsTab tab) {
       return _kIncomingSpec;
     case TicketsTab.todayInProgress:
       return _kTodayInProgressSpec;
+    case TicketsTab.overdue:
+      return _kOverdueSpec;
     case TicketsTab.todayDone:
       return _kTodayDoneSpec;
     case TicketsTab.backlog:

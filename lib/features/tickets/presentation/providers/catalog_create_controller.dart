@@ -118,6 +118,8 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
 
   // ── Navigation ────────────────────────────────────────────────────────────
   void selectCatalog(Catalog catalog) {
+    debugPrint('[CatalogCreateController] selectCatalog: ${catalog.id} - ${catalog.name}');
+    debugPrint('[CatalogCreateController] Catalog items count (from API): ${catalog.items?.length ?? 0}');
     state = state.copyWith(
       selectedCatalog: catalog,
       step: CatalogStep.selectItems,
