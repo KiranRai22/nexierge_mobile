@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/error_handler.dart';
@@ -9,11 +10,12 @@ import '../../domain/entities/needs_attention_item.dart';
 
 abstract class DashboardRepository {
   Future<HotelDetailsDto> fetchHotelDetails({String? hotelUserId});
-  Future<DashboardNumbersDto> fetchNumbers({String? hotelUserId});
+  Future<DashboardNumbersDto> fetchNumbers({String? hotelId, bool today});
 
   /// Fetch + map dashboard KPI counts. UI / providers consume this domain
   /// model; the raw DTO never leaves the data layer.
-  Future<DashboardCounts> fetchCounts({String? hotelUserId});
+  /// Set [today] to true to get only today's counts.
+  Future<DashboardCounts> fetchCounts({String? hotelId, bool today});
 
   /// Fetch needs attention items from API.
   Future<List<NeedsAttentionItem>> fetchNeedsAttention({
@@ -37,9 +39,9 @@ class _DashboardRepositoryImpl implements DashboardRepository {
   }
 
   @override
-  Future<DashboardNumbersDto> fetchNumbers({String? hotelUserId}) async {
+  Future<DashboardNumbersDto> fetchNumbers({String? hotelId, bool today = false}) async {
     try {
-      return await _remote.getNumbers(hotelUserId: hotelUserId);
+      return await _remote.getNumbers(hotelId: hotelId, today: today);
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {
@@ -48,13 +50,14 @@ class _DashboardRepositoryImpl implements DashboardRepository {
   }
 
   @override
-  Future<DashboardCounts> fetchCounts({String? hotelUserId}) async {
-    final dto = await fetchNumbers(hotelUserId: hotelUserId);
+  Future<DashboardCounts> fetchCounts({String? hotelId, bool today = false}) async {
+    final dto = await fetchNumbers(hotelId: hotelId, today: today);
     return DashboardCounts(
-      needsAcknowledgmentCount: _toInt(dto.needsAcknowledgement),
+      // not_started from API maps to incoming
+      incomingCount: _toInt(dto.notStarted),
       inProgressCount: _toInt(dto.inprogress),
       overdueCount: _toInt(dto.overdue),
-      notStartedCount: _toInt(dto.notStarted),
+      doneCount: _toInt(dto.done),
     );
   }
 
@@ -64,7 +67,15 @@ class _DashboardRepositoryImpl implements DashboardRepository {
   }) async {
     try {
       final dtos = await _remote.getNeedsAttention(hotelId: hotelId);
-      return dtos
+      debugPrint(
+        '[DashboardRepository] fetchNeedsAttention: received ${dtos.length} items, '
+        'statuses: ${dtos.map((d) => d.status).toSet().toList()}',
+      );
+      // Filter out DONE tickets — they don't need attention.
+      final active = dtos.where(
+        (dto) => dto.status.toUpperCase() != 'DONE',
+      );
+      return active
           .map(
             (dto) => NeedsAttentionItem(
               id: dto.id,

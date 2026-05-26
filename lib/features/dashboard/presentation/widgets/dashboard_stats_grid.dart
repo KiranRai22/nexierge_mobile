@@ -8,22 +8,22 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/dashboard_view.dart';
 
-/// 2×2 stat grid that mirrors `Dashboard.tsx`:
+/// Dashboard stats grid with new layout:
 ///
 /// ```
 /// ┌────────────────────────────┐
-/// │     Needs acknowledgment   │  ← col-span-2, big
+/// │        INCOMING            │  ← col-span-2, big (from not_started)
 /// ├──────────────┬─────────────┤
 /// │ In progress  │  Overdue    │
 /// ├──────────────┴─────────────┤
-/// │       Not started          │  ← col-span-2
+/// │          DONE              │  ← col-span-2 (new)
 /// └────────────────────────────┘
 /// ```
 class DashboardStatsGrid extends StatelessWidget {
-  final int incoming;
-  final int accepted;
+  final int incoming;    // from not_started
   final int inProgress;
   final int overdue;
+  final int done;        // new field
   final IncomingBreakdown breakdown;
 
   /// Tap routes for each card. The host screen decides where each one goes
@@ -31,19 +31,19 @@ class DashboardStatsGrid extends StatelessWidget {
   final VoidCallback onTapIncoming;
   final VoidCallback onTapInProgress;
   final VoidCallback onTapOverdue;
-  final VoidCallback onTapAccepted;
+  final VoidCallback onTapDone;
 
   const DashboardStatsGrid({
     super.key,
     required this.incoming,
-    required this.accepted,
     required this.inProgress,
     required this.overdue,
+    required this.done,
     required this.breakdown,
     required this.onTapIncoming,
     required this.onTapInProgress,
     required this.onTapOverdue,
-    required this.onTapAccepted,
+    required this.onTapDone,
   });
 
   _OverdueVariant get _overdueVariant {
@@ -72,13 +72,14 @@ class DashboardStatsGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Row 1: INCOMING (from not_started)
         StatNoteCard(
           tone: StatNoteTone.neutral,
-          badgeLabel: s.dashboardNeedsAcknowledgment,
+          badgeLabel: 'INCOMING',
           value: incoming,
           footer: breakdownText.isNotEmpty
               ? breakdownText
-              : s.dashboardIncomingFooterEmpty,
+              : 'Awaiting acceptance',
           size: StatNoteSize.large,
           trailing: Icon(
             LucideIcons.chevronRight,
@@ -88,15 +89,16 @@ class DashboardStatsGrid extends StatelessWidget {
           onTap: onTapIncoming,
         ),
         const SizedBox(height: 10),
+        // Row 2: IN PROGRESS + OVERDUE
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: StatNoteCard(
                 tone: StatNoteTone.purple,
-                badgeLabel: s.dashboardInProgressLabel,
+                badgeLabel: 'IN PROGRESS',
                 value: inProgress,
-                footer: s.dashboardInProgressFooter,
+                footer: 'Currently working',
                 size: StatNoteSize.medium,
                 onTap: onTapInProgress,
               ),
@@ -105,9 +107,9 @@ class DashboardStatsGrid extends StatelessWidget {
             Expanded(
               child: StatNoteCard(
                 tone: overdueTone,
-                badgeLabel: s.dashboardOverdueLabel,
+                badgeLabel: 'OVERDUE',
                 value: overdue,
-                footer: s.dashboardOverdueFooter,
+                footer: 'Past due time',
                 size: StatNoteSize.medium,
                 onTap: onTapOverdue,
               ),
@@ -115,13 +117,14 @@ class DashboardStatsGrid extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
+        // Row 3: DONE
         StatNoteCard(
-          tone: accepted > 0 ? StatNoteTone.blue : StatNoteTone.neutral,
-          badgeLabel: s.dashboardNotStartedLabel,
-          value: accepted,
-          footer: s.dashboardNotStartedFooter,
+          tone: done > 0 ? StatNoteTone.blue : StatNoteTone.neutral,
+          badgeLabel: 'DONE',
+          value: done,
+          footer: 'Completed tickets',
           size: StatNoteSize.medium,
-          onTap: onTapAccepted,
+          onTap: onTapDone,
         ),
       ],
     );

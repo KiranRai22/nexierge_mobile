@@ -46,7 +46,6 @@ dependencies:
 
   # Realtime
   socket_io_client: ^2.0.3+1
-  web_socket_channel: ^2.4.0
 
   # Routing
   go_router: ^14.2.7
@@ -73,26 +72,28 @@ dependencies:
   # Lucide icon glyphs (matches the React design system used by HotelOps).
   lucide_icons_flutter: ^3.0.0
 
+  # URL launcher for opening store links (App Store / Play Store)
+  url_launcher: ^6.3.1
+
+  # App version info for profile/settings
+  package_info_plus: ^8.0.0
+
+  # Permission handling for camera/photos
+  permission_handler: ^11.3.0
+
   # Image picker for avatar uploads
   image_picker: ^1.1.2
 
   # Image compression for avatar uploads
   flutter_image_compress: ^2.3.0
-
-  # Runtime permissions (camera + photo library) for avatar picker
-  permission_handler: ^11.3.1
   json_annotation: ^4.9.0
 
   # Audio playback for UI sounds
   audioplayers: ^6.1.0
-
-  # App version info (semver + build number from native platform)
-  package_info_plus: ^8.1.2
-
-  # Open App Store / Play Store URLs for update prompts
-  url_launcher: ^6.3.1
-
-
+  
+  # Date time picker
+  awesome_datetime_picker: ^0.1.1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

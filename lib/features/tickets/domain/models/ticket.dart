@@ -2,9 +2,9 @@ import '../../../../core/time/server_clock.dart';
 import 'department.dart';
 
 /// Lifecycle of a ticket. Backend statuses (NEW, ACCEPTED, IN_PROGRESS,
-/// ON_HOLD, DONE, CANCELED, EXPIRED) map to these enum values. EXPIRED
-/// folds into [canceled] for now until a dedicated UI is added.
-enum TicketStatus { incoming, accepted, inProgress, onHold, done, canceled }
+/// ON_HOLD, DONE, CANCELED, EXPIRED, BACKLOG) map to these enum values.
+/// EXPIRED folds into [canceled] for now until a dedicated UI is added.
+enum TicketStatus { incoming, accepted, inProgress, onHold, done, canceled, backlog }
 
 /// What category of ticket this is. Drives the chip colour on the card.
 enum TicketKind { universal, catalog, manual }
@@ -167,6 +167,7 @@ class Ticket {
 
   /// Source-of-truth timestamps. UI computes "X minutes ago" from them.
   final DateTime createdAt;
+  final String? createdTime; // Formatted string from API (e.g., "May 23, 2026 01:47:06 pm")
   final DateTime? acceptedAt;
   final DateTime? doneAt;
   final DateTime? eta;
@@ -185,6 +186,7 @@ class Ticket {
     required this.room,
     required this.items,
     required this.createdAt,
+    this.createdTime,
     this.departmentName,
     this.departmentEmoji,
     this.departmentIconUrl,
@@ -218,6 +220,7 @@ class Ticket {
     String? note,
     String? assigneeName,
     DateTime? acceptedAt,
+    String? createdTime,
     DateTime? doneAt,
     DateTime? eta,
     DateTime? workStartedAt,
@@ -243,6 +246,7 @@ class Ticket {
       note: note ?? this.note,
       assigneeName: assigneeName ?? this.assigneeName,
       acceptedAt: acceptedAt ?? this.acceptedAt,
+      createdTime: createdTime ?? this.createdTime,
       doneAt: doneAt ?? this.doneAt,
       eta: eta ?? this.eta,
       workStartedAt: workStartedAt ?? this.workStartedAt,

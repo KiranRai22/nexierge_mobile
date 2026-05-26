@@ -201,7 +201,7 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
                           size: 18,
                           color: _canConfirm ? Colors.white : c.fgMuted,
                         ),
-                  label: const Text('Confirm Cancel'),
+                  label: const Text('Confirm'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.tagRedIcon,
                     foregroundColor: Colors.white,

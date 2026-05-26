@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/utils/string_utils.dart';
 import '../../domain/models/department.dart';
@@ -124,6 +127,9 @@ class UniversalDraftState {
 }
 
 /// AutoDispose notifier — state is local to the create screen.
+/// Result type for universal order creation attempt.
+typedef _OrderResult = ({bool success, Object? lastError});
+
 class UniversalDraftController
     extends AutoDisposeNotifier<UniversalDraftState> {
   @override
@@ -200,7 +206,8 @@ class UniversalDraftController
       state = state.copyWith(step: UniversalStep.selectItems);
 
   /// Submits the draft. Returns the created ticket id, or null if invalid.
-  Future<String?> submit() async {
+  /// Throws [UniversalOrderException] if ticket was created but universal order failed.
+  Future<String?> submit({void Function(String)? onRetryMessage}) async {
     if (!state.canSubmit) return null;
     state = state.copyWith(submitting: true);
     try {
@@ -208,7 +215,26 @@ class UniversalDraftController
       ref.read(operatorSessionProvider);
 
       final ticket = await repo.create(_buildDraft());
-      await _createUniversalOrder();
+      
+      // Try to create universal order with retry logic
+      final orderResult = await _createUniversalOrderWithRetry(
+        onRetryMessage: onRetryMessage,
+      );
+      
+      if (!orderResult.success) {
+        // Log the error details for diagnostic sharing
+        await _logErrorToFile(
+          'Universal order creation failed after 2 attempts. Ticket ID: ${ticket.id}',
+          orderResult.lastError ?? 'Unknown error',
+        );
+        
+        // Ticket was created but universal order failed after retries
+        // We still return the ticket ID but mark it as partial success
+        throw UniversalOrderException(
+          ticketId: ticket.id,
+          message: 'Ticket created but universal order details failed to save.',
+        );
+      }
 
       return ticket.id;
     } finally {
@@ -218,9 +244,42 @@ class UniversalDraftController
     }
   }
 
-  Future<void> _createUniversalOrder() async {
+  /// Creates universal order with 1 retry attempt on timeout.
+  /// Returns result with success flag and last error if failed.
+  Future<_OrderResult> _createUniversalOrderWithRetry({
+    void Function(String)? onRetryMessage,
+  }) async {
+    Object? lastError;
+
+    // First attempt
+    try {
+      final success = await _tryCreateUniversalOrder();
+      if (success) return (success: true, lastError: null);
+    } catch (e) {
+      lastError = e;
+    }
+
+    // Notify about retry attempt
+    debugPrint('[UniversalDraftController] First attempt failed, retrying...');
+    onRetryMessage?.call('Ticket creation failed. Attempting to create again....');
+
+    // Second attempt (immediate retry)
+    try {
+      final success = await _tryCreateUniversalOrder();
+      if (success) return (success: true, lastError: null);
+    } catch (e) {
+      lastError = e;
+    }
+
+    // Both attempts failed
+    return (success: false, lastError: lastError);
+  }
+
+  /// Single attempt to create universal order.
+  /// Returns true on success, false on failure (does not throw).
+  Future<bool> _tryCreateUniversalOrder() async {
     final userProfile = ref.read(userProfileProvider);
-    if (userProfile == null) return;
+    if (userProfile == null) return false;
 
     final universalRequestService = ref.read(universalRequestServiceProvider);
 
@@ -243,9 +302,29 @@ class UniversalDraftController
         hotelId: userProfile.userHotelStatus.hotelId,
         orderItems: orderItems,
       );
-    } catch (_) {
-      // Ticket creation must succeed even if order POST fails — the local
-      // ticket is the source of truth for the operator.
+      return true;
+    } on Exception catch (e) {
+      debugPrint('[UniversalDraftController] Order creation failed: $e');
+      return false;
+    }
+  }
+
+  /// Logs error details to a file for future diagnostic sharing.
+  /// File location: app documents directory /nexierge_logs.txt
+  Future<void> _logErrorToFile(String message, Object error) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/nexierge_logs.txt');
+      final timestamp = DateTime.now().toIso8601String();
+      final logEntry = '[$timestamp] $message\nError: $error\n\n';
+      
+      // Append to file (create if doesn't exist)
+      await file.writeAsString(logEntry, mode: FileMode.append, flush: true);
+      
+      debugPrint('[UniversalDraftController] Error logged to: ${file.path}');
+    } catch (e) {
+      // If logging fails, just print to console
+      debugPrint('[UniversalDraftController] Failed to log error: $e');
     }
   }
 
@@ -278,6 +357,21 @@ class UniversalDraftController
 
   String _capitalize(String s) =>
       s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
+}
+
+/// Exception thrown when ticket was created but universal order failed.
+/// This allows the UI to show appropriate retry/error messaging.
+class UniversalOrderException implements Exception {
+  final String ticketId;
+  final String message;
+  
+  const UniversalOrderException({
+    required this.ticketId,
+    required this.message,
+  });
+  
+  @override
+  String toString() => 'UniversalOrderException: $message (ticketId: $ticketId)';
 }
 
 final universalDraftControllerProvider =

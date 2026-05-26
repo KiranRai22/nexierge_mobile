@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -5,7 +7,6 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../../core/utils/date_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/needs_attention_item.dart';
 
@@ -140,14 +141,41 @@ class _AllClearEmpty extends StatelessWidget {
   }
 }
 
-class _AttentionRow extends StatelessWidget {
+class _AttentionRow extends StatefulWidget {
   final NeedsAttentionItem item;
   final VoidCallback onTap;
 
   const _AttentionRow({required this.item, required this.onTap});
 
-  ({Color iconBg, Color iconFg, Color pillBg, Color pillFg, IconData glyph})
+  @override
+  State<_AttentionRow> createState() => _AttentionRowState();
+}
+
+class _AttentionRowState extends State<_AttentionRow> {
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tick every second to update elapsed time
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  NeedsAttentionItem get item => widget.item;
+  VoidCallback get onTap => widget.onTap;
+
+  ({Color iconBg, Color iconFg, Color pillBg, Color pillFg, String? emoji})
   _palette(AppColors c) {
+    final bool isOverdue = item.dueAt > 0 && item.dueAt < DateTime.now().millisecondsSinceEpoch;
+
     switch (item.status) {
       case 'ACCEPTED':
         return (
@@ -155,35 +183,106 @@ class _AttentionRow extends StatelessWidget {
           iconFg: c.tagBlueIcon,
           pillBg: c.tagBlueBg,
           pillFg: c.tagBlueText,
-          glyph: LucideIcons.circlePause,
+          emoji: item.department.mobileIcon.isNotEmpty ? item.department.mobileIcon : null,
         );
       case 'NEW':
         return (
           iconBg: c.tagNeutralBg,
           iconFg: c.tagNeutralIcon,
-          pillBg: c.tagNeutralBg,
-          pillFg: c.tagNeutralText,
-          glyph: LucideIcons.circlePlay,
+          pillBg: isOverdue ? c.tagRedBg : c.tagNeutralBg,
+          pillFg: isOverdue ? c.tagRedText : c.tagNeutralText,
+          emoji: item.department.mobileIcon.isNotEmpty ? item.department.mobileIcon : null,
         );
       default:
         return (
-          iconBg: c.tagOrangeBg,
-          iconFg: c.tagOrangeIcon,
-          pillBg: c.tagOrangeBg,
-          pillFg: c.tagOrangeText,
-          glyph: LucideIcons.clock,
+          iconBg: isOverdue ? c.tagRedBg : c.tagOrangeBg,
+          iconFg: isOverdue ? c.tagRedIcon : c.tagOrangeIcon,
+          pillBg: isOverdue ? c.tagRedBg : c.tagOrangeBg,
+          pillFg: isOverdue ? c.tagRedText : c.tagOrangeText,
+          emoji: item.department.mobileIcon.isNotEmpty ? item.department.mobileIcon : null,
         );
+    }
+  }
+
+  String _countdownText() {
+    if (item.dueAt <= 0) return '';
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final diff = item.dueAt - now;
+
+    if (diff <= 0) {
+      // Overdue - show elapsed time since due
+      final overdue = now - item.dueAt;
+      return 'Overdue: ${_formatDuration(overdue)}';
+    } else {
+      // Not overdue - show remaining time
+      return '⏱️ ${_formatDuration(diff)}';
+    }
+  }
+
+  String _formatDuration(int milliseconds) {
+    final seconds = (milliseconds / 1000).floor();
+    final minutes = (seconds / 60).floor();
+    final hours = (minutes / 60).floor();
+    final days = (hours / 24).floor();
+
+    if (days > 0) {
+      return '${days}d ${hours % 24}h ${minutes % 60}m';
+    } else if (hours > 0) {
+      return '${hours}h ${minutes % 60}m ${seconds % 60}s';
+    } else if (minutes > 0) {
+      return '${minutes}m ${seconds % 60}s';
+    } else {
+      return '${seconds}s';
     }
   }
 
   String _pillLabel(AppLocalizations s) {
     switch (item.status) {
+      case 'IN_PROGRESS':
+        return _countdownText();
+      case 'NEW':
+        final elapsed = DateTime.now().millisecondsSinceEpoch - item.createdAt;
+        return '⏳ ${_formatDuration(elapsed)}';
       case 'ACCEPTED':
         return s.dashboardNotStartedPill;
-      case 'NEW':
-        return 'Waiting ${AppDateUtils.timeAgo(item.createdAt)}';
+      case 'BACKLOG':
+      case 'DONE':
+        return '';
       default:
-        return item.status;
+        return '';
+    }
+  }
+
+  Color _timePillBg(AppColors c) {
+    if (item.status == 'IN_PROGRESS' && item.dueAt > 0) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (item.dueAt < now) return c.tagRedBg; // Overdue
+    }
+    return c.tagNeutralBg;
+  }
+
+  Color _timePillFg(AppColors c) {
+    if (item.status == 'IN_PROGRESS' && item.dueAt > 0) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (item.dueAt < now) return c.tagRedText; // Overdue
+    }
+    return c.tagNeutralText;
+  }
+
+  ({String label, Color bg, Color fg}) _statusBadge(AppColors c) {
+    switch (item.status) {
+      case 'NEW':
+        return (label: 'NEW', bg: c.tagBlueBg, fg: c.tagBlueText);
+      case 'ACCEPTED':
+        return (label: 'ACCEPTED', bg: c.tagPurpleBg, fg: c.tagPurpleText);
+      case 'IN_PROGRESS':
+        return (label: 'IN PROGRESS', bg: c.tagOrangeBg, fg: c.tagOrangeText);
+      case 'DONE':
+        return (label: 'DONE', bg: c.tagGreenBg, fg: c.tagGreenText);
+      case 'BACKLOG':
+        return (label: 'BACKLOG', bg: c.tagNeutralBg, fg: c.tagNeutralText);
+      default:
+        return (label: item.status, bg: c.tagNeutralBg, fg: c.tagNeutralText);
     }
   }
 
@@ -238,7 +337,14 @@ class _AttentionRow extends StatelessWidget {
                     color: p.iconBg,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(p.glyph, color: p.iconFg, size: 18),
+                  child: p.emoji != null
+                    ? Center(
+                        child: Text(
+                          p.emoji!,
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                      )
+                    : Icon(LucideIcons.circleDot, color: p.iconFg, size: 18),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -275,7 +381,25 @@ class _AttentionRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                _SeverityPill(label: _pillLabel(s), bg: p.pillBg, fg: p.pillFg),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _StatusBadge(
+                      label: _statusBadge(c).label,
+                      bg: _statusBadge(c).bg,
+                      fg: _statusBadge(c).fg,
+                    ),
+                    if (_pillLabel(s).isNotEmpty) ...[  
+                      const SizedBox(height: 4),
+                      _SeverityPill(
+                        label: _pillLabel(s),
+                        bg: _timePillBg(c),
+                        fg: _timePillFg(c),
+                      ),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
@@ -307,6 +431,37 @@ class _SeverityPill extends StatelessWidget {
       child: Text(
         label,
         style: TypographyManager.textCaption.copyWith(color: fg),
+      ),
+    );
+  }
+}
+
+/// Status badge showing ticket status with color coding
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color fg;
+
+  const _StatusBadge({
+    required this.label,
+    required this.bg,
+    required this.fg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TypographyManager.textCaption.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

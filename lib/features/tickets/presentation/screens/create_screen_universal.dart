@@ -565,16 +565,31 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
   }
 
   Future<void> _submit() async {
-    final id = await ref
-        .read(universalDraftControllerProvider.notifier)
-        .submit();
-    if (id == null || !mounted) return;
-    context.showSuccess(context.l10n.createSuccessToast);
-    // Reset to go back to universal selection screen for next ticket
-    // Delay slightly to let toast show and AnimatedSwitcher transition smoothly
-    await Future.delayed(const Duration(milliseconds: 200));
-    if (!mounted) return;
-    ref.read(universalDraftControllerProvider.notifier).reset();
+    try {
+      final id = await ref
+          .read(universalDraftControllerProvider.notifier)
+          .submit(
+            onRetryMessage: (msg) {
+              // Show retry message to user
+              if (mounted) {
+                context.showInfo(msg);
+              }
+            },
+          );
+      if (id == null || !mounted) return;
+      context.showSuccess(context.l10n.createSuccessToast);
+      // Reset to go back to universal selection screen for next ticket
+      // Delay slightly to let toast show and AnimatedSwitcher transition smoothly
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (!mounted) return;
+      ref.read(universalDraftControllerProvider.notifier).reset();
+    } on UniversalOrderException {
+      // Universal order failed after 2 attempts
+      // Stay on the current screen and show error toast
+      if (mounted) {
+        context.showFailure('Ticket creation failed. Please try again.');
+      }
+    }
   }
 
   @override

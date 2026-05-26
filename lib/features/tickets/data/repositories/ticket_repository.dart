@@ -176,6 +176,12 @@ abstract class TicketRepository {
     required String reason,
   });
 
+  /// POST /ticketsv2/cancel. Cancels ticket.
+  Future<void> cancelTicketV2({
+    required String ticketId,
+    required String reason,
+  });
+
   /// Submits a catalog (paid) order via
   /// `POST /service_catalogs/user_app/order/create`. Returns the created
   /// ticket id (may be empty when the backend doesn't echo one).
@@ -200,7 +206,11 @@ class _TicketRepositoryImpl implements TicketRepository {
   @override
   Future<TicketDetail> fetchTicketDetails({required String ticketId}) async {
     try {
+      // ignore: avoid_print
+      print('[TicketRepository] fetchTicketDetails called with ticketId: $ticketId');
       final dto = await _remote.getTicketDetails(ticketId: ticketId);
+      // ignore: avoid_print
+      print('[TicketRepository] Ticket details fetched successfully');
       return TicketDetail.fromJson({
         'ticket': dto.ticket,
         'events': dto.events,
@@ -856,6 +866,23 @@ class _TicketRepositoryImpl implements TicketRepository {
   }) async {
     try {
       await _remote.resetAcknowledgeV2(
+        ticketId: ticketId,
+        reason: reason,
+      );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> cancelTicketV2({
+    required String ticketId,
+    required String reason,
+  }) async {
+    try {
+      await _remote.cancelTicketV2(
         ticketId: ticketId,
         reason: reason,
       );

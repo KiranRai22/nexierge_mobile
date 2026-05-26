@@ -176,6 +176,8 @@ TicketStatus _mapStatus(String status) {
     case 'CANCELED':
     case 'CANCELLED':
       return TicketStatus.canceled;
+    case 'BACKLOG':
+      return TicketStatus.backlog;
     case 'EXPIRED':
       // EXPIRED is server-driven; no UI tab yet — render as canceled-like
       // terminal state until a dedicated badge is added.

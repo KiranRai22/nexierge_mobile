@@ -53,11 +53,13 @@ Ticket _mergeTicket({
     status: detailStatus,
     department: p?.department ?? Department.housekeeping,
     departmentName: p?.departmentName ?? deptNamesById[detail.departmentId],
-    departmentEmoji: p?.departmentEmoji,
+    departmentEmoji: detail.mobileIcon.isNotEmpty ? detail.mobileIcon : p?.departmentEmoji,
     departmentIconUrl: p?.departmentIconUrl,
-    room:
-        p?.room ??
-        Room(id: detail.room, number: detail.onbRoomNumber, floor: 0),
+    room: Room(
+      id: detail.room,
+      number: detail.onbRoomNumber.isNotEmpty ? detail.onbRoomNumber : (p?.room.number ?? ''),
+      floor: 0,
+    ),
     guest:
         p?.guest ??
         (detail.guestName.isNotEmpty
@@ -70,6 +72,7 @@ Ticket _mergeTicket({
     source: p?.source ?? _mapSource(detail.source),
     createdAt:
         p?.createdAt ?? DateTime.fromMillisecondsSinceEpoch(detail.createdAt),
+    createdTime: detail.createdTime.isNotEmpty ? detail.createdTime : p?.createdTime,
     acceptedAt: detailAccepted ?? p?.acceptedAt,
     doneAt: p?.doneAt,
     eta: p?.eta,
@@ -112,6 +115,8 @@ TicketStatus _mapStatus(String status) {
       return TicketStatus.canceled;
     case 'ON_HOLD':
       return TicketStatus.onHold;
+    case 'BACKLOG':
+      return TicketStatus.backlog;
     case 'EXPIRED':
       return TicketStatus.canceled;
     default:
@@ -377,6 +382,8 @@ class _DetailsTab extends StatelessWidget {
         return s.ticketStatusBadgeCancelled;
       case TicketStatus.onHold:
         return s.ticketStatusBadgeOnHold;
+      case TicketStatus.backlog:
+        return 'Backlog';
     }
   }
 
@@ -411,6 +418,10 @@ class _DetailsTab extends StatelessWidget {
         bg = c.tagPurpleBg;
         fg = c.tagPurpleText;
         label = s.ticketStatusBadgeOnHold;
+      case TicketStatus.backlog:
+        bg = c.tagNeutralBg;
+        fg = c.tagNeutralText;
+        label = 'Backlog';
     }
     return TicketInfoStatusPill(label: label, bg: bg, fg: fg);
   }

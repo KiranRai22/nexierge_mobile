@@ -193,6 +193,7 @@ AttentionItem? _classify(Ticket t, DateTime now) {
     case TicketStatus.onHold:
     case TicketStatus.done:
     case TicketStatus.canceled:
+    case TicketStatus.backlog:
       return null;
   }
 }

@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/utils/string_utils.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
@@ -246,14 +250,15 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
 
   // ── Submit ────────────────────────────────────────────────────────────────
   /// Submits the catalog order via the real `/service_catalogs/user_app/order/create`
-  /// endpoint. Builds the payload from the cart + selected stay, prints it
-  /// for debugging, then triggers a refresh of the Today tab so the new
-  /// ticket shows up there immediately. Returns the created ticket id
-  /// (may be empty if the backend doesn't echo one — still treated as
-  /// success).
-  Future<String?> submit() async {
+  /// endpoint with retry logic for timeouts. Builds the payload from the cart
+  /// + selected stay, prints it for debugging, then triggers a refresh of
+  /// the Today tab so the new ticket shows up there immediately.
+  /// Returns the created ticket id (may be empty if the backend doesn't echo
+  /// one — still treated as success), or null if submission failed after retries.
+  Future<String?> submit({void Function(String)? onRetryMessage}) async {
     if (!state.canSubmit) return null;
     state = state.copyWith(submitting: true);
+    
     try {
       final hotelId =
           ref
@@ -271,19 +276,74 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
       );
 
       final repo = ref.read(ticketRepositoryProvider);
-      final ticketId = await repo.createCatalogOrder(request: request);
-
-      // Refresh all ticket tabs (Incoming/Today/Done) as a safety net so the
-      // freshly-created ticket shows up immediately even if the realtime
-      // push is delayed or dropped. Mirrors the manual create flow.
-      // ignore: discarded_futures
-      ref.read(myTicketsNotifierProvider.notifier).refresh();
-
-      return ticketId.isEmpty ? '_pending_' : ticketId;
+      
+      // First attempt
+      try {
+        final ticketId = await repo.createCatalogOrder(request: request);
+        // Refresh all ticket tabs as a safety net
+        // ignore: discarded_futures
+        ref.read(myTicketsNotifierProvider.notifier).refresh();
+        return ticketId.isEmpty ? '_pending_' : ticketId;
+      } catch (e) {
+        // Only retry on connection timeout
+        if (!_isTimeoutError(e)) {
+          rethrow;
+        }
+      }
+      
+      // Notify about retry attempt
+      debugPrint('[CatalogDraftController] First attempt failed with timeout, retrying...');
+      onRetryMessage?.call('Ticket creation failed. Attempting to create again....');
+      
+      // Second attempt (immediate retry)
+      try {
+        final ticketId = await repo.createCatalogOrder(request: request);
+        // Refresh all ticket tabs as a safety net
+        // ignore: discarded_futures
+        ref.read(myTicketsNotifierProvider.notifier).refresh();
+        return ticketId.isEmpty ? '_pending_' : ticketId;
+      } catch (e) {
+        // Both attempts failed - log the error for future diagnostic sharing
+        await _logErrorToFile(
+          'Catalog order creation failed after 2 attempts (timeout)',
+          e,
+        );
+        rethrow;
+      }
+      
     } finally {
       if (ref.exists(catalogDraftControllerProvider)) {
         state = state.copyWith(submitting: false);
       }
+    }
+  }
+  
+  /// Checks if an error is a timeout error that warrants a retry.
+  bool _isTimeoutError(Object error) {
+    if (error is DioException) {
+      return error.type == DioExceptionType.connectionTimeout ||
+             error.type == DioExceptionType.sendTimeout ||
+             error.type == DioExceptionType.receiveTimeout;
+    }
+    return false;
+  }
+  
+  /// Logs error details to a file for future diagnostic sharing.
+  /// File location: app documents directory /nexierge_logs.txt
+  Future<void> _logErrorToFile(String message, Object error) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/nexierge_logs.txt');
+      final timestamp = DateTime.now().toIso8601String();
+      final logEntry = '[$timestamp] $message\nError: $error\n\n';
+      
+      // Append to file (create if doesn't exist)
+      await file.writeAsString(logEntry, mode: FileMode.append, flush: true);
+      
+      debugPrint('[CatalogDraftController] Error logged to: ${file.path}');
+    } catch (e) {
+      // If logging fails, just print to console
+      debugPrint('[CatalogDraftController] Failed to log error: $e');
     }
   }
 

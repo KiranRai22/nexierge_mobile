@@ -62,24 +62,23 @@ class DashboardBootstrapController
       }
 
       final userProfile = userProfileDto.toEntity();
-      final effectiveHotelUserId = hotelUserId ?? userProfile.id;
+      final effectiveHotelId = userProfile.userHotelStatus.hotelId;
 
-      if (effectiveHotelUserId.isEmpty) {
-        throw Exception('User profile does not contain userId');
+      if (effectiveHotelId.isEmpty) {
+        throw Exception('User profile does not contain hotelId');
       }
 
-      // Step 2: Now call dashboard/numbers with the userId
+      // Step 2: Now call dashboard/numbers with the hotelId
       final dashboardNumbersDto = await _fetchDashboardNumbers(
-        effectiveHotelUserId,
+        effectiveHotelId,
       );
 
       final dashboardNumbers = dashboardNumbersDto != null
           ? DashboardNumbers(
-              needsAcknowledgement:
-                  dashboardNumbersDto.needsAcknowledgement ?? '',
               inprogress: dashboardNumbersDto.inprogress ?? '',
               overdue: dashboardNumbersDto.overdue ?? '',
               notStarted: dashboardNumbersDto.notStarted ?? '',
+              done: dashboardNumbersDto.done ?? '',
             )
           : null;
 
@@ -116,10 +115,10 @@ class DashboardBootstrapController
 
   /// Fetch dashboard numbers from dashboard/numbers API
   Future<dashboard_dto.DashboardNumbersDto?> _fetchDashboardNumbers(
-    String hotelUserId,
+    String hotelId,
   ) async {
     try {
-      return await _dashboardRemote.getNumbers(hotelUserId: hotelUserId);
+      return await _dashboardRemote.getNumbers(hotelId: hotelId);
     } catch (_) {
       return null;
     }

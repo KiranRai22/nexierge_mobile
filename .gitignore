@@ -12,9 +12,6 @@
 .swiftpm/
 migrate_working_dir/
 
-#windsurf
-.windsurf/
-
 # IntelliJ related
 *.iml
 *.ipr
@@ -35,7 +32,6 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
-.pubspec.lock
 
 # Symbolication related
 app.*.symbols
@@ -44,15 +40,6 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-
 /android/app/debug
 /android/app/profile
 /android/app/release
-
-# Technical Documentation (local only)
-TECHNICAL_DOCUMENTATION.md
-TECHNICAL_DOCUMENTATION.pdf
-CONVERT_TO_PDF.md
-convert_to_pdf.py
-convert_simple.py
-/scripts/

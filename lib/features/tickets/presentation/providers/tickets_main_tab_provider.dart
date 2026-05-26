@@ -9,7 +9,7 @@ final ticketsMainTabProvider = StateProvider<TicketsMainTab>((ref) {
 });
 
 /// Provider for the selected filter within the current main tab
-/// Default is 'all' so the All chip is selected initially on Today tab
+/// Default is 'active' so the Active chip is selected initially on Today (In Progress) tab
 final ticketsFilterProvider = StateProvider<String?>((ref) {
-  return 'all';
+  return 'active';
 });

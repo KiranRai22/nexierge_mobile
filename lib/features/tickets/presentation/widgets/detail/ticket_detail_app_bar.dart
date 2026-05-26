@@ -176,6 +176,12 @@ class _StatusPill extends StatelessWidget {
           fg: c.tagPurpleText,
           label: s.ticketStatusBadgeOnHold,
         );
+      case TicketStatus.backlog:
+        return (
+          bg: c.tagNeutralBg,
+          fg: c.tagNeutralText,
+          label: 'Backlog',
+        );
     }
   }
 }

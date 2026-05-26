@@ -498,6 +498,10 @@ class _StatusPill extends StatelessWidget {
           label = s.ticketStatusBadgeCancelled;
           bg = c.tagRedBg;
           fg = c.tagRedText;
+        case TicketStatus.backlog:
+          label = 'Backlog';
+          bg = c.tagNeutralBg;
+          fg = c.tagNeutralText;
       }
     }
 

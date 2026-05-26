@@ -51,10 +51,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     // active — it's a persistent, session-scoped notifier.
     ref.read(ticketsTabActiveProvider.notifier).state = tab == ShellTab.tickets;
 
-    // When user selects tickets from bottom nav, always show Today tab with All filter
+    // When user selects tickets from bottom nav, always show Today tab with Active filter
     if (tab == ShellTab.tickets) {
       ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
-      ref.read(ticketsFilterProvider.notifier).state = 'all';
+      ref.read(ticketsFilterProvider.notifier).state = 'active';
     }
   }
 
@@ -114,6 +114,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     setState(() => _current = ShellTab.tickets);
     ref.read(ticketsTabActiveProvider.notifier).state = true;
     ref.read(ticketsMainTabProvider.notifier).state = mainTab;
-    ref.read(ticketsFilterProvider.notifier).state = 'all';
+    // Set appropriate filter based on the tab being navigated to
+    final filter = switch (mainTab) {
+      TicketsMainTab.today => 'active',
+      TicketsMainTab.backlog => 'all',
+      TicketsMainTab.incoming => 'newest',
+      TicketsMainTab.done => null,
+    };
+    ref.read(ticketsFilterProvider.notifier).state = filter;
   }
 }

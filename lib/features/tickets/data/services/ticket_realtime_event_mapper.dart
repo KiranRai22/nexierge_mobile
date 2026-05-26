@@ -132,5 +132,14 @@ MyTicket _dtoToDomain(MyTicketDto dto) {
                 (dto.roomDetails!['onb_room_type_id'] as String?) ?? '',
           )
         : null,
+    universalItems: dto.universalDetails
+        .map((d) => UniversalTicketItem(
+              id: d.id,
+              item: d.item,
+              emoji: d.emoji,
+              thumbnailUrl: d.thumbnailUrl,
+              nameI18n: d.nameI18n,
+            ))
+        .toList(),
   );
 }

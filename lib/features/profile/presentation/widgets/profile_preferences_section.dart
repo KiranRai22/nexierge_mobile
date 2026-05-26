@@ -47,7 +47,7 @@ class _ProfilePreferencesSectionState
       children: [
         // Header with expand/collapse
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+          padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
           child: Row(
             children: [
               Expanded(

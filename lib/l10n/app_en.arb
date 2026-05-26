@@ -191,7 +191,7 @@
   "ticketActionPause": "Pause",
   "ticketActionResume": "Resume",
   "ticketActionComplete": "Complete",
-  "ticketActionChangeDue": "Change Due",
+  "ticketActionChangeDue": "Add Time",
   "ticketActionCancel": "Cancel",
   "ticketActionReset": "Reset",
   "ticketActionFailedAccept": "Couldn't accept ticket. Reverted.",
@@ -312,7 +312,7 @@
     }
   },
 
-  "createNewTitle": "Create new",
+  "createNewTitle": "Create new ticket",
   "createNewSubtitle": "What kind of ticket are you creating?",
   "createUniversalTitle": "Universal Ticket",
   "createUniversalDesc": "Towels, pillows, toiletries — quick operational asks",

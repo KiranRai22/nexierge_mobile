@@ -10,20 +10,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
+import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../../../core/services/sound_manager.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../core/time/server_clock.dart';
 import '../../../../../shared/widgets/app_toast.dart';
-import '../../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../../data/repositories/ticket_repository.dart';
 import '../../../domain/entities/my_ticket.dart';
 import '../../../domain/models/ticket.dart';
 import '../../providers/my_tickets_notifier.dart';
 import '../../providers/ticket_busy_provider.dart';
+import '../../providers/tickets_paged_notifier.dart';
 import '../cancel_ticket_bottom_sheet.dart';
 import '../change_due_time_bottom_sheet.dart';
 import '../mark_done_bottom_sheet.dart';
+import '../move_to_backlog_bottom_sheet.dart';
 import '../reset_acknowledgement_bottom_sheet.dart';
 import '../start_work_confirmation_bottom_sheet.dart';
 
@@ -75,6 +77,8 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         await _onMarkDone();
       case TicketStatus.onHold:
         await _onResume();
+      case TicketStatus.backlog:
+        await _onStartFromBacklog();
       default:
         break;
     }
@@ -82,36 +86,25 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   // ────────── HOLD (ACCEPTED|IN_PROGRESS → ON_HOLD) ──────────
 
-  Future<void> _onHold() async {
+
+  // ────────── START FROM BACKLOG (BACKLOG → IN_PROGRESS) ──────────
+
+  Future<void> _onStartFromBacklog() async {
     final t = widget.ticket;
-    final s = context.l10n;
-    final failureMsg = s.ticketActionFailedHold;
-    final confirmed = await showDialog<bool>(
+    final dueAt = ServerClock.now().add(const Duration(minutes: 15));
+    await showStartWorkConfirmation(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.ticketActionHoldConfirmTitle),
-        content: Text(s.ticketActionHoldConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: tapSound(() => Navigator.of(ctx).pop(false), SoundCategory.back),
-            child: Text(s.ticketActionCancel),
+      onConfirm: () async {
+        await _withGuard(
+          () => _runOptimistic(
+            newStatus: 'IN_PROGRESS',
+            apiCall: () => ref
+                .read(ticketRepositoryProvider)
+                .startTicketV2(ticketId: t.id, dueAt: dueAt),
+            failureMessage: context.l10n.ticketActionFailedAccept,
           ),
-          ElevatedButton(
-            onPressed: tapSound(() => Navigator.of(ctx).pop(true)),
-            child: Text(s.ticketActionHold),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    await _withGuard(
-      () => _runOptimistic(
-        newStatus: 'ON_HOLD',
-        apiCall: () => ref
-            .read(ticketRepositoryProvider)
-            .changeTicketStatus(ticketId: t.id, newStatus: 'ON_HOLD'),
-        failureMessage: failureMsg,
-      ),
+        );
+      },
     );
   }
 
@@ -128,6 +121,39 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
             .changeTicketStatus(ticketId: t.id, newStatus: 'IN_PROGRESS'),
         failureMessage: failureMsg,
       ),
+    );
+  }
+
+  // ────────── MOVE TO BACKLOG (→ BACKLOG) ──────────
+
+  Future<void> _onMoveToBacklog() async {
+    final t = widget.ticket;
+
+    await showMoveToBacklogBottomSheet(
+      context: context,
+      onConfirm: (reason) async {
+        await _withGuard(() async {
+          try {
+            await ref
+                .read(ticketRepositoryProvider)
+                .moveToBacklogV2(ticketId: t.id, reason: reason);
+            // Refresh the backlog tab (server-curated, cannot infer locally)
+            // and the source tab so removed ticket disappears.
+            ref
+                .read(ticketsPagedProvider(specForTab(TicketsTab.backlog)).notifier)
+                .refresh();
+            ref
+                .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
+                .refresh();
+            ref
+                .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+                .refresh();
+            if (mounted) Navigator.of(context).pop();
+          } catch (e) {
+            if (mounted) context.showFailure('Failed to move ticket to backlog');
+          }
+        });
+      },
     );
   }
 
@@ -236,31 +262,22 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   Future<void> _onChangeDue() async {
     final t = widget.ticket;
-    final result = await ChangeDueTimeBottomSheet.show(context);
+    final result = await ChangeDueTimeBottomSheet.show(
+      context,
+      ticketId: t.id,
+      currentDueAtMs: t.eta?.millisecondsSinceEpoch ?? 0,
+      roomId: t.room.id,
+    );
     if (result == null) return;
-
-    final hotelId = ref
-        .read(dashboardBootstrapControllerProvider)
-        .valueOrNull
-        ?.userProfile
-        ?.hotelDetails
-        .hotel
-        .id;
-    if (hotelId == null || hotelId.isEmpty) {
-      if (!mounted) return;
-      context.showFailure(context.l10n.unauthorizedError);
-      return;
-    }
 
     await _withGuard(() async {
       try {
         await ref
             .read(ticketRepositoryProvider)
-            .changeDueTime(
+            .addTimeV2(
               ticketId: t.id,
-              hotelId: hotelId,
-              newDueAt: result.newDueAt,
               reason: result.reason,
+              extensionMinutes: result.extensionMinutes,
             );
         ref.read(myTicketsNotifierProvider.notifier).refresh();
       } catch (e) {
@@ -274,24 +291,25 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   Future<void> _onCancel() async {
     final t = widget.ticket;
-    final reason = await CancelTicketBottomSheet.show(context);
-    if (reason == null) return;
-
-    await _withGuard(() async {
-      try {
-        await ref.read(ticketRepositoryProvider).changeTicketStatus(
-              ticketId: t.id,
-              newStatus: 'CANCELED',
-              resolutionNote: reason,
-            );
-        _patchStatus(t.id, 'CANCELED');
-        if (!mounted) return;
-        Navigator.of(context).pop();
-      } catch (e) {
-        if (!mounted) return;
-        context.showFailure(e.toString());
-      }
-    });
+    await CancelTicketBottomSheet.showWithCallback(
+      context,
+      onConfirm: (reason) async {
+        await _withGuard(() async {
+          try {
+            await ref
+                .read(ticketRepositoryProvider)
+                .cancelTicketV2(ticketId: t.id, reason: reason);
+            _patchStatus(t.id, 'CANCELED');
+            if (!mounted) return;
+            Navigator.of(context).pop();
+          } catch (e) {
+            if (!mounted) return;
+            context.showFailure(e.toString());
+            rethrow;
+          }
+        });
+      },
+    );
   }
 
   // ────────── RESET ──────────
@@ -409,140 +427,306 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         t.status == TicketStatus.done || t.status == TicketStatus.canceled;
     if (isFinal) return const SizedBox.shrink();
 
-    // Cancel: live tickets only (accepted/inProgress/onHold).
-    final showCancel =
-        t.status == TicketStatus.accepted ||
-        t.status == TicketStatus.inProgress ||
-        t.status == TicketStatus.onHold;
-    // Reset: any non-NEW, non-final ticket can be sent back to NEW. Excludes
-    // NEW itself (already there) and DONE/CANCELED (handled by `isFinal`
-    // early return above).
-    final showReset =
-        t.status == TicketStatus.accepted ||
-        t.status == TicketStatus.inProgress ||
-        t.status == TicketStatus.onHold;
-    // Hold: while the ticket is being worked on. Not for NEW (must accept
-    // first) and not from ON_HOLD (use Resume instead).
-    final showHold =
-        t.status == TicketStatus.accepted ||
-        t.status == TicketStatus.inProgress;
-
-    // Prepare primary button data for non-NEW tickets
-    final primaryLabel = switch (t.status) {
-      TicketStatus.inProgress => s.ticketActionComplete,
-      TicketStatus.accepted => s.ticketActionStartWork,
-      TicketStatus.onHold => s.ticketActionResume,
-      _ => s.ticketActionStartWork,
-    };
-    final primaryIcon = t.status == TicketStatus.onHold
-        ? LucideIcons.play
-        : LucideIcons.circlePlay;
-
     return Material(
       color: c.bgBase,
       elevation: 0,
       child: SafeArea(
         top: false,
         minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // NEW tickets: a single full-width "Accept & Start" button.
-            // Direct flow: no bottom sheet, immediately starts the ticket
-            // with a default 15-minute due time (matches card quick action).
-            if (t.status == TicketStatus.incoming) ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _busy ? null : tapSound(_onAcceptIncoming),
-                  icon: const Icon(LucideIcons.play, size: 18),
-                  // TODO(i18n): consider a dedicated "Start" key; reusing
-                  // existing AcceptAndStart label until l10n catalog is updated.
-                  label: Text(s.ticketActionAcceptAndStart),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: c.buttonInverted,
-                    foregroundColor: c.fgOnInverted,
-                    disabledBackgroundColor: c.bgDisabled,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: TypographyManager.textBodyStrong,
-                  ),
-                ),
+        child: switch (t.status) {
+          // ───── NEW / INCOMING ─────
+          TicketStatus.incoming => _buildNewLayout(context, s, c),
+          // ───── IN PROGRESS ───── 3 rows: Complete | AddTime/Backlog | Cancel/Reset
+          TicketStatus.inProgress => _buildInProgressLayout(context, s, c),
+          // ───── BACKLOG ───── 2 rows: MoveToInProgress | AddTime/Cancel/Reset
+          TicketStatus.backlog => _buildBacklogLayout(context, s, c),
+          // ───── ACCEPTED ───── 2 rows: StartWork | AddTime/Cancel/Reset
+          TicketStatus.accepted => _buildAcceptedLayout(context, s, c),
+          // ───── ON HOLD ───── Single Resume button
+          TicketStatus.onHold => _buildOnHoldLayout(context, s, c),
+          // ───── DONE / CANCELED already filtered out by isFinal
+          _ => const SizedBox.shrink(),
+        },
+      ),
+    );
+  }
+
+  // ───── Layout Builders ─────
+
+  Widget _buildNewLayout(BuildContext context, AppLocalizations s, AppColors c) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Row 1: Accept & Start (full width primary)
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _busy ? null : tapSound(_onAcceptIncoming),
+            icon: const Icon(LucideIcons.play, size: 18),
+            label: Text(s.ticketActionAcceptAndStart),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: c.buttonInverted,
+              foregroundColor: c.fgOnInverted,
+              disabledBackgroundColor: c.bgDisabled,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ] else ...[
-              // Show single primary button for other statuses
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _busy ? null : tapSound(_onPrimary),
-                  icon: Icon(primaryIcon, size: 18),
-                  label: Text(primaryLabel),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: c.buttonInverted,
-                    foregroundColor: c.fgOnInverted,
-                    disabledBackgroundColor: c.bgDisabled,
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: TypographyManager.textBodyStrong,
-                  ),
-                ),
+              textStyle: TypographyManager.labelMedium.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-            ],
-            // Secondary actions row (Change Due / Cancel / Reset) is hidden
-            // for NEW tickets — those choices belong inside the acknowledge
-            // sheet's date picker, not here.
-            if (t.status != TicketStatus.incoming) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _SecondaryButton(
-                      icon: LucideIcons.calendar,
-                      label: s.ticketActionChangeDue,
-                      onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
-                    ),
-                  ),
-                  if (showCancel) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _SecondaryButton(
-                      icon: LucideIcons.circleX,
-                      label: s.ticketActionCancel,
-                      onTap: _busy ? null : tapSound(_onCancel, SoundCategory.back),
-                    ),
-                  ),
-                ],
-                if (showReset) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _SecondaryButton(
-                      icon: LucideIcons.rotateCcw,
-                      label: s.ticketActionReset,
-                      onTap: _busy ? null : tapSound(_onReset),
-                    ),
-                  ),
-                ],
-              ],
             ),
-            ],
-            // if (showHold) ...[
-            //   const SizedBox(height: 8),
-            //   SizedBox(
-            //     width: double.infinity,
-            //     child: _SecondaryButton(
-            //       icon: LucideIcons.pause,
-            //       label: s.ticketActionHold,
-            //       onTap: _busy ? null : _onHold,
-            //     ),
-            //   ),
-            // ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Row 2: Add Time | Backlog | Cancel (3 buttons)
+        Row(
+          children: [
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.circlePlus,
+                label: 'Add Time',
+                onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.archive,
+                label: 'Backlog',
+                onTap: _busy ? null : tapSound(_onMoveToBacklog),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.x,
+                label: 'Cancel',
+                isDestructive: true,
+                onTap: _busy ? null : tapSound(_onCancel),
+              ),
+            ),
           ],
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildInProgressLayout(BuildContext context, AppLocalizations s, AppColors c) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Row 1: Complete (full width primary)
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _busy ? null : tapSound(_onMarkDone),
+            icon: const Icon(LucideIcons.check, size: 18),
+            label: Text(s.ticketActionComplete),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: c.buttonInverted,
+              foregroundColor: c.fgOnInverted,
+              disabledBackgroundColor: c.bgDisabled,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: TypographyManager.labelLarge.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Row 2: Add Time | Backlog
+        Row(
+          children: [
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.circlePlus,
+                label: 'Add Time',
+                onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.archive,
+                label: 'Backlog',
+                onTap: _busy ? null : tapSound(_onMoveToBacklog),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Row 3: Cancel (destructive) | Reset
+        Row(
+          children: [
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.x,
+                label: 'Cancel',
+                isDestructive: true,
+                onTap: _busy ? null : tapSound(_onCancel),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.rotateCcw,
+                label: s.ticketActionReset,
+                onTap: _busy ? null : tapSound(_onReset),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBacklogLayout(BuildContext context, AppLocalizations s, AppColors c) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Row 1: Move to In Progress (full width primary)
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _busy ? null : tapSound(_onStartFromBacklog),
+            icon: const Icon(LucideIcons.circlePlay, size: 18),
+            label: const Text('Move to In Progress'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: c.buttonInverted,
+              foregroundColor: c.fgOnInverted,
+              disabledBackgroundColor: c.bgDisabled,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: TypographyManager.labelLarge.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Row 2: Add Time | Cancel (destructive) | Reset (3 buttons)
+        Row(
+          children: [
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.circlePlus,
+                label: 'Add Time',
+                onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.x,
+                label: 'Cancel',
+                isDestructive: true,
+                onTap: _busy ? null : tapSound(_onCancel),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.rotateCcw,
+                label: s.ticketActionReset,
+                onTap: _busy ? null : tapSound(_onReset),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAcceptedLayout(BuildContext context, AppLocalizations s, AppColors c) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Row 1: Start Work (full width primary)
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _busy ? null : tapSound(_onStartWork),
+            icon: const Icon(LucideIcons.circlePlay, size: 18),
+            label: Text(s.ticketActionStartWork),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: c.buttonInverted,
+              foregroundColor: c.fgOnInverted,
+              disabledBackgroundColor: c.bgDisabled,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: TypographyManager.labelLarge.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Row 2: Add Time | Cancel (destructive) | Reset (3 buttons)
+        Row(
+          children: [
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.circlePlus,
+                label: 'Add Time',
+                onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.x,
+                label: 'Cancel',
+                isDestructive: true,
+                onTap: _busy ? null : tapSound(_onCancel),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.rotateCcw,
+                label: s.ticketActionReset,
+                onTap: _busy ? null : tapSound(_onReset),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOnHoldLayout(BuildContext context, AppLocalizations s, AppColors c) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _busy ? null : tapSound(_onResume),
+            icon: const Icon(LucideIcons.play, size: 18),
+            label: Text(s.ticketActionResume),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: c.buttonInverted,
+              foregroundColor: c.fgOnInverted,
+              disabledBackgroundColor: c.bgDisabled,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              textStyle: TypographyManager.labelLarge.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -551,10 +735,12 @@ class _SecondaryButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
+  final bool isDestructive;
   const _SecondaryButton({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.isDestructive = false,
   });
 
   @override
@@ -562,11 +748,11 @@ class _SecondaryButton extends StatelessWidget {
     final c = context.themeColors;
     return OutlinedButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: 16),
+      icon: Icon(icon, size: 16, color: isDestructive ? c.tagRedText : null),
       label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
       style: OutlinedButton.styleFrom(
-        foregroundColor: c.fgBase,
-        side: BorderSide(color: c.borderBase),
+        foregroundColor: isDestructive ? c.tagRedText : c.fgBase,
+        side: BorderSide(color: isDestructive ? c.tagRedText : c.borderBase),
         minimumSize: const Size.fromHeight(44),
         padding: const EdgeInsets.symmetric(horizontal: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

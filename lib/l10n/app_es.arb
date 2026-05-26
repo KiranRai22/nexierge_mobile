@@ -165,7 +165,7 @@
   "activityNoteTitle": "{actor} añadió una nota",
   "activityReassignedTitle": "{actor} reasignó a {target}",
 
-  "createNewTitle": "Crear nuevo",
+  "createNewTitle": "Crear nuevo ticket",
   "createNewSubtitle": "¿Qué tipo de ticket vas a crear?",
   "createUniversalTitle": "Ticket Universal",
   "createUniversalDesc": "Toallas, almohadas, artículos de aseo — peticiones rápidas",
@@ -477,7 +477,7 @@
   "ticketActionPause": "Pausar",
   "ticketActionResume": "Reanudar",
   "ticketActionComplete": "Completar",
-  "ticketActionChangeDue": "Cambiar plazo",
+  "ticketActionChangeDue": "Añadir tiempo",
   "ticketActionCancel": "Cancelar",
   "ticketActionReset": "Restablecer",
   "ticketActionFailedAccept": "No se pudo aceptar el ticket. Revertido.",

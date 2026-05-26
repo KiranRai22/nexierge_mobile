@@ -94,19 +94,17 @@ abstract class APIEndpoints {
   static const String ticketsV2DoneToday = '$_ticketsV2Base/done';
   static const String ticketsV2DoneHistory = '$_ticketsV2Base/done/history';
 
-  /// POST `/ticketsv2/start/{id}` — body `{due_at: <UTC ISO>}`.
+  /// POST `/ticketsv2/start/{id}` — body `{tickets_v2_id: <uuid>, due_at: null}`.
   /// Moves NEW → IN_PROGRESS, assigns current user.
   static String ticketsV2Start(String ticketId) =>
       '$_ticketsV2Base/start/$ticketId';
-
   /// POST `/ticketsv2/done/{id}` — body carries existing resolution payload
   /// `{resolution_notes, resolution_code?, ...}`. Moves IN_PROGRESS → DONE.
   static String ticketsV2Done(String ticketId) =>
       '$_ticketsV2Base/done/$ticketId';
 
-  /// POST `/ticketsv2/backlog/{id}` — body `{reason: <string>}`. Moves to backlog.
-  static String ticketsV2BacklogMove(String ticketId) =>
-      '$_ticketsV2Base/backlog/$ticketId';
+  /// POST `/ticketsv2/backlog` — body `{tickets_v2_id: <uuid>, reason: <string>}`. Moves to backlog.
+  static const String ticketsV2BacklogMove = '$_ticketsV2Base/backlog';
 
   /// POST `/ticketsv2/add_time/{id}` — adds additional time to ticket SLA.
   /// Body: `{tickets_v2_id, reason, extension_minutes?}`
@@ -117,6 +115,9 @@ abstract class APIEndpoints {
   /// Resets ticket acknowledgement.
   static String ticketsV2ResetAcknowledge(String ticketId) =>
       '$_ticketsV2Base/reset_acknowledge/$ticketId';
+
+  /// POST `/ticketsv2/cancel` — body `{tickets_v2_id, reason}`. Moves to CANCELED.
+  static const String ticketsV2Cancel = '$_ticketsV2Base/cancel';
 
   /// Base path for `/tickets/change_status/{id}` — append the ticket id
   /// to form the full URL. Body carries `{tickets_v2_id, new_status}`.

@@ -100,50 +100,50 @@ class _StartWorkConfirmationBottomSheetState
           ),
           const SizedBox(height: 24),
           // Countdown card
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 24),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: c.tagPurpleBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: c.tagPurpleIcon.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: c.tagPurpleIcon,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(LucideIcons.play, size: 20, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Countdown will start now',
-                        style: TypographyManager.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: c.fgBase,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'The preparation timer begins the moment you confirm.',
-                        style: TypographyManager.bodySmall.copyWith(
-                          color: c.fgMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
+          // Container(
+          //   margin: const EdgeInsets.symmetric(horizontal: 24),
+          //   padding: const EdgeInsets.all(16),
+          //   decoration: BoxDecoration(
+          //     color: c.tagPurpleBg,
+          //     borderRadius: BorderRadius.circular(12),
+          //     border: Border.all(color: c.tagPurpleIcon.withValues(alpha: 0.3)),
+          //   ),
+          //   child: Row(
+          //     children: [
+          //       Container(
+          //         padding: const EdgeInsets.all(8),
+          //         decoration: BoxDecoration(
+          //           color: c.tagPurpleIcon,
+          //           borderRadius: BorderRadius.circular(8),
+          //         ),
+          //         child: const Icon(LucideIcons.play, size: 20, color: Colors.white),
+          //       ),
+          //       const SizedBox(width: 12),
+          //       Expanded(
+          //         child: Column(
+          //           crossAxisAlignment: CrossAxisAlignment.start,
+          //           children: [
+          //             Text(
+          //               'Countdown will start now',
+          //               style: TypographyManager.bodyMedium.copyWith(
+          //                 fontWeight: FontWeight.w600,
+          //                 color: c.fgBase,
+          //               ),
+          //             ),
+          //             const SizedBox(height: 2),
+          //             Text(
+          //               'The preparation timer begins the moment you confirm.',
+          //               style: TypographyManager.bodySmall.copyWith(
+          //                 color: c.fgMuted,
+          //               ),
+          //             ),
+          //           ],
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
+          // const SizedBox(height: 28),
           // Action buttons
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),

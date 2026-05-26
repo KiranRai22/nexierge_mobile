@@ -21,7 +21,9 @@ class InfoCardsRow extends StatelessWidget {
         final cards = [
           _InfoCard(
             label: s.detailRoomLabel,
-            primary: s.roomNumber(ticket.room.number),
+            primary: ticket.room.number.isNotEmpty 
+                ? 'Room #${ticket.room.number}' 
+                : s.detailEmpty,
             secondary: ticket.room.type ?? s.roomFloor(ticket.room.floor),
           ),
           _InfoCard(

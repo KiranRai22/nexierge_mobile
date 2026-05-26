@@ -174,6 +174,13 @@ abstract class TicketRemoteDataSource {
     required String reason,
   });
 
+  /// POST /ticketsv2/cancel — cancels ticket.
+  /// Body: `{tickets_v2_id, reason}`
+  Future<void> cancelTicketV2({
+    required String ticketId,
+    required String reason,
+  });
+
   /// Get all service catalogs for a hotel
   Future<List<ServiceCatalogDto>> getServiceCatalogs({required String hotelId});
 
@@ -197,6 +204,8 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
   @override
   Future<TicketDetailDto> getTicketDetails({required String ticketId}) async {
     debugPrint('[TicketRemoteDataSource] getTicketDetails: $ticketId');
+    debugPrint('[TicketRemoteDataSource] API Endpoint: ${APIEndpoints.ticketsDetails}');
+    debugPrint('[TicketRemoteDataSource] Request payload: {"ticket_id": "$ticketId"}');
     final res = await _dio.post(
       APIEndpoints.ticketsDetails,
       data: {'ticket_id': ticketId},
@@ -378,19 +387,24 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     final note = (resolutionNote != null && resolutionNote.isNotEmpty)
         ? resolutionNote
         : null;
+    final url = APIEndpoints.ticketsChangeStatus(ticketId);
+    final payload = {
+      'tickets_v2_id': ticketId,
+      'new_status': newStatus,
+      'resolution_notes': note,
+    };
     debugPrint(
-      '[TicketRemoteDataSource] changeTicketStatus: $ticketId -> $newStatus'
-      ' note=${note ?? 'null'}',
+      '[TicketRemoteDataSource] [API] changeTicketStatus\n'
+      '  URL: $url\n'
+      '  Ticket: $ticketId\n'
+      '  Status: $newStatus\n'
+      '  Payload: $payload',
     );
     // `resolution_notes` is always present in the body — sent as `null`
     // when the caller has no summary to attach (e.g. reset to NEW).
-    await _dio.post(
-      APIEndpoints.ticketsChangeStatus(ticketId),
-      data: {
-        'tickets_v2_id': ticketId,
-        'new_status': newStatus,
-        'resolution_notes': note,
-      },
+    final res = await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] changeTicketStatus response: ${res.data}',
     );
   }
 
@@ -414,18 +428,25 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String reason,
   }) async {
     final url = APIEndpoints.ticketsV2AddTime(ticketId);
-    debugPrint('[TicketRemoteDataSource][v2] addTime: POST $url');
-    // V2 endpoint uses extension_minutes instead of absolute due_at
-    // Calculate extension from current time to newDueAt
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final extensionMinutes = ((newDueAt - now) / 60000).round();
-    await _dio.post(
+    final extensionMinutes = ((newDueAt - DateTime.now().millisecondsSinceEpoch) / 60000).round();
+    final payload = <String, dynamic>{
+      'tickets_v2_id': ticketId,
+      'reason': reason,
+      'extension_minutes': extensionMinutes,
+    };
+    debugPrint(
+      '[TicketRemoteDataSource] [API] changeDueTime\n'
+      '  URL: $url\n'
+      '  Ticket: $ticketId\n'
+      '  Action: IN_PROGRESS -> CHANGE_DUE\n'
+      '  Payload: $payload',
+    );
+    final res = await _dio.post(
       url,
-      data: {
-        'tickets_v2_id': ticketId,
-        'reason': reason,
-        'extension_minutes': extensionMinutes > 0 ? extensionMinutes : 30,
-      },
+      data: payload,
+    );
+    debugPrint(
+      '[TicketRemoteDataSource] [API] changeDueTime response: ${res.data}',
     );
   }
 
@@ -608,9 +629,21 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required DateTime dueAt,
   }) async {
     final url = APIEndpoints.ticketsV2Start(ticketId);
-    final iso = dueAt.toUtc().toIso8601String();
-    debugPrint('[TicketRemoteDataSource][v2] startTicketV2 $url due_at=$iso');
-    await _dio.post(url, data: {'due_at': iso});
+    final payload = {
+      'tickets_v2_id': ticketId,
+      'due_at': null,
+    };
+    debugPrint(
+      '[TicketRemoteDataSource] [API] startTicketV2\n'
+      '  URL: $url\n'
+      '  Ticket: $ticketId\n'
+      '  Action: INCOMING -> IN_PROGRESS\n'
+      '  Payload: $payload',
+    );
+    final res = await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] startTicketV2 response: ${res.data}',
+    );
   }
 
   @override
@@ -622,11 +655,23 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     final note = (resolutionNote != null && resolutionNote.isNotEmpty)
         ? resolutionNote
         : null;
-    debugPrint('[TicketRemoteDataSource][v2] completeTicketV2 $url note=$note');
-    await _dio.post(url, data: {
+    final payload = <String, dynamic>{
       'tickets_v2_id': ticketId,
-      'resolution_notes': note,
-    });
+    };
+    if (note != null) {
+      payload['resolution_notes'] = note;
+    }
+    debugPrint(
+      '[TicketRemoteDataSource] [API] completeTicketV2\n'
+      '  URL: $url\n'
+      '  Ticket: $ticketId\n'
+      '  Action: IN_PROGRESS -> DONE\n'
+      '  Payload: $payload',
+    );
+    final res = await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] completeTicketV2 response: ${res.data}',
+    );
   }
 
   @override
@@ -634,12 +679,22 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String ticketId,
     required String reason,
   }) async {
-    final url = APIEndpoints.ticketsV2BacklogMove(ticketId);
-    debugPrint('[TicketRemoteDataSource][v2] moveToBacklogV2 $url reason=$reason');
-    await _dio.post(url, data: {
+    final url = APIEndpoints.ticketsV2BacklogMove;
+    final payload = {
       'tickets_v2_id': ticketId,
       'reason': reason,
-    });
+    };
+    debugPrint(
+      '[TicketRemoteDataSource] [API] moveToBacklogV2\n'
+      '  URL: POST $url\n'
+      '  Ticket: $ticketId\n'
+      '  Action: -> BACKLOG\n'
+      '  Payload: $payload',
+    );
+    final res = await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] moveToBacklogV2 response: ${res.data}',
+    );
   }
 
   @override
@@ -656,8 +711,17 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     if (extensionMinutes != null) {
       payload['extension_minutes'] = extensionMinutes;
     }
-    debugPrint('[TicketRemoteDataSource][v2] addTimeV2 $url payload=$payload');
-    await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] addTimeV2\n'
+      '  URL: $url\n'
+      '  Ticket: $ticketId\n'
+      '  Action: IN_PROGRESS -> CHANGE_DUE\n'
+      '  Payload: $payload',
+    );
+    final res = await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] addTimeV2 response: ${res.data}',
+    );
   }
 
   @override
@@ -666,11 +730,44 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String reason,
   }) async {
     final url = APIEndpoints.ticketsV2ResetAcknowledge(ticketId);
-    debugPrint('[TicketRemoteDataSource][v2] resetAcknowledgeV2 $url reason=$reason');
-    await _dio.post(url, data: {
+    final payload = {
       'tickets_v2_id': ticketId,
       'reason': reason,
-    });
+    };
+    debugPrint(
+      '[TicketRemoteDataSource] [API] resetAcknowledgeV2\n'
+      '  URL: $url\n'
+      '  Ticket: $ticketId\n'
+      '  Action: IN_PROGRESS -> RESET\n'
+      '  Payload: $payload',
+    );
+    final res = await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] resetAcknowledgeV2 response: ${res.data}',
+    );
+  }
+
+  @override
+  Future<void> cancelTicketV2({
+    required String ticketId,
+    required String reason,
+  }) async {
+    final url = APIEndpoints.ticketsV2Cancel;
+    final payload = {
+      'tickets_v2_id': ticketId,
+      'reason': reason,
+    };
+    debugPrint(
+      '[TicketRemoteDataSource] [API] cancelTicketV2\n'
+      '  URL: POST $url\n'
+      '  Ticket: $ticketId\n'
+      '  Action: -> CANCELED\n'
+      '  Payload: $payload',
+    );
+    final res = await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] cancelTicketV2 response: ${res.data}',
+    );
   }
 
   @override
@@ -782,6 +879,7 @@ class MyTicketDto {
   final int confirmedAt;
   final String? closedAt;
   final Map<String, dynamic>? roomDetails;
+  final List<UniversalRequestOrderItemDto> universalDetails;
 
   MyTicketDto({
     required this.id,
@@ -809,6 +907,7 @@ class MyTicketDto {
     required this.confirmedAt,
     this.closedAt,
     this.roomDetails,
+    this.universalDetails = const [],
   });
 
   factory MyTicketDto.fromJson(Map<String, dynamic> json) {
@@ -841,7 +940,16 @@ class MyTicketDto {
       confirmedAt: i('confirmed_at'),
       closedAt: json['closed_at'] as String?,
       roomDetails: json['room_details'] as Map<String, dynamic>?,
+      universalDetails: _parseUniversalDetails(json['_universal_request_order_details']),
     );
+  }
+
+  static List<UniversalRequestOrderItemDto> _parseUniversalDetails(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .map(UniversalRequestOrderItemDto.fromJson)
+        .toList(growable: false);
   }
 }
 

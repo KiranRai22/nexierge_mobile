@@ -148,7 +148,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   // Navigation functions for dashboard cards
-  void _navigateToNeedsAcknowledgment() {
+  void _navigateToIncoming() {
     // Navigate to tickets page and select incoming tab
     widget.onSwitchTab(ShellTab.tickets);
     // Set the main tab to incoming
@@ -169,11 +169,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     ref.read(ticketsFilterProvider.notifier).state = 'overdue';
   }
 
-  void _navigateToNotStarted() {
-    // Navigate to tickets page, select today tab and accepted filter
+  void _navigateToDone() {
+    // Navigate to tickets page, select today tab and done filter
     widget.onSwitchTab(ShellTab.tickets);
     ref.read(ticketsMainTabProvider.notifier).state = TicketsMainTab.today;
-    ref.read(ticketsFilterProvider.notifier).state = 'accepted';
+    ref.read(ticketsFilterProvider.notifier).state = 'done';
   }
 
   bool _resolveDark(BuildContext context, ThemeMode? mode) {
@@ -244,6 +244,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                     ref.read(themeModeControllerProvider.notifier).toggle(),
                 onNotifications: () => _openNotifications(context),
                 onAvatarTap: () => widget.onSwitchTab(ShellTab.profile),
+                onRefresh: _refresh,
               ),
             ),
 
@@ -289,10 +290,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         backgroundColor: c.bgSubtle,
                         fullGrid: asyncCounts.when(
                           data: (counts) => DashboardStatsGrid(
-                            incoming: counts.needsAcknowledgmentCount,
-                            accepted: counts.notStartedCount,
+                            incoming: counts.incomingCount,
                             inProgress: counts.inProgressCount,
                             overdue: counts.overdueCount,
+                            done: counts.doneCount,
                             breakdown: asyncView.maybeWhen(
                               data: (v) => v.incomingBreakdown,
                               orElse: () => const IncomingBreakdown(
@@ -301,24 +302,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                                 manual: 0,
                               ),
                             ),
-                            onTapIncoming: _navigateToNeedsAcknowledgment,
+                            onTapIncoming: _navigateToIncoming,
                             onTapInProgress: _navigateToInProgress,
                             onTapOverdue: _navigateToOverdue,
-                            onTapAccepted: _navigateToNotStarted,
+                            onTapDone: _navigateToDone,
                           ),
                           loading: () => const _StatsSkeleton(),
                           error: (_, _) => const _StatsSkeleton(),
                         ),
                         compactStrip: asyncCounts.when(
                           data: (counts) => DashboardStatsCompact(
-                            incoming: counts.needsAcknowledgmentCount,
-                            accepted: counts.notStartedCount,
+                            incoming: counts.incomingCount,
                             inProgress: counts.inProgressCount,
                             overdue: counts.overdueCount,
-                            onTapIncoming: _navigateToNeedsAcknowledgment,
+                            done: counts.doneCount,
+                            onTapIncoming: _navigateToIncoming,
                             onTapInProgress: _navigateToInProgress,
                             onTapOverdue: _navigateToOverdue,
-                            onTapAccepted: _navigateToNotStarted,
+                            onTapDone: _navigateToDone,
                           ),
                           loading: () => const SizedBox(height: 48),
                           error: (_, _) => const SizedBox(height: 48),
@@ -378,14 +379,14 @@ class _StatsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return DashboardStatsGrid(
       incoming: 0,
-      accepted: 0,
       inProgress: 0,
       overdue: 0,
+      done: 0,
       breakdown: const IncomingBreakdown(universal: 0, catalog: 0, manual: 0),
       onTapIncoming: _noop,
       onTapInProgress: _noop,
       onTapOverdue: _noop,
-      onTapAccepted: _noop,
+      onTapDone: _noop,
     );
   }
 

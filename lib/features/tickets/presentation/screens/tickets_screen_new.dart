@@ -60,6 +60,26 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
     super.initState();
     _searchCtl = TextEditingController();
     WidgetsBinding.instance.addObserver(this);
+
+    // Initialize filter based on current tab (runs once on first load)
+    // This ensures the correct filter chip is selected when screen first appears
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final currentTab = ref.read(ticketsMainTabProvider);
+      final currentFilter = ref.read(ticketsFilterProvider);
+      // Only set if not already the correct value (avoid unnecessary updates)
+      final expectedFilter = switch (currentTab) {
+        TicketsMainTab.today => 'active',
+        TicketsMainTab.backlog => 'all',
+        TicketsMainTab.incoming => 'newest',
+        TicketsMainTab.done => 'newest',
+      };
+      debugPrint('[TicketsScreen] initState - Tab: $currentTab, Current filter: "$currentFilter", Expected: "$expectedFilter"');
+      if (currentFilter != expectedFilter) {
+        debugPrint('[TicketsScreen] initState - Setting filter to: "$expectedFilter"');
+        ref.read(ticketsFilterProvider.notifier).state = expectedFilter;
+      }
+    });
   }
 
   @override
@@ -111,7 +131,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       case TicketsMainTab.backlog:
         return true; // Has all/inprogress/overdue filters
       case TicketsMainTab.done:
-        return false; // Filters hidden
+        return true; // Has newest/oldest filters
     }
   }
 
@@ -129,24 +149,33 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   Widget build(BuildContext context) {
     final mainTab = ref.watch(ticketsMainTabProvider);
     final selectedFilter = ref.watch(ticketsFilterProvider);
+    debugPrint('[TicketsScreen] BUILD - mainTab: $mainTab, selectedFilter: "$selectedFilter"');
     // Tab transitions: rely on the realtime cache for freshness — no
     // refresh-on-tap. Reset the chip state to the default of each tab so
     // the operator doesn't carry a stale filter across tabs.
+    // Also handles initial load when prev is null (first build).
     ref.listen<TicketsMainTab>(ticketsMainTabProvider, (prev, next) {
-      if (prev == next) return;
+      // If prev is null, this is the initial load - still apply the filter
+      // If prev == next, ignore (no actual change)
+      if (prev != null && prev == next) return;
+      debugPrint('[TicketsScreen] ref.listen - Tab changed: $prev -> $next');
       switch (next) {
         case TicketsMainTab.today:
           // Reset Today to 'active' filter (shows non-overdue in-progress tickets)
+          debugPrint('[TicketsScreen] ref.listen - Setting filter to: "active"');
           ref.read(ticketsFilterProvider.notifier).state = 'active';
           break;
         case TicketsMainTab.backlog:
+          debugPrint('[TicketsScreen] ref.listen - Setting filter to: "all"');
           ref.read(ticketsFilterProvider.notifier).state = 'all';
           break;
         case TicketsMainTab.incoming:
+          debugPrint('[TicketsScreen] ref.listen - Setting filter to: "newest"');
           ref.read(ticketsFilterProvider.notifier).state = 'newest';
           break;
         case TicketsMainTab.done:
-          ref.read(ticketsFilterProvider.notifier).state = null;
+          debugPrint('[TicketsScreen] ref.listen - Setting filter to: "newest"');
+          ref.read(ticketsFilterProvider.notifier).state = 'newest';
           break;
       }
     });
@@ -208,6 +237,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                 onSearchToggle: _toggleSearch,
                 isSearchVisible: _isSearchVisible,
                 onAvatarTap: () => widget.onSwitchTab(ShellTab.profile),
+                onRefresh: _refresh,
               ),
             ),
 
@@ -368,16 +398,11 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
         )
         .valueOrNull;
 
-    // Calculate active count (non-overdue) for In Progress badge
-    final activeCount = inProgressState?.items
-            .where((t) => !t.isOverdue)
-            .length ??
-        0;
-
     return {
       TicketsMainTab.incoming: incomingState?.itemsTotal ?? 0,
-      // In Progress badge = active (non-overdue) tickets only
-      TicketsMainTab.today: activeCount,
+      // In Progress badge = total in-progress tickets from server
+      // (Filter chips show active/overdue breakdown separately)
+      TicketsMainTab.today: inProgressState?.itemsTotal ?? 0,
       TicketsMainTab.backlog: backlogState?.itemsTotal ?? 0,
       TicketsMainTab.done: doneState?.itemsTotal ?? 0,
     };
@@ -585,15 +610,12 @@ VoidCallback _acceptHandler(
             .read(ticketsPagedProvider(todayInProgressSpec).notifier)
             .updateTabCountImmediate(delta: 1);
         try {
-          final dueAt = ServerClock.now()
-              .add(const Duration(minutes: 15))
-              .millisecondsSinceEpoch;
+          final dueAt = ServerClock.now().add(const Duration(minutes: 15));
           await ref
               .read(ticketRepositoryProvider)
-              .acknowledgeAndStartTicket(
+              .startTicketV2(
                 ticketId: ticket.id,
                 dueAt: dueAt,
-                notes: null,
               );
           ref
               .read(ticketsPagedProvider(incomingSpec).notifier)
@@ -767,12 +789,15 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
     final spec = ref.watch(ticketsPagedSpecProvider(widget.tab));
     final asyncState = ref.watch(ticketsPagedProvider(spec));
 
-    // Debug: Log spec changes including department filter
-    debugPrint('[TicketsPagedTabList] Tab: ${widget.tab}, Spec: departmentId=${spec.departmentId}, perPage=${spec.perPage}');
-
     // Keep sort order in sync with the filter chip ('newest'/'oldest').
     // Use a separate listener to avoid calling setSortOrder during build.
     final filter = ref.watch(ticketsFilterProvider);
+    
+    // DEBUG: Log filter value for Today tab
+    if (widget.tab == TicketsTab.todayInProgress) {
+      debugPrint('[TicketsPagedTabList] TODAY TAB - Filter value: "$filter"');
+    }
+    
     final order = filter == 'oldest'
         ? TicketsSortOrder.oldestFirst
         : TicketsSortOrder.newestFirst;

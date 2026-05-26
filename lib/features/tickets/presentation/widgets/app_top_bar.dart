@@ -24,6 +24,7 @@ class AppTopBar extends StatelessWidget {
   final VoidCallback? onLanguageTap;
   final VoidCallback? onNotifications;
   final VoidCallback? onAvatarTap;
+  final VoidCallback? onRefresh;
 
   const AppTopBar({
     super.key,
@@ -35,6 +36,7 @@ class AppTopBar extends StatelessWidget {
     this.onLanguageTap,
     this.onNotifications,
     this.onAvatarTap,
+    this.onRefresh,
   });
 
   @override
@@ -51,6 +53,19 @@ class AppTopBar extends StatelessWidget {
             onTap: onAvatarTap,
           ),
           const Spacer(),
+          if (onRefresh != null)
+            IconButton(
+              tooltip: 'Refresh',
+              onPressed: () async {
+                await SoundManager.instance.play(SoundCategory.preference);
+                onRefresh!();
+              },
+              icon: Icon(
+                LucideIcons.refreshCw,
+                color: c.fgBase,
+                size: 20,
+              ),
+            ),
           IconButton(
             tooltip: s.tooltipToggleTheme,
             onPressed: onThemeToggle == null

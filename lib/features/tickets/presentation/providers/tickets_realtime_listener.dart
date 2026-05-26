@@ -59,6 +59,39 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
     });
   }
 
+  // Incoming and In-Progress tabs need refresh when new tickets arrive via realtime
+  // because the socket payload is sparse (missing universalDetails, roomDetails).
+  // Debounce refreshes so a burst of events maps to a single request per tab.
+  Timer? incomingDebounce;
+  void scheduleIncomingRefresh() {
+    incomingDebounce?.cancel();
+    incomingDebounce = Timer(const Duration(milliseconds: 600), () {
+      ref
+          .read(
+            ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier,
+          )
+          .refresh();
+    });
+  }
+
+  Timer? inProgressDebounce;
+  void scheduleInProgressRefresh() {
+    inProgressDebounce?.cancel();
+    inProgressDebounce = Timer(const Duration(milliseconds: 600), () {
+      ref
+          .read(
+            ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier,
+          )
+          .refresh();
+      // Also refresh overdue tab since it uses same endpoint
+      ref
+          .read(
+            ticketsPagedProvider(specForTab(TicketsTab.overdue)).notifier,
+          )
+          .refresh();
+    });
+  }
+
   final sub = socket.messageStream.listen(
     (raw) {
       final event = parseTicketRealtimeEvent(raw);
@@ -77,6 +110,15 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
           // Backlog is server-curated; force a debounced refetch so it stays
           // in sync with status changes that may have shifted membership.
           scheduleBacklogRefresh();
+          // Refresh Incoming tab to get full ticket details (universalItems, roomDetails)
+          // when new tickets arrive via realtime (socket payload is sparse)
+          if (ticket.status == 'NEW') {
+            scheduleIncomingRefresh();
+          }
+          // Refresh In-Progress tabs when tickets are accepted/started
+          if (ticket.status == 'ACCEPTED' || ticket.status == 'IN_PROGRESS') {
+            scheduleInProgressRefresh();
+          }
           // If the user is viewing this ticket's detail, pull the latest
           // payload so the activity timeline picks up the new transition
           // entry the backend just emitted.
@@ -103,6 +145,8 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
   ref.onDispose(() {
     countsDebounce?.cancel();
     backlogDebounce?.cancel();
+    incomingDebounce?.cancel();
+    inProgressDebounce?.cancel();
     sub.cancel();
   });
 

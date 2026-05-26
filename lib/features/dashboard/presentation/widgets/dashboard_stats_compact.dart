@@ -1,81 +1,79 @@
 import 'package:flutter/material.dart';
-import 'package:nexierge/core/utils/string_utils.dart';
 // import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-/// Compact KPI cards row for scroll-responsive dashboard.
-/// Shows only icon and count in a single row with 25% width each.
+/// Compact KPI cards for scroll-responsive dashboard.
+/// Single row layout: INCOMING | IN PROGRESS | OVERDUE | DONE
+/// This enables smooth transition from the full 2x2 grid on scroll.
 class DashboardStatsCompact extends StatelessWidget {
   final int incoming;
-  final int accepted;
   final int inProgress;
   final int overdue;
+  final int done;
 
   final VoidCallback onTapIncoming;
   final VoidCallback onTapInProgress;
   final VoidCallback onTapOverdue;
-  final VoidCallback onTapAccepted;
+  final VoidCallback onTapDone;
 
   const DashboardStatsCompact({
     super.key,
     required this.incoming,
-    required this.accepted,
     required this.inProgress,
     required this.overdue,
+    required this.done,
     required this.onTapIncoming,
     required this.onTapInProgress,
     required this.onTapOverdue,
-    required this.onTapAccepted,
+    required this.onTapDone,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final s = context.l10n;
     return Row(
       children: [
+        // INCOMING
         Expanded(
           child: _CompactStatCard(
-            // icon: LucideIcons.bell,
-            label: s.dashboardNeedsAcknowledgment,
+            label: 'INCOMING',
             count: incoming,
             color: c.tagNeutralIcon,
             onTap: onTapIncoming,
           ),
         ),
         const SizedBox(width: 8),
+        // IN PROGRESS
         Expanded(
           child: _CompactStatCard(
-            // icon: LucideIcons.play,
-            label: s.dashboardInProgressLabel,
+            label: 'IN PROGRESS',
             count: inProgress,
             color: c.tagPurpleIcon,
             onTap: onTapInProgress,
           ),
         ),
         const SizedBox(width: 8),
+        // OVERDUE
         Expanded(
           child: _CompactStatCard(
-            // icon: LucideIcons.triangleAlert,
-            label: s.dashboardOverdueLabel,
+            label: 'OVERDUE',
             count: overdue,
             color: overdue > 0 ? c.tagRedIcon : c.tagOrangeIcon,
             onTap: onTapOverdue,
           ),
         ),
         const SizedBox(width: 8),
+        // DONE
         Expanded(
           child: _CompactStatCard(
-            // icon: LucideIcons.clock,
-            label: s.dashboardNotStartedLabel,
-            count: accepted,
-            color: c.tagBlueIcon,
-            onTap: onTapAccepted,
+            label: 'DONE',
+            count: done,
+            color: c.tagGreenIcon,
+            onTap: onTapDone,
           ),
         ),
       ],
@@ -84,14 +82,12 @@ class DashboardStatsCompact extends StatelessWidget {
 }
 
 class _CompactStatCard extends StatelessWidget {
-  // final IconData icon;
   final String label;
   final int count;
   final Color color;
   final VoidCallback onTap;
 
   const _CompactStatCard({
-    // required this.icon,
     required this.label,
     required this.count,
     required this.color,
@@ -118,10 +114,8 @@ class _CompactStatCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           child: Column(
             children: [
-              // Icon(icon, size: 20, color: color),
-              // const SizedBox(height: 4),
               Text(
-                StringUtils.capitalizeWords(label),
+                label,
                 style: TypographyManager.textCaption.copyWith(
                   color: c.fgMuted,
                   fontWeight: FontWeight.w500,

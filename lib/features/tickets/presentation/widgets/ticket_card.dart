@@ -31,6 +31,8 @@ class TicketCard extends StatelessWidget {
         return ColorPalette.statusUnassigned;
       case TicketStatus.incoming:
         return ColorPalette.ticketStripeUniversal;
+      case TicketStatus.backlog:
+        return ColorPalette.statusUnassigned;
     }
   }
 
@@ -360,6 +362,8 @@ class _StatusBadge extends StatelessWidget {
           label: s.ticketStatusBadgeOnHold,
           color: ColorPalette.statusInProgress,
         );
+      case TicketStatus.backlog:
+        return (label: 'Backlog', color: ColorPalette.statusUnassigned);
     }
   }
 

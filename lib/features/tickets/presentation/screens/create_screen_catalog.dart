@@ -1242,7 +1242,15 @@ class _CatalogStepDetailsState
       context,
       onConfirm: () async {
         try {
-          final id = await ctl.submit();
+          final id = await ctl.submit(
+            onRetryMessage: (msg) {
+              // Show retry message to user via the sheet's loading state
+              // The sheet shows loading spinner, we can add a message overlay if needed
+              if (mounted) {
+                context.showInfo(msg);
+              }
+            },
+          );
           return id != null;
         } catch (e) {
           errorMsg = e.toString();

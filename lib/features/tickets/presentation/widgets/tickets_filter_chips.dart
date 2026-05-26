@@ -77,8 +77,10 @@ class TicketsFilterChips extends StatelessWidget {
           _FilterOption('oldest', s.filterOldestFirst),
         ];
       case TicketsMainTab.done:
-        // ENHANCEMENT: Hide filters for done tab for now
-        return [];
+        return [
+          _FilterOption('newest', s.filterNewestFirst),
+          _FilterOption('oldest', s.filterOldestFirst),
+        ];
     }
   }
 }

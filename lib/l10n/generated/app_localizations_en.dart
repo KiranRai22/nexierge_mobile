@@ -479,7 +479,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ticketActionComplete => 'Complete';
 
   @override
-  String get ticketActionChangeDue => 'Change Due';
+  String get ticketActionChangeDue => 'Add Time';
 
   @override
   String get ticketActionCancel => 'Cancel';
@@ -664,7 +664,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get createNewTitle => 'Create new';
+  String get createNewTitle => 'Create new ticket';
 
   @override
   String get createNewSubtitle => 'What kind of ticket are you creating?';

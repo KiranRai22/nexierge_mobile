@@ -100,10 +100,32 @@ class UniversalRequestService {
         );
       }
 
+      // API can return either:
+      // 1. List of ticket IDs: ["ticket-id-1", "ticket-id-2", ...]
+      // 2. Map with ticket details: {id: "...", status: "...", created_at: "..."}
+      if (data is List && data.isNotEmpty) {
+        // List response - treat first ID as the main ticket ID
+        final ticketId = data.first.toString();
+        print('[UniversalRequestService] List response with ${data.length} ticket(s), using first: $ticketId');
+        return UniversalRequestOrderResponseDto(
+          id: ticketId,
+          status: 'created',
+          createdAt: DateTime.now(),
+        );
+      }
+
       Map<String, dynamic> jsonData;
       if (data is String) {
         try {
-          jsonData = jsonDecode(data) as Map<String, dynamic>;
+          final decoded = jsonDecode(data);
+          if (decoded is List && decoded.isNotEmpty) {
+            return UniversalRequestOrderResponseDto(
+              id: decoded.first.toString(),
+              status: 'created',
+              createdAt: DateTime.now(),
+            );
+          }
+          jsonData = decoded as Map<String, dynamic>;
         } catch (e) {
           throw Exception('Failed to parse JSON response: $e');
         }

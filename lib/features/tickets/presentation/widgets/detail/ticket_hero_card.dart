@@ -31,48 +31,89 @@ class TicketHeroCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         backgroundColor: c.bgSubtle,
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: c.bgBase,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: c.borderBase),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              _kindIcon(ticket.department),
-              size: 20,
-              color: c.fgBase,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  ticket.title,
-                  style: TypographyManager.textBodyStrong.copyWith(
-                    color: c.fgBase,
-                    fontWeight: FontWeight.w700,
-                  ),
+          // Top row: icon | title | kind pill
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: c.bgBase,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: c.borderBase),
                 ),
-                const SizedBox(height: 4),
-                _ElapsedTimeRow(ticket: ticket),
-              ],
+                alignment: Alignment.center,
+                child: ticket.departmentEmoji != null && ticket.departmentEmoji!.isNotEmpty
+                  ? Text(
+                      ticket.departmentEmoji!,
+                      style: const TextStyle(fontSize: 24),
+                    )
+                  : Icon(
+                      _kindIcon(ticket.department),
+                      size: 20,
+                      color: c.fgBase,
+                    ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      ticket.title,
+                      style: TypographyManager.textBodyStrong.copyWith(
+                        color: c.fgBase,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    _ElapsedTimeRow(ticket: ticket),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Right column: ticket kind pill (Manual/Universal/Paid)
+              _KindPill(kind: ticket.kind),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Bottom row: created at (centered)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(top:8.0),
+              child: Text(
+                'Created at: ${ticket.createdTime ?? _formatCreatedAt(ticket.createdAt)}',
+                style: TypographyManager.bodySmall.copyWith(
+                  color: c.fgMuted,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          // Right column: ticket kind pill (Manual/Universal/Paid)
-          _KindPill(kind: ticket.kind),
         ],
       ),
     );
+  }
+
+  String _formatCreatedAt(DateTime createdAt) {
+    final now = DateTime.now();
+    final diff = now.difference(createdAt);
+
+    if (diff.inDays > 0) {
+      return '${diff.inDays}d ago';
+    } else if (diff.inHours > 0) {
+      return '${diff.inHours}h ${diff.inMinutes % 60}m ago';
+    } else if (diff.inMinutes > 0) {
+      return '${diff.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   /// Picks a representative icon per department. Falls back to a wrench.

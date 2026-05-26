@@ -103,34 +103,35 @@ class HotelDetails {
 }
 
 /// Dashboard numbers from dashboard/numbers API
+/// API response: {"in_progress":25,"overdue":25,"not_started":1,"done":6}
 class DashboardNumbers {
-  final String needsAcknowledgement;
   final String inprogress;
   final String overdue;
-  final String notStarted;
+  final String notStarted;  // used for INCOMING
+  final String done;
 
   const DashboardNumbers({
-    this.needsAcknowledgement = '',
     this.inprogress = '',
     this.overdue = '',
     this.notStarted = '',
+    this.done = '',
   });
 
   factory DashboardNumbers.fromJson(Map<String, dynamic> json) {
     return DashboardNumbers(
-      needsAcknowledgement: json['needs_acknowledgement'],
-      inprogress: json['in_progress'],
-      overdue: json['overdue'],
-      notStarted: json['not_ started'],
+      inprogress: json['in_progress'] ?? '',
+      overdue: json['overdue'] ?? '',
+      notStarted: json['not_started'] ?? '',
+      done: json['done'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'needs_acknowledgement': needsAcknowledgement,
       'in_progress': inprogress,
       'overdue': overdue,
       'not_started': notStarted,
+      'done': done,
     };
   }
 }

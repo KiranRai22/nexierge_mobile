@@ -43,13 +43,10 @@ class NeedsAttentionController extends AsyncNotifier<List<NeedsAttentionItem>> {
     return _repo.fetchNeedsAttention(hotelId: hotelId);
   }
 
-  /// Pull-to-refresh hook. Keeps previous data visible while reloading
-  /// (state stays AsyncData until the new fetch resolves) so the UI
-  /// doesn't flash empty during a manual refresh.
+  /// Manual refresh — drops previous data to show the shimmer skeleton,
+  /// then re-fetches from the API.
   Future<void> refresh() async {
-    state = const AsyncLoading<List<NeedsAttentionItem>>().copyWithPrevious(
-      state,
-    );
+    state = const AsyncLoading<List<NeedsAttentionItem>>();
     state = await AsyncValue.guard(_fetch);
   }
 }

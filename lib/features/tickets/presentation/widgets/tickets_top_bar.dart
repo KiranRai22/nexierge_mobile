@@ -18,6 +18,7 @@ class TicketsTopBar extends StatelessWidget {
   final VoidCallback? onNotifications;
   final VoidCallback? onSearchToggle;
   final VoidCallback? onAvatarTap;
+  final VoidCallback? onRefresh;
 
   const TicketsTopBar({
     super.key,
@@ -30,6 +31,7 @@ class TicketsTopBar extends StatelessWidget {
     this.onNotifications,
     this.onSearchToggle,
     this.onAvatarTap,
+    this.onRefresh,
   });
 
   @override
@@ -53,6 +55,15 @@ class TicketsTopBar extends StatelessWidget {
             icon: isSearchVisible ? LucideIcons.x : LucideIcons.search,
           ),
           const SizedBox(width: 8),
+          // Refresh
+          if (onRefresh != null) ...[
+            _CircleIconButton(
+              tooltip: 'Refresh',
+              onPressed: onRefresh,
+              icon: LucideIcons.refreshCw,
+            ),
+            const SizedBox(width: 8),
+          ],
           // Theme toggle
           _CircleIconButton(
             tooltip: s.tooltipToggleTheme,

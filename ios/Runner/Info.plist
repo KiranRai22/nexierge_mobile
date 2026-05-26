@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>nexierge_tm</string>
+	<string>nexierge</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -31,6 +31,8 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -43,27 +45,5 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>remote-notification</string>
-	</array>
-	<key>NSUserNotificationUsageDescription</key>
-	<string>We use notifications to keep you informed about important updates.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Nexierge needs camera access so you can take a new profile picture.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Nexierge needs photo library access so you can choose a profile picture.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Nexierge needs permission to save your profile picture to the photo library.</string>
-	<key>UIStatusBarHidden</key>
-	<false/>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 </dict>
 </plist>

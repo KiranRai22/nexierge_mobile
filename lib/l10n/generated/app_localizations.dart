@@ -995,7 +995,7 @@ abstract class AppLocalizations {
   /// No description provided for @ticketActionChangeDue.
   ///
   /// In en, this message translates to:
-  /// **'Change Due'**
+  /// **'Add Time'**
   String get ticketActionChangeDue;
 
   /// No description provided for @ticketActionCancel.
@@ -1313,7 +1313,7 @@ abstract class AppLocalizations {
   /// No description provided for @createNewTitle.
   ///
   /// In en, this message translates to:
-  /// **'Create new'**
+  /// **'Create new ticket'**
   String get createNewTitle;
 
   /// No description provided for @createNewSubtitle.
