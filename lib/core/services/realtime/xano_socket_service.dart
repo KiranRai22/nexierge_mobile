@@ -30,6 +30,13 @@ abstract class XanoSocketService {
     required String hotelId,
     required String userId,
   });
+
+  /// Join the hub notifications channel for a specific hotel and ticket hub
+  /// Channel path: hub_notifications/{hotelId}/{ticketHubTicketId}
+  void joinHubNotificationsChannel({
+    required String hotelId,
+    required String ticketHubTicketId,
+  });
 }
 
 class _XanoSocketServiceImpl implements XanoSocketService {
@@ -42,6 +49,10 @@ class _XanoSocketServiceImpl implements XanoSocketService {
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
   static const _maxReconnectDelay = 10; // seconds
+
+  /// Messages queued while the socket is still connecting. Flushed in-order
+  /// as soon as the connection transitions to [connected].
+  final List<Map<String, dynamic>> _pendingMessages = [];
 
   final StreamController<SocketConnectionStatus> _statusCtrl =
       StreamController<SocketConnectionStatus>.broadcast();
@@ -137,6 +148,17 @@ class _XanoSocketServiceImpl implements XanoSocketService {
       debugPrint('[XanoSocket] CONNECTED with header auth');
       _reconnectAttempts = 0;
 
+      // Flush any messages that were queued before the connection was ready.
+      if (_pendingMessages.isNotEmpty) {
+        debugPrint('[XanoSocket] Flushing ${_pendingMessages.length} pending message(s)');
+        for (final msg in _pendingMessages) {
+          final json = jsonEncode(msg);
+          debugPrint('[XanoSocket] Sending (queued): $json');
+          _socketChannel!.sink.add(json);
+        }
+        _pendingMessages.clear();
+      }
+
       // Single internal subscription that fans out to the broadcast
       // controller exposed via `messageStream`. Debug logging is now just
       // another consumer downstream.
@@ -209,6 +231,7 @@ class _XanoSocketServiceImpl implements XanoSocketService {
     }
     _token = null;
     _reconnectAttempts = 0;
+    _pendingMessages.clear();
     _emit(SocketConnectionStatus.idle);
   }
 
@@ -244,7 +267,8 @@ class _XanoSocketServiceImpl implements XanoSocketService {
   @override
   void sendMessage(Map<String, dynamic> message) {
     if (_socketChannel == null) {
-      debugPrint('[XanoSocket] Cannot send message: not connected');
+      debugPrint('[XanoSocket] Not connected — queuing message for when socket is ready');
+      _pendingMessages.add(message);
       return;
     }
     final json = jsonEncode(message);
@@ -260,6 +284,23 @@ class _XanoSocketServiceImpl implements XanoSocketService {
     // final channelName = 'notifications/$hotelId/$userId';
     final channelName = 'liveTickets/$hotelId';
     debugPrint('[XanoSocket] Joining channel: $channelName');
+
+    final message = {
+      'action': 'join',
+      'options': {'channel': channelName},
+      'payload': {'history': false, 'presence': true},
+    };
+
+    sendMessage(message);
+  }
+
+  @override
+  void joinHubNotificationsChannel({
+    required String hotelId,
+    required String ticketHubTicketId,
+  }) {
+    final channelName = 'hub_notifications/$hotelId/$ticketHubTicketId';
+    debugPrint('[XanoSocket] Joining hub channel: $channelName');
 
     final message = {
       'action': 'join',

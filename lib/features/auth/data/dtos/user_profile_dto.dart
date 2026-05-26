@@ -381,16 +381,19 @@ class LoginDto {
 
 @JsonSerializable()
 class HubAccessDto {
+  @JsonKey(name: 'hub_preset_id', defaultValue: '')
+  final String hubPresetId;
   @JsonKey(name: 'hub_code')
   final String hubCode;
+  @JsonKey(name: 'hub_role')
   final String? hubRole;
 
-  HubAccessDto({required this.hubCode, this.hubRole});
+  HubAccessDto({required this.hubPresetId, required this.hubCode, this.hubRole});
 
   factory HubAccessDto.fromJson(Map<String, dynamic> json) =>
       _$HubAccessDtoFromJson(json);
 
   Map<String, dynamic> toJson() => _$HubAccessDtoToJson(this);
 
-  HubAccess toEntity() => HubAccess(hubCode: hubCode, hubRole: hubRole);
+  HubAccess toEntity() => HubAccess(hubPresetId: hubPresetId, hubCode: hubCode, hubRole: hubRole);
 }

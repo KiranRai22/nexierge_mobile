@@ -227,12 +227,14 @@ Map<String, dynamic> _$LoginDtoToJson(LoginDto instance) => <String, dynamic>{
 };
 
 HubAccessDto _$HubAccessDtoFromJson(Map<String, dynamic> json) => HubAccessDto(
+  hubPresetId: json['hub_preset_id'] as String? ?? '',
   hubCode: json['hub_code'] as String,
-  hubRole: json['hubRole'] as String?,
+  hubRole: json['hub_role'] as String?,
 );
 
 Map<String, dynamic> _$HubAccessDtoToJson(HubAccessDto instance) =>
     <String, dynamic>{
+      'hub_preset_id': instance.hubPresetId,
       'hub_code': instance.hubCode,
-      'hubRole': instance.hubRole,
+      'hub_role': instance.hubRole,
     };

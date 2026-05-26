@@ -349,11 +349,14 @@ class Login {
 
 @JsonSerializable()
 class HubAccess {
+  @JsonKey(name: 'hub_preset_id', defaultValue: '')
+  final String hubPresetId;
   @JsonKey(name: 'hub_code', defaultValue: '')
   final String hubCode;
+  @JsonKey(name: 'hub_role')
   final String? hubRole;
 
-  const HubAccess({required this.hubCode, this.hubRole});
+  const HubAccess({required this.hubPresetId, required this.hubCode, this.hubRole});
 
   factory HubAccess.fromJson(Map<String, dynamic> json) =>
       _$HubAccessFromJson(json);

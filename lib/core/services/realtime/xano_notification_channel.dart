@@ -57,3 +57,29 @@ final xanoNotificationChannelProvider = Provider<void>((ref) {
     );
   }
 });
+
+/// Subscribes to the socket message stream and logs every frame that arrives
+/// on the `hub_notifications` channel. Watch this once at the app root
+/// alongside [xanoHubNotificationsChannelProvider].
+final xanoHubNotificationsLoggerProvider = Provider<void>((ref) {
+  final socket = ref.watch(xanoSocketServiceProvider);
+
+  final sub = socket.messageStream.listen(
+    (raw) {
+      if (!kDebugMode) return;
+      final msg = raw?.toString() ?? '';
+      if (msg.contains('hub_notifications')) {
+        debugPrint('[XanoHubNotificationsChannel] Event received: $msg');
+      }
+    },
+    onError: (Object e) {
+      debugPrint('[XanoHubNotificationsChannel] Stream error: $e');
+    },
+  );
+
+  ref.onDispose(sub.cancel);
+
+  if (kDebugMode) {
+    debugPrint('[XanoHubNotificationsChannel] Logger subscribed to socket messages');
+  }
+});

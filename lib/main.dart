@@ -108,6 +108,9 @@ class MyApp extends ConsumerWidget {
     // Auto-join notification channel when socket connects
     ref.watch(xanoNotificationChannelProvider);
 
+    // Log all events received from the hub_notifications channel
+    ref.watch(xanoHubNotificationsLoggerProvider);
+
     // Sync sound manager with preferences
     SoundManager.instance.setEnabled(soundEnabled);
 

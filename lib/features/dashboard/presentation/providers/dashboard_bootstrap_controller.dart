@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nexierge/features/dashboard/data/datasources/dashboard_remote_data_source.dart';
 
+import 'package:flutter/foundation.dart';
+
+import '../../../../core/services/realtime/xano_socket_service.dart';
 import '../../../auth/data/dtos/user_profile_dto.dart';
 import '../../../auth/data/services/auth_me_service.dart';
 import '../../../auth/domain/entities/user_profile.dart' as auth;
@@ -25,11 +28,14 @@ class DashboardBootstrapController
   late DashboardRemoteDataSource _dashboardRemote;
   late DashboardDataService _dataService;
 
+  late XanoSocketService _socketService;
+
   @override
   Future<DashboardBootstrapState> build() async {
     _authMeService = ref.read(authMeServiceProvider);
     _dashboardRemote = ref.read(dashboardRemoteDataSourceProvider);
     _dataService = DashboardDataService();
+    _socketService = ref.read(xanoSocketServiceProvider);
 
     // Check if we have cached data that's still fresh
     final isComplete = await _dataService.isBootstrapComplete();
@@ -67,6 +73,13 @@ class DashboardBootstrapController
       if (effectiveHotelId.isEmpty) {
         throw Exception('User profile does not contain hotelId');
       }
+
+      // After auth/me: join hub_notifications channel using the tickets hub entry.
+      // hub_access[].id is the channel segment; hub_code identifies the hub type.
+      _joinHubNotificationsChannel(
+        hotelId: effectiveHotelId,
+        hubAccess: userProfile.accessControl.hubAccess,
+      );
 
       // Step 2: Now call dashboard/numbers with the hotelId
       final dashboardNumbersDto = await _fetchDashboardNumbers(
@@ -162,6 +175,36 @@ class DashboardBootstrapController
   Future<void> refresh() async {
     await _dataService.clearAllData();
     await runBootstrap();
+  }
+
+  /// Joins hub_notifications/{hotelId}/{ticketHubTicketId} via the WebSocket.
+  /// Called immediately after auth/me so the channel is subscribed before
+  /// any hub events can be missed. The ticketHubTicketId is the `hub_preset_id`
+  /// of the hub_access entry where hub_code == 'tickets'.
+  void _joinHubNotificationsChannel({
+    required String hotelId,
+    required List<auth.HubAccess> hubAccess,
+  }) {
+    final ticketsHub = hubAccess
+        .where((h) => h.hubCode == 'tickets' && h.hubPresetId.isNotEmpty)
+        .firstOrNull;
+
+    if (ticketsHub == null) {
+      debugPrint(
+        '[DashboardBootstrap] Cannot join hub_notifications: no hub_access entry with a valid id',
+      );
+      return;
+    }
+
+    debugPrint(
+      '[DashboardBootstrap] Joining hub_notifications/$hotelId/${ticketsHub.hubPresetId} '
+      '(hub_code: ${ticketsHub.hubCode})',
+    );
+    _socketService.joinHubNotificationsChannel(
+      hotelId: hotelId,
+      ticketHubTicketId: ticketsHub.hubPresetId,
+    );
+    debugPrint('[DashboardBootstrap] Connected to hub_notifications channel');
   }
 }
 
