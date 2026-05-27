@@ -48,8 +48,35 @@ class UserProfileDto {
     required this.accessControl,
   });
 
-  factory UserProfileDto.fromJson(Map<String, dynamic> json) =>
-      _$UserProfileDtoFromJson(json);
+  factory UserProfileDto.fromJson(Map<String, dynamic> json) {
+    return UserProfileDto(
+      id: (json['id'] as String?) ?? '',
+      createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
+      firstName: (json['first_name'] as String?) ?? '',
+      lastName: (json['last_name'] as String?) ?? '',
+      employeeCode: (json['employee_code'] as String?) ?? '',
+      email: (json['email'] as String?) ?? '',
+      birthday: json['birthday'] as String?,
+      phoneNumber: json['phone_number'] as String?,
+      pictureProfile: json['picture_profile'] == null
+          ? null
+          : PictureProfileDto.fromJson(
+              json['picture_profile'] as Map<String, dynamic>,
+            ),
+      userSettings: UserSettingsDto.fromJson(
+        json['user_settings'] as Map<String, dynamic>,
+      ),
+      hotelDetails: HotelDetailsDto.fromJson(
+        json['hotel_details'] as Map<String, dynamic>,
+      ),
+      userHotelStatus: UserHotelStatusDto.fromJson(
+        json['user_hotel_status'] as Map<String, dynamic>,
+      ),
+      accessControl: AccessControlDto.fromJson(
+        json['access_control'] as Map<String, dynamic>,
+      ),
+    );
+  }
 
   Map<String, dynamic> toJson() => _$UserProfileDtoToJson(this);
 
@@ -93,8 +120,13 @@ class UserSettingsDto {
 
   UserSettingsDto({required this.id, required this.lang, required this.theme});
 
-  factory UserSettingsDto.fromJson(Map<String, dynamic> json) =>
-      _$UserSettingsDtoFromJson(json);
+  factory UserSettingsDto.fromJson(Map<String, dynamic> json) {
+    return UserSettingsDto(
+      id: (json['id'] as String?) ?? '',
+      lang: (json['lang'] as String?) ?? 'en',
+      theme: (json['theme'] as String?) ?? 'light',
+    );
+  }
 
   Map<String, dynamic> toJson() => _$UserSettingsDtoToJson(this);
 
@@ -164,8 +196,30 @@ class HotelDto {
     required this.onboardingInitiated,
   });
 
-  factory HotelDto.fromJson(Map<String, dynamic> json) =>
-      _$HotelDtoFromJson(json);
+  factory HotelDto.fromJson(Map<String, dynamic> json) {
+    // country/city/street may arrive as int IDs or string values from the API.
+    String coerce(String key) {
+      final v = json[key];
+      if (v == null) return '';
+      return v.toString();
+    }
+    return HotelDto(
+      id: (json['id'] as String?) ?? '',
+      businessEmail: (json['business_email'] as String?) ?? '',
+      name: (json['name'] as String?) ?? '',
+      country: coerce('country'),
+      timezone: (json['timezone'] as String?) ?? 'UTC',
+      language: (json['language'] as String?) ?? 'en',
+      status: (json['status'] as String?) ?? '',
+      createdByUserId: (json['created_by_user_id'] as String?) ?? '',
+      createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
+      city: coerce('city'),
+      street: coerce('street'),
+      websiteUrl: json['website_url'] as String?,
+      businessPhoneNumber: json['business_phone_number'] as String?,
+      onboardingInitiated: (json['onboarding_initiated'] as bool?) ?? false,
+    );
+  }
 
   Map<String, dynamic> toJson() => _$HotelDtoToJson(this);
 
@@ -278,8 +332,31 @@ class UserHotelStatusDto {
     required this.isPrimaryContact,
   });
 
-  factory UserHotelStatusDto.fromJson(Map<String, dynamic> json) =>
-      _$UserHotelStatusDtoFromJson(json);
+  factory UserHotelStatusDto.fromJson(Map<String, dynamic> json) {
+    return UserHotelStatusDto(
+      id: (json['id'] as String?) ?? '',
+      userId: (json['user_id'] as String?) ?? '',
+      hotelId: (json['hotel_id'] as String?) ?? '',
+      hierarchyRole: (json['hierarchy_role'] as String?) ?? '',
+      status: (json['status'] as String?) ?? '',
+      scheduleType: (json['schedule_type'] as String?) ?? '',
+      weeklyHours: (json['weekly_hours'] as num?)?.toInt() ?? 0,
+      invitedByUserId: json['invited_by_user_id'] as String?,
+      createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
+      scheduleActive: (json['schedule_active'] as bool?) ?? false,
+      scheduleUpdatedAt: (json['schedule_updated_at'] as num?)?.toInt() ?? 0,
+      scheduleUpdatedBy: (json['schedule_updated_by'] as String?) ?? '',
+      lastLoginAt: (json['last_login_at'] as num?)?.toInt(),
+      verifiedBusinessEmail: json['verified_business_email'] as String?,
+      verifiedBusinessEmailStatus:
+          json['verified_business_email_status'] as String?,
+      verifiedBusinessEmailAt:
+          (json['verified_business_email_at'] as num?)?.toInt(),
+      securityGroupEligible: (json['security_group_eligible'] as bool?) ?? false,
+      notesInternal: (json['notes_internal'] as String?) ?? '',
+      isPrimaryContact: (json['is_primary_contact'] as bool?) ?? false,
+    );
+  }
 
   Map<String, dynamic> toJson() => _$UserHotelStatusDtoToJson(this);
 
@@ -331,8 +408,23 @@ class AccessControlDto {
     required this.departments,
   });
 
-  factory AccessControlDto.fromJson(Map<String, dynamic> json) =>
-      _$AccessControlDtoFromJson(json);
+  factory AccessControlDto.fromJson(Map<String, dynamic> json) {
+    return AccessControlDto(
+      hotelUserId: (json['hotel_user_id'] as String?) ?? '',
+      hotelId: (json['hotel_id'] as String?) ?? '',
+      hierarchyRole: (json['hierarchy_role'] as String?) ?? '',
+      userStatus: (json['user_status'] as String?) ?? '',
+      login: LoginDto.fromJson(
+        (json['login'] as Map?)?.cast<String, dynamic>() ?? {},
+      ),
+      hubAccess: ((json['hub_access'] as List?) ?? [])
+          .map((e) => HubAccessDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      departments: ((json['departments'] as List?) ?? [])
+          .map((e) => AuthDepartment.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 
   Map<String, dynamic> toJson() => _$AccessControlDtoToJson(this);
 
@@ -364,8 +456,14 @@ class LoginDto {
     required this.status,
   });
 
-  factory LoginDto.fromJson(Map<String, dynamic> json) =>
-      _$LoginDtoFromJson(json);
+  factory LoginDto.fromJson(Map<String, dynamic> json) {
+    return LoginDto(
+      interfaceAccess: (json['interface_access'] as String?) ?? 'web',
+      loginIdentifierType: (json['login_identifier_type'] as String?) ?? 'email',
+      authMethod: (json['auth_method'] as String?) ?? 'password',
+      status: (json['status'] as String?) ?? 'active',
+    );
+  }
 
   Map<String, dynamic> toJson() => _$LoginDtoToJson(this);
 

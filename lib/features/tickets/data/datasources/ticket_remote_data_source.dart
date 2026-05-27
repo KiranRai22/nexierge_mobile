@@ -855,6 +855,7 @@ class TicketDetailDto {
 /// DTO for my_tickets API response.
 class MyTicketDto {
   final String id;
+  final String opsTicketId;
   final int createdAt;
   final String hotelId;
   final String departmentId;
@@ -864,6 +865,9 @@ class MyTicketDto {
   final String type;
   final String status;
   final int dueAt;
+  final int dueAtWithGrace;
+  final bool overdue;
+  final bool needsAttention;
   final String category;
   final String priority;
   final String issueSummary;
@@ -883,6 +887,7 @@ class MyTicketDto {
 
   MyTicketDto({
     required this.id,
+    this.opsTicketId = '',
     required this.createdAt,
     required this.hotelId,
     required this.departmentId,
@@ -892,6 +897,9 @@ class MyTicketDto {
     required this.type,
     required this.status,
     required this.dueAt,
+    this.dueAtWithGrace = 0,
+    this.overdue = false,
+    this.needsAttention = false,
     required this.category,
     required this.priority,
     required this.issueSummary,
@@ -916,6 +924,7 @@ class MyTicketDto {
     bool b(String key) => (json[key] as bool?) ?? false;
     return MyTicketDto(
       id: s('id'),
+      opsTicketId: s('ops_ticket_id'),
       createdAt: i('created_at'),
       hotelId: s('hotel_id'),
       departmentId: s('department_id'),
@@ -925,6 +934,9 @@ class MyTicketDto {
       type: s('type'),
       status: s('status'),
       dueAt: i('due_at'),
+      dueAtWithGrace: (json['due_at_with_grace'] as num?)?.toInt() ?? 0,
+      overdue: b('overdue'),
+      needsAttention: b('needs_attention'),
       category: s('category'),
       priority: s('priority'),
       issueSummary: s('issue_summary'),
@@ -992,6 +1004,9 @@ class UniversalRequestOrderItemDto {
   final String emoji;
   final String? thumbnailUrl;
   final Map<String, String> nameI18n;
+  final int etaStart;
+  final int etaEnd;
+  final int slaTargetMinutes;
 
   UniversalRequestOrderItemDto({
     required this.id,
@@ -999,6 +1014,9 @@ class UniversalRequestOrderItemDto {
     required this.emoji,
     this.thumbnailUrl,
     this.nameI18n = const {},
+    this.etaStart = 0,
+    this.etaEnd = 0,
+    this.slaTargetMinutes = 0,
   });
 
   factory UniversalRequestOrderItemDto.fromJson(Map<String, dynamic> json) {
@@ -1016,6 +1034,9 @@ class UniversalRequestOrderItemDto {
           : i18nRaw.map(
               (k, v) => MapEntry(k.toString(), (v as String?) ?? ''),
             ),
+      etaStart: (active?['eta_start'] as num?)?.toInt() ?? 0,
+      etaEnd: (active?['eta_end'] as num?)?.toInt() ?? 0,
+      slaTargetMinutes: (json['sla_target_minutes'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -1050,6 +1071,7 @@ class ServiceCatalogOrderDetailsDto {
   final double grandTotal;
   final String currency;
   final List<ServiceCatalogOrderItemDto> items;
+  final int slaTargetMinutes;
 
   ServiceCatalogOrderDetailsDto({
     required this.catalogName,
@@ -1058,6 +1080,7 @@ class ServiceCatalogOrderDetailsDto {
     required this.grandTotal,
     required this.currency,
     required this.items,
+    this.slaTargetMinutes = 0,
   });
 
   factory ServiceCatalogOrderDetailsDto.fromJson(Map<String, dynamic> json) {
@@ -1071,6 +1094,7 @@ class ServiceCatalogOrderDetailsDto {
       brandColorHex: svc?['brand_color'] as String?,
       grandTotal: (json['grand_total'] as num?)?.toDouble() ?? 0,
       currency: (json['currency'] as String?) ?? '',
+      slaTargetMinutes: (json['sla_target_minutes'] as num?)?.toInt() ?? 0,
       items: itemsRaw
           .map(
             (e) => ServiceCatalogOrderItemDto.fromJson(
@@ -1109,6 +1133,7 @@ class AllTicketDto {
   final int updatedAt;
   final int lastTransitionAt;
   final String hotelId;
+  final String opsTicketId;
   final String? assignedToUserId;
   final String createdByUserId;
   final bool createdByAi;
@@ -1116,6 +1141,9 @@ class AllTicketDto {
   final String ticketType;
   final String status;
   final int dueAt;
+  final int dueAtWithGrace;
+  final bool overdue;
+  final bool needsAttention;
   final String category;
   final String priority;
   final String issueSummary;
@@ -1153,6 +1181,7 @@ class AllTicketDto {
     required this.updatedAt,
     required this.lastTransitionAt,
     required this.hotelId,
+    this.opsTicketId = '',
     this.assignedToUserId,
     required this.createdByUserId,
     required this.createdByAi,
@@ -1160,6 +1189,9 @@ class AllTicketDto {
     required this.ticketType,
     required this.status,
     required this.dueAt,
+    this.dueAtWithGrace = 0,
+    this.overdue = false,
+    this.needsAttention = false,
     required this.category,
     required this.priority,
     required this.issueSummary,
@@ -1210,6 +1242,7 @@ class AllTicketDto {
       updatedAt: i('updated_at'),
       lastTransitionAt: i('last_transition_at'),
       hotelId: s('hotel_id'),
+      opsTicketId: s('ops_ticket_id'),
       assignedToUserId: json['assigned_to_user_id'] as String?,
       createdByUserId: s('created_by_user_id'),
       createdByAi: b('created_by_ai'),
@@ -1217,6 +1250,9 @@ class AllTicketDto {
       ticketType: s('ticket_type'),
       status: s('status'),
       dueAt: i('due_at'),
+      dueAtWithGrace: (json['due_at_with_grace'] as num?)?.toInt() ?? 0,
+      overdue: b('overdue'),
+      needsAttention: b('needs_attention'),
       category: s('category'),
       priority: s('priority'),
       issueSummary: s('issue_summary'),

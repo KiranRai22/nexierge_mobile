@@ -59,7 +59,7 @@ Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
 
   return Ticket(
     id: t.id,
-    code: t.roomDetails?.onbRoomNumber ?? 'N/A',
+    code: t.opsTicketId.isNotEmpty ? t.opsTicketId : (t.roomDetails?.onbRoomNumber ?? 'N/A'),
     title: title,
     status: _mapStatus(t.status),
     kind: kind,
@@ -80,13 +80,31 @@ Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
         ? Guest(id: t.room, displayName: t.guestName)
         : null,
     createdAt: DateTime.fromMillisecondsSinceEpoch(t.createdAt),
-    eta: t.dueAt > 0 ? DateTime.fromMillisecondsSinceEpoch(t.dueAt) : null,
+    eta: _resolveEta(t),
+    dueAtWithGrace: t.dueAtWithGrace > 0
+        ? DateTime.fromMillisecondsSinceEpoch(t.dueAtWithGrace)
+        : null,
     workStartedAt: workStartedAt,
     items: const [],
     assigneeName: t.assignedToUserId,
     isTransitioning: t.isTransitioning,
     kindData: kindData,
   );
+}
+
+/// Resolves the ETA DateTime for a ticket.
+/// Priority:
+///   1. `due_at` from API (authoritative SLA deadline)
+///   2. `createdAt + etaStart` from universal request preset (soft estimate
+///      when the SLA hasn't been set yet — e.g. brand-new incoming tickets)
+DateTime? _resolveEta(MyTicket t) {
+  if (t.dueAt > 0) return DateTime.fromMillisecondsSinceEpoch(t.dueAt);
+  final etaStart = t.universalItems.isNotEmpty ? t.universalItems.first.etaStart : 0;
+  if (etaStart > 0) {
+    return DateTime.fromMillisecondsSinceEpoch(t.createdAt)
+        .add(Duration(minutes: etaStart));
+  }
+  return null;
 }
 
 TicketKindData? _buildKindData(MyTicket t, TicketKind kind) {
@@ -100,6 +118,8 @@ TicketKindData? _buildKindData(MyTicket t, TicketKind kind) {
         emoji: first.emoji.isEmpty ? null : first.emoji,
         itemCount: t.universalItems.length,
         nameI18n: first.nameI18n,
+        etaStart: first.etaStart,
+        etaEnd: first.etaEnd,
       );
     case TicketKind.catalog:
       final c = t.catalogDetails;

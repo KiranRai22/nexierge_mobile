@@ -195,7 +195,26 @@ class Hotel {
     required this.onboardingInitiated,
   });
 
-  factory Hotel.fromJson(Map<String, dynamic> json) => _$HotelFromJson(json);
+  factory Hotel.fromJson(Map<String, dynamic> json) {
+    // country/city/street may be integer IDs from the API.
+    String coerce(String key) => json[key]?.toString() ?? '';
+    return Hotel(
+      id: (json['id'] as String?) ?? '',
+      businessEmail: (json['business_email'] as String?) ?? '',
+      name: (json['name'] as String?) ?? '',
+      country: coerce('country'),
+      timezone: (json['timezone'] as String?) ?? 'UTC',
+      language: (json['language'] as String?) ?? 'en',
+      status: (json['status'] as String?) ?? 'active',
+      createdByUserId: (json['created_by_user_id'] as String?) ?? '',
+      createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
+      city: coerce('city'),
+      street: coerce('street'),
+      websiteUrl: json['website_url'] as String?,
+      businessPhoneNumber: json['business_phone_number'] as String?,
+      onboardingInitiated: (json['onboarding_initiated'] as bool?) ?? false,
+    );
+  }
 
   Map<String, dynamic> toJson() => _$HotelToJson(this);
 }

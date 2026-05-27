@@ -8,6 +8,9 @@ class UniversalTicketItem {
   final String emoji;
   final String? thumbnailUrl;
   final Map<String, String> nameI18n;
+  final int etaStart;
+  final int etaEnd;
+  final int slaTargetMinutes;
 
   const UniversalTicketItem({
     required this.id,
@@ -15,6 +18,9 @@ class UniversalTicketItem {
     required this.emoji,
     this.thumbnailUrl,
     this.nameI18n = const {},
+    this.etaStart = 0,
+    this.etaEnd = 0,
+    this.slaTargetMinutes = 0,
   });
 }
 
@@ -36,6 +42,7 @@ class CatalogTicketDetails {
   final double grandTotal;
   final String currency;
   final List<CatalogTicketItem> items;
+  final int slaTargetMinutes;
 
   const CatalogTicketDetails({
     required this.catalogName,
@@ -44,6 +51,7 @@ class CatalogTicketDetails {
     required this.grandTotal,
     required this.currency,
     required this.items,
+    this.slaTargetMinutes = 0,
   });
 }
 
@@ -60,10 +68,13 @@ class ManualTicketDetails {
 /// Domain entity for My Ticket from get_my_tickets API.
 class MyTicket {
   final String id;
+  final String opsTicketId;
   final int createdAt;
   final int updatedAt;
   final int lastTransitionAt;
   final bool slaBreached;
+  final bool overdue;
+  final bool needsAttention;
   final String hotelId;
   final String departmentId;
   final String? departmentName;
@@ -77,6 +88,7 @@ class MyTicket {
   final String? ticketType;
   final String status;
   final int dueAt;
+  final int dueAtWithGrace;
   final String category;
   final String priority;
   final String issueSummary;
@@ -102,10 +114,13 @@ class MyTicket {
 
   const MyTicket({
     required this.id,
+    this.opsTicketId = '',
     required this.createdAt,
     this.updatedAt = 0,
     this.lastTransitionAt = 0,
     this.slaBreached = false,
+    this.overdue = false,
+    this.needsAttention = false,
     required this.hotelId,
     required this.departmentId,
     this.departmentName,
@@ -119,6 +134,7 @@ class MyTicket {
     this.ticketType,
     required this.status,
     required this.dueAt,
+    this.dueAtWithGrace = 0,
     required this.category,
     required this.priority,
     required this.issueSummary,
@@ -142,10 +158,13 @@ class MyTicket {
 
   MyTicket copyWith({
     String? id,
+    String? opsTicketId,
     int? createdAt,
     int? updatedAt,
     int? lastTransitionAt,
     bool? slaBreached,
+    bool? overdue,
+    bool? needsAttention,
     String? hotelId,
     String? departmentId,
     String? departmentName,
@@ -159,6 +178,7 @@ class MyTicket {
     String? ticketType,
     String? status,
     int? dueAt,
+    int? dueAtWithGrace,
     String? category,
     String? priority,
     String? issueSummary,
@@ -181,10 +201,13 @@ class MyTicket {
   }) {
     return MyTicket(
       id: id ?? this.id,
+      opsTicketId: opsTicketId ?? this.opsTicketId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastTransitionAt: lastTransitionAt ?? this.lastTransitionAt,
       slaBreached: slaBreached ?? this.slaBreached,
+      overdue: overdue ?? this.overdue,
+      needsAttention: needsAttention ?? this.needsAttention,
       hotelId: hotelId ?? this.hotelId,
       departmentId: departmentId ?? this.departmentId,
       departmentName: departmentName ?? this.departmentName,
@@ -198,6 +221,7 @@ class MyTicket {
       ticketType: ticketType ?? this.ticketType,
       status: status ?? this.status,
       dueAt: dueAt ?? this.dueAt,
+      dueAtWithGrace: dueAtWithGrace ?? this.dueAtWithGrace,
       category: category ?? this.category,
       priority: priority ?? this.priority,
       issueSummary: issueSummary ?? this.issueSummary,

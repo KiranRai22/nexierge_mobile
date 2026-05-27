@@ -8,7 +8,7 @@ part of 'user_profile.dart';
 
 UserProfile _$UserProfileFromJson(Map<String, dynamic> json) => UserProfile(
   id: json['id'] as String? ?? '',
-  createdAt: (json['created_at'] as num).toInt(),
+  createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
   firstName: json['first_name'] as String? ?? '',
   lastName: json['last_name'] as String? ?? '',
   employeeCode: json['employee_code'] as String? ?? '',
@@ -52,7 +52,7 @@ Map<String, dynamic> _$UserProfileToJson(UserProfile instance) =>
     };
 
 PictureProfile _$PictureProfileFromJson(Map<String, dynamic> json) =>
-    PictureProfile(url: json['url'] as String);
+    PictureProfile(url: (json['url'] as String?) ?? '');
 
 Map<String, dynamic> _$PictureProfileToJson(PictureProfile instance) =>
     <String, dynamic>{'url': instance.url};
@@ -87,17 +87,17 @@ Hotel _$HotelFromJson(Map<String, dynamic> json) => Hotel(
   id: json['id'] as String? ?? '',
   businessEmail: json['business_email'] as String? ?? '',
   name: json['name'] as String? ?? '',
-  country: json['country'] as String? ?? '',
+  country: json['country']?.toString() ?? '',
   timezone: json['timezone'] as String? ?? 'UTC',
   language: json['language'] as String? ?? 'en',
   status: json['status'] as String? ?? 'active',
   createdByUserId: json['created_by_user_id'] as String? ?? '',
-  createdAt: (json['created_at'] as num).toInt(),
-  city: json['city'] as String? ?? '',
-  street: json['street'] as String? ?? '',
+  createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
+  city: json['city']?.toString() ?? '',
+  street: json['street']?.toString() ?? '',
   websiteUrl: json['website_url'] as String?,
   businessPhoneNumber: json['business_phone_number'] as String?,
-  onboardingInitiated: json['onboarding_initiated'] as bool,
+  onboardingInitiated: (json['onboarding_initiated'] as bool?) ?? false,
 );
 
 Map<String, dynamic> _$HotelToJson(Hotel instance) => <String, dynamic>{
@@ -119,10 +119,10 @@ Map<String, dynamic> _$HotelToJson(Hotel instance) => <String, dynamic>{
 
 SubscriptionDetails _$SubscriptionDetailsFromJson(Map<String, dynamic> json) =>
     SubscriptionDetails(
-      subscriptionActive: json['subscription_active'] as bool,
+      subscriptionActive: (json['subscription_active'] as bool?) ?? false,
       plan: json['plan'] as String? ?? '',
-      subscriptionStartDate: (json['subscription_start_date'] as num).toInt(),
-      subscriptionEndDate: (json['subscription_end_date'] as num).toInt(),
+      subscriptionStartDate: (json['subscription_start_date'] as num?)?.toInt() ?? 0,
+      subscriptionEndDate: (json['subscription_end_date'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$SubscriptionDetailsToJson(
@@ -142,11 +142,11 @@ UserHotelStatus _$UserHotelStatusFromJson(Map<String, dynamic> json) =>
       hierarchyRole: json['hierarchy_role'] as String? ?? '',
       status: json['status'] as String? ?? '',
       scheduleType: json['schedule_type'] as String? ?? '',
-      weeklyHours: (json['weekly_hours'] as num).toInt(),
+      weeklyHours: (json['weekly_hours'] as num?)?.toInt() ?? 0,
       invitedByUserId: json['invited_by_user_id'] as String?,
-      createdAt: (json['created_at'] as num).toInt(),
-      scheduleActive: json['schedule_active'] as bool,
-      scheduleUpdatedAt: (json['schedule_updated_at'] as num).toInt(),
+      createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
+      scheduleActive: (json['schedule_active'] as bool?) ?? false,
+      scheduleUpdatedAt: (json['schedule_updated_at'] as num?)?.toInt() ?? 0,
       scheduleUpdatedBy: json['schedule_updated_by'] as String? ?? '',
       lastLoginAt: (json['last_login_at'] as num?)?.toInt(),
       verifiedBusinessEmail: json['verified_business_email'] as String?,
@@ -154,9 +154,9 @@ UserHotelStatus _$UserHotelStatusFromJson(Map<String, dynamic> json) =>
           json['verified_business_email_status'] as String?,
       verifiedBusinessEmailAt: (json['verified_business_email_at'] as num?)
           ?.toInt(),
-      securityGroupEligible: json['security_group_eligible'] as bool,
+      securityGroupEligible: (json['security_group_eligible'] as bool?) ?? false,
       notesInternal: json['notes_internal'] as String? ?? '',
-      isPrimaryContact: json['is_primary_contact'] as bool,
+      isPrimaryContact: (json['is_primary_contact'] as bool?) ?? false,
     );
 
 Map<String, dynamic> _$UserHotelStatusToJson(UserHotelStatus instance) =>
@@ -188,11 +188,13 @@ AccessControl _$AccessControlFromJson(Map<String, dynamic> json) =>
       hotelId: json['hotel_id'] as String? ?? '',
       hierarchyRole: json['hierarchy_role'] as String? ?? '',
       userStatus: json['user_status'] as String? ?? '',
-      login: Login.fromJson(json['login'] as Map<String, dynamic>),
-      hubAccess: (json['hub_access'] as List<dynamic>)
+      login: Login.fromJson(
+        (json['login'] as Map?)?.cast<String, dynamic>() ?? {},
+      ),
+      hubAccess: ((json['hub_access'] as List?) ?? [])
           .map((e) => HubAccess.fromJson(e as Map<String, dynamic>))
           .toList(),
-      departments: (json['departments'] as List<dynamic>)
+      departments: ((json['departments'] as List?) ?? [])
           .map((e) => AuthDepartment.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
@@ -225,7 +227,7 @@ Map<String, dynamic> _$LoginToJson(Login instance) => <String, dynamic>{
 HubAccess _$HubAccessFromJson(Map<String, dynamic> json) => HubAccess(
   hubPresetId: json['hub_preset_id'] as String? ?? '',
   hubCode: json['hub_code'] as String? ?? '',
-  hubRole: json['hub_role'] as String?,
+  hubRole: (json['hub_role'] ?? json['hubRole']) as String?,
 );
 
 Map<String, dynamic> _$HubAccessToJson(HubAccess instance) => <String, dynamic>{

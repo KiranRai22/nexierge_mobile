@@ -636,6 +636,9 @@ class _TicketRepositoryImpl implements TicketRepository {
                 emoji: u.emoji,
                 thumbnailUrl: u.thumbnailUrl,
                 nameI18n: u.nameI18n,
+                etaStart: u.etaStart,
+                etaEnd: u.etaEnd,
+                slaTargetMinutes: u.slaTargetMinutes,
               ))
           .toList(growable: false);
       final catalogDetails = d.catalogDetails == null
@@ -646,6 +649,7 @@ class _TicketRepositoryImpl implements TicketRepository {
               brandColorHex: d.catalogDetails!.brandColorHex,
               grandTotal: d.catalogDetails!.grandTotal,
               currency: d.catalogDetails!.currency,
+              slaTargetMinutes: d.catalogDetails!.slaTargetMinutes,
               items: d.catalogDetails!.items
                   .map((i) => CatalogTicketItem(
                         itemName: i.itemName,
@@ -661,10 +665,13 @@ class _TicketRepositoryImpl implements TicketRepository {
             );
       return MyTicket(
         id: d.id,
+        opsTicketId: d.opsTicketId,
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
         lastTransitionAt: d.lastTransitionAt,
         slaBreached: d.slaBreached,
+        overdue: d.overdue,
+        needsAttention: d.needsAttention,
         hotelId: d.hotelId,
         departmentId: deptId,
         departmentName: deptName.isEmpty ? null : deptName,
@@ -678,6 +685,7 @@ class _TicketRepositoryImpl implements TicketRepository {
         ticketType: d.ticketType,
         status: d.status,
         dueAt: d.dueAt,
+        dueAtWithGrace: d.dueAtWithGrace,
         category: d.category,
         priority: d.priority,
         issueSummary: d.issueSummary,

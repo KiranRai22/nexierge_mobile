@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nexierge/features/dashboard/data/datasources/dashboard_remote_data_source.dart';
 
@@ -52,7 +53,12 @@ class DashboardBootstrapController
   /// Run the bootstrap process - called after successful login
   /// Sequential API calls: me_user first (to get userId), then dashboard/numbers
   Future<void> runBootstrap({String? hotelUserId}) async {
-    if (state.isLoading) return; // Prevent concurrent runs
+    // Only prevent re-entrant calls: isLoading is only true when a previous
+    // runBootstrap already set AsyncLoading. The initial build() AsyncLoading
+    // state resolves before ref.listen fires, so checking hasPreviousValue
+    // distinguishes "build still loading" (hasPreviousValue=false) from
+    // "runBootstrap already in flight" (hasPreviousValue=true).
+    if (state.isLoading && state.hasValue) return;
 
     state = const AsyncLoading<DashboardBootstrapState>().copyWithPrevious(
       state,
@@ -62,11 +68,6 @@ class DashboardBootstrapController
 
       // Step 1: Call me_user FIRST to get user profile (includes userId)
       final userProfileDto = await _fetchUserProfile();
-
-      if (userProfileDto == null) {
-        throw Exception('Failed to fetch user profile from me_user API');
-      }
-
       final userProfile = userProfileDto.toEntity();
       final effectiveHotelId = userProfile.userHotelStatus.hotelId;
 
@@ -113,18 +114,13 @@ class DashboardBootstrapController
       // Trigger version check after successful authentication and bootstrap
       ref.read(versionCheckProvider.notifier).checkAfterAuth();
     } catch (e, st) {
+      debugPrint('[DashboardBootstrap] runBootstrap failed: $e\n$st');
       state = AsyncError(e, st);
     }
   }
 
   /// Fetch user profile from me_user API
-  Future<UserProfileDto?> _fetchUserProfile() async {
-    try {
-      return await _authMeService.fetchMe();
-    } catch (_) {
-      return null;
-    }
-  }
+  Future<UserProfileDto> _fetchUserProfile() => _authMeService.fetchMe();
 
   /// Fetch dashboard numbers from dashboard/numbers API
   Future<dashboard_dto.DashboardNumbersDto?> _fetchDashboardNumbers(
