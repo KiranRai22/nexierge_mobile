@@ -96,12 +96,18 @@ class UniversalKindData extends TicketKindData {
   /// when the backend didn't ship a preset.
   final Map<String, String> nameI18n;
 
+  /// ETA range from the active preset (e.g. eta_start=5, eta_end=15 → "5–15 min").
+  final int etaStart;
+  final int etaEnd;
+
   const UniversalKindData({
     required this.displayName,
     this.thumbnailUrl,
     this.emoji,
     required this.itemCount,
     this.nameI18n = const {},
+    this.etaStart = 0,
+    this.etaEnd = 0,
   });
 
   /// Picks the best display name for [languageCode] — exact match, then
@@ -172,6 +178,10 @@ class Ticket {
   final DateTime? doneAt;
   final DateTime? eta;
 
+  /// `due_at_with_grace` from the API — the authoritative overdue threshold.
+  /// Overdue starts when `now >= dueAtWithGrace`. Null when not set.
+  final DateTime? dueAtWithGrace;
+
   /// When IN_PROGRESS started — used for the elapsed work timer.
   /// Populated from statusChangedAt override when available, else acknowledgedAt.
   final DateTime? workStartedAt;
@@ -196,6 +206,7 @@ class Ticket {
     this.acceptedAt,
     this.doneAt,
     this.eta,
+    this.dueAtWithGrace,
     this.workStartedAt,
     this.priority = TicketPriority.p2,
     this.source,
@@ -223,6 +234,7 @@ class Ticket {
     String? createdTime,
     DateTime? doneAt,
     DateTime? eta,
+    DateTime? dueAtWithGrace,
     DateTime? workStartedAt,
     TicketPriority? priority,
     TicketSource? source,
@@ -249,6 +261,7 @@ class Ticket {
       createdTime: createdTime ?? this.createdTime,
       doneAt: doneAt ?? this.doneAt,
       eta: eta ?? this.eta,
+      dueAtWithGrace: dueAtWithGrace ?? this.dueAtWithGrace,
       workStartedAt: workStartedAt ?? this.workStartedAt,
       priority: priority ?? this.priority,
       source: source ?? this.source,

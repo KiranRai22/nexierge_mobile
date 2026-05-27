@@ -20,6 +20,26 @@ import '../providers/ticket_busy_provider.dart';
 /// after the realtime event lands.
 const Color _kRecentChangeBorder = Color(0xFF34A853);
 
+/// Resolves the left accent border color based on ticket status / overdue.
+Color _resolveLeftBorderColor(Ticket ticket, AppColors c) {
+  if (ticket.isOverdue) return c.tagRedIcon;
+  switch (ticket.status) {
+    case TicketStatus.incoming:
+      return c.tagBlueIcon;
+    case TicketStatus.accepted:
+    case TicketStatus.inProgress:
+      return c.tagPurpleIcon;
+    case TicketStatus.onHold:
+      return c.tagOrangeIcon;
+    case TicketStatus.done:
+      return c.tagGreenIcon;
+    case TicketStatus.canceled:
+      return c.tagRedIcon;
+    case TicketStatus.backlog:
+      return c.tagNeutralIcon;
+  }
+}
+
 /// Resolves the localized department label, preferring the API-provided
 /// name when present, falling back to the static enum mapping.
 String _departmentLabel(BuildContext context, Ticket ticket) {
@@ -76,6 +96,10 @@ class TicketCardNew extends ConsumerWidget {
 
     // Highlighted border when the ticket was just created or its status
     // moved within the last few seconds (driven by the realtime layer).
+    final leftBorderColor = _resolveLeftBorderColor(ticket, c);
+
+    // Base card decoration — no top-level border; left accent bar is drawn
+    // inside the card using a separate Container.
     final baseDecoration = CardDecoration.standard(
       colors: c,
       borderRadius: BorderRadius.circular(16),
@@ -100,39 +124,56 @@ class TicketCardNew extends ConsumerWidget {
           onTap: tapSound(onTap, SoundCategory.card),
           child: Container(
             decoration: decoration,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Title row: dot + title + status
-                  _TitleRow(ticket: ticket),
-                  const SizedBox(height: 6),
-                  // Room row: icon + room + department + price
-                  _RoomRow(ticket: ticket),
-                  const SizedBox(height: 4),
-                  // Countdown timer for ACTIVE inProgress tickets only (not overdue)
-                  if (ticket.status == TicketStatus.inProgress &&
-                      ticket.eta != null &&
-                      !ticket.isOverdue)
-                    _CountdownTimer(ticket: ticket),
-                  // Elapsed time row for incoming tickets
-                  if (ticket.status == TicketStatus.incoming)
-                    _ElapsedTimeRow(ticket: ticket),
-                  // Elapsed time row for OVERDUE inProgress tickets
-                  if (ticket.status == TicketStatus.inProgress && ticket.isOverdue)
-                    _OverdueElapsedRow(ticket: ticket),
-                  const SizedBox(height: 12),
-                  // Inner card with avatar, details
-                  _InnerCard(ticket: ticket),
-                  const SizedBox(height: 12),
-                  // Bottom row: tag (left) + action button (right)
-                  _BottomRow(
-                    ticket: ticket,
-                    onAccept: onAccept,
-                    onStartWork: onStartWork,
-                    onMarkDone: onMarkDone,
+                  // Left accent border bar
+                  Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: leftBorderColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        bottomLeft: Radius.circular(16),
+                      ),
+                    ),
+                  ),
+                  // Card body
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Top row: kind dot + ops ticket id + status pill
+                          _TicketIdRow(ticket: ticket),
+                          const SizedBox(height: 4),
+                          // Title row
+                          _TitleText(ticket: ticket),
+                          const SizedBox(height: 6),
+                          // Room · dept  ·  ETA (all on one line)
+                          _RoomRow(ticket: ticket),
+                          const SizedBox(height: 8),
+                          // Created at | Due at  ···  Timer (non-terminal)
+                          if (ticket.status != TicketStatus.done &&
+                              ticket.status != TicketStatus.canceled)
+                            _TimingRow(ticket: ticket),
+                          const SizedBox(height: 12),
+                          // Inner card with avatar, details
+                          _InnerCard(ticket: ticket),
+                          const SizedBox(height: 12),
+                          // Bottom row: tag (left) + action button (right)
+                          _BottomRow(
+                            ticket: ticket,
+                            onAccept: onAccept,
+                            onStartWork: onStartWork,
+                            onMarkDone: onMarkDone,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -262,33 +303,58 @@ class _FreshArrivalWrapperState extends State<_FreshArrivalWrapper>
   }
 }
 
-class _TitleRow extends StatelessWidget {
+/// Top row: kind-color dot  +  #OPS-XXXX  +  spacer  +  status pill
+class _TicketIdRow extends StatelessWidget {
   final Ticket ticket;
-  const _TitleRow({required this.ticket});
+  const _TicketIdRow({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
+    final code = ticket.code;
+    final dotColor = _resolveLeftBorderColor(ticket, c);
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _KindDot(ticket: ticket),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            _buildTitle(context, ticket),
-            style: TypographyManager.cardTitle.copyWith(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              color: c.fgBase, // Use theme-aware color for dark mode
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
+        if (code.isNotEmpty && code != 'N/A')
+          Text(
+            '#$code',
+            style: TypographyManager.bodySmall.copyWith(
+              color: dotColor,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
+        const Spacer(),
         _StatusPill(ticket: ticket),
       ],
+    );
+  }
+}
+
+/// Title text only (no dot, no pill — those are in _TicketIdRow).
+class _TitleText extends StatelessWidget {
+  final Ticket ticket;
+  const _TitleText({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Text(
+      _buildTitle(context, ticket),
+      style: TypographyManager.cardTitle.copyWith(
+        fontWeight: FontWeight.w700,
+        fontSize: 17,
+        color: c.fgBase,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -323,134 +389,7 @@ class _TitleRow extends StatelessWidget {
   }
 }
 
-class _KindDot extends StatelessWidget {
-  final Ticket ticket;
-  const _KindDot({required this.ticket});
 
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          color: _resolveColor(c),
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
-  }
-
-  Color _resolveColor(AppColors c) {
-    switch (ticket.kind) {
-      case TicketKind.manual:
-        return c.fgMuted;
-      case TicketKind.universal:
-        return c.tagPurpleIcon;
-      case TicketKind.catalog:
-        if (ticket.kindData is CatalogKindData) {
-          final brand = _parseHexColor(
-            (ticket.kindData as CatalogKindData).brandColorHex,
-          );
-          if (brand != null) return brand;
-        }
-        return c.tagPurpleIcon;
-    }
-  }
-}
-
-class _TimeDisplay extends StatefulWidget {
-  final Ticket ticket;
-  const _TimeDisplay({required this.ticket});
-
-  @override
-  State<_TimeDisplay> createState() => _TimeDisplayState();
-}
-
-class _TimeDisplayState extends State<_TimeDisplay> {
-  Timer? _ticker;
-
-  @override
-  void initState() {
-    super.initState();
-    // Only tick for tickets that need live elapsed time (not Done).
-    if (widget.ticket.status != TicketStatus.done) {
-      _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
-  }
-
-  String _formatDuration(Duration diff) {
-    if (diff.inDays > 0) {
-      return '${diff.inDays}d ${diff.inHours % 24}h ${diff.inMinutes % 60}m';
-    }
-    if (diff.inHours > 0) {
-      return '${diff.inHours}h ${diff.inMinutes % 60}m ${diff.inSeconds % 60}s';
-    }
-    return '${diff.inMinutes}m ${diff.inSeconds % 60}s';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    final t = widget.ticket;
-
-    if (t.status == TicketStatus.done) {
-      final dt = t.doneAt;
-      final label = dt != null
-          ? 'Done ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}'
-          : 'Done';
-      return Text(
-        label,
-        style: TypographyManager.bodySmall.copyWith(
-          color: c.fgMuted,
-          fontWeight: FontWeight.w500,
-        ),
-      );
-    }
-
-    final now = ServerClock.now();
-    final isOverdue = t.isOverdue;
-    final elapsedFrom = t.workStartedAt ?? t.createdAt;
-    final elapsed = now.difference(elapsedFrom);
-    final label = _formatDuration(elapsed);
-
-    if (isOverdue) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: c.tagRedBg,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          '● Overdue $label',
-          style: TypographyManager.bodySmall.copyWith(
-            color: c.tagRedText,
-            fontWeight: FontWeight.w600,
-            fontSize: 11,
-          ),
-        ),
-      );
-    }
-
-    return Text(
-      label,
-      style: TypographyManager.bodySmall.copyWith(
-        color: c.fgMuted,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-}
 
 /// Status pill for the top-right of the ticket card.
 /// Shows status with appropriate colors (OVERDUE in red if ticket.isOverdue).
@@ -524,26 +463,36 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-/// Elapsed time row for new/incoming tickets.
-/// Shows timer icon + time elapsed since ticket creation.
-class _ElapsedTimeRow extends StatefulWidget {
+/// "Created at  |  Due at" row on the left with the live timer on the right.
+/// Matches the image layout exactly.
+class _TimingRow extends StatefulWidget {
   final Ticket ticket;
-  const _ElapsedTimeRow({required this.ticket});
+  const _TimingRow({required this.ticket});
 
   @override
-  State<_ElapsedTimeRow> createState() => _ElapsedTimeRowState();
+  State<_TimingRow> createState() => _TimingRowState();
 }
 
-class _ElapsedTimeRowState extends State<_ElapsedTimeRow> {
+class _TimingRowState extends State<_TimingRow> {
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    // Tick every second while ticket is incoming
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant _TimingRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.ticket.id != widget.ticket.id) {
+      _timer?.cancel();
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   @override
@@ -552,32 +501,125 @@ class _ElapsedTimeRowState extends State<_ElapsedTimeRow> {
     super.dispose();
   }
 
-  String _formatElapsed(Duration d) {
+  String _fmtTime(DateTime dt) {
+    final h = dt.hour;
+    final m = dt.minute.toString().padLeft(2, '0');
+    final period = h >= 12 ? 'PM' : 'AM';
+    final h12 = h % 12 == 0 ? 12 : h % 12;
+    return '$h12:$m $period';
+  }
+
+  String _fmtDuration(Duration d) {
+    if (d.isNegative) d = Duration.zero;
     final h = d.inHours;
-    final m = d.inMinutes % 60;
-    final s = d.inSeconds % 60;
-    if (h > 0) return '${h}h ${m}m ${s}s';
-    return '${m}m ${s}s';
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    if (h > 0) return '${h}h ${m}m';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final elapsed = DateTime.now().difference(widget.ticket.createdAt);
+    final ticket = widget.ticket;
+
+    // Timer side
+    final threshold = ticket.dueAtWithGrace ?? ticket.eta;
+    final now = ServerClock.now();
+    final diff = threshold != null ? threshold.difference(now) : null;
+    final isOverdue = diff != null && diff.isNegative;
+    final timerColor = isOverdue ? c.tagRedText : c.tagPurpleIcon;
+    final timerLabel = isOverdue ? 'Overdue by' : 'Time left';
+    final timerValue = diff != null ? _fmtDuration(diff.abs()) : null;
+
+    // Due at — highlight red if overdue
+    final dueAt = ticket.eta ?? ticket.dueAtWithGrace;
+    final dueColor = isOverdue ? c.tagRedText : c.fgBase;
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Icon(LucideIcons.timer, size: 12, color: c.fgMuted),
-        const SizedBox(width: 4),
-        Text(
-          _formatElapsed(elapsed),
-          style: TypographyManager.bodySmall.copyWith(
-            color: c.fgMuted,
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
-          ),
+        // Left: Created at column
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Created at',
+              style: TypographyManager.bodySmall.copyWith(
+                color: c.fgMuted,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _fmtTime(ticket.createdAt),
+              style: TypographyManager.bodySmall.copyWith(
+                color: c.fgBase,
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ],
         ),
+        // Vertical divider
+        if (dueAt != null) ...[
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            width: 1,
+            height: 32,
+            color: c.borderBase,
+          ),
+          // Due at column
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Due at',
+                style: TypographyManager.bodySmall.copyWith(
+                  color: c.fgMuted,
+                  fontSize: 10,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _fmtTime(dueAt),
+                style: TypographyManager.bodySmall.copyWith(
+                  color: dueColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ],
+        const Spacer(),
+        // Right: live timer
+        if (timerValue != null)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                timerLabel,
+                style: TypographyManager.bodySmall.copyWith(
+                  color: timerColor,
+                  fontSize: 10,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                timerValue,
+                style: TypographyManager.bodySmall.copyWith(
+                  color: timerColor,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -587,25 +629,58 @@ class _RoomRow extends StatelessWidget {
   final Ticket ticket;
   const _RoomRow({required this.ticket});
 
+  String? _etaRange() {
+    final data = ticket.kindData;
+    if (data is UniversalKindData && data.etaStart > 0) {
+      return data.etaEnd > data.etaStart
+          ? 'ETA ${data.etaStart}–${data.etaEnd} min'
+          : 'ETA ${data.etaStart} min';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final catalog = ticket.kindData is CatalogKindData
         ? ticket.kindData as CatalogKindData
         : null;
+    final eta = _etaRange();
+    final isTerminal = ticket.status == TicketStatus.done ||
+        ticket.status == TicketStatus.canceled;
 
     return Row(
       children: [
-        // Left: Room info
+        // Left: Room · dept
         Icon(LucideIcons.doorOpen, size: 14, color: c.fgMuted),
         const SizedBox(width: 4),
-        Text(
-          '${ticket.room.number} · ${_departmentLabel(context, ticket)}',
-          style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
+        Expanded(
+          child: Text(
+            '${ticket.room.number} · ${_departmentLabel(context, ticket)}',
+            style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-        const Spacer(),
-        // Right: Price (for catalog tickets with price)
-        if (catalog != null && catalog.grandTotal > 0)
+        // Right: ETA range OR catalog price
+        if (eta != null && !isTerminal) ...[
+          const SizedBox(width: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                eta,
+                style: TypographyManager.bodySmall.copyWith(
+                  color: c.fgMuted,
+                  fontSize: 11,
+                ),
+              ),
+              const SizedBox(width: 3),
+              Icon(LucideIcons.info, size: 11, color: c.fgMuted),
+            ],
+          ),
+        ] else if (catalog != null && catalog.grandTotal > 0) ...[
+          const SizedBox(width: 8),
           Text(
             _formatMoney(catalog.grandTotal, catalog.currency),
             style: TypographyManager.bodySmall.copyWith(
@@ -613,233 +688,8 @@ class _RoomRow extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-      ],
-    );
-  }
-}
-
-/// Live countdown timer row for inProgress tickets.
-/// Shows remaining time counting down (e.g., "14m 32s") in gray.
-/// When overdue, shows elapsed time in red.
-/// Updates every second.
-class _CountdownTimer extends StatefulWidget {
-  final Ticket ticket;
-  const _CountdownTimer({required this.ticket});
-
-  @override
-  State<_CountdownTimer> createState() => _CountdownTimerState();
-}
-
-class _CountdownTimerState extends State<_CountdownTimer> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
-  }
-
-  @override
-  void didUpdateWidget(covariant _CountdownTimer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _startTimer();
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-    if (widget.ticket.eta != null) {
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  String _formatDuration(Duration d) {
-    if (d.isNegative) d = Duration.zero;
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60);
-    // Always show seconds for live countdown effect
-    if (h > 0) return '${h}h ${m}m ${s}s';
-    if (m > 0) return '${m}m ${s}s';
-    return '${s}s';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    final s = context.l10n;
-
-    final eta = widget.ticket.eta;
-    if (eta == null) return const SizedBox.shrink();
-
-    final now = ServerClock.now();
-    final remaining = eta.difference(now);
-    final isOverdue = remaining.isNegative;
-
-    final timeText = _formatDuration(isOverdue ? remaining.abs() : remaining);
-    final textColor = isOverdue ? c.tagRedText : c.fgMuted;
-    final iconColor = isOverdue ? c.tagRedText : c.fgMuted;
-
-    return Row(
-      children: [
-        Icon(
-          LucideIcons.timer,
-          size: 14,
-          color: iconColor,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '${s.ticketResolutionTimeLabel}: $timeText',
-          style: TypographyManager.bodySmall.copyWith(
-            color: textColor,
-            fontWeight: isOverdue ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Elapsed time row for overdue In Progress tickets.
-/// Shows elapsed time in red (e.g., "Elapsed Time: 44m 19s")
-/// Only visible when ticket is overdue. Auto-updates every second.
-class _OverdueElapsedRow extends StatefulWidget {
-  final Ticket ticket;
-  const _OverdueElapsedRow({required this.ticket});
-
-  @override
-  State<_OverdueElapsedRow> createState() => _OverdueElapsedRowState();
-}
-
-class _OverdueElapsedRowState extends State<_OverdueElapsedRow> {
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
-  }
-
-  @override
-  void didUpdateWidget(covariant _OverdueElapsedRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _startTimer();
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-    if (widget.ticket.status == TicketStatus.inProgress &&
-        widget.ticket.eta != null) {
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  String _formatDuration(Duration d) {
-    if (d.isNegative) d = Duration.zero;
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60);
-    if (h > 0) return '${h}h ${m}m ${s}s';
-    if (m > 0) return '${m}m ${s}s';
-    return '${s}s';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    final s = context.l10n;
-
-    // Only show for in-progress tickets with an ETA
-    if (widget.ticket.status != TicketStatus.inProgress ||
-        widget.ticket.eta == null) {
-      return const SizedBox.shrink();
-    }
-
-    final now = ServerClock.now();
-    final remaining = widget.ticket.eta!.difference(now);
-    final isOverdue = remaining.isNegative;
-
-    // Only show for overdue tickets
-    if (!isOverdue) {
-      return const SizedBox.shrink();
-    }
-
-    // Calculate elapsed time (how long since it became overdue)
-    final elapsed = remaining.abs();
-    final elapsedText = _formatDuration(elapsed);
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          LucideIcons.timer,
-          size: 14,
-          color: c.tagRedText,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '${s.ticketElapsedTimeLabel}: $elapsedText',
-          style: TypographyManager.bodySmall.copyWith(
-            color: c.tagRedText,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Green chip showing the original resolution time that was allocated
-class _OriginalResolutionChip extends StatelessWidget {
-  final String text;
-
-  const _OriginalResolutionChip({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: c.tagGreenBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: c.tagGreenBorder, width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            LucideIcons.clock,
-            size: 12,
-            color: c.tagGreenText,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TypographyManager.bodySmall.copyWith(
-              color: c.tagGreenText,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1118,9 +968,6 @@ class _BottomRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.themeColors;
-    final s = context.l10n;
-
     return Row(
       children: [
         // Left side: Type tag

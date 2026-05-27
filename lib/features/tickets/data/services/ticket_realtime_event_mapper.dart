@@ -99,6 +99,7 @@ String? _id(Map<String, dynamic>? m) {
 MyTicket _dtoToDomain(MyTicketDto dto) {
   return MyTicket(
     id: dto.id,
+    opsTicketId: dto.opsTicketId,
     createdAt: dto.createdAt,
     hotelId: dto.hotelId,
     departmentId: dto.departmentId,
@@ -108,6 +109,9 @@ MyTicket _dtoToDomain(MyTicketDto dto) {
     type: dto.type,
     status: dto.status,
     dueAt: dto.dueAt,
+    dueAtWithGrace: dto.dueAtWithGrace,
+    overdue: dto.overdue,
+    needsAttention: dto.needsAttention,
     category: dto.category,
     priority: dto.priority,
     issueSummary: dto.issueSummary,
@@ -139,6 +143,9 @@ MyTicket _dtoToDomain(MyTicketDto dto) {
               emoji: d.emoji,
               thumbnailUrl: d.thumbnailUrl,
               nameI18n: d.nameI18n,
+              etaStart: d.etaStart,
+              etaEnd: d.etaEnd,
+              slaTargetMinutes: d.slaTargetMinutes,
             ))
         .toList(),
   );
