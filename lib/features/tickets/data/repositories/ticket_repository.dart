@@ -298,6 +298,9 @@ class _TicketRepositoryImpl implements TicketRepository {
                           (i) => CatalogTicketItem(
                             itemName: i.itemName,
                             imageUrl: i.imageUrl,
+                            quantity: i.quantity,
+                            unitPrice: i.unitPrice,
+                            lineTotal: i.lineTotal,
                           ),
                         )
                         .toList(growable: false),

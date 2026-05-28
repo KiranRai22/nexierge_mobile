@@ -1045,18 +1045,33 @@ class UniversalRequestOrderItemDto {
 class ServiceCatalogOrderItemDto {
   final String itemName;
   final String? imageUrl;
+  final int quantity;
+  final double unitPrice;
+  final double lineTotal;
 
-  ServiceCatalogOrderItemDto({required this.itemName, this.imageUrl});
+  ServiceCatalogOrderItemDto({
+    required this.itemName,
+    this.imageUrl,
+    this.quantity = 1,
+    this.unitPrice = 0,
+    this.lineTotal = 0,
+  });
 
   factory ServiceCatalogOrderItemDto.fromJson(Map<String, dynamic> json) {
     final details = json['item_details'] as Map?;
     final images = (details?['image'] as List?) ?? const [];
     final firstImage = images.isNotEmpty ? images.first?.toString() : null;
+    final qty = (json['quantity'] as num?)?.toInt() ?? 1;
+    final price = (json['price'] as num?)?.toDouble() ?? 0;
+    final total = (json['total_price'] as num?)?.toDouble() ??
+        (json['item_total'] as num?)?.toDouble() ??
+        price * qty;
     return ServiceCatalogOrderItemDto(
       itemName: (json['item_name'] as String?) ?? '',
-      imageUrl: (firstImage != null && firstImage.isNotEmpty)
-          ? firstImage
-          : null,
+      imageUrl: (firstImage != null && firstImage.isNotEmpty) ? firstImage : null,
+      quantity: qty,
+      unitPrice: price,
+      lineTotal: total,
     );
   }
 }

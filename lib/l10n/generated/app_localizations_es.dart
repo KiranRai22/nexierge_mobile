@@ -363,7 +363,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ticketTabDetails => 'Detalles';
 
   @override
+  String get ticketTabOverview => 'Resumen';
+
+  @override
+  String get ticketTabOrders => 'Pedidos';
+
+  @override
+  String get ticketTabGuest => 'Huésped';
+
+  @override
   String get ticketTabActivity => 'Actividad';
+
+  @override
+  String get ticketOrdersEmpty => 'No hay detalles de pedido disponibles';
+
+  @override
+  String ticketOrderItems(int count) {
+    return 'ARTÍCULOS ($count)';
+  }
+
+  @override
+  String get ticketOrderTotal => 'Total';
 
   @override
   String get ticketSectionGuestRoom => 'HUÉSPED Y HABITACIÓN';
@@ -462,6 +482,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String ticketResolutionTimeOverdue(String time) {
     return '$time retrasado';
   }
+
+  @override
+  String get ticketActionMarkDone => 'Marcar listo';
 
   @override
   String get ticketActionStartWork => 'Comenzar';
@@ -602,6 +625,40 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String etaShortHours(int hours) {
     return 'ETA $hours h';
+  }
+
+  @override
+  String get timeLeftNow => 'Ahora';
+
+  @override
+  String timeLeftMinutes(int minutes) {
+    return '${minutes}m Rest.';
+  }
+
+  @override
+  String timeLeftHours(int hours) {
+    return '${hours}h Rest.';
+  }
+
+  @override
+  String get ticketCreatedAt => 'Creado';
+
+  @override
+  String get ticketDueAt => 'Vence';
+
+  @override
+  String overdueByMinutes(int minutes) {
+    return 'Vencido ${minutes}m';
+  }
+
+  @override
+  String overdueByHours(int hours) {
+    return 'Vencido ${hours}h';
+  }
+
+  @override
+  String overdueByHoursMinutes(int hours, int minutes) {
+    return 'Vencido ${hours}h ${minutes}m';
   }
 
   @override
@@ -1164,10 +1221,23 @@ class AppLocalizationsEs extends AppLocalizations {
   String get notificationsMarkAllRead => 'Marcar todo como leído';
 
   @override
+  String get notificationsTabAll => 'Todos';
+
+  @override
+  String get notificationsTabUnread => 'Sin leer';
+
+  @override
   String get notificationsEmpty => 'Estás al día';
 
   @override
   String get notificationsEmptyHint => 'La nueva actividad aparecerá aquí.';
+
+  @override
+  String get notificationsLoadError =>
+      'No se pudieron cargar las notificaciones. Verifica tu conexión.';
+
+  @override
+  String get notificationsRetry => 'Reintentar';
 
   @override
   String get notificationsItemNewTicket => 'Nuevo ticket recibido';

@@ -134,7 +134,18 @@
   "actionUndo": "UNDO",
 
   "ticketTabDetails": "Details",
+  "ticketTabOverview": "Overview",
+  "ticketTabOrders": "Orders",
+  "ticketTabGuest": "Guest",
   "ticketTabActivity": "Activity",
+  "ticketOrdersEmpty": "No order details available",
+  "ticketOrderItems": "ITEMS ({count})",
+  "@ticketOrderItems": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "ticketOrderTotal": "Total",
   "ticketSectionGuestRoom": "GUEST & ROOM",
   "ticketSectionInformation": "TICKET INFORMATION",
   "ticketFieldGuest": "Guest",
@@ -185,6 +196,7 @@
       "time": { "type": "String", "example": "15 mins" }
     }
   },
+  "ticketActionMarkDone": "Mark Done",
   "ticketActionStartWork": "Start Work",
   "ticketActionAccept": "Accept Ticket",
   "ticketActionAcceptAndStart": "Accept & Start",
@@ -262,6 +274,36 @@
   "@etaShortHours": {
     "placeholders": {
       "hours": { "type": "int", "example": "1" }
+    }
+  },
+  "timeLeftNow": "Now",
+  "timeLeftMinutes": "{minutes}m Left",
+  "@timeLeftMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int", "example": "5" }
+    }
+  },
+  "timeLeftHours": "{hours}h Left",
+  "@timeLeftHours": {
+    "placeholders": {
+      "hours": { "type": "int", "example": "1" }
+    }
+  },
+  "ticketCreatedAt": "Created",
+  "ticketDueAt": "Due",
+  "overdueByMinutes": "Overdue {minutes}m",
+  "@overdueByMinutes": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "overdueByHours": "Overdue {hours}h",
+  "@overdueByHours": {
+    "placeholders": { "hours": { "type": "int" } }
+  },
+  "overdueByHoursMinutes": "Overdue {hours}h {minutes}m",
+  "@overdueByHoursMinutes": {
+    "placeholders": {
+      "hours": { "type": "int" },
+      "minutes": { "type": "int" }
     }
   },
 
@@ -563,8 +605,12 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "notificationsMarkAllRead": "Mark all as read",
+  "notificationsTabAll": "All",
+  "notificationsTabUnread": "Unread",
   "notificationsEmpty": "You're all caught up",
   "notificationsEmptyHint": "New activity will appear here.",
+  "notificationsLoadError": "Could not load notifications. Check your connection.",
+  "notificationsRetry": "Retry",
   "notificationsItemNewTicket": "New ticket received",
 
   "relativeJustNow": "Just now",

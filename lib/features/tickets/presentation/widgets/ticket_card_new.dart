@@ -525,7 +525,7 @@ class _TimingRowState extends State<_TimingRow> {
     final ticket = widget.ticket;
 
     // Timer side
-    final threshold = ticket.dueAtWithGrace ?? ticket.eta;
+    final threshold = ticket.eta ?? ticket.dueAtWithGrace;
     final now = ServerClock.now();
     final diff = threshold != null ? threshold.difference(now) : null;
     final isOverdue = diff != null && diff.isNegative;

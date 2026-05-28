@@ -167,6 +167,13 @@ abstract class APIEndpoints {
   static const String serviceCatalogsCreateOrder =
       '$_host/api:u0I0pXR9/service_catalogs/user_app/order/create';
 
+  // Notifications (hub: api:9SaoW0J_)
+  static const String _notificationsApiPath = '/api:9SaoW0J_';
+  static const String notificationsTickets =
+      '$_host$_notificationsApiPath/mobile/notifications/tickets';
+  static const String notificationsMarkRead =
+      '$_host$_notificationsApiPath/notifications/mark-read';
+
   // Guest stay
   static const String guestStayCheckedIn =
       '$_host/api:bAt3sLZU/guest_stay/checked_in';

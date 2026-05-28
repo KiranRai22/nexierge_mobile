@@ -143,6 +143,14 @@
   "etaShortNow": "Ahora",
   "etaShortMinutes": "ETA {minutes} min",
   "etaShortHours": "ETA {hours} h",
+  "timeLeftNow": "Ahora",
+  "timeLeftMinutes": "{minutes}m Rest.",
+  "timeLeftHours": "{hours}h Rest.",
+  "ticketCreatedAt": "Creado",
+  "ticketDueAt": "Vence",
+  "overdueByMinutes": "Vencido {minutes}m",
+  "overdueByHours": "Vencido {hours}h",
+  "overdueByHoursMinutes": "Vencido {hours}h {minutes}m",
 
   "activityTypeAll": "Todo",
   "activityTypeCreated": "Creados",
@@ -359,8 +367,12 @@
     "placeholders": { "count": { "type": "int" } }
   },
   "notificationsMarkAllRead": "Marcar todo como leído",
+  "notificationsTabAll": "Todos",
+  "notificationsTabUnread": "Sin leer",
   "notificationsEmpty": "Estás al día",
   "notificationsEmptyHint": "La nueva actividad aparecerá aquí.",
+  "notificationsLoadError": "No se pudieron cargar las notificaciones. Verifica tu conexión.",
+  "notificationsRetry": "Reintentar",
   "notificationsItemNewTicket": "Nuevo ticket recibido",
 
   "relativeJustNow": "ahora mismo",
@@ -415,7 +427,18 @@
   "filterThisMonth": "Este mes",
 
   "ticketTabDetails": "Detalles",
+  "ticketTabOverview": "Resumen",
+  "ticketTabOrders": "Pedidos",
+  "ticketTabGuest": "Huésped",
   "ticketTabActivity": "Actividad",
+  "ticketOrdersEmpty": "No hay detalles de pedido disponibles",
+  "ticketOrderItems": "ARTÍCULOS ({count})",
+  "@ticketOrderItems": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "ticketOrderTotal": "Total",
   "ticketSectionGuestRoom": "HUÉSPED Y HABITACIÓN",
   "ticketSectionInformation": "INFORMACIÓN DEL TICKET",
   "ticketFieldGuest": "Huésped",
@@ -465,6 +488,7 @@
       "time": { "type": "String", "example": "15 mins" }
     }
   },
+  "ticketActionMarkDone": "Marcar listo",
   "ticketActionStartWork": "Comenzar",
   "ticketActionAccept": "Aceptar ticket",
   "ticketActionAcceptAndStart": "Aceptar e iniciar",

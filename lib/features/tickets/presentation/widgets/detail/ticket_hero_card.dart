@@ -47,16 +47,7 @@ class TicketHeroCard extends StatelessWidget {
                   border: Border.all(color: c.borderBase),
                 ),
                 alignment: Alignment.center,
-                child: ticket.departmentEmoji != null && ticket.departmentEmoji!.isNotEmpty
-                  ? Text(
-                      ticket.departmentEmoji!,
-                      style: const TextStyle(fontSize: 24),
-                    )
-                  : Icon(
-                      _kindIcon(ticket.department),
-                      size: 20,
-                      color: c.fgBase,
-                    ),
+                child: _buildIconOrImage(ticket, c),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -86,7 +77,7 @@ class TicketHeroCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Padding(
-              padding: const EdgeInsets.only(top:8.0),
+              padding: const EdgeInsets.only(top: 4.0),
               child: Text(
                 'Created at: ${ticket.createdTime ?? _formatCreatedAt(ticket.createdAt)}',
                 style: TypographyManager.bodySmall.copyWith(
@@ -114,6 +105,47 @@ class TicketHeroCard extends StatelessWidget {
     } else {
       return 'Just now';
     }
+  }
+
+  /// Builds the appropriate icon or image based on ticket type.
+  /// - Catalog: uses catalog logo image if available
+  /// - Universal: uses department emoji, or emoji from kindData if available
+  /// - Manual: uses department emoji or fallback icon
+  Widget _buildIconOrImage(Ticket ticket, AppColors c) {
+    // For catalog tickets, use the catalog logo image
+    if (ticket.kind == TicketKind.catalog && ticket.kindData is CatalogKindData) {
+      final catalogData = ticket.kindData as CatalogKindData;
+      if (catalogData.logoUrl != null && catalogData.logoUrl!.isNotEmpty) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            catalogData.logoUrl!,
+            width: 36,
+            height: 36,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(_kindIcon(ticket.department), size: 20, color: c.fgBase);
+            },
+          ),
+        );
+      }
+    }
+
+    // For universal tickets, use emoji from kindData or department emoji
+    if (ticket.kind == TicketKind.universal && ticket.kindData is UniversalKindData) {
+      final universalData = ticket.kindData as UniversalKindData;
+      if (universalData.emoji != null && universalData.emoji!.isNotEmpty) {
+        return Text(universalData.emoji!, style: const TextStyle(fontSize: 24));
+      }
+    }
+
+    // Fallback to department emoji
+    if (ticket.departmentEmoji != null && ticket.departmentEmoji!.isNotEmpty) {
+      return Text(ticket.departmentEmoji!, style: const TextStyle(fontSize: 24));
+    }
+
+    // Final fallback to department icon
+    return Icon(_kindIcon(ticket.department), size: 20, color: c.fgBase);
   }
 
   /// Picks a representative icon per department. Falls back to a wrench.

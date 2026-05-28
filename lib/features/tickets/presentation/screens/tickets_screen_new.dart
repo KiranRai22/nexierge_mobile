@@ -27,7 +27,8 @@ import '../providers/tickets_list_controller.dart';
 import '../providers/tickets_main_tab_provider.dart';
 import '../providers/tickets_paged_notifier.dart';
 import '../widgets/skeletons/ticket_skeletons.dart';
-import '../widgets/ticket_card_new.dart';
+// import '../widgets/ticket_card_new.dart'; // ← backup — uncomment to revert
+import '../widgets/ticket_card_compact.dart';
 import '../widgets/tickets_top_bar.dart';
 import '../widgets/tickets_main_tabs.dart';
 import '../widgets/tickets_filter_chips.dart';
@@ -869,7 +870,7 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
               key: ValueKey('ticket_card_${ticket.id}'),
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: TicketCardNew(
+                child: TicketCardCompact(
                   key: ValueKey('ticket_${ticket.id}'),
                   ticket: ticket,
                   onTap: _openHandler(context, ticket),

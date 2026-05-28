@@ -9,11 +9,12 @@ import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/notification_inbox_item.dart';
 
-/// One inbox row. Mirrors the Lovable prototype:
-/// `[+ icon] [title / subtitle] [time + unread dot]`.
+/// One inbox row.
+///
+/// Layout: `[priority accent] [icon circle] [title / subtitle] [time + unread dot]`
 ///
 /// Pure presentation — tap routing and read-state mutations live in the
-/// caller (`NotificationsSheet`). Keeps this widget testable in isolation.
+/// caller. Keeps this widget testable in isolation.
 class NotificationCard extends StatelessWidget {
   final NotificationInboxItem item;
   final VoidCallback onTap;
@@ -23,29 +24,44 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final s = context.l10n;
     final radius = BorderRadius.circular(12);
 
     return Material(
-      color: c.bgBase,
+      color: item.unread ? c.bgBase : c.bgSubtle,
       borderRadius: radius,
       child: InkWell(
         onTap: tapSound(onTap, SoundCategory.card),
         borderRadius: radius,
         child: Container(
           decoration: CardDecoration.subtle(colors: c, borderRadius: radius),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _LeadingIcon(c: c),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _Body(item: item, c: c, s: s),
-              ),
-              const SizedBox(width: 8),
-              _Trailing(item: item, c: c, s: s),
-            ],
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Priority left-border accent
+                _PriorityAccent(priority: item.priority, radius: radius),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _LeadingIcon(item: item),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _Body(item: item, c: c),
+                        ),
+                        const SizedBox(width: 8),
+                        _Trailing(item: item, c: c, s: context.l10n),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -53,33 +69,76 @@ class NotificationCard extends StatelessWidget {
   }
 }
 
-class _LeadingIcon extends StatelessWidget {
-  final AppColors c;
-  const _LeadingIcon({required this.c});
+// ─── Priority accent bar ──────────────────────────────────────────────────────
+
+class _PriorityAccent extends StatelessWidget {
+  final NotificationPriority priority;
+  final BorderRadius radius;
+
+  const _PriorityAccent({required this.priority, required this.radius});
 
   @override
   Widget build(BuildContext context) {
+    final color = switch (priority) {
+      NotificationPriority.urgent => const Color(0xFFE53935),        // red
+      NotificationPriority.actionRequired => const Color(0xFFFB8C00), // amber
+      NotificationPriority.informational => Colors.transparent,
+    };
+
+    if (color == Colors.transparent) return const SizedBox(width: 4);
+
     return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(color: c.tagPurpleBg, shape: BoxShape.circle),
-      child: Icon(LucideIcons.plus, size: 18, color: c.tagPurpleIcon),
+      width: 4,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.only(
+          topLeft: radius.topLeft,
+          bottomLeft: radius.bottomLeft,
+        ),
+      ),
     );
   }
 }
 
+// ─── Leading icon ─────────────────────────────────────────────────────────────
+
+class _LeadingIcon extends StatelessWidget {
+  final NotificationInboxItem item;
+
+  const _LeadingIcon({required this.item});
+
+  IconData _iconForKind(NotificationInboxKind kind) {
+    return switch (kind) {
+      NotificationInboxKind.newTicket => LucideIcons.ticket,
+      NotificationInboxKind.ticketAssigned => LucideIcons.userCheck,
+      NotificationInboxKind.ticketOverdue => LucideIcons.clock,
+      NotificationInboxKind.ticketEscalated => LucideIcons.alertTriangle,
+      NotificationInboxKind.ticketCompleted => LucideIcons.checkCircle2,
+      NotificationInboxKind.other => LucideIcons.bell,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = item.parsedGroupColor.withValues(alpha: 0.15);
+    final iconColor = item.parsedGroupColor;
+
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+      child: Icon(_iconForKind(item.kind), size: 18, color: iconColor),
+    );
+  }
+}
+
+// ─── Body ─────────────────────────────────────────────────────────────────────
+
 class _Body extends StatelessWidget {
   final NotificationInboxItem item;
   final AppColors c;
-  final AppLocalizations s;
-  const _Body({required this.item, required this.c, required this.s});
 
-  String _resolvedTitle() {
-    switch (item.kind) {
-      case NotificationInboxKind.newTicket:
-        return s.notificationsItemNewTicket;
-    }
-  }
+  const _Body({required this.item, required this.c});
 
   @override
   Widget build(BuildContext context) {
@@ -88,27 +147,34 @@ class _Body extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          _resolvedTitle(),
+          item.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase),
+          style: TypographyManager.textBodyStrong.copyWith(
+            color: item.unread ? c.fgBase : c.fgMuted,
+          ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          item.subtitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
-        ),
+        if (item.subtitle.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            item.subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
+          ),
+        ],
       ],
     );
   }
 }
 
+// ─── Trailing ─────────────────────────────────────────────────────────────────
+
 class _Trailing extends StatelessWidget {
   final NotificationInboxItem item;
   final AppColors c;
   final AppLocalizations s;
+
   const _Trailing({required this.item, required this.c, required this.s});
 
   String _relative(DateTime t) {
@@ -121,8 +187,8 @@ class _Trailing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
@@ -130,13 +196,13 @@ class _Trailing extends StatelessWidget {
           style: TypographyManager.textCaption.copyWith(color: c.fgMuted),
         ),
         if (item.unread) ...[
-          const SizedBox(width: 6),
+          const SizedBox(height: 4),
           SizedBox(
             width: 8,
             height: 8,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: c.tagPurpleIcon,
+                color: item.parsedGroupColor,
                 shape: BoxShape.circle,
               ),
             ),

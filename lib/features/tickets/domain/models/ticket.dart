@@ -154,6 +154,9 @@ class ManualKindData extends TicketKindData {
 class Ticket {
   final String id; // internal id (e.g. t1)
   final String code; // human-facing (e.g. TKT-3042)
+  /// Ops-facing short ticket ID (e.g. "1234"). Shown as #1234 on cards.
+  /// Empty string when not set — UI falls back to "#0000".
+  final String opsTicketId;
   final String title;
   final TicketKind kind;
   final TicketStatus status;
@@ -189,6 +192,7 @@ class Ticket {
   const Ticket({
     required this.id,
     required this.code,
+    this.opsTicketId = '',
     required this.title,
     required this.kind,
     required this.status,
@@ -244,6 +248,7 @@ class Ticket {
     return Ticket(
       id: id,
       code: code,
+      opsTicketId: opsTicketId,
       title: title,
       kind: kind,
       status: status ?? this.status,

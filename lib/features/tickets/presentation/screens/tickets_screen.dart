@@ -21,7 +21,8 @@ import '../widgets/filter_department_sheet.dart';
 import '../widgets/kpi_strip.dart';
 import '../widgets/scope_segmented_tabs.dart';
 import '../widgets/sub_tab_bar.dart';
-import '../widgets/ticket_card.dart';
+// import '../widgets/ticket_card.dart'; // ← original (backup — uncomment to revert)
+import '../widgets/ticket_card_compact.dart';
 import '_tickets_helpers.dart';
 import 'ticket_detail_screen.dart';
 
@@ -314,7 +315,7 @@ class _TicketsList extends StatelessWidget {
           if (i < s.tickets.length) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: TicketCard(
+              child: TicketCardCompact(
                 ticket: s.tickets[i],
                 onTap: () => _openDetail(context, s.tickets[i]),
               ),

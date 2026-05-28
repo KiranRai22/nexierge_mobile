@@ -360,7 +360,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ticketTabDetails => 'Details';
 
   @override
+  String get ticketTabOverview => 'Overview';
+
+  @override
+  String get ticketTabOrders => 'Orders';
+
+  @override
+  String get ticketTabGuest => 'Guest';
+
+  @override
   String get ticketTabActivity => 'Activity';
+
+  @override
+  String get ticketOrdersEmpty => 'No order details available';
+
+  @override
+  String ticketOrderItems(int count) {
+    return 'ITEMS ($count)';
+  }
+
+  @override
+  String get ticketOrderTotal => 'Total';
 
   @override
   String get ticketSectionGuestRoom => 'GUEST & ROOM';
@@ -459,6 +479,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String ticketResolutionTimeOverdue(String time) {
     return '$time overdue';
   }
+
+  @override
+  String get ticketActionMarkDone => 'Mark Done';
 
   @override
   String get ticketActionStartWork => 'Start Work';
@@ -597,6 +620,40 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String etaShortHours(int hours) {
     return 'ETA ${hours}h';
+  }
+
+  @override
+  String get timeLeftNow => 'Now';
+
+  @override
+  String timeLeftMinutes(int minutes) {
+    return '${minutes}m Left';
+  }
+
+  @override
+  String timeLeftHours(int hours) {
+    return '${hours}h Left';
+  }
+
+  @override
+  String get ticketCreatedAt => 'Created';
+
+  @override
+  String get ticketDueAt => 'Due';
+
+  @override
+  String overdueByMinutes(int minutes) {
+    return 'Overdue ${minutes}m';
+  }
+
+  @override
+  String overdueByHours(int hours) {
+    return 'Overdue ${hours}h';
+  }
+
+  @override
+  String overdueByHoursMinutes(int hours, int minutes) {
+    return 'Overdue ${hours}h ${minutes}m';
   }
 
   @override
@@ -1156,10 +1213,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsMarkAllRead => 'Mark all as read';
 
   @override
+  String get notificationsTabAll => 'All';
+
+  @override
+  String get notificationsTabUnread => 'Unread';
+
+  @override
   String get notificationsEmpty => 'You\'re all caught up';
 
   @override
   String get notificationsEmptyHint => 'New activity will appear here.';
+
+  @override
+  String get notificationsLoadError =>
+      'Could not load notifications. Check your connection.';
+
+  @override
+  String get notificationsRetry => 'Retry';
 
   @override
   String get notificationsItemNewTicket => 'New ticket received';

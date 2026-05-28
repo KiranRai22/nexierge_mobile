@@ -24,13 +24,22 @@ class UniversalTicketItem {
   });
 }
 
-/// One catalog item line (name + first image url) captured from
+/// One catalog item line captured from
 /// `_service_catalog_order_details.order_item_details.items[i]`.
 class CatalogTicketItem {
   final String itemName;
   final String? imageUrl;
+  final int quantity;
+  final double unitPrice;
+  final double lineTotal;
 
-  const CatalogTicketItem({required this.itemName, this.imageUrl});
+  const CatalogTicketItem({
+    required this.itemName,
+    this.imageUrl,
+    this.quantity = 1,
+    this.unitPrice = 0,
+    this.lineTotal = 0,
+  });
 }
 
 /// Trimmed catalog order summary captured from

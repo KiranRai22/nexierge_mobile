@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -91,8 +92,8 @@ String _fallbackTitle(TicketDetail detail, Map<String, String> deptNamesById) {
   final deptName = deptNamesById[detail.departmentId];
   if (deptName != null && deptName.isNotEmpty) {
     final type = detail.type.toUpperCase();
-    if (type == 'REQUEST') return '$deptName request';
-    if (type == 'CATALOG') return '$deptName order';
+    if (type == 'REQUEST') return deptName;
+    if (type == 'CATALOG') return deptName;
     return deptName;
   }
   if (detail.onbRoomNumber.isNotEmpty) return 'Room ${detail.onbRoomNumber}';
@@ -255,7 +256,7 @@ class _DetailBodyState extends State<_DetailBody>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 2, vsync: this);
+    _tabs = TabController(length: 4, vsync: this);
     _tabs.addListener(() {
       if (_tabs.indexIsChanging) {
         setState(() => _selectedTab = _tabs.index);
@@ -283,9 +284,12 @@ class _DetailBodyState extends State<_DetailBody>
           ),
           TicketDetailTabs(controller: _tabs),
           Expanded(
-            child: _selectedTab == 0
-                ? _DetailsTab(ticket: widget.mappedTicket)
-                : _ActivityTab(ticket: widget.ticket),
+            child: switch (_selectedTab) {
+              0 => _OverviewTab(ticket: widget.mappedTicket),
+              1 => _OrdersTab(ticket: widget.mappedTicket),
+              2 => _GuestTab(ticket: widget.mappedTicket),
+              _ => _ActivityTab(ticket: widget.ticket),
+            },
           ),
           TicketActionBar(ticket: widget.mappedTicket),
         ],
@@ -294,9 +298,368 @@ class _DetailBodyState extends State<_DetailBody>
   }
 }
 
-class _DetailsTab extends StatelessWidget {
+/// Overview tab: hero card + ticket information only (no guest/room).
+class _OverviewTab extends StatelessWidget {
   final Ticket ticket;
-  const _DetailsTab({required this.ticket});
+  const _OverviewTab({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      children: [
+        TicketHeroCard(ticket: ticket),
+        const SizedBox(height: 20),
+        CollapsibleTicketSection(
+          label: s.ticketSectionInformation,
+          rows: [
+            TicketInfoRow(
+              label: s.ticketFieldStatus,
+              trailing: _statusPill(context, ticket.status),
+              compactValue: _statusLabel(s, ticket.status),
+            ),
+            TicketInfoRow(
+              label: s.ticketFieldTicketType,
+              value: _kindLabel(s, ticket.kind),
+            ),
+            TicketInfoRow(
+              label: s.ticketFieldSource,
+              value: ticket.source == null ? '—' : _sourceLabel(s, ticket.source!),
+            ),
+            TicketInfoRow(
+              label: s.ticketFieldDepartment,
+              value: ticket.department.label(s),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Orders tab: hero card + order details for catalog or universal tickets.
+class _OrdersTab extends StatelessWidget {
+  final Ticket ticket;
+  const _OrdersTab({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      children: [
+        TicketHeroCard(ticket: ticket),
+        const SizedBox(height: 20),
+        if (ticket.kindData is CatalogKindData)
+          _CatalogOrderSection(ticket: ticket, data: ticket.kindData as CatalogKindData)
+        else if (ticket.kindData is UniversalKindData)
+          _UniversalOrderSection(ticket: ticket, data: ticket.kindData as UniversalKindData)
+        else
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Text(s.ticketOrdersEmpty, style: TypographyManager.textMeta),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _CatalogOrderSection extends StatelessWidget {
+  final Ticket ticket;
+  final CatalogKindData data;
+  const _CatalogOrderSection({required this.ticket, required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+
+    // Extract rich items from kindData if available via the cached MyTicket items
+    // The itemNames/itemThumbnails are parallel lists — zip them for display.
+    final itemCount = data.itemNames.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Items section
+        Text(
+          s.ticketOrderItems(itemCount),
+          style: TypographyManager.textMeta.copyWith(color: c.fgMuted, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: CardDecoration.standard(
+            colors: c,
+            borderRadius: BorderRadius.circular(12),
+            backgroundColor: c.bgSubtle,
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: itemCount,
+            separatorBuilder: (_, __) => Divider(height: 1, color: c.borderBase),
+            itemBuilder: (context, i) {
+              final name = data.itemNames[i];
+              final thumb = i < data.itemThumbnails.length ? data.itemThumbnails[i] : null;
+              return _CatalogItemRow(
+                name: name,
+                imageUrl: thumb,
+                lineIndex: i + 1,
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Order header card
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: CardDecoration.standard(
+            colors: c,
+            borderRadius: BorderRadius.circular(12),
+            backgroundColor: c.bgSubtle,
+          ),
+          child: Column(
+            children: [
+              // Catalog name + logo row
+              Row(
+                children: [
+                  if (data.logoUrl != null && data.logoUrl!.isNotEmpty)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        data.logoUrl!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: c.bgHover,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(LucideIcons.shoppingBag, size: 20, color: c.fgMuted),
+                    ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      data.catalogName,
+                      style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _OrderInfoRow(label: s.ticketFieldDepartment, value: ticket.departmentName ?? ticket.department.label(s)),
+              _OrderInfoRow(label: s.ticketFieldRoom, value: s.ticketRoomNumber(ticket.room.number)),
+              _OrderInfoRow(label: s.ticketFieldGuest, value: ticket.guest?.displayName ?? '—'),
+              if (ticket.source != null)
+                _OrderInfoRow(label: s.ticketFieldSource, value: _sourceLabel(s, ticket.source!)),
+              const Divider(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(s.ticketOrderTotal,
+                      style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase, fontWeight: FontWeight.w700)),
+                  Text(
+                    '${data.currency} ${data.grandTotal.toStringAsFixed(2)}',
+                    style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CatalogItemRow extends StatelessWidget {
+  final String name;
+  final String? imageUrl;
+  final int lineIndex;
+  const _CatalogItemRow({required this.name, this.imageUrl, required this.lineIndex});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Thumbnail
+          if (imageUrl != null && imageUrl!.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                imageUrl!,
+                width: 44,
+                height: 44,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _ItemPlaceholder(c: c),
+              ),
+            )
+          else
+            _ItemPlaceholder(c: c),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: TypographyManager.textBodyStrong.copyWith(
+                      color: c.fgBase,
+                      fontWeight: FontWeight.w600,
+                    )),
+                Text(
+                  '#$lineIndex',
+                  style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemPlaceholder extends StatelessWidget {
+  final AppColors c;
+  const _ItemPlaceholder({required this.c});
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 44,
+    height: 44,
+    decoration: BoxDecoration(color: c.bgHover, borderRadius: BorderRadius.circular(8)),
+    child: Icon(LucideIcons.package, size: 20, color: c.fgMuted),
+  );
+}
+
+class _UniversalOrderSection extends StatelessWidget {
+  final Ticket ticket;
+  final UniversalKindData data;
+  const _UniversalOrderSection({required this.ticket, required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: CardDecoration.standard(
+            colors: c,
+            borderRadius: BorderRadius.circular(12),
+            backgroundColor: c.bgSubtle,
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  if (data.emoji != null && data.emoji!.isNotEmpty)
+                    Text(data.emoji!, style: const TextStyle(fontSize: 32))
+                  else if (data.thumbnailUrl != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        data.thumbnailUrl!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(color: c.bgHover, borderRadius: BorderRadius.circular(8)),
+                      child: Icon(LucideIcons.bell, size: 20, color: c.fgMuted),
+                    ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      data.displayName,
+                      style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _OrderInfoRow(label: s.ticketFieldDepartment, value: ticket.departmentName ?? ticket.department.label(s)),
+              _OrderInfoRow(label: s.ticketFieldRoom, value: s.ticketRoomNumber(ticket.room.number)),
+              _OrderInfoRow(label: s.ticketFieldGuest, value: ticket.guest?.displayName ?? '—'),
+              if (ticket.source != null)
+                _OrderInfoRow(label: s.ticketFieldSource, value: _sourceLabel(s, ticket.source!)),
+            ],
+          ),
+        ),
+        if (ticket.note != null && ticket.note!.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            s.ticketFieldConversation,
+            style: TypographyManager.textMeta.copyWith(color: c.fgMuted, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: CardDecoration.standard(
+              colors: c,
+              borderRadius: BorderRadius.circular(12),
+              backgroundColor: c.bgSubtle,
+            ),
+            child: Text(ticket.note!, style: TypographyManager.textBody.copyWith(color: c.fgBase)),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// A simple label/value row used inside order cards.
+class _OrderInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _OrderInfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TypographyManager.textMeta.copyWith(color: c.fgMuted)),
+          Text(value,
+              style: TypographyManager.textMeta.copyWith(color: c.fgBase, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Guest tab: hero card + guest & room section.
+class _GuestTab extends StatelessWidget {
+  final Ticket ticket;
+  const _GuestTab({required this.ticket});
 
   @override
   Widget build(BuildContext context) {
@@ -337,57 +700,12 @@ class _DetailsTab extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        CollapsibleTicketSection(
-          label: s.ticketSectionInformation,
-          rows: [
-            TicketInfoRow(
-              label: s.ticketFieldStatus,
-              trailing: _statusPill(context, ticket.status),
-              compactValue: _statusLabel(s, ticket.status),
-            ),
-            TicketInfoRow(
-              label: s.ticketFieldTicketType,
-              value: _kindLabel(s, ticket.kind),
-            ),
-            TicketInfoRow(
-              label: s.ticketFieldSource,
-              value: ticket.source == null
-                  ? '—'
-                  : _sourceLabel(s, ticket.source!),
-            ),
-            TicketInfoRow(
-              label: s.ticketFieldDepartment,
-              value: ticket.department.label(s),
-            ),
-          ],
-        ),
       ],
     );
   }
+}
 
-  /// Plain-text status label used in collapsed-section summaries (status
-  /// pill is a custom widget, can't be flattened to a string by itself).
-  String _statusLabel(AppLocalizations s, TicketStatus st) {
-    switch (st) {
-      case TicketStatus.accepted:
-        return s.ticketStatusBadgeAccepted;
-      case TicketStatus.inProgress:
-        return s.ticketStatusBadgeInProgress;
-      case TicketStatus.incoming:
-        return s.ticketStatusBadgeNew;
-      case TicketStatus.done:
-        return s.ticketStatusBadgeDone;
-      case TicketStatus.canceled:
-        return s.ticketStatusBadgeCancelled;
-      case TicketStatus.onHold:
-        return s.ticketStatusBadgeOnHold;
-      case TicketStatus.backlog:
-        return 'Backlog';
-    }
-  }
-
-  Widget _statusPill(BuildContext context, TicketStatus st) {
+Widget _statusPill(BuildContext context, TicketStatus st) {
     final c = context.themeColors;
     final s = context.l10n;
     late Color bg;
@@ -469,7 +787,27 @@ class _DetailsTab extends StatelessWidget {
         return c.tagGreenIcon;
     }
   }
-}
+
+  /// Plain-text status label used in collapsed-section summaries (status
+  /// pill is a custom widget, can't be flattened to a string by itself).
+  String _statusLabel(AppLocalizations s, TicketStatus st) {
+    switch (st) {
+      case TicketStatus.accepted:
+        return s.ticketStatusBadgeAccepted;
+      case TicketStatus.inProgress:
+        return s.ticketStatusBadgeInProgress;
+      case TicketStatus.incoming:
+        return s.ticketStatusBadgeNew;
+      case TicketStatus.done:
+        return s.ticketStatusBadgeDone;
+      case TicketStatus.canceled:
+        return s.ticketStatusBadgeCancelled;
+      case TicketStatus.onHold:
+        return s.ticketStatusBadgeOnHold;
+      case TicketStatus.backlog:
+        return 'Backlog';
+    }
+  }
 
 class _ActivityTab extends StatelessWidget {
   final TicketDetail ticket;

@@ -45,7 +45,9 @@ class TicketDetailTabs extends StatelessWidget implements PreferredSizeWidget {
             SoundManager.instance.play(SoundCategory.button);
           },
           tabs: [
-            Tab(text: s.ticketTabDetails, height: 42),
+            Tab(text: s.ticketTabOverview, height: 42),
+            Tab(text: s.ticketTabOrders, height: 42),
+            Tab(text: s.ticketTabGuest, height: 42),
             Tab(text: s.ticketTabActivity, height: 42),
           ],
         ),

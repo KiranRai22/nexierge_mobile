@@ -11,21 +11,19 @@ import '../../domain/entities/notification_inbox_item.dart';
 import '../providers/notification_inbox_controller.dart';
 import 'notification_card.dart';
 
-/// Notifications inbox bottom sheet. Mirrors the Lovable prototype:
-/// drag handle → header (title + close) → unread count + actions →
-/// scrollable list of `NotificationCard`s.
+/// Notifications inbox bottom sheet.
 ///
-/// Sheet is draggable: starts at ~60% height, snaps to 95% on a long
-/// drag, content scrolls when the sheet is fully expanded.
+/// Structure:
+///   drag handle → header (title + unread count + close)
+///   → actions row (mark-all-read + total)
+///   → All / Unread tab bar
+///   → scrollable list with pull-to-refresh + infinite scroll
 class NotificationsSheet extends ConsumerWidget {
-  /// Optional callback when the user taps a row that has a `ticketId`.
-  /// Receives the ticket id so the host (DashboardScreen) can route.
+  /// Called when the user taps a notification that links to a ticket.
   final ValueChanged<String>? onOpenTicket;
 
   const NotificationsSheet({super.key, this.onOpenTicket});
 
-  /// Launch helper. Owns the modal-bottom-sheet config so call sites
-  /// don't repeat the boilerplate.
   static Future<void> show(
     BuildContext context, {
     ValueChanged<String>? onOpenTicket,
@@ -61,7 +59,8 @@ class NotificationsSheet extends ConsumerWidget {
               const _Handle(),
               const _Header(),
               const _ActionsRow(),
-              const SizedBox(height: 8),
+              const _TabBar(),
+              const Divider(height: 1),
               Expanded(
                 child: _Body(
                   scrollController: scrollController,
@@ -75,6 +74,8 @@ class NotificationsSheet extends ConsumerWidget {
     );
   }
 }
+
+// ─── Handle ───────────────────────────────────────────────────────────────────
 
 class _Handle extends StatelessWidget {
   const _Handle();
@@ -97,6 +98,8 @@ class _Handle extends StatelessWidget {
     );
   }
 }
+
+// ─── Header ───────────────────────────────────────────────────────────────────
 
 class _Header extends ConsumerWidget {
   const _Header();
@@ -132,7 +135,10 @@ class _Header extends ConsumerWidget {
           ),
           IconButton(
             tooltip: s.cancel,
-            onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
+            onPressed: tapSound(
+              () => Navigator.of(context).pop(),
+              SoundCategory.back,
+            ),
             icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
           ),
         ],
@@ -140,6 +146,8 @@ class _Header extends ConsumerWidget {
     );
   }
 }
+
+// ─── Actions row ──────────────────────────────────────────────────────────────
 
 class _ActionsRow extends ConsumerWidget {
   const _ActionsRow();
@@ -156,14 +164,18 @@ class _ActionsRow extends ConsumerWidget {
       child: Row(
         children: [
           InkWell(
-            onTap: state.unreadCount == 0 ? null : tapSound(controller.markAllAsRead),
+            onTap: state.unreadCount == 0
+                ? null
+                : tapSound(controller.markAllAsRead),
             borderRadius: BorderRadius.circular(6),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               child: Text(
                 s.notificationsMarkAllRead,
                 style: TypographyManager.textLabel.copyWith(
-                  color: state.unreadCount == 0 ? c.fgSubtle : c.tagPurpleIcon,
+                  color: state.unreadCount == 0
+                      ? c.fgSubtle
+                      : c.tagPurpleIcon,
                 ),
               ),
             ),
@@ -179,51 +191,180 @@ class _ActionsRow extends ConsumerWidget {
   }
 }
 
-class _Body extends ConsumerWidget {
-  final ScrollController scrollController;
-  final ValueChanged<String>? onOpenTicket;
+// ─── Tab bar ─────────────────────────────────────────────────────────────────
 
-  const _Body({required this.scrollController, required this.onOpenTicket});
+class _TabBar extends ConsumerWidget {
+  const _TabBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(
-      notificationInboxControllerProvider.select((v) => v.items),
+    final s = context.l10n;
+    final c = context.themeColors;
+    final currentFilter = ref.watch(
+      notificationInboxControllerProvider.select((v) => v.statusFilter),
     );
+    final controller = ref.read(notificationInboxControllerProvider.notifier);
 
-    if (items.isEmpty) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+      child: Row(
+        children: [
+          _Tab(
+            label: s.notificationsTabAll,
+            selected: currentFilter == 'all',
+            onTap: () => controller.switchTab('all'),
+            c: c,
+          ),
+          const SizedBox(width: 8),
+          _Tab(
+            label: s.notificationsTabUnread,
+            selected: currentFilter == 'unread',
+            onTap: () => controller.switchTab('unread'),
+            c: c,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final AppColors c;
+
+  const _Tab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    required this.c,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? c.tagPurpleBg : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? c.tagPurpleIcon : c.borderBase,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TypographyManager.textLabel.copyWith(
+            color: selected ? c.tagPurpleIcon : c.fgMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Body ─────────────────────────────────────────────────────────────────────
+
+class _Body extends ConsumerStatefulWidget {
+  final ScrollController scrollController;
+  final ValueChanged<String>? onOpenTicket;
+
+  const _Body({
+    required this.scrollController,
+    required this.onOpenTicket,
+  });
+
+  @override
+  ConsumerState<_Body> createState() => _BodyState();
+}
+
+class _BodyState extends ConsumerState<_Body> {
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final pos = widget.scrollController.position;
+    // Trigger load-more when user has scrolled 80% of available content
+    if (pos.pixels >= pos.maxScrollExtent * 0.8) {
+      ref.read(notificationInboxControllerProvider.notifier).loadMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(notificationInboxControllerProvider);
+
+    // First-page loading
+    if (state.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // Error state (first page)
+    if (state.error != null && state.items.isEmpty) {
+      return _ErrorState(
+        onRetry: () =>
+            ref.read(notificationInboxControllerProvider.notifier).refresh(),
+      );
+    }
+
+    // Empty state
+    if (state.items.isEmpty) {
       return const _EmptyState();
     }
 
-    return ListView.separated(
-      controller: scrollController,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (_, index) {
-        final item = items[index];
-        return NotificationCard(
-          item: item,
-          onTap: () => _onItemTap(context, ref, item),
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(notificationInboxControllerProvider.notifier).refresh(),
+      child: ListView.separated(
+        controller: widget.scrollController,
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        itemBuilder: (_, index) {
+          // Load-more spinner at bottom
+          if (index == state.items.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final item = state.items[index];
+          return NotificationCard(
+            item: item,
+            onTap: () => _onItemTap(item),
+          );
+        },
+      ),
     );
   }
 
-  void _onItemTap(
-    BuildContext context,
-    WidgetRef ref,
-    NotificationInboxItem item,
-  ) {
+  void _onItemTap(NotificationInboxItem item) {
     ref.read(notificationInboxControllerProvider.notifier).markRead(item.id);
+
     final ticketId = item.ticketId;
-    if (ticketId != null) {
+    if (ticketId != null && ticketId.isNotEmpty) {
       Navigator.of(context).pop();
-      onOpenTicket?.call(ticketId);
+      widget.onOpenTicket?.call(ticketId);
     }
   }
 }
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
@@ -244,11 +385,7 @@ class _EmptyState extends StatelessWidget {
               color: c.tagGreenBg,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              LucideIcons.checkCheck,
-              color: c.tagGreenIcon,
-              size: 22,
-            ),
+            child: Icon(LucideIcons.checkCheck, color: c.tagGreenIcon, size: 22),
           ),
           const SizedBox(height: 12),
           Text(
@@ -260,6 +397,40 @@ class _EmptyState extends StatelessWidget {
             s.notificationsEmptyHint,
             textAlign: TextAlign.center,
             style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Error state ──────────────────────────────────────────────────────────────
+
+class _ErrorState extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(LucideIcons.wifiOff, color: c.fgMuted, size: 32),
+          const SizedBox(height: 12),
+          Text(
+            s.notificationsLoadError,
+            textAlign: TextAlign.center,
+            style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase),
+          ),
+          const SizedBox(height: 12),
+          TextButton(
+            onPressed: onRetry,
+            child: Text(s.notificationsRetry),
           ),
         ],
       ),

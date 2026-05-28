@@ -770,11 +770,47 @@ abstract class AppLocalizations {
   /// **'Details'**
   String get ticketTabDetails;
 
+  /// No description provided for @ticketTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get ticketTabOverview;
+
+  /// No description provided for @ticketTabOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get ticketTabOrders;
+
+  /// No description provided for @ticketTabGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get ticketTabGuest;
+
   /// No description provided for @ticketTabActivity.
   ///
   /// In en, this message translates to:
   /// **'Activity'**
   String get ticketTabActivity;
+
+  /// No description provided for @ticketOrdersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No order details available'**
+  String get ticketOrdersEmpty;
+
+  /// No description provided for @ticketOrderItems.
+  ///
+  /// In en, this message translates to:
+  /// **'ITEMS ({count})'**
+  String ticketOrderItems(int count);
+
+  /// No description provided for @ticketOrderTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get ticketOrderTotal;
 
   /// No description provided for @ticketSectionGuestRoom.
   ///
@@ -955,6 +991,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{time} overdue'**
   String ticketResolutionTimeOverdue(String time);
+
+  /// No description provided for @ticketActionMarkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark Done'**
+  String get ticketActionMarkDone;
 
   /// No description provided for @ticketActionStartWork.
   ///
@@ -1201,6 +1243,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'ETA {hours}h'**
   String etaShortHours(int hours);
+
+  /// No description provided for @timeLeftNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get timeLeftNow;
+
+  /// No description provided for @timeLeftMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m Left'**
+  String timeLeftMinutes(int minutes);
+
+  /// No description provided for @timeLeftHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h Left'**
+  String timeLeftHours(int hours);
+
+  /// No description provided for @ticketCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get ticketCreatedAt;
+
+  /// No description provided for @ticketDueAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Due'**
+  String get ticketDueAt;
+
+  /// No description provided for @overdueByMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue {minutes}m'**
+  String overdueByMinutes(int minutes);
+
+  /// No description provided for @overdueByHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue {hours}h'**
+  String overdueByHours(int hours);
+
+  /// No description provided for @overdueByHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue {hours}h {minutes}m'**
+  String overdueByHoursMinutes(int hours, int minutes);
 
   /// No description provided for @activityTypeAll.
   ///
@@ -2150,6 +2240,18 @@ abstract class AppLocalizations {
   /// **'Mark all as read'**
   String get notificationsMarkAllRead;
 
+  /// No description provided for @notificationsTabAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get notificationsTabAll;
+
+  /// No description provided for @notificationsTabUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get notificationsTabUnread;
+
   /// No description provided for @notificationsEmpty.
   ///
   /// In en, this message translates to:
@@ -2161,6 +2263,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New activity will appear here.'**
   String get notificationsEmptyHint;
+
+  /// No description provided for @notificationsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load notifications. Check your connection.'**
+  String get notificationsLoadError;
+
+  /// No description provided for @notificationsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get notificationsRetry;
 
   /// No description provided for @notificationsItemNewTicket.
   ///
