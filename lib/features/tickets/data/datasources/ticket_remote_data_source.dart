@@ -152,6 +152,13 @@ abstract class TicketRemoteDataSource {
     String? resolutionNote,
   });
 
+  /// POST /ticketsv2/backlog_to_in_progress — moves BACKLOG → IN_PROGRESS.
+  /// Body: `{tickets_v2_id, reason}`
+  Future<void> moveToInProgressV2({
+    required String ticketId,
+    required String reason,
+  });
+
   /// POST /ticketsv2/backlog/{id} — moves ticket to backlog.
   /// Body: `{tickets_v2_id, reason}`
   Future<void> moveToBacklogV2({
@@ -671,6 +678,29 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     final res = await _dio.post(url, data: payload);
     debugPrint(
       '[TicketRemoteDataSource] [API] completeTicketV2 response: ${res.data}',
+    );
+  }
+
+  @override
+  Future<void> moveToInProgressV2({
+    required String ticketId,
+    required String reason,
+  }) async {
+    const url = APIEndpoints.ticketsV2BacklogToInProgress;
+    final payload = {
+      'tickets_v2_id': ticketId,
+      'reason': reason,
+    };
+    debugPrint(
+      '[TicketRemoteDataSource] [API] moveToInProgressV2\n'
+      '  URL: POST $url\n'
+      '  Ticket: $ticketId\n'
+      '  Action: BACKLOG -> IN_PROGRESS\n'
+      '  Payload: $payload',
+    );
+    final res = await _dio.post(url, data: payload);
+    debugPrint(
+      '[TicketRemoteDataSource] [API] moveToInProgressV2 response: ${res.data}',
     );
   }
 

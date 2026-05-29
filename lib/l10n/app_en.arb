@@ -206,6 +206,14 @@
   "ticketActionChangeDue": "Add Time",
   "ticketActionCancel": "Cancel",
   "ticketActionReset": "Reset",
+  "ticketActionForceDone": "Force Done",
+  "ticketActionMoveToBacklog": "Backlog",
+  "ticketActionResumeToInProgress": "In Progress",
+  "ticketActionResetOwnership": "Reset",
+  "resumeToInProgressSheetTitle": "Resume to In Progress?",
+  "resumeToInProgressSheetSubtitle": "The ticket will return to the active queue. Please provide a reason (e.g. clarification received, issue resolved).",
+  "resumeToInProgressSheetHint": "Enter reason (required)...",
+  "resumeToInProgressSheetConfirm": "Resume",
   "ticketActionFailedAccept": "Couldn't accept ticket. Reverted.",
   "ticketActionFailedStartWork": "Couldn't start work. Reverted.",
   "ticketActionFailedMarkDone": "Couldn't mark as done. Reverted.",
@@ -406,12 +414,29 @@
   },
   "roomSearchHint": "Search room number…",
 
-  "filterTitle": "Filter by department",
+  "filterTitle": "Ticket Filters",
+  "filterTitleWithCount": "Ticket Filters ({count})",
+  "@filterTitleWithCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "filterTabDepartment": "Department",
+  "filterTabSort": "Sort",
+  "filterTabType": "Type",
+  "filterSortNewestFirst": "Newest first",
+  "filterSortOldestFirst": "Oldest first",
+  "filterSortSubtitle": "Choose how tickets are ordered in the list.",
+  "filterDeptSubtitle": "Showing tickets from your accessible departments. At least one must be selected.",
+  "filterTypeSubtitle": "Show only specific ticket types. At least one must be selected.",
+  "filterTypeAll": "All",
+  "filterOldFilterTitle": "Filter by department",
   "filterSubtitleAll": "Showing all departments",
   "filterSubtitleSome": "{count, plural, one{Showing 1 department} other{Showing {count} departments}}",
   "filterActionClear": "Clear",
   "filterActionApply": "Apply",
   "filterActionSelectAll": "Select All",
+  "filterDeptPrimary": "Primary",
   "@filterSubtitleSome": {
     "placeholders": {
       "count": { "type": "int" }

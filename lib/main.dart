@@ -143,11 +143,19 @@ class MyApp extends ConsumerWidget {
       final result = next.valueOrNull;
       if (result == null) return;
 
+      // Guard: only show the dialog once per check cycle. The provider state
+      // can trigger the listener multiple times (e.g. due to widget rebuilds
+      // caused by ref.watch(versionCheckProvider) elsewhere in the tree).
+      // markDialogShown() is called INSIDE each branch so that VersionUpToDate
+      // results never consume the guard — only actual dialogs do.
+      final notifier = ref.read(versionCheckProvider.notifier);
+      if (notifier.dialogShown) return;
+
       if (result is VersionUpdateOptional) {
+        notifier.markDialogShown();
         final platformVersion = Platform.isIOS
             ? result.version.iosVersion
             : result.version.androidVersion;
-        final notifier = ref.read(versionCheckProvider.notifier);
         final storeUrl = notifier.storeUrl(result.version);
 
         // Fire-and-forget local notification (debounced per version)
@@ -167,7 +175,7 @@ class MyApp extends ConsumerWidget {
           );
         });
       } else if (result is VersionUpdateForced) {
-        final notifier = ref.read(versionCheckProvider.notifier);
+        notifier.markDialogShown();
         final storeUrl = notifier.storeUrl(result.version);
 
         // Show non-dismissable force update bottom sheet (after first frame)

@@ -32,7 +32,7 @@ import '../widgets/ticket_card_compact.dart';
 import '../widgets/tickets_top_bar.dart';
 import '../widgets/tickets_main_tabs.dart';
 import '../widgets/tickets_filter_chips.dart';
-import '../widgets/filter_department_sheet.dart';
+import '../widgets/ticket_filters_sheet.dart';
 import '../widgets/mark_done_bottom_sheet.dart';
 import '../widgets/start_work_confirmation_bottom_sheet.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
@@ -122,19 +122,8 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
     await ref.read(ticketsPagedProvider(spec).notifier).refresh();
   }
 
-  /// Check if a tab has filters available
-  bool _tabHasFilters(TicketsMainTab tab) {
-    switch (tab) {
-      case TicketsMainTab.incoming:
-        return true; // Has newest/oldest filters
-      case TicketsMainTab.today:
-        return true; // Has active/overdue/newest/oldest filters
-      case TicketsMainTab.backlog:
-        return true; // Has all/inprogress/overdue filters
-      case TicketsMainTab.done:
-        return true; // Has newest/oldest filters
-    }
-  }
+  /// Only Today tab has inline filter chips (active/overdue).
+  bool _tabHasFilters(TicketsMainTab tab) => tab == TicketsMainTab.today;
 
   void _toggleSearch() {
     setState(() {
@@ -279,11 +268,11 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                               color: c.fgBase,
                             ),
                           ),
-                          // Show count badge if departments are selected
+                          // Show count badge for active filter selections
                           Consumer(
                             builder: (context, ref, _) {
-                              final selectedDepts = ref.watch(departmentFilterProvider);
-                              if (selectedDepts.isEmpty) return const SizedBox.shrink();
+                              final activeCount = ref.watch(resolvedTicketsFilterProvider).activeCount;
+                              if (activeCount == 0) return const SizedBox.shrink();
                               return Positioned(
                                 right: 0,
                                 top: 0,
@@ -297,7 +286,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                                   ),
                                   child: Center(
                                     child: Text(
-                                      '${selectedDepts.length}',
+                                      '$activeCount',
                                       style: TypographyManager.labelSmall.copyWith(
                                         color: Colors.white,
                                         fontSize: 10,
@@ -472,7 +461,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   }
 
   void _showFilterSheet(BuildContext context) {
-    FilterDepartmentSheet.show(context);
+    TicketFiltersSheet.show(context);
   }
 
   Widget _buildList(TicketsMainTab mainTab) {
@@ -790,18 +779,13 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
     final spec = ref.watch(ticketsPagedSpecProvider(widget.tab));
     final asyncState = ref.watch(ticketsPagedProvider(spec));
 
-    // Keep sort order in sync with the filter chip ('newest'/'oldest').
-    // Use a separate listener to avoid calling setSortOrder during build.
+    // Keep sort order in sync with the advanced filter.
+    final advancedFilter = ref.watch(resolvedTicketsFilterProvider);
     final filter = ref.watch(ticketsFilterProvider);
-    
-    // DEBUG: Log filter value for Today tab
-    if (widget.tab == TicketsTab.todayInProgress) {
-      debugPrint('[TicketsPagedTabList] TODAY TAB - Filter value: "$filter"');
-    }
-    
-    final order = filter == 'oldest'
-        ? TicketsSortOrder.oldestFirst
-        : TicketsSortOrder.newestFirst;
+
+    final order = advancedFilter.newestFirst
+        ? TicketsSortOrder.newestFirst
+        : TicketsSortOrder.oldestFirst;
 
     // Sync sort order after build to prevent infinite loop
     WidgetsBinding.instance.addPostFrameCallback((_) {

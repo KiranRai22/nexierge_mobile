@@ -514,6 +514,31 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ticketActionReset => 'Restablecer';
 
   @override
+  String get ticketActionForceDone => 'Forzar Hecho';
+
+  @override
+  String get ticketActionMoveToBacklog => 'Mover a Pendientes';
+
+  @override
+  String get ticketActionResumeToInProgress => 'Reanudar a En Progreso';
+
+  @override
+  String get ticketActionResetOwnership => 'Restablecer';
+
+  @override
+  String get resumeToInProgressSheetTitle => '¿Reanudar a En Progreso?';
+
+  @override
+  String get resumeToInProgressSheetSubtitle =>
+      'El ticket volverá a la cola activa. Proporciona un motivo (p. ej. aclaración recibida, problema resuelto).';
+
+  @override
+  String get resumeToInProgressSheetHint => 'Ingresa motivo (requerido)...';
+
+  @override
+  String get resumeToInProgressSheetConfirm => 'Reanudar';
+
+  @override
   String get ticketActionFailedAccept =>
       'No se pudo aceptar el ticket. Revertido.';
 
@@ -845,7 +870,45 @@ class AppLocalizationsEs extends AppLocalizations {
   String get roomSearchHint => 'Buscar número de habitación…';
 
   @override
-  String get filterTitle => 'Filtrar por área';
+  String get filterTitle => 'Filtros de tickets';
+
+  @override
+  String filterTitleWithCount(int count) {
+    return 'Filtros de tickets ($count)';
+  }
+
+  @override
+  String get filterTabDepartment => 'Departamento';
+
+  @override
+  String get filterTabSort => 'Orden';
+
+  @override
+  String get filterTabType => 'Tipo';
+
+  @override
+  String get filterSortNewestFirst => 'Más recientes primero';
+
+  @override
+  String get filterSortOldestFirst => 'Más antiguos primero';
+
+  @override
+  String get filterSortSubtitle =>
+      'Elige cómo se ordenan los tickets en la lista.';
+
+  @override
+  String get filterDeptSubtitle =>
+      'Mostrando tickets de tus departamentos accesibles. Al menos uno debe estar seleccionado.';
+
+  @override
+  String get filterTypeSubtitle =>
+      'Muestra solo tipos de tickets específicos. Al menos uno debe estar seleccionado.';
+
+  @override
+  String get filterTypeAll => 'Todos';
+
+  @override
+  String get filterOldFilterTitle => 'Filtrar por área';
 
   @override
   String get filterSubtitleAll => 'Mostrando todas las áreas';
@@ -862,13 +925,16 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get filterActionClear => 'Clear';
+  String get filterActionClear => 'Limpiar';
 
   @override
-  String get filterActionApply => 'Apply';
+  String get filterActionApply => 'Aplicar';
 
   @override
-  String get filterActionSelectAll => 'Select All';
+  String get filterActionSelectAll => 'Seleccionar todo';
+
+  @override
+  String get filterDeptPrimary => 'Principal';
 
   @override
   String get filterSelectAll => 'Seleccionar todo';

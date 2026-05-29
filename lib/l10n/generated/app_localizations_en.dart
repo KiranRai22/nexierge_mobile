@@ -511,6 +511,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ticketActionReset => 'Reset';
 
   @override
+  String get ticketActionForceDone => 'Force Done';
+
+  @override
+  String get ticketActionMoveToBacklog => 'Backlog';
+
+  @override
+  String get ticketActionResumeToInProgress => 'In Progress';
+
+  @override
+  String get ticketActionResetOwnership => 'Reset';
+
+  @override
+  String get resumeToInProgressSheetTitle => 'Resume to In Progress?';
+
+  @override
+  String get resumeToInProgressSheetSubtitle =>
+      'The ticket will return to the active queue. Please provide a reason (e.g. clarification received, issue resolved).';
+
+  @override
+  String get resumeToInProgressSheetHint => 'Enter reason (required)...';
+
+  @override
+  String get resumeToInProgressSheetConfirm => 'Resume';
+
+  @override
   String get ticketActionFailedAccept => 'Couldn\'t accept ticket. Reverted.';
 
   @override
@@ -838,7 +863,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roomSearchHint => 'Search room number…';
 
   @override
-  String get filterTitle => 'Filter by department';
+  String get filterTitle => 'Ticket Filters';
+
+  @override
+  String filterTitleWithCount(int count) {
+    return 'Ticket Filters ($count)';
+  }
+
+  @override
+  String get filterTabDepartment => 'Department';
+
+  @override
+  String get filterTabSort => 'Sort';
+
+  @override
+  String get filterTabType => 'Type';
+
+  @override
+  String get filterSortNewestFirst => 'Newest first';
+
+  @override
+  String get filterSortOldestFirst => 'Oldest first';
+
+  @override
+  String get filterSortSubtitle =>
+      'Choose how tickets are ordered in the list.';
+
+  @override
+  String get filterDeptSubtitle =>
+      'Showing tickets from your accessible departments. At least one must be selected.';
+
+  @override
+  String get filterTypeSubtitle =>
+      'Show only specific ticket types. At least one must be selected.';
+
+  @override
+  String get filterTypeAll => 'All';
+
+  @override
+  String get filterOldFilterTitle => 'Filter by department';
 
   @override
   String get filterSubtitleAll => 'Showing all departments';
@@ -862,6 +925,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get filterActionSelectAll => 'Select All';
+
+  @override
+  String get filterDeptPrimary => 'Primary';
 
   @override
   String get filterSelectAll => 'Select all';

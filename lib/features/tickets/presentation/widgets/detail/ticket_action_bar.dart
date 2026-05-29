@@ -27,6 +27,7 @@ import '../change_due_time_bottom_sheet.dart';
 import '../mark_done_bottom_sheet.dart';
 import '../move_to_backlog_bottom_sheet.dart';
 import '../reset_acknowledgement_bottom_sheet.dart';
+import '../resume_to_in_progress_bottom_sheet.dart';
 import '../start_work_confirmation_bottom_sheet.dart';
 
 /// Persistent bottom action bar for the ticket detail screen.
@@ -64,26 +65,6 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     }
   }
 
-  // ────────── PRIMARY ACTION ──────────
-
-  Future<void> _onPrimary() async {
-    final t = widget.ticket;
-    switch (t.status) {
-      case TicketStatus.incoming:
-        await _onAcceptIncoming();
-      case TicketStatus.accepted:
-        await _onStartWork();
-      case TicketStatus.inProgress:
-        await _onMarkDone();
-      case TicketStatus.onHold:
-        await _onResume();
-      case TicketStatus.backlog:
-        await _onStartFromBacklog();
-      default:
-        break;
-    }
-  }
-
   // ────────── HOLD (ACCEPTED|IN_PROGRESS → ON_HOLD) ──────────
 
 
@@ -91,16 +72,15 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   Future<void> _onStartFromBacklog() async {
     final t = widget.ticket;
-    final dueAt = ServerClock.now().add(const Duration(minutes: 15));
-    await showStartWorkConfirmation(
+    await showResumeToInProgressBottomSheet(
       context: context,
-      onConfirm: () async {
+      onConfirm: (reason) async {
         await _withGuard(
           () => _runOptimistic(
             newStatus: 'IN_PROGRESS',
             apiCall: () => ref
                 .read(ticketRepositoryProvider)
-                .startTicketV2(ticketId: t.id, dueAt: dueAt),
+                .moveToInProgressV2(ticketId: t.id, reason: reason),
             failureMessage: context.l10n.ticketActionFailedAccept,
           ),
         );
@@ -427,6 +407,8 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         t.status == TicketStatus.done || t.status == TicketStatus.canceled;
     if (isFinal) return const SizedBox.shrink();
 
+    final overdue = t.isOverdue;
+
     return Material(
       color: c.bgBase,
       elevation: 0,
@@ -435,16 +417,21 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: switch (t.status) {
           // ───── NEW / INCOMING ─────
-          TicketStatus.incoming => _buildNewLayout(context, s, c),
-          // ───── IN PROGRESS ───── 3 rows: Complete | AddTime/Backlog | Cancel/Reset
-          TicketStatus.inProgress => _buildInProgressLayout(context, s, c),
-          // ───── BACKLOG ───── 2 rows: MoveToInProgress | AddTime/Cancel/Reset
-          TicketStatus.backlog => _buildBacklogLayout(context, s, c),
-          // ───── ACCEPTED ───── 2 rows: StartWork | AddTime/Cancel/Reset
+          TicketStatus.incoming => overdue
+              ? _buildOverdueLayout(context, s, c)
+              : _buildNewLayout(context, s, c),
+          // ───── IN PROGRESS ─────
+          TicketStatus.inProgress => overdue
+              ? _buildOverdueLayout(context, s, c)
+              : _buildInProgressLayout(context, s, c),
+          // ───── BACKLOG ─────
+          TicketStatus.backlog => overdue
+              ? _buildBacklogOverdueLayout(context, s, c)
+              : _buildBacklogLayout(context, s, c),
+          // ───── ACCEPTED ───── (legacy v1 path)
           TicketStatus.accepted => _buildAcceptedLayout(context, s, c),
-          // ───── ON HOLD ───── Single Resume button
+          // ───── ON HOLD ─────
           TicketStatus.onHold => _buildOnHoldLayout(context, s, c),
-          // ───── DONE / CANCELED already filtered out by isFinal
           _ => const SizedBox.shrink(),
         },
       ),
@@ -453,39 +440,27 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   // ───── Layout Builders ─────
 
+  /// INCOMING healthy: Accept & Start (primary) + Add Time | Backlog | Cancel
   Widget _buildNewLayout(BuildContext context, AppLocalizations s, AppColors c) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Row 1: Accept & Start (full width primary)
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _busy ? null : tapSound(_onAcceptIncoming),
             icon: const Icon(LucideIcons.play, size: 18),
             label: Text(s.ticketActionAcceptAndStart),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: c.buttonInverted,
-              foregroundColor: c.fgOnInverted,
-              disabledBackgroundColor: c.bgDisabled,
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: TypographyManager.labelMedium.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            style: _primaryStyle(c),
           ),
         ),
         const SizedBox(height: 8),
-        // Row 2: Add Time | Backlog | Cancel (3 buttons)
         Row(
           children: [
             Expanded(
               child: _SecondaryButton(
                 icon: LucideIcons.circlePlus,
-                label: 'Add Time',
+                label: s.ticketActionChangeDue,
                 onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
               ),
             ),
@@ -493,7 +468,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
             Expanded(
               child: _SecondaryButton(
                 icon: LucideIcons.archive,
-                label: 'Backlog',
+                label: s.ticketActionMoveToBacklog,
                 onTap: _busy ? null : tapSound(_onMoveToBacklog),
               ),
             ),
@@ -501,7 +476,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
             Expanded(
               child: _SecondaryButton(
                 icon: LucideIcons.x,
-                label: 'Cancel',
+                label: s.ticketActionCancel,
                 isDestructive: true,
                 onTap: _busy ? null : tapSound(_onCancel),
               ),
@@ -512,70 +487,57 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     );
   }
 
+  /// IN_PROGRESS healthy: Mark Done (primary) + Add Time | Reset | Backlog | Cancel
   Widget _buildInProgressLayout(BuildContext context, AppLocalizations s, AppColors c) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Row 1: Complete (full width primary)
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _busy ? null : tapSound(_onMarkDone),
             icon: const Icon(LucideIcons.check, size: 18),
-            label: Text(s.ticketActionComplete),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: c.buttonInverted,
-              foregroundColor: c.fgOnInverted,
-              disabledBackgroundColor: c.bgDisabled,
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: TypographyManager.labelLarge.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            label: Text(s.ticketActionMarkDone),
+            style: _primaryStyle(c),
           ),
         ),
         const SizedBox(height: 8),
-        // Row 2: Add Time | Backlog
         Row(
           children: [
             Expanded(
               child: _SecondaryButton(
                 icon: LucideIcons.circlePlus,
-                label: 'Add Time',
+                label: s.ticketActionChangeDue,
                 onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _SecondaryButton(
-                icon: LucideIcons.archive,
-                label: 'Backlog',
-                onTap: _busy ? null : tapSound(_onMoveToBacklog),
+                icon: LucideIcons.rotateCcw,
+                label: s.ticketActionResetOwnership,
+                onTap: _busy ? null : tapSound(_onReset),
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        // Row 3: Cancel (destructive) | Reset
         Row(
           children: [
             Expanded(
               child: _SecondaryButton(
-                icon: LucideIcons.x,
-                label: 'Cancel',
-                isDestructive: true,
-                onTap: _busy ? null : tapSound(_onCancel),
+                icon: LucideIcons.archive,
+                label: s.ticketActionMoveToBacklog,
+                onTap: _busy ? null : tapSound(_onMoveToBacklog),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _SecondaryButton(
-                icon: LucideIcons.rotateCcw,
-                label: s.ticketActionReset,
-                onTap: _busy ? null : tapSound(_onReset),
+                icon: LucideIcons.x,
+                label: s.ticketActionCancel,
+                isDestructive: true,
+                onTap: _busy ? null : tapSound(_onCancel),
               ),
             ),
           ],
@@ -584,57 +546,38 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     );
   }
 
-  Widget _buildBacklogLayout(BuildContext context, AppLocalizations s, AppColors c) {
+  /// Shared overdue layout for INCOMING + IN_PROGRESS:
+  /// Force Done (primary) + Move to Backlog | Cancel
+  Widget _buildOverdueLayout(BuildContext context, AppLocalizations s, AppColors c) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Row 1: Move to In Progress (full width primary)
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: _busy ? null : tapSound(_onStartFromBacklog),
-            icon: const Icon(LucideIcons.circlePlay, size: 18),
-            label: const Text('Move to In Progress'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: c.buttonInverted,
-              foregroundColor: c.fgOnInverted,
-              disabledBackgroundColor: c.bgDisabled,
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: TypographyManager.labelLarge.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            onPressed: _busy ? null : tapSound(_onMarkDone),
+            icon: const Icon(LucideIcons.checkCheck, size: 18),
+            label: Text(s.ticketActionForceDone),
+            style: _primaryStyle(c),
           ),
         ),
         const SizedBox(height: 8),
-        // Row 2: Add Time | Cancel (destructive) | Reset (3 buttons)
         Row(
           children: [
             Expanded(
               child: _SecondaryButton(
-                icon: LucideIcons.circlePlus,
-                label: 'Add Time',
-                onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+                icon: LucideIcons.archive,
+                label: s.ticketActionMoveToBacklog,
+                onTap: _busy ? null : tapSound(_onMoveToBacklog),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _SecondaryButton(
                 icon: LucideIcons.x,
-                label: 'Cancel',
+                label: s.ticketActionCancel,
                 isDestructive: true,
                 onTap: _busy ? null : tapSound(_onCancel),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _SecondaryButton(
-                icon: LucideIcons.rotateCcw,
-                label: s.ticketActionReset,
-                onTap: _busy ? null : tapSound(_onReset),
               ),
             ),
           ],
@@ -642,6 +585,75 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       ],
     );
   }
+
+  /// BACKLOG healthy: Resume to In Progress (primary) + Cancel
+  Widget _buildBacklogLayout(BuildContext context, AppLocalizations s, AppColors c) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _busy ? null : tapSound(_onStartFromBacklog),
+                icon: const Icon(LucideIcons.circlePlay, size: 18),
+                label: Text(s.ticketActionResumeToInProgress),
+                style: _primaryStyle(c),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.x,
+                label: s.ticketActionCancel,
+                isDestructive: true,
+                onTap: _busy ? null : tapSound(_onCancel),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// BACKLOG overdue: Force Done (primary) + Cancel
+  Widget _buildBacklogOverdueLayout(BuildContext context, AppLocalizations s, AppColors c) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _busy ? null : tapSound(_onMarkDone),
+                icon: const Icon(LucideIcons.checkCheck, size: 18),
+                label: Text(s.ticketActionForceDone),
+                style: _primaryStyle(c),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _SecondaryButton(
+                icon: LucideIcons.x,
+                label: s.ticketActionCancel,
+                isDestructive: true,
+                onTap: _busy ? null : tapSound(_onCancel),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  ButtonStyle _primaryStyle(AppColors c) => ElevatedButton.styleFrom(
+    backgroundColor: c.buttonInverted,
+    foregroundColor: c.fgOnInverted,
+    disabledBackgroundColor: c.bgDisabled,
+    minimumSize: const Size.fromHeight(48),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    textStyle: TypographyManager.labelLarge.copyWith(fontWeight: FontWeight.w600),
+  );
 
   Widget _buildAcceptedLayout(BuildContext context, AppLocalizations s, AppColors c) {
     return Column(

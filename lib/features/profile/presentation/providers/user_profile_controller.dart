@@ -2,64 +2,25 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/domain/entities/department.dart';
 import '../../../auth/domain/entities/user_profile.dart' as auth_entity;
 import '../../../auth/presentation/providers/auth_session_controller.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart'
     as auth_ctrl;
 import '../../domain/entities/user_profile.dart';
-import '../../../tickets/domain/entities/ticket_form_options.dart';
-import '../../../tickets/presentation/providers/ticket_form_options_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Mapping
 // ---------------------------------------------------------------------------
 
-/// Extract readable department names from the department list.
-/// For AuthDepartment objects, we'll use the existing HotelDepartment API data
-/// for consistency with the rest of the application.
-List<String> _extractDepartments(List<dynamic> raw, Ref ref) {
-  // Get department IDs from AuthDepartment objects
-  final departmentIds = raw
-      .map((d) {
-        // Handle AuthDepartment objects
-        if (d.runtimeType.toString().contains('AuthDepartment')) {
-          return (d as dynamic).id as String? ?? '';
-        }
-        // Handle plain strings (might be department IDs)
-        if (d is String) return d;
-        // Handle Map objects
-        if (d is Map) {
-          return (d['id'] ?? d['department_id'] ?? '').toString();
-        }
-        return '';
-      })
-      .where((id) => id.trim().isNotEmpty)
+/// Extract readable department names from the auth/me department list.
+/// [AuthDepartment] already carries the [name] field — use it directly
+/// instead of trying to cross-reference a separate hotel-departments API.
+List<String> _extractDepartments(List<AuthDepartment> depts) {
+  return depts
+      .map((d) => d.name.trim())
+      .where((name) => name.isNotEmpty)
       .toList();
-
-  // If no department IDs, return empty list
-  if (departmentIds.isEmpty) return [];
-
-  try {
-    // Get the existing HotelDepartment data from the tickets API
-    final hotelDepartments = ref.read(apiDepartmentsProvider);
-
-    // Match department IDs with names from the existing HotelDepartment data
-    final departmentNames = departmentIds
-        .map((deptId) {
-          final hotelDept = hotelDepartments.firstWhere(
-            (hd) => hd.id == deptId,
-            orElse: () => HotelDepartment.fromName(id: deptId, name: deptId),
-          );
-          return hotelDept.name;
-        })
-        .where((name) => name.trim().isNotEmpty)
-        .toList();
-
-    return departmentNames;
-  } catch (e) {
-    // Fallback: return the department IDs if we can't fetch the HotelDepartment data
-    return departmentIds;
-  }
 }
 
 /// Maps the full auth-domain [auth_entity.UserProfile] (returned by the
@@ -90,7 +51,7 @@ UserProfile _mapToProfileEntity(auth_entity.UserProfile p, Ref ref) {
     email: p.email,
     employeeCode: p.employeeCode.trim().isEmpty ? null : p.employeeCode,
     role: p.userHotelStatus.hierarchyRole,
-    departments: _extractDepartments(p.accessControl.departments, ref),
+    departments: _extractDepartments(p.accessControl.departments),
     status: p.userHotelStatus.status.toLowerCase() == 'active'
         ? UserStatus.active
         : UserStatus.inactive,

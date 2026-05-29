@@ -1052,6 +1052,54 @@ abstract class AppLocalizations {
   /// **'Reset'**
   String get ticketActionReset;
 
+  /// No description provided for @ticketActionForceDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Done'**
+  String get ticketActionForceDone;
+
+  /// No description provided for @ticketActionMoveToBacklog.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlog'**
+  String get ticketActionMoveToBacklog;
+
+  /// No description provided for @ticketActionResumeToInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get ticketActionResumeToInProgress;
+
+  /// No description provided for @ticketActionResetOwnership.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get ticketActionResetOwnership;
+
+  /// No description provided for @resumeToInProgressSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume to In Progress?'**
+  String get resumeToInProgressSheetTitle;
+
+  /// No description provided for @resumeToInProgressSheetSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The ticket will return to the active queue. Please provide a reason (e.g. clarification received, issue resolved).'**
+  String get resumeToInProgressSheetSubtitle;
+
+  /// No description provided for @resumeToInProgressSheetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter reason (required)...'**
+  String get resumeToInProgressSheetHint;
+
+  /// No description provided for @resumeToInProgressSheetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get resumeToInProgressSheetConfirm;
+
   /// No description provided for @ticketActionFailedAccept.
   ///
   /// In en, this message translates to:
@@ -1607,8 +1655,74 @@ abstract class AppLocalizations {
   /// No description provided for @filterTitle.
   ///
   /// In en, this message translates to:
-  /// **'Filter by department'**
+  /// **'Ticket Filters'**
   String get filterTitle;
+
+  /// No description provided for @filterTitleWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket Filters ({count})'**
+  String filterTitleWithCount(int count);
+
+  /// No description provided for @filterTabDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'Department'**
+  String get filterTabDepartment;
+
+  /// No description provided for @filterTabSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get filterTabSort;
+
+  /// No description provided for @filterTabType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get filterTabType;
+
+  /// No description provided for @filterSortNewestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get filterSortNewestFirst;
+
+  /// No description provided for @filterSortOldestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get filterSortOldestFirst;
+
+  /// No description provided for @filterSortSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how tickets are ordered in the list.'**
+  String get filterSortSubtitle;
+
+  /// No description provided for @filterDeptSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing tickets from your accessible departments. At least one must be selected.'**
+  String get filterDeptSubtitle;
+
+  /// No description provided for @filterTypeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show only specific ticket types. At least one must be selected.'**
+  String get filterTypeSubtitle;
+
+  /// No description provided for @filterTypeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterTypeAll;
+
+  /// No description provided for @filterOldFilterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by department'**
+  String get filterOldFilterTitle;
 
   /// No description provided for @filterSubtitleAll.
   ///
@@ -1639,6 +1753,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select All'**
   String get filterActionSelectAll;
+
+  /// No description provided for @filterDeptPrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary'**
+  String get filterDeptPrimary;
 
   /// No description provided for @filterSelectAll.
   ///

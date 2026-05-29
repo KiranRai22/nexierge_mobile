@@ -116,6 +116,16 @@ abstract class APIEndpoints {
   static String ticketsV2ResetAcknowledge(String ticketId) =>
       '$_ticketsV2Base/reset_acknowledge/$ticketId';
 
+  /// POST `/ticketsv2/backlog_to_in_progress` — body `{tickets_v2_id, reason}`.
+  /// Moves BACKLOG → IN_PROGRESS.
+  static const String ticketsV2BacklogToInProgress =
+      '$_ticketsV2Base/backlog_to_in_progress';
+
+  /// POST `/ticketsv2/in_progress/{id}` — body `{tickets_v2_id}`. Moves BACKLOG → IN_PROGRESS.
+  /// @deprecated Use [ticketsV2BacklogToInProgress] instead.
+  static String ticketsV2InProgressTransition(String ticketId) =>
+      '$_ticketsV2Base/in_progress/$ticketId';
+
   /// POST `/ticketsv2/cancel` — body `{tickets_v2_id, reason}`. Moves to CANCELED.
   static const String ticketsV2Cancel = '$_ticketsV2Base/cancel';
 

@@ -157,6 +157,12 @@ abstract class TicketRepository {
     String? resolutionNote,
   });
 
+  /// POST /ticketsv2/backlog_to_in_progress. Moves BACKLOG → IN_PROGRESS.
+  Future<void> moveToInProgressV2({
+    required String ticketId,
+    required String reason,
+  });
+
   /// POST /ticketsv2/backlog/{id}. Moves ticket to backlog.
   Future<void> moveToBacklogV2({
     required String ticketId,
@@ -827,6 +833,20 @@ class _TicketRepositoryImpl implements TicketRepository {
         ticketId: ticketId,
         resolutionNote: resolutionNote,
       );
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> moveToInProgressV2({
+    required String ticketId,
+    required String reason,
+  }) async {
+    try {
+      await _remote.moveToInProgressV2(ticketId: ticketId, reason: reason);
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {

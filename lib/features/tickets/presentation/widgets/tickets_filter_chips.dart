@@ -59,28 +59,15 @@ class TicketsFilterChips extends StatelessWidget {
     TicketsMainTab tab,
   ) {
     switch (tab) {
-      case TicketsMainTab.incoming:
-        return [
-          _FilterOption('newest', s.filterNewestFirst),
-          _FilterOption('oldest', s.filterOldestFirst),
-        ];
       case TicketsMainTab.today:
         return [
           _FilterOption('active', s.statusActive),
           _FilterOption('overdue', s.statusOverdue, isDanger: true),
-          _FilterOption('newest', s.filterNewestFirst),
-          _FilterOption('oldest', s.filterOldestFirst),
         ];
+      case TicketsMainTab.incoming:
       case TicketsMainTab.backlog:
-        return [
-          _FilterOption('newest', s.filterNewestFirst),
-          _FilterOption('oldest', s.filterOldestFirst),
-        ];
       case TicketsMainTab.done:
-        return [
-          _FilterOption('newest', s.filterNewestFirst),
-          _FilterOption('oldest', s.filterOldestFirst),
-        ];
+        return [];
     }
   }
 }

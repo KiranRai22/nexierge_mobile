@@ -373,7 +373,12 @@ class _CatalogOrderSection extends StatelessWidget {
   final Ticket ticket;
   final CatalogKindData data;
   const _CatalogOrderSection({required this.ticket, required this.data});
-
+  String _formatMoney(double amount, String currency) {
+    final upper = currency.toUpperCase();
+    final formatted = amount.toStringAsFixed(2);
+    if (upper == 'USD' || upper.isEmpty) return '\$$formatted';
+    return '$formatted $upper';
+  }
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
@@ -405,9 +410,12 @@ class _CatalogOrderSection extends StatelessWidget {
             separatorBuilder: (_, __) => Divider(height: 1, color: c.borderBase),
             itemBuilder: (context, i) {
               final name = data.itemNames[i];
+              final quantity = data.itemCount;
+
               final thumb = i < data.itemThumbnails.length ? data.itemThumbnails[i] : null;
               return _CatalogItemRow(
                 name: name,
+                quantity: quantity.toString(),
                 imageUrl: thumb,
                 lineIndex: i + 1,
               );
@@ -473,7 +481,7 @@ class _CatalogOrderSection extends StatelessWidget {
                   Text(s.ticketOrderTotal,
                       style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase, fontWeight: FontWeight.w700)),
                   Text(
-                    '${data.currency} ${data.grandTotal.toStringAsFixed(2)}',
+                    _formatMoney(data.grandTotal, data.currency),
                     style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase, fontWeight: FontWeight.w700),
                   ),
                 ],
@@ -488,15 +496,16 @@ class _CatalogOrderSection extends StatelessWidget {
 
 class _CatalogItemRow extends StatelessWidget {
   final String name;
+  final String quantity;
   final String? imageUrl;
   final int lineIndex;
-  const _CatalogItemRow({required this.name, this.imageUrl, required this.lineIndex});
+  const _CatalogItemRow({required this.name, required this.quantity, this.imageUrl, required this.lineIndex});
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -506,8 +515,8 @@ class _CatalogItemRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
                 imageUrl!,
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => _ItemPlaceholder(c: c),
               ),
@@ -519,15 +528,17 @@ class _CatalogItemRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  '#$lineIndex',
+                  style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
+                ),
                 Text(name,
                     style: TypographyManager.textBodyStrong.copyWith(
                       color: c.fgBase,
                       fontWeight: FontWeight.w600,
                     )),
-                Text(
-                  '#$lineIndex',
-                  style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
-                ),
+                Text('Quantity: $quantity',
+                  style: TypographyManager.textMeta.copyWith(color: c.fgMuted),),
               ],
             ),
           ),
@@ -542,8 +553,8 @@ class _ItemPlaceholder extends StatelessWidget {
   const _ItemPlaceholder({required this.c});
   @override
   Widget build(BuildContext context) => Container(
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     decoration: BoxDecoration(color: c.bgHover, borderRadius: BorderRadius.circular(8)),
     child: Icon(LucideIcons.package, size: 20, color: c.fgMuted),
   );

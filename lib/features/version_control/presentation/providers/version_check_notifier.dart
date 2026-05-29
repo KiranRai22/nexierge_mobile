@@ -34,6 +34,14 @@ class VersionUpdateForced extends VersionCheckResult {
 /// (no autoDispose) because it gates app usage for force updates.
 class VersionCheckNotifier
     extends AsyncNotifier<VersionCheckResult> {
+  /// Guards against showing the update dialog more than once per check cycle.
+  /// Reset to false on every [recheck] call; set to true once the listener
+  /// in main.dart actually shows the dialog.
+  bool _dialogShown = false;
+
+  bool get dialogShown => _dialogShown;
+  void markDialogShown() => _dialogShown = true;
+
   @override
   Future<VersionCheckResult> build() async {
     return _check();
@@ -78,7 +86,12 @@ class VersionCheckNotifier
   }
 
   Future<void> recheck() async {
-    state = const AsyncLoading<VersionCheckResult>().copyWithPrevious(state);
+    // Reset the dialog guard so the next result can trigger the dialog once.
+    _dialogShown = false;
+    // Use a bare AsyncLoading (no copyWithPrevious) so that valueOrNull
+    // returns null during the check — prevents stale values from firing the
+    // listener prematurely.
+    state = const AsyncLoading<VersionCheckResult>();
     state = AsyncData(await _check());
   }
 

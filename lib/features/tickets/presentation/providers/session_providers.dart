@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/domain/entities/department.dart';
 import '../../domain/entities/ticket_form_options.dart';
 import '../../domain/models/department.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
@@ -63,3 +65,84 @@ final ticketScopeProvider = StateProvider<TicketScope>(
 final departmentFilterProvider = StateProvider<Set<HotelDepartment>>(
   (ref) => const {},
 );
+
+// ─── Advanced ticket filter (Department + Sort + Type) ───────────────
+
+/// Unified filter state for the tickets screen.
+@immutable
+class TicketsAdvancedFilter {
+  /// Selected dept IDs from user's accessible departments.
+  /// Empty = all accessible departments.
+  final Set<String> departmentIds;
+
+  /// true = newest first (default), false = oldest first.
+  final bool newestFirst;
+
+  /// Ticket types to include: 'universal', 'catalog'. Empty = all.
+  final Set<String> ticketTypes;
+
+  const TicketsAdvancedFilter({
+    required this.departmentIds,
+    required this.newestFirst,
+    required this.ticketTypes,
+  });
+
+  /// Number of active filter selections shown on the filter badge.
+  int get activeCount =>
+      departmentIds.length + 1 + ticketTypes.length;
+
+  TicketsAdvancedFilter copyWith({
+    Set<String>? departmentIds,
+    bool? newestFirst,
+    Set<String>? ticketTypes,
+  }) =>
+      TicketsAdvancedFilter(
+        departmentIds: departmentIds ?? this.departmentIds,
+        newestFirst: newestFirst ?? this.newestFirst,
+        ticketTypes: ticketTypes ?? this.ticketTypes,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TicketsAdvancedFilter &&
+          setEquals(other.departmentIds, departmentIds) &&
+          other.newestFirst == newestFirst &&
+          setEquals(other.ticketTypes, ticketTypes));
+
+  @override
+  int get hashCode => Object.hash(
+        Object.hashAllUnordered(departmentIds),
+        newestFirst,
+        Object.hashAllUnordered(ticketTypes),
+      );
+}
+
+/// Returns the departments the current user has access to (from auth/me).
+final userAccessDepartmentsProvider = Provider<List<AuthDepartment>>((ref) {
+  final profile = ref.watch(userProfileProvider);
+  final depts = profile?.accessControl.departments ?? const [];
+  debugPrint(
+    '[userAccessDepartmentsProvider] ${depts.length} dept(s): '
+    '${depts.map((d) => '${d.id}/${d.name}').join(', ')}',
+  );
+  return depts;
+});
+
+/// Persisted advanced filter state. null = use defaults derived from
+/// [userAccessDepartmentsProvider].
+final ticketsAdvancedFilterProvider =
+    StateProvider<TicketsAdvancedFilter?>((ref) => null);
+
+/// Resolved filter — falls back to "all user depts + newest + all types"
+/// when no explicit filter has been applied yet.
+final resolvedTicketsFilterProvider = Provider<TicketsAdvancedFilter>((ref) {
+  final stored = ref.watch(ticketsAdvancedFilterProvider);
+  if (stored != null) return stored;
+  final depts = ref.watch(userAccessDepartmentsProvider);
+  return TicketsAdvancedFilter(
+    departmentIds: depts.map((d) => d.id).toSet(),
+    newestFirst: true,
+    ticketTypes: const {'universal_request', 'service_catalog'},
+  );
+});

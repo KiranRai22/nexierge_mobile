@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/user_profile_repository.dart';
@@ -72,20 +73,43 @@ class UserProfileController extends StateNotifier<UserProfileState> {
     }
   }
 
-  /// Load cached profile on app start. Falls back to network fetch when
-  /// cache is missing or corrupted, so the UI never lands on an empty
-  /// state silently.
+  /// Load cached profile on app start. Shows cached data instantly, then
+  /// always refreshes from the network in the background to ensure
+  /// department names and other access-control data stay fresh.
   Future<void> loadCachedProfile() async {
+    bool hasCached = false;
     try {
       final profile = await _repository.getCachedProfile();
       if (profile != null) {
-        state = state.copyWith(profile: profile);
-        return;
+        // Check if departments have data — if the cache is stale (empty
+        // strings from an old serialisation format), skip it.
+        final depts = profile.accessControl.departments;
+        final deptsLookOk = depts.isEmpty || depts.any((d) => d.id.isNotEmpty);
+        if (deptsLookOk) {
+          state = state.copyWith(profile: profile);
+          hasCached = true;
+          debugPrint(
+            '[UserProfileController] Loaded ${depts.length} dept(s) from cache: '
+            '${depts.map((d) => '${d.id}/${d.name}').join(', ')}',
+          );
+        } else {
+          debugPrint(
+            '[UserProfileController] Cache has ${depts.length} dept(s) but all '
+            'ids are empty — invalidating cache and fetching from network.',
+          );
+        }
       }
     } catch (_) {
       // Cache corrupted — fall through to network fetch.
     }
-    await loadProfile();
+    // Always refresh from network — either as the primary source (no cache)
+    // or as a background update (stale cache was shown first).
+    if (hasCached) {
+      // Fire-and-forget background refresh so the UI gets fresh dept data.
+      loadProfile();
+    } else {
+      await loadProfile();
+    }
   }
 
   /// Upload a new profile picture and refresh state with the updated

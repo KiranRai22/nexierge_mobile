@@ -552,20 +552,43 @@ const List<TicketsTab> kAllTicketsTabs = TicketsTab.values;
 
 /// Creates a [TicketsPagedSpec] for the given tab with the department filter
 /// applied from [departmentFilterProvider]. This ensures API requests include
-/// the selected department filter.
-///
-/// The API only supports a single department filter, so when multiple
-/// departments are selected, we use the first one's ID. For full multi-select
-/// support, the backend would need to accept a list of department IDs.
+/// Builds the API spec for each tab, applying the advanced filter
+/// (Department + Sort + Type) from [resolvedTicketsFilterProvider].
 final ticketsPagedSpecProvider = Provider.family<TicketsPagedSpec, TicketsTab>((
   ref,
   tab,
 ) {
   final baseSpec = specForTab(tab);
-  final selectedDepts = ref.watch(departmentFilterProvider);
+  final filter = ref.watch(resolvedTicketsFilterProvider);
+  final allDeptIds = ref.watch(userAccessDepartmentsProvider).map((d) => d.id).toSet();
 
-  // API only supports single department; use first selected or null for all
-  final departmentId = selectedDepts.isNotEmpty ? selectedDepts.first.id : null;
+  // Pass a departmentId only when exactly 1 dept is selected and it's a
+  // subset of the user's allowed depts. If all or none are selected the API
+  // returns all depts (no filter needed).
+  final String? departmentId;
+  if (filter.departmentIds.length == 1) {
+    departmentId = filter.departmentIds.first;
+  } else if (filter.departmentIds.isNotEmpty &&
+      filter.departmentIds.length < allDeptIds.length) {
+    // Multiple but not all — API limitation: send first selected.
+    departmentId = filter.departmentIds.first;
+  } else {
+    departmentId = null;
+  }
+
+  // Pass ticketType only when a single type is selected.
+  final String? ticketType;
+  if (filter.ticketTypes.length == 1) {
+    ticketType = filter.ticketTypes.first;
+  } else {
+    ticketType = null;
+  }
+
+  debugPrint(
+    '[ticketsPagedSpecProvider] tab=$tab '
+    'deptIds=${filter.departmentIds} allDeptIds=$allDeptIds '
+    '→ departmentId=$departmentId ticketType=$ticketType',
+  );
 
   return TicketsPagedSpec(
     tab: baseSpec.tab,
@@ -573,6 +596,6 @@ final ticketsPagedSpecProvider = Provider.family<TicketsPagedSpec, TicketsTab>((
     departmentId: departmentId,
     createdAtStartDate: baseSpec.createdAtStartDate,
     createdAtEndDate: baseSpec.createdAtEndDate,
-    ticketType: baseSpec.ticketType,
+    ticketType: ticketType,
   );
 });
