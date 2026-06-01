@@ -12,8 +12,8 @@ abstract class NotificationInboxDatasource {
     required String hotelUserId,
     required int limit,
     required int offset,
-    required String statusFilter, // "all" | "unread" | "read"
-    String scopeFilter = 'all',
+    required String statusFilter, // "unread" | "read"
+    String scopeFilter = 'unread',
   });
 
   /// Marks a single notification event as read for the current user.
@@ -21,6 +21,12 @@ abstract class NotificationInboxDatasource {
     required String hotelId,
     required String hotelUserId,
     required String notificationEventId,
+  });
+
+  /// Clears all read notifications for the current user.
+  Future<void> clearAllRead({
+    required String hotelId,
+    required String hotelUserId,
   });
 }
 
@@ -35,14 +41,13 @@ class _NotificationInboxDatasourceImpl implements NotificationInboxDatasource {
     required int limit,
     required int offset,
     required String statusFilter,
-    String scopeFilter = 'all',
+    String scopeFilter = 'unread',
   }) async {
-    final res = await _dio.post(
+    final res = await _dio.get(
       APIEndpoints.notificationsTickets,
-      data: {
+      queryParameters: {
         'hotel_id': hotelId,
         'hotel_user_id': hotelUserId,
-        // API expects string values for limit and offset
         'limit': limit.toString(),
         'offset': offset.toString(),
         'status_filter': statusFilter,
@@ -68,11 +73,25 @@ class _NotificationInboxDatasourceImpl implements NotificationInboxDatasource {
       },
     );
   }
+
+  @override
+  Future<void> clearAllRead({
+    required String hotelId,
+    required String hotelUserId,
+  }) async {
+    await _dio.post(
+      APIEndpoints.notificationsClearRead,
+      data: {
+        'hotel_id': hotelId,
+        'hotel_user_id': hotelUserId,
+      },
+    );
+  }
 }
 
 /// Provider — uses the same authenticated Dio instance as the rest of the app.
 final notificationInboxDatasourceProvider =
     Provider<NotificationInboxDatasource>((ref) {
-  final dio = ref.watch(dioProvider);
+  final dio = ref.watch(authedDioProvider);
   return _NotificationInboxDatasourceImpl(dio);
 });

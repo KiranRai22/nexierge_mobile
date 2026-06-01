@@ -11,7 +11,7 @@ import '../../../../core/theme/typography_manager.dart';
 class TicketsTopBar extends StatelessWidget {
   final String avatarInitials;
   final String? avatarImageUrl;
-  final bool hasUnreadNotifications;
+  final int unreadCount;
   final bool isDarkMode;
   final bool isSearchVisible;
   final VoidCallback? onThemeToggle;
@@ -24,7 +24,7 @@ class TicketsTopBar extends StatelessWidget {
     super.key,
     required this.avatarInitials,
     this.avatarImageUrl,
-    this.hasUnreadNotifications = false,
+    this.unreadCount = 0,
     this.isDarkMode = false,
     this.isSearchVisible = false,
     this.onThemeToggle,
@@ -76,7 +76,7 @@ class TicketsTopBar extends StatelessWidget {
             tooltip: s.tooltipNotifications,
             onPressed: onNotifications,
             icon: LucideIcons.bell,
-            badge: hasUnreadNotifications,
+            unreadCount: unreadCount,
           ),
         ],
       ),
@@ -148,13 +148,13 @@ class _CircleIconButton extends StatelessWidget {
   final String tooltip;
   final VoidCallback? onPressed;
   final IconData icon;
-  final bool badge;
+  final int unreadCount;
 
   const _CircleIconButton({
     required this.tooltip,
     this.onPressed,
     required this.icon,
-    this.badge = false,
+    this.unreadCount = 0,
   });
 
   @override
@@ -177,17 +177,26 @@ class _CircleIconButton extends StatelessWidget {
               child: Icon(icon, size: 18, color: c.fgBase),
             ),
           ),
-          if (badge)
+          if (unreadCount > 0)
             Positioned(
-              right: 0,
-              top: 0,
+              right: -2,
+              top: -2,
               child: Container(
-                width: 8,
-                height: 8,
+                constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
                   color: c.tagRedText,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(999),
                   border: Border.all(color: c.bgBase, width: 1.5),
+                ),
+                child: Text(
+                  unreadCount > 99 ? '99+' : unreadCount.toString(),
+                  style: TypographyManager.labelSmall.copyWith(
+                    fontSize: 8,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ),

@@ -18,19 +18,19 @@ class _GuestStayRemoteDataSourceImpl implements GuestStayRemoteDataSource {
   Future<List<CheckedInGuestStayDto>> getCheckedIn({
     required String hotelId,
   }) async {
-    debugPrint(
-      '[GuestStayRemoteDataSource] GET ${APIEndpoints.guestStayCheckedIn} '
-      'hotel_id=$hotelId',
-    );
+    //debugPrint(
+    //   '[GuestStayRemoteDataSource] GET ${APIEndpoints.guestStayCheckedIn} '
+    //   'hotel_id=$hotelId',
+    // );
     final res = await _dio.get(
       APIEndpoints.guestStayCheckedIn,
       queryParameters: {'hotel_id': hotelId},
     );
     final list = (res.data as List?) ?? const [];
-    debugPrint(
-      '[GuestStayRemoteDataSource] status=${res.statusCode} '
-      'count=${list.length}',
-    );
+    //debugPrint(
+    //   '[GuestStayRemoteDataSource] status=${res.statusCode} '
+    //   'count=${list.length}',
+    // );
     return list
         .map((e) => CheckedInGuestStayDto.fromJson(e as Map<String, dynamic>))
         .toList();

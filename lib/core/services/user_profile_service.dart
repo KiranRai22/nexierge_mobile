@@ -45,7 +45,7 @@ class UserProfileService {
         return null;
       }
     } catch (e) {
-      debugPrint('[UserProfileService] Error loading profile: $e');
+      //debugPrint('[UserProfileService] Error loading profile: $e');
       // Clear corrupted data
       await clearProfile();
       return null;

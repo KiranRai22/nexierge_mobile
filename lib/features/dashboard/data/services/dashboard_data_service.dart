@@ -19,9 +19,9 @@ class DashboardDataService {
       final prefs = await SharedPreferences.getInstance();
       final json = jsonEncode(details.toJson());
       await prefs.setString(_hotelDetailsKey, json);
-      debugPrint('[DashboardDataService] Hotel details saved');
+      //debugPrint('[DashboardDataService] Hotel details saved');
     } catch (e) {
-      debugPrint('[DashboardDataService] Failed to save hotel details: $e');
+      //debugPrint('[DashboardDataService] Failed to save hotel details: $e');
       throw Exception('Failed to save hotel details: $e');
     }
   }
@@ -36,7 +36,7 @@ class DashboardDataService {
       final map = jsonDecode(json) as Map<String, dynamic>;
       return HotelDetails.fromJson(map);
     } catch (e) {
-      debugPrint('[DashboardDataService] Failed to load hotel details: $e');
+      //debugPrint('[DashboardDataService] Failed to load hotel details: $e');
       await _clearHotelDetails();
       return null;
     }
@@ -48,9 +48,9 @@ class DashboardDataService {
       final prefs = await SharedPreferences.getInstance();
       final json = jsonEncode(numbers.toJson());
       await prefs.setString(_dashboardNumbersKey, json);
-      debugPrint('[DashboardDataService] Dashboard numbers saved');
+      //debugPrint('[DashboardDataService] Dashboard numbers saved');
     } catch (e) {
-      debugPrint('[DashboardDataService] Failed to save dashboard numbers: $e');
+      //debugPrint('[DashboardDataService] Failed to save dashboard numbers: $e');
       throw Exception('Failed to save dashboard numbers: $e');
     }
   }
@@ -65,7 +65,7 @@ class DashboardDataService {
       final map = jsonDecode(json) as Map<String, dynamic>;
       return DashboardNumbers.fromJson(map);
     } catch (e) {
-      debugPrint('[DashboardDataService] Failed to load dashboard numbers: $e');
+      //debugPrint('[DashboardDataService] Failed to load dashboard numbers: $e');
       await _clearDashboardNumbers();
       return null;
     }
@@ -80,9 +80,9 @@ class DashboardDataService {
         _bootstrapTimestampKey,
         DateTime.now().millisecondsSinceEpoch,
       );
-      debugPrint('[DashboardDataService] Bootstrap marked complete');
+      //debugPrint('[DashboardDataService] Bootstrap marked complete');
     } catch (e) {
-      debugPrint('[DashboardDataService] Failed to mark bootstrap complete: $e');
+      //debugPrint('[DashboardDataService] Failed to mark bootstrap complete: $e');
     }
   }
 
@@ -103,7 +103,7 @@ class DashboardDataService {
       // Data is considered fresh if less than 24 hours old
       return diff.inHours < 24;
     } catch (e) {
-      debugPrint('[DashboardDataService] Failed to check bootstrap status: $e');
+      //debugPrint('[DashboardDataService] Failed to check bootstrap status: $e');
       return false;
     }
   }
@@ -130,9 +130,9 @@ class DashboardDataService {
         prefs.remove(_bootstrapCompleteKey),
         prefs.remove(_bootstrapTimestampKey),
       ]);
-      debugPrint('[DashboardDataService] All dashboard data cleared');
+      //debugPrint('[DashboardDataService] All dashboard data cleared');
     } catch (e) {
-      debugPrint('[DashboardDataService] Failed to clear data: $e');
+      //debugPrint('[DashboardDataService] Failed to clear data: $e');
     }
   }
 

@@ -31,6 +31,15 @@ TicketRealtimeEvent? parseTicketRealtimeEvent(dynamic raw) {
   final decoded = _decode(raw);
   if (decoded == null) return null;
 
+  // Only process liveTickets channel frames. hub_notifications frames share
+  // the same socket stream and their payload overlaps enough with MyTicketDto
+  // fields that fromJson silently parses them as garbage tickets, triggering
+  // false "New ticket" toasts.
+  final channel =
+      ((decoded['options'] as Map<String, dynamic>?)?['channel'] as String?) ??
+      '';
+  if (channel.isNotEmpty && !channel.startsWith('liveTickets')) return null;
+
   final action = (decoded['action'] ?? decoded['type'] ?? decoded['event'])
       ?.toString()
       .toLowerCase();
@@ -62,7 +71,7 @@ TicketRealtimeEvent? parseTicketRealtimeEvent(dynamic raw) {
     final dto = MyTicketDto.fromJson(body);
     return TicketUpsertEvent(_dtoToDomain(dto));
   } catch (e) {
-    debugPrint('[TicketRealtimeEvent] parse failed: $e');
+    //debugPrint('[TicketRealtimeEvent] parse failed: $e');
     return null;
   }
 }

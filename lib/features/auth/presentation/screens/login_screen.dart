@@ -224,9 +224,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<String> _getDeviceToken() async {
     final token = await DeviceTokenService.getToken();
     if (token == null) {
-      debugPrint(
-        '[DeviceToken] Token unavailable during login — background validation will handle',
-      );
+      //debugPrint(
+      //   '[DeviceToken] Token unavailable during login — background validation will handle',
+      // );
       return '';
     }
     return token;

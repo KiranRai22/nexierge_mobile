@@ -122,8 +122,8 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
 
   // ── Navigation ────────────────────────────────────────────────────────────
   void selectCatalog(Catalog catalog) {
-    debugPrint('[CatalogCreateController] selectCatalog: ${catalog.id} - ${catalog.name}');
-    debugPrint('[CatalogCreateController] Catalog items count (from API): ${catalog.items?.length ?? 0}');
+    // //debugPrint('[CatalogCreateController] selectCatalog: ${catalog.id} - ${catalog.name}');
+    // //debugPrint('[CatalogCreateController] Catalog items count (from API): ${catalog.items?.length ?? 0}');
     state = state.copyWith(
       selectedCatalog: catalog,
       step: CatalogStep.selectItems,
@@ -271,9 +271,9 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
           '';
       final request = _buildCatalogOrderRequest(hotelId);
       // Per user request: print the full payload before firing the API.
-      debugPrint(
-        '[CatalogDraftController] createCatalogOrder payload: ${request.toJson()}',
-      );
+      // //debugPrint(
+      //   '[CatalogDraftController] createCatalogOrder payload: ${request.toJson()}',
+      // );
 
       final repo = ref.read(ticketRepositoryProvider);
       
@@ -292,7 +292,7 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
       }
       
       // Notify about retry attempt
-      debugPrint('[CatalogDraftController] First attempt failed with timeout, retrying...');
+      //debugPrint('[CatalogDraftController] First attempt failed with timeout, retrying...');
       onRetryMessage?.call('Ticket creation failed. Attempting to create again....');
       
       // Second attempt (immediate retry)
@@ -340,10 +340,10 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
       // Append to file (create if doesn't exist)
       await file.writeAsString(logEntry, mode: FileMode.append, flush: true);
       
-      debugPrint('[CatalogDraftController] Error logged to: ${file.path}');
+      //debugPrint('[CatalogDraftController] Error logged to: ${file.path}');
     } catch (e) {
       // If logging fails, just print to console
-      debugPrint('[CatalogDraftController] Failed to log error: $e');
+      //debugPrint('[CatalogDraftController] Failed to log error: $e');
     }
   }
 

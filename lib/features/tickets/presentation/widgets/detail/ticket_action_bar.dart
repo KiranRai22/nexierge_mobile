@@ -187,7 +187,10 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   Future<void> _onMarkDone() async {
     final t = widget.ticket;
     final failureMsg = context.l10n.ticketActionFailedMarkDone;
-    final note = await MarkDoneBottomSheet.show(context);
+    final note = await MarkDoneBottomSheet.show(
+      context,
+      isRequired: t.isOverdue,
+    );
     if (note == null) return;
     await _withGuard(
       () => _runOptimistic(

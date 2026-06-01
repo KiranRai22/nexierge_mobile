@@ -44,9 +44,9 @@ CatalogItem _mapItemDtoToCatalogItem(ServiceCatalogItemDto dto) {
   const fallbackEmoji = '🍽️';
 
   final imageUrl = dto.images.isNotEmpty ? dto.images.first : null;
-  debugPrint(
-    '[CatalogItem Mapping] Item: ${dto.name}, Images: ${dto.images}, Selected URL: $imageUrl',
-  );
+  //debugPrint(
+  //   '[CatalogItem Mapping] Item: ${dto.name}, Images: ${dto.images}, Selected URL: $imageUrl',
+  // );
 
   return CatalogItem(
     id: dto.id,
@@ -65,7 +65,7 @@ CatalogItem _mapItemDtoToCatalogItem(ServiceCatalogItemDto dto) {
 final serviceCatalogItemsProvider = FutureProvider.family
     .autoDispose<List<CatalogItem>, String>((ref, catalogId) async {
       if (catalogId.isEmpty) return const [];
-      debugPrint('[serviceCatalogItemsProvider] fetching all items for $catalogId');
+      //debugPrint('[serviceCatalogItemsProvider] fetching all items for $catalogId');
       final repo = ref.read(ticketRepositoryProvider);
 
       // Fetch all pages until empty
@@ -74,7 +74,7 @@ final serviceCatalogItemsProvider = FutureProvider.family
       int page = 0;
       while (true) {
         final dtos = await repo.fetchServiceCatalogItems(catalogId: catalogId, page: page);
-        debugPrint('[serviceCatalogItemsProvider] Page $page: fetched ${dtos.length} items');
+        //debugPrint('[serviceCatalogItemsProvider] Page $page: fetched ${dtos.length} items');
         if (dtos.isEmpty) break;
         
         // Filter out duplicates and add new items
@@ -83,7 +83,7 @@ final serviceCatalogItemsProvider = FutureProvider.family
             seenIds.add(dto.id);
             allItems.add(_mapItemDtoToCatalogItem(dto));
           } else {
-            debugPrint('[serviceCatalogItemsProvider] Skipping duplicate item: ${dto.id} - ${dto.name}');
+            //debugPrint('[serviceCatalogItemsProvider] Skipping duplicate item: ${dto.id} - ${dto.name}');
           }
         }
         
@@ -92,6 +92,6 @@ final serviceCatalogItemsProvider = FutureProvider.family
         if (page > 10) break;
       }
 
-      debugPrint('[serviceCatalogItemsProvider] Total unique items: ${allItems.length} (duplicates skipped: ${seenIds.length - allItems.length})');
+      //debugPrint('[serviceCatalogItemsProvider] Total unique items: ${allItems.length} (duplicates skipped: ${seenIds.length - allItems.length})');
       return allItems;
     });

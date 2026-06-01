@@ -389,6 +389,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ticketSectionInformation => 'TICKET INFORMATION';
 
   @override
+  String get ticketFieldId => 'Ticket ID';
+
+  @override
   String get ticketFieldGuest => 'Guest';
 
   @override
@@ -512,6 +515,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ticketActionForceDone => 'Force Done';
+
+  @override
+  String get markDoneSheetTitle => 'Mark ticket as done';
+
+  @override
+  String get markDoneSheetSubtitleOptional =>
+      'Optionally add a resolution note before closing this ticket.';
+
+  @override
+  String get markDoneSheetSubtitleRequired =>
+      'This ticket is overdue. A resolution reason is required before closing.';
+
+  @override
+  String get markDoneSheetHintOptional => 'Resolution note (optional)...';
+
+  @override
+  String get markDoneSheetHintRequired => 'Resolution reason (required)...';
 
   @override
   String get ticketActionMoveToBacklog => 'Backlog';
@@ -1276,13 +1296,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get notificationsMarkAllRead => 'Mark all as read';
-
-  @override
-  String get notificationsTabAll => 'All';
-
-  @override
   String get notificationsTabUnread => 'Unread';
+
+  @override
+  String get notificationsTabRead => 'Read';
+
+  @override
+  String get notificationsInfoUnread =>
+      'Unread notifications are automatically cleared for everyone after 72 hours.';
+
+  @override
+  String get notificationsInfoRead =>
+      'Read notifications are automatically cleared after 48 hours.';
+
+  @override
+  String get notificationsClearAll => 'Clear all';
 
   @override
   String get notificationsEmpty => 'You\'re all caught up';

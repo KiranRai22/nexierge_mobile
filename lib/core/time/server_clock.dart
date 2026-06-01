@@ -37,7 +37,7 @@ class ServerClock {
       _lastSyncAt = DateTime.now();
     } catch (_) {
       if (kDebugMode) {
-        debugPrint('[ServerClock] failed to parse Date header: $header');
+        //debugPrint('[ServerClock] failed to parse Date header: $header');
       }
     }
   }

@@ -59,6 +59,7 @@ Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
 
   return Ticket(
     id: t.id,
+    opsTicketId: t.opsTicketId,
     code: t.opsTicketId.isNotEmpty ? t.opsTicketId : (t.roomDetails?.onbRoomNumber ?? 'N/A'),
     title: title,
     status: _mapStatus(t.status),

@@ -18,15 +18,15 @@ final ticketFormOptionsProvider = FutureProvider<TicketFormOptions>((
   final bootstrap = ref.watch(dashboardBootstrapControllerProvider).valueOrNull;
   final hotelId = bootstrap?.userProfile?.hotelDetails.hotel.id;
   if (hotelId == null || hotelId.isEmpty) {
-    debugPrint('[ticketFormOptionsProvider] No hotelId, returning empty');
+    //debugPrint('[ticketFormOptionsProvider] No hotelId, returning empty');
     return TicketFormOptions.empty;
   }
-  debugPrint('[ticketFormOptionsProvider] Fetching for hotel: $hotelId');
+  //debugPrint('[ticketFormOptionsProvider] Fetching for hotel: $hotelId');
   final repo = ref.read(ticketRepositoryProvider);
   final result = await repo.fetchTicketFormOptions(hotelId: hotelId);
-  debugPrint(
-    '[ticketFormOptionsProvider] Loaded ${result.departments.length} depts',
-  );
+  //debugPrint(
+  //   '[ticketFormOptionsProvider] Loaded ${result.departments.length} depts',
+  // );
   return result;
 });
 

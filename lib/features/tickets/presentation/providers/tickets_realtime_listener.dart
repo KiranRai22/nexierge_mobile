@@ -138,7 +138,7 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
       }
     },
     onError: (Object e) {
-      debugPrint('[TicketsRealtimeListener] stream error: $e');
+      //debugPrint('[TicketsRealtimeListener] stream error: $e');
     },
   );
 
@@ -151,6 +151,6 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
   });
 
   if (kDebugMode) {
-    debugPrint('[TicketsRealtimeListener] subscribed to socket messages');
+    //debugPrint('[TicketsRealtimeListener] subscribed to socket messages');
   }
 });

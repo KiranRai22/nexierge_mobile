@@ -101,7 +101,8 @@ class TicketCardCompact extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _Row1(ticket: ticket),
-                          const SizedBox(height: 6),
+                          _RowTitle(ticket: ticket),
+                          const SizedBox(height: 8),
                           _Row2(
                             ticket: ticket,
                             showAccept: _showAccept,
@@ -136,10 +137,10 @@ class _Row1 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    final divider = Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5),
-        child: Text('·', style: TypographyManager.cardMeta.copyWith(color: c.fgSubtle)),
-      );
+    // final divider = Padding(
+    //     padding: const EdgeInsets.symmetric(horizontal: 5),
+    //     child: Text('·', style: TypographyManager.cardMeta.copyWith(color: c.fgSubtle)),
+    //   );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -154,22 +155,14 @@ class _Row1 extends StatelessWidget {
           ),
         ),
         // #opsTicketId or fallback
-        Text(
-          ticket.opsTicketId.isNotEmpty ? '#${ticket.opsTicketId}' : '#0000',
-          style: TypographyManager.labelSmall.copyWith(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: c.fgMuted,
-          ),
-        ),
-        divider,
-        // title — takes all remaining space
         Expanded(
           child: Text(
-            ticket.title,
-            style: TypographyManager.cardTitle.copyWith(fontSize: 14),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            ticket.opsTicketId.isNotEmpty ? '#${ticket.opsTicketId}' : '#0000',
+            style: TypographyManager.labelSmall.copyWith(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: c.fgMuted,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -193,6 +186,27 @@ class _Row1 extends StatelessWidget {
   }
 }
 
+class _RowTitle extends StatelessWidget {
+  final Ticket ticket;
+  const _RowTitle({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        // Title
+        Expanded(
+          child: Text(
+            ticket.title,
+            style: TypographyManager.cardTitle.copyWith(fontSize: 14),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
 // ─── Row 2: [kind badge] | dept (expanded) | [door] #room | action button ────
 //
 //   Col 1: kind badge (fixed)

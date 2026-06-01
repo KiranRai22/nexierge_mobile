@@ -87,10 +87,10 @@ class SoundManager {
         await player.setSource(AssetSource(entry.value));
         _players[entry.key] = player;
       } catch (e) {
-        debugPrint('SoundManager: failed to preload ${entry.key} (${entry.value}): $e');
+        //debugPrint('SoundManager: failed to preload ${entry.key} (${entry.value}): $e');
       }
     }
-    debugPrint('SoundManager: initialized ${_players.length}/${_soundPaths.length} sounds');
+    //debugPrint('SoundManager: initialized ${_players.length}/${_soundPaths.length} sounds');
   }
 
   void setEnabled(bool enabled) => _isEnabled = enabled;
@@ -118,7 +118,7 @@ class SoundManager {
     try {
       await player.resume();
     } catch (e) {
-      debugPrint('SoundManager: play error for $category: $e');
+      //debugPrint('SoundManager: play error for $category: $e');
     }
   }
 

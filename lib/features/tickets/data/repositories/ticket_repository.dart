@@ -33,6 +33,10 @@ class TicketsPageResult {
   /// all pages). Drives the tab badge counts.
   final int itemsTotal;
 
+  /// Server-computed overdue count. Non-zero only for the `in_progress`
+  /// endpoint which returns `overdue_count` in the response envelope.
+  final int overdueCount;
+
   /// Resolved `department_id` per ticket, sourced from the nested
   /// `department.id` block in the response. Keyed by ticket id. Allows
   /// the UI to preserve department info even though `MyTicket` carries
@@ -44,6 +48,7 @@ class TicketsPageResult {
     required this.curPage,
     required this.nextPage,
     required this.itemsTotal,
+    this.overdueCount = 0,
     required this.departmentNameById,
   });
 
@@ -319,6 +324,7 @@ class _TicketRepositoryImpl implements TicketRepository {
                   );
             return MyTicket(
               id: d.id,
+              opsTicketId: d.opsTicketId,
               createdAt: d.createdAt,
               updatedAt: d.updatedAt,
               lastTransitionAt: d.lastTransitionAt,
@@ -385,6 +391,7 @@ class _TicketRepositoryImpl implements TicketRepository {
           .map(
             (dto) => MyTicket(
               id: dto.id,
+              opsTicketId: dto.opsTicketId,
               createdAt: dto.createdAt,
               hotelId: dto.hotelId,
               departmentId: dto.departmentId,
@@ -721,6 +728,7 @@ class _TicketRepositoryImpl implements TicketRepository {
       curPage: dto.curPage,
       nextPage: dto.nextPage,
       itemsTotal: dto.itemsTotal,
+      overdueCount: dto.overdueCount,
       departmentNameById: names,
     );
   }

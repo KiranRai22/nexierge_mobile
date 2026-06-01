@@ -174,9 +174,9 @@ class UniversalDraftController
   void selectRoom(String guestStayId) {
     final stay = ref.read(checkedInStayByIdProvider(guestStayId));
     if (stay == null) {
-      debugPrint(
-        '[UniversalDraftController] selectRoom: no stay row for $guestStayId',
-      );
+      //debugPrint(
+      //   '[UniversalDraftController] selectRoom: no stay row for $guestStayId',
+      // );
       return;
     }
     state = state.copyWith(
@@ -260,7 +260,7 @@ class UniversalDraftController
     }
 
     // Notify about retry attempt
-    debugPrint('[UniversalDraftController] First attempt failed, retrying...');
+    //debugPrint('[UniversalDraftController] First attempt failed, retrying...');
     onRetryMessage?.call('Ticket creation failed. Attempting to create again....');
 
     // Second attempt (immediate retry)
@@ -304,7 +304,7 @@ class UniversalDraftController
       );
       return true;
     } on Exception catch (e) {
-      debugPrint('[UniversalDraftController] Order creation failed: $e');
+      //debugPrint('[UniversalDraftController] Order creation failed: $e');
       return false;
     }
   }
@@ -321,10 +321,10 @@ class UniversalDraftController
       // Append to file (create if doesn't exist)
       await file.writeAsString(logEntry, mode: FileMode.append, flush: true);
       
-      debugPrint('[UniversalDraftController] Error logged to: ${file.path}');
+      //debugPrint('[UniversalDraftController] Error logged to: ${file.path}');
     } catch (e) {
       // If logging fails, just print to console
-      debugPrint('[UniversalDraftController] Failed to log error: $e');
+      //debugPrint('[UniversalDraftController] Failed to log error: $e');
     }
   }
 

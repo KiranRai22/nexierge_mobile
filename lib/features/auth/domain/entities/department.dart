@@ -34,10 +34,10 @@ class AuthDepartment {
 
   /// Custom fromJson that handles multiple possible API key names.
   factory AuthDepartment.fromJson(Map<String, dynamic> json) {
-    debugPrint('[AuthDepartment.fromJson] raw keys=${json.keys.toList()} '
-        'id=${json['id']} name=${json['name']} '
-        'hotel_department_id=${json['hotel_department_id']} '
-        'department_name=${json['department_name']}');
+    //debugPrint('[AuthDepartment.fromJson] raw keys=${json.keys.toList()} '
+        // 'id=${json['id']} name=${json['name']} '
+        // 'hotel_department_id=${json['hotel_department_id']} '
+        // 'department_name=${json['department_name']}');
     final id = (json['id'] as String?)
         ?? (json['hotel_department_id'] as String?)
         ?? (json['department_id'] as String?)
@@ -46,7 +46,7 @@ class AuthDepartment {
         ?? (json['department_name'] as String?)
         ?? '';
     final isPrimary = (json['is_primary'] as bool?) ?? false;
-    debugPrint('[AuthDepartment.fromJson] resolved → id=$id name=$name isPrimary=$isPrimary');
+    //debugPrint('[AuthDepartment.fromJson] resolved → id=$id name=$name isPrimary=$isPrimary');
     return AuthDepartment(
       id: id,
       name: name,

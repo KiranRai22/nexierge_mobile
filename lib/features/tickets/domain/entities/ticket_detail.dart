@@ -1,6 +1,7 @@
 /// Ticket detail from tickets/details API.
 class TicketDetail {
   final String id;
+  final String opsTicketId;
   final int createdAt;
   final String hotelId;
   final String departmentId;
@@ -28,6 +29,7 @@ class TicketDetail {
 
   const TicketDetail({
     required this.id,
+    this.opsTicketId = '',
     required this.createdAt,
     required this.hotelId,
     required this.departmentId,
@@ -62,6 +64,7 @@ class TicketDetail {
     bool b(String key) => (ticket[key] as bool?) ?? false;
     return TicketDetail(
       id: s('id'),
+      opsTicketId: s('ops_ticket_id'),
       createdAt: i('created_at'),
       hotelId: s('hotel_id'),
       departmentId: s('department_id'),

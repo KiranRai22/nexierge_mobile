@@ -183,6 +183,8 @@ abstract class APIEndpoints {
       '$_host$_notificationsApiPath/mobile/notifications/tickets';
   static const String notificationsMarkRead =
       '$_host$_notificationsApiPath/notifications/mark-read';
+  static const String notificationsClearRead =
+      '$_host$_notificationsApiPath/mobile/notifications/tickets/clear-read';
 
   // Guest stay
   static const String guestStayCheckedIn =

@@ -94,9 +94,9 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
   void selectGuestStay(String guestStayId) {
     final stay = ref.read(checkedInStayByIdProvider(guestStayId));
     if (stay == null) {
-      debugPrint(
-        '[ManualDraftController] selectGuestStay: no row for $guestStayId',
-      );
+      //debugPrint(
+      //   '[ManualDraftController] selectGuestStay: no row for $guestStayId',
+      // );
       return;
     }
     state = state.copyWith(
@@ -123,7 +123,7 @@ class ManualDraftController extends AutoDisposeNotifier<ManualDraftState> {
         .valueOrNull;
     final hotelId = bootstrap?.userProfile?.hotelDetails.hotel.id;
     if (hotelId == null || hotelId.isEmpty) {
-      debugPrint('[ManualDraftController] No hotelId from bootstrap');
+      //debugPrint('[ManualDraftController] No hotelId from bootstrap');
       return null;
     }
 

@@ -18,13 +18,13 @@ final checkedInGuestStaysProvider =
   final bootstrap = ref.watch(dashboardBootstrapControllerProvider).valueOrNull;
   final hotelId = bootstrap?.userProfile?.hotelDetails.hotel.id;
   if (hotelId == null || hotelId.isEmpty) {
-    debugPrint('[checkedInGuestStaysProvider] No hotelId, returning empty');
+    //debugPrint('[checkedInGuestStaysProvider] No hotelId, returning empty');
     return const [];
   }
-  debugPrint('[checkedInGuestStaysProvider] Fetching for hotel: $hotelId');
+  //debugPrint('[checkedInGuestStaysProvider] Fetching for hotel: $hotelId');
   final repo = ref.read(guestStayRepositoryProvider);
   final result = await repo.fetchCheckedIn(hotelId: hotelId);
-  debugPrint('[checkedInGuestStaysProvider] Loaded ${result.length} stays');
+  //debugPrint('[checkedInGuestStaysProvider] Loaded ${result.length} stays');
   return result;
 });
 

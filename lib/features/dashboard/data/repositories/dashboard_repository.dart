@@ -67,10 +67,10 @@ class _DashboardRepositoryImpl implements DashboardRepository {
   }) async {
     try {
       final dtos = await _remote.getNeedsAttention(hotelId: hotelId);
-      debugPrint(
-        '[DashboardRepository] fetchNeedsAttention: received ${dtos.length} items, '
-        'statuses: ${dtos.map((d) => d.status).toSet().toList()}',
-      );
+      //debugPrint(
+      //   '[DashboardRepository] fetchNeedsAttention: received ${dtos.length} items, '
+      //   'statuses: ${dtos.map((d) => d.status).toSet().toList()}',
+      // );
       // Filter out DONE tickets — they don't need attention.
       final active = dtos.where(
         (dto) => dto.status.toUpperCase() != 'DONE',

@@ -115,6 +115,11 @@ class TicketsPageState {
   /// Total number of tickets matching the filter on the server. May be
   /// 0 before the first page lands.
   final int itemsTotal;
+
+  /// Server-reported overdue count. Populated from `overdue_count` in the
+  /// `in_progress` response envelope; zero for all other tabs.
+  final int overdueCount;
+
   final bool isLoadingMore;
   final TicketsSortOrder sortOrder;
 
@@ -126,6 +131,7 @@ class TicketsPageState {
     this.items = const [],
     this.nextPage = 1,
     this.itemsTotal = 0,
+    this.overdueCount = 0,
     this.isLoadingMore = false,
     this.sortOrder = TicketsSortOrder.newestFirst,
     this.freshlyArrivedIds = const {},
@@ -138,6 +144,7 @@ class TicketsPageState {
     int? nextPage,
     bool clearNextPage = false,
     int? itemsTotal,
+    int? overdueCount,
     bool? isLoadingMore,
     TicketsSortOrder? sortOrder,
     Set<String>? freshlyArrivedIds,
@@ -146,6 +153,7 @@ class TicketsPageState {
       items: items ?? this.items,
       nextPage: clearNextPage ? null : (nextPage ?? this.nextPage),
       itemsTotal: itemsTotal ?? this.itemsTotal,
+      overdueCount: overdueCount ?? this.overdueCount,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       sortOrder: sortOrder ?? this.sortOrder,
       freshlyArrivedIds: freshlyArrivedIds ?? this.freshlyArrivedIds,
@@ -165,13 +173,13 @@ class TicketsPagedNotifier
     _repo = ref.read(ticketRepositoryProvider);
 
     final hotelId = _hotelId();
-    debugPrint(
-      '[TicketsPagedNotifier] build: hotelId=$hotelId, tab=${_spec.tab}',
-    );
+    //debugPrint(
+    //   '[TicketsPagedNotifier] build: hotelId=$hotelId, tab=${_spec.tab}',
+    // );
     if (hotelId == null) {
-      debugPrint(
-        '[TicketsPagedNotifier] build: No hotelId, returning empty state',
-      );
+      //debugPrint(
+      //   '[TicketsPagedNotifier] build: No hotelId, returning empty state',
+      // );
       return const TicketsPageState();
     }
 
@@ -183,9 +191,9 @@ class TicketsPagedNotifier
         .read(dashboardBootstrapControllerProvider)
         .valueOrNull;
     final id = bootstrap?.userProfile?.hotelDetails.hotel.id;
-    debugPrint(
-      '[TicketsPagedNotifier] _hotelId: bootstrap=${bootstrap != null}, id=$id',
-    );
+    //debugPrint(
+    //   '[TicketsPagedNotifier] _hotelId: bootstrap=${bootstrap != null}, id=$id',
+    // );
     if (id == null || id.isEmpty) return null;
     return id;
   }
@@ -194,10 +202,10 @@ class TicketsPagedNotifier
     required int page,
     required String hotelId,
   }) async {
-    debugPrint(
-      '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
-      'departmentId=${_spec.departmentId} page=$page',
-    );
+    //debugPrint(
+    //   '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
+    //   'departmentId=${_spec.departmentId} page=$page',
+    // );
     final res = await _repo.fetchTicketsV2Page(
       tab: _spec.v2Tab,
       hotelId: hotelId,
@@ -208,11 +216,11 @@ class TicketsPagedNotifier
       createdAtStartDate: _spec.createdAtStartDate,
       createdAtEndDate: _spec.createdAtEndDate,
     );
-    debugPrint(
-      '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
-      'departmentId=${_spec.departmentId} page=$page got=${res.items.length} total=${res.itemsTotal} '
-      'nextPage=${res.nextPage}',
-    );
+    //debugPrint(
+    //   '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
+    //   'departmentId=${_spec.departmentId} page=$page got=${res.items.length} total=${res.itemsTotal} '
+    //   'nextPage=${res.nextPage}',
+    // );
     final current = state.valueOrNull;
     final merged = page == 1
         ? res.items
@@ -225,6 +233,7 @@ class TicketsPagedNotifier
       items: sorted,
       nextPage: res.nextPage,
       itemsTotal: res.itemsTotal,
+      overdueCount: res.overdueCount,
       isLoadingMore: false,
       sortOrder: current?.sortOrder ?? TicketsSortOrder.newestFirst,
       freshlyArrivedIds: current?.freshlyArrivedIds ?? const {},
@@ -253,7 +262,7 @@ class TicketsPagedNotifier
       final next = await _fetchPage(page: page, hotelId: hotelId);
       state = AsyncData(next);
     } catch (e, st) {
-      debugPrint('[TicketsPagedNotifier] loadNextPage error: $e');
+      //debugPrint('[TicketsPagedNotifier] loadNextPage error: $e');
       state = AsyncError<TicketsPageState>(
         e,
         st,
@@ -584,11 +593,11 @@ final ticketsPagedSpecProvider = Provider.family<TicketsPagedSpec, TicketsTab>((
     ticketType = null;
   }
 
-  debugPrint(
-    '[ticketsPagedSpecProvider] tab=$tab '
-    'deptIds=${filter.departmentIds} allDeptIds=$allDeptIds '
-    '→ departmentId=$departmentId ticketType=$ticketType',
-  );
+  //debugPrint(
+  //   '[ticketsPagedSpecProvider] tab=$tab '
+  //   'deptIds=${filter.departmentIds} allDeptIds=$allDeptIds '
+  //   '→ departmentId=$departmentId ticketType=$ticketType',
+  // );
 
   return TicketsPagedSpec(
     tab: baseSpec.tab,

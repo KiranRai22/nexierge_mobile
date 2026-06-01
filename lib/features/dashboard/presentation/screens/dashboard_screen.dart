@@ -128,6 +128,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   }
 
   void _openNotifications(BuildContext context) {
+    ref.read(notificationInboxControllerProvider.notifier).refreshUnreadCount();
     NotificationsSheet.show(
       context,
       onOpenTicket: (ticketId) => Navigator.of(context).push(
@@ -234,12 +235,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 avatarInitials: initials,
                 avatarImageUrl: profilePictureUrl,
                 isDarkMode: isDark,
-                hasUnreadNotifications:
-                    inboxUnread > 0 ||
-                    asyncCounts.maybeWhen(
-                      data: (counts) => counts.hasUnread,
-                      orElse: () => false,
-                    ),
+                unreadCount: inboxUnread,
                 onThemeToggle: () =>
                     ref.read(themeModeControllerProvider.notifier).toggle(),
                 onNotifications: () => _openNotifications(context),

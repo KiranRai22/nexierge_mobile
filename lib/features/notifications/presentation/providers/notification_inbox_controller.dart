@@ -39,7 +39,7 @@ class NotificationInboxState {
     isLoadingMore: false,
     hasMore: false,
     offset: 0,
-    statusFilter: 'all',
+    statusFilter: 'unread',
     totalUnreadCount: 0,
   );
 
@@ -49,7 +49,7 @@ class NotificationInboxState {
     isLoadingMore: false,
     hasMore: false,
     offset: 0,
-    statusFilter: 'all',
+    statusFilter: 'unread',
     totalUnreadCount: 0,
   );
 
@@ -87,7 +87,7 @@ class NotificationInboxState {
 // ─── Controller ───────────────────────────────────────────────────────────────
 
 class NotificationInboxController extends Notifier<NotificationInboxState> {
-  static const int _pageSize = 30;
+  static const int _pageSize = 10;
 
   @override
   NotificationInboxState build() {
@@ -95,12 +95,15 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
     // cold-start race (socket connects before auth/me completes).
     ref.listen(dashboardBootstrapControllerProvider, (_, next) {
       final hasProfile = next.valueOrNull?.userProfile != null;
+      //debugPrint('[NotificationInboxController] bootstrap changed, hasProfile: $hasProfile, items: ${state.items.length}, isLoading: ${state.isLoading}');
       if (hasProfile && state.items.isEmpty && !state.isLoading) {
+        //debugPrint('[NotificationInboxController] triggering fetch after bootstrap');
         _fetchPage(offset: 0, reset: true);
       }
     });
 
     // Schedule first load after the frame so the sheet renders immediately.
+    //debugPrint('[NotificationInboxController] build() called, scheduling first fetch');
     Future.microtask(() => _fetchPage(offset: 0, reset: true));
 
     return NotificationInboxState.loading;
@@ -132,6 +135,32 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
       error: null,
     );
     await _fetchPage(offset: 0, reset: true);
+  }
+
+  /// Fetches the latest unread count from the server without disturbing the
+  /// currently displayed list. Called on websocket notification events and
+  /// when the notification sheet opens.
+  Future<void> refreshUnreadCount() async {
+    final credentials = _credentials();
+    if (credentials == null) return;
+
+    try {
+      final response = await ref
+          .read(notificationInboxDatasourceProvider)
+          .fetchNotifications(
+            hotelId: credentials.$1,
+            hotelUserId: credentials.$2,
+            limit: 1,
+            offset: 0,
+            statusFilter: 'unread',
+          );
+      state = state.copyWith(totalUnreadCount: response.meta.unreadCount);
+
+      // If the sheet is currently showing unread items, also refresh that list.
+      if (state.statusFilter == 'unread') {
+        await _fetchPage(offset: 0, reset: true, filterOverride: 'unread');
+      }
+    } catch (_) {}
   }
 
   /// Infinite scroll — loads next page. No-op if already loading or no more.
@@ -171,6 +200,26 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
     }
   }
 
+  /// Clears all read notifications via API and updates local state.
+  Future<void> clearAllRead() async {
+    final credentials = _credentials();
+    if (credentials == null) return;
+
+    // Optimistic update: clear local items immediately
+    state = state.copyWith(items: [], hasMore: false, offset: 0);
+
+    // Fire API call to clear on server
+    try {
+      await ref.read(notificationInboxDatasourceProvider).clearAllRead(
+            hotelId: credentials.$1,
+            hotelUserId: credentials.$2,
+          );
+      //debugPrint('[NotificationInboxController] clearAllRead succeeded');
+    } catch (e) {
+      //debugPrint('[NotificationInboxController] clearAllRead error: $e');
+    }
+  }
+
   /// Called by the realtime handler when another device/session reads a
   /// notification belonging to this user. Updates local state without an
   /// API round-trip.
@@ -195,12 +244,15 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
     String? filterOverride,
   }) async {
     final credentials = _credentials();
+    //debugPrint('[NotificationInboxController] _fetchPage called, credentials: ${credentials != null}, offset: $offset, reset: $reset');
     if (credentials == null) {
+      //debugPrint('[NotificationInboxController] credentials null, skipping fetch');
       state = state.copyWith(isLoading: false, isLoadingMore: false);
       return;
     }
 
     final filter = filterOverride ?? state.statusFilter;
+    //debugPrint('[NotificationInboxController] fetching with hotelId: ${credentials.$1}, userId: ${credentials.$2}, filter: $filter');
 
     try {
       final response = await ref
@@ -213,6 +265,8 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
             statusFilter: filter,
           );
 
+      //debugPrint('[NotificationInboxController] fetch success, events count: ${response.events.length}, hasMore: ${response.meta.hasMore}, unreadCount: ${response.meta.unreadCount}');
+
       // Detect locale from the device (en/es) to pick server label
       // We default to English for now; locale-aware pick happens in fromDto.
       const languageCode = 'en';
@@ -224,17 +278,21 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
 
       final allItems = reset ? newItems : [...state.items, ...newItems];
 
+      // Only update totalUnreadCount when fetching unread items.
+      // The read tab shouldn't affect the global unread count.
+      final shouldUpdateCount = filter == 'unread';
+
       state = state.copyWith(
         items: allItems,
         isLoading: false,
         isLoadingMore: false,
         hasMore: response.meta.hasMore,
         offset: offset + newItems.length,
-        totalUnreadCount: response.meta.unreadCount,
+        totalUnreadCount: shouldUpdateCount ? response.meta.unreadCount : state.totalUnreadCount,
         error: null,
       );
     } catch (e, st) {
-      debugPrint('[NotificationInboxController] fetch error: $e\n$st');
+      //debugPrint('[NotificationInboxController] fetch error: $e\n$st');
       state = state.copyWith(
         isLoading: false,
         isLoadingMore: false,
@@ -254,7 +312,7 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
             notificationEventId: notificationEventId,
           );
     } catch (e) {
-      debugPrint('[NotificationInboxController] markAsRead error: $e');
+      //debugPrint('[NotificationInboxController] markAsRead error: $e');
     }
   }
 
@@ -263,11 +321,13 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
     final bootstrap =
         ref.read(dashboardBootstrapControllerProvider).valueOrNull;
     final profile = bootstrap?.userProfile;
+    //debugPrint('[NotificationInboxController] _credentials: bootstrap: ${bootstrap != null}, profile: ${profile != null}');
     if (profile == null) return null;
 
-    final hotelId = profile.hotelDetails?.hotel.id ?? '';
-    final userId = profile.id;
+    final hotelId = profile.accessControl.hotelId;
+    final userId = profile.accessControl.hotelUserId;
 
+    //debugPrint('[NotificationInboxController] _credentials: hotelId: $hotelId, userId: $userId');
     if (hotelId.isEmpty || userId.isEmpty) return null;
     return (hotelId, userId);
   }

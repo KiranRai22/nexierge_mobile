@@ -122,10 +122,10 @@ class TicketsAdvancedFilter {
 final userAccessDepartmentsProvider = Provider<List<AuthDepartment>>((ref) {
   final profile = ref.watch(userProfileProvider);
   final depts = profile?.accessControl.departments ?? const [];
-  debugPrint(
-    '[userAccessDepartmentsProvider] ${depts.length} dept(s): '
-    '${depts.map((d) => '${d.id}/${d.name}').join(', ')}',
-  );
+  //debugPrint(
+  //   '[userAccessDepartmentsProvider] ${depts.length} dept(s): '
+  //   '${depts.map((d) => '${d.id}/${d.name}').join(', ')}',
+  // );
   return depts;
 });
 

@@ -73,12 +73,12 @@ class _ConfirmBodyState extends ConsumerState<_ConfirmBody> {
     final guest = draft.guestName.trim();
     final note = draft.note.trim();
 
-    debugPrint(
-      '[ConfirmTicket] Catalog: ${catalog.name}, ImageUrl: ${catalog.imageUrl}, Emoji: ${catalog.emoji}',
-    );
-    debugPrint(
-      '[ConfirmTicket] Cart items: ${draft.cart.map((item) => '${item.item.name} - ImageUrl: ${item.item.imageUrl}').toList()}',
-    );
+    //debugPrint(
+    //   '[ConfirmTicket] Catalog: ${catalog.name}, ImageUrl: ${catalog.imageUrl}, Emoji: ${catalog.emoji}',
+    // );
+    //debugPrint(
+    //   '[ConfirmTicket] Cart items: ${draft.cart.map((item) => '${item.item.name} - ImageUrl: ${item.item.imageUrl}').toList()}',
+    // );
 
     final rows = <_SummaryRow>[
       _SummaryRow.catalog(
@@ -349,14 +349,14 @@ class _InlineRow extends StatelessWidget {
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) {
-                        debugPrint(
-                          '[ConfirmTicket] Catalog image loaded successfully: ${row.imageUrl}',
-                        );
+                        //debugPrint(
+                        //   '[ConfirmTicket] Catalog image loaded successfully: ${row.imageUrl}',
+                        // );
                         return child;
                       }
-                      debugPrint(
-                        '[ConfirmTicket] Catalog image loading: ${row.imageUrl}',
-                      );
+                      //debugPrint(
+                      //   '[ConfirmTicket] Catalog image loading: ${row.imageUrl}',
+                      // );
                       return Container(
                         width: 24,
                         height: 24,
@@ -374,9 +374,9 @@ class _InlineRow extends StatelessWidget {
                       );
                     },
                     errorBuilder: (context, error, stackTrace) {
-                      debugPrint(
-                        '[ConfirmTicket] Catalog image load error: $error',
-                      );
+                      //debugPrint(
+                      //   '[ConfirmTicket] Catalog image load error: $error',
+                      // );
                       return FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
@@ -464,9 +464,9 @@ class _ItemsBlock extends StatelessWidget {
                 perItemIndex[line.item.id] = n;
                 final summary = line.optionsSummary;
 
-                debugPrint(
-                  '[ConfirmTicket _ItemsBlock] Item: ${line.item.name}, ImageUrl: ${line.item.imageUrl}, Emoji: ${line.item.emoji}',
-                );
+                //debugPrint(
+                //   '[ConfirmTicket _ItemsBlock] Item: ${line.item.name}, ImageUrl: ${line.item.imageUrl}, Emoji: ${line.item.emoji}',
+                // );
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                   child: Column(
@@ -495,14 +495,14 @@ class _ItemsBlock extends StatelessWidget {
                                       loadingBuilder:
                                           (context, child, loadingProgress) {
                                             if (loadingProgress == null) {
-                                              debugPrint(
-                                                '[ConfirmTicket] Item image loaded successfully: ${line.item.name}',
-                                              );
+                                              //debugPrint(
+                                              //   '[ConfirmTicket] Item image loaded successfully: ${line.item.name}',
+                                              // );
                                               return child;
                                             }
-                                            debugPrint(
-                                              '[ConfirmTicket] Item image loading: ${line.item.name}',
-                                            );
+                                            //debugPrint(
+                                            //   '[ConfirmTicket] Item image loading: ${line.item.name}',
+                                            // );
                                             return Container(
                                               width: 26,
                                               height: 26,
@@ -522,9 +522,9 @@ class _ItemsBlock extends StatelessWidget {
                                             );
                                           },
                                       errorBuilder: (context, error, stackTrace) {
-                                        debugPrint(
-                                          '[ConfirmTicket] Item image load error for ${line.item.name}: $error',
-                                        );
+                                        //debugPrint(
+                                        //   '[ConfirmTicket] Item image load error for ${line.item.name}: $error',
+                                        // );
                                         return FittedBox(
                                           fit: BoxFit.scaleDown,
                                           child: Text(

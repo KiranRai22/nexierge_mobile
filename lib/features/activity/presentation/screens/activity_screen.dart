@@ -57,7 +57,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                 avatarInitials: session.displayName.isEmpty
                     ? '?'
                     : session.displayName[0].toUpperCase(),
-                hasUnreadNotifications: true,
+                unreadCount: 0,
                 onThemeToggle: () =>
                     ref.read(themeModeControllerProvider.notifier).toggle(),
                 onLanguageTap: () => LanguagePickerSheet.show(context),

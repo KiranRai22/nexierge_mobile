@@ -49,10 +49,10 @@ Dio buildDio({String? authToken, String? Function()? tokenProvider}) {
           ServerClock.updateFromHttpDate(dateHeader);
         }
         if (kDebugMode) {
-          debugPrint(
-            '[ApiClient] ${error.requestOptions.method} '
-            '${error.requestOptions.uri} → ${error.message}',
-          );
+          //debugPrint(
+          //   '[ApiClient] ${error.requestOptions.method} '
+          //   '${error.requestOptions.uri} → ${error.message}',
+          // );
         }
         handler.next(error);
       },

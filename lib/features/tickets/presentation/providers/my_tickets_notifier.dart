@@ -7,6 +7,7 @@ import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/my_ticket.dart';
 import '../../domain/models/ticket_change_event.dart';
+import 'ticket_detail_api_controller.dart';
 import 'ticket_event_bus.dart';
 import 'tickets_paged_notifier.dart';
 
@@ -39,9 +40,9 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
     final hotelId = bootstrap?.userProfile?.hotelDetails.hotel.id;
 
     if (hotelId == null || hotelId.isEmpty) {
-      debugPrint(
-        '[MyTicketsNotifier] hotelId not ready — returning empty state',
-      );
+      //debugPrint(
+      //   '[MyTicketsNotifier] hotelId not ready — returning empty state',
+      // );
       return const MyTicketsState();
     }
 
@@ -51,11 +52,11 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
   Future<MyTicketsState> _fetchTickets(String hotelId) async {
     try {
       final tickets = await _repo.fetchMyTickets(hotelId: hotelId);
-      debugPrint('[MyTicketsNotifier] fetched ${tickets.length} tickets');
+      //debugPrint('[MyTicketsNotifier] fetched ${tickets.length} tickets');
       return MyTicketsState(all: tickets, isLoading: false);
     } catch (e, st) {
-      debugPrint('[MyTicketsNotifier] fetch error: $e');
-      debugPrint('$st');
+      //debugPrint('[MyTicketsNotifier] fetch error: $e');
+      //debugPrint('$st');
       return MyTicketsState(error: e.toString());
     }
   }
@@ -95,10 +96,10 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final current = state.valueOrNull;
     if (kDebugMode) {
-      debugPrint(
-        '[MyTicketsNotifier] upsertFromRealtime id=${ticket.id} '
-        'status=${ticket.status} hasState=${current != null}',
-      );
+      //debugPrint(
+      //   '[MyTicketsNotifier] upsertFromRealtime id=${ticket.id} '
+      //   'status=${ticket.status} hasState=${current != null}',
+      // );
     }
     if (current == null) {
       state = AsyncData(
@@ -111,11 +112,13 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
       );
       _scheduleFreshClear(ticket.id);
       _scheduleRecentChangeClear(ticket.id);
-      _emitEvent(
-        kind: TicketChangeKind.created,
-        ticket: ticket,
-        oldStatus: null,
-      );
+      if (ref.read(ticketIdProvider) != ticket.id) {
+        _emitEvent(
+          kind: TicketChangeKind.created,
+          ticket: ticket,
+          oldStatus: null,
+        );
+      }
       return;
     }
 
@@ -147,13 +150,13 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
         : current.recentChangeAt;
 
     if (kDebugMode) {
-      debugPrint(
-        '[MyTicketsNotifier] upsert resolved: '
-        'isBrandNew=$isBrandNew isStatusChange=$isStatusChange '
-        'oldStatus=${existing?.status} newStatus=${ticket.status} '
-        'todayBefore=${current.todayAllCount} '
-        'incomingBefore=${current.incomingCount}',
-      );
+      //debugPrint(
+      //   '[MyTicketsNotifier] upsert resolved: '
+      //   'isBrandNew=$isBrandNew isStatusChange=$isStatusChange '
+      //   'oldStatus=${existing?.status} newStatus=${ticket.status} '
+      //   'todayBefore=${current.todayAllCount} '
+      //   'incomingBefore=${current.incomingCount}',
+      // );
     }
 
     state = AsyncData(
@@ -167,26 +170,30 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
 
     if (kDebugMode) {
       final s = state.valueOrNull!;
-      debugPrint(
-        '[MyTicketsNotifier] upsert applied: '
-        'todayAfter=${s.todayAllCount} '
-        'todayAccepted=${s.todayAcceptedCount} '
-        'todayInProgress=${s.todayInProgressCount} '
-        'todayOverdue=${s.todayOverdueCount} '
-        'incomingAfter=${s.incomingCount}',
-      );
+      //debugPrint(
+      //   '[MyTicketsNotifier] upsert applied: '
+      //   'todayAfter=${s.todayAllCount} '
+      //   'todayAccepted=${s.todayAcceptedCount} '
+      //   'todayInProgress=${s.todayInProgressCount} '
+      //   'todayOverdue=${s.todayOverdueCount} '
+      //   'incomingAfter=${s.incomingCount}',
+      // );
     }
 
     if (isBrandNew) _scheduleFreshClear(ticket.id);
     if (isMeaningful) {
       _scheduleRecentChangeClear(ticket.id);
-      _emitEvent(
-        kind: isBrandNew
-            ? TicketChangeKind.created
-            : TicketChangeKind.statusChanged,
-        ticket: ticket,
-        oldStatus: existing?.status,
-      );
+      // Don't toast if the user opened this ticket directly from a notification.
+      final isBeingViewed = isBrandNew && ref.read(ticketIdProvider) == ticket.id;
+      if (!isBeingViewed) {
+        _emitEvent(
+          kind: isBrandNew
+              ? TicketChangeKind.created
+              : TicketChangeKind.statusChanged,
+          ticket: ticket,
+          oldStatus: existing?.status,
+        );
+      }
     }
   }
 

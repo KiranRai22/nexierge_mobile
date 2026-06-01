@@ -169,7 +169,8 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
                     }
                   },
                   onClose: () => Navigator.of(context).pop(),
-                  onCustom: showCustom ? () => _tabs.animateTo(2) : null,
+                  // onCustom: showCustom ? () => _tabs.animateTo(2) : null,
+                  onCustom: null,
                   customLabel: s.createCustomButton,
                 ),
                 Divider(

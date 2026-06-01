@@ -392,6 +392,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ticketSectionInformation => 'INFORMACIÓN DEL TICKET';
 
   @override
+  String get ticketFieldId => 'ID del ticket';
+
+  @override
   String get ticketFieldGuest => 'Huésped';
 
   @override
@@ -515,6 +518,23 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get ticketActionForceDone => 'Forzar Hecho';
+
+  @override
+  String get markDoneSheetTitle => 'Marcar ticket como hecho';
+
+  @override
+  String get markDoneSheetSubtitleOptional =>
+      'Opcionalmente, añade una nota de resolución antes de cerrar este ticket.';
+
+  @override
+  String get markDoneSheetSubtitleRequired =>
+      'Este ticket está vencido. Se requiere un motivo de resolución antes de cerrar.';
+
+  @override
+  String get markDoneSheetHintOptional => 'Nota de resolución (opcional)...';
+
+  @override
+  String get markDoneSheetHintRequired => 'Motivo de resolución (requerido)...';
 
   @override
   String get ticketActionMoveToBacklog => 'Mover a Pendientes';
@@ -1284,13 +1304,21 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get notificationsMarkAllRead => 'Marcar todo como leído';
-
-  @override
-  String get notificationsTabAll => 'Todos';
-
-  @override
   String get notificationsTabUnread => 'Sin leer';
+
+  @override
+  String get notificationsTabRead => 'Leído';
+
+  @override
+  String get notificationsInfoUnread =>
+      'Las notificaciones sin leer se eliminan automáticamente para todos después de 72 horas.';
+
+  @override
+  String get notificationsInfoRead =>
+      'Las notificaciones leídas se eliminan automáticamente después de 48 horas.';
+
+  @override
+  String get notificationsClearAll => 'Limpiar todo';
 
   @override
   String get notificationsEmpty => 'Estás al día';

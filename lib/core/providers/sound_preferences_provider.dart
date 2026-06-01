@@ -22,13 +22,13 @@ class SoundPreferencesNotifier extends StateNotifier<bool> {
       final prefs = await SharedPreferences.getInstance();
       final isEnabled = prefs.getBool(_soundEnabledKey) ?? true;
       state = isEnabled;
-      debugPrint('SoundPreferences: Loaded preference: $isEnabled');
+      // //debugPrint('SoundPreferences: Loaded preference: $isEnabled');
     } catch (e) {
       // Default to enabled if loading fails
       state = true;
-      debugPrint(
-        'SoundPreferences: Error loading preference, defaulting to enabled: $e',
-      );
+      // //debugPrint(
+      //   'SoundPreferences: Error loading preference, defaulting to enabled: $e',
+      // );
     }
   }
 

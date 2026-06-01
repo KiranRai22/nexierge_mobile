@@ -15,7 +15,7 @@ import '../../../../core/theme/typography_manager.dart';
 class AppTopBar extends StatelessWidget {
   final String avatarInitials;
   final String? avatarImageUrl;
-  final bool hasUnreadNotifications;
+  final int unreadCount;
 
   /// Drives the theme-toggle glyph: `true` shows a Sun (tap → go light),
   /// `false` shows a Moon (tap → go dark). Mirrors the React behaviour.
@@ -30,7 +30,7 @@ class AppTopBar extends StatelessWidget {
     super.key,
     required this.avatarInitials,
     this.avatarImageUrl,
-    this.hasUnreadNotifications = false,
+    this.unreadCount = 0,
     this.isDarkMode = false,
     this.onThemeToggle,
     this.onLanguageTap,
@@ -90,7 +90,7 @@ class AppTopBar extends StatelessWidget {
               icon: Icon(Icons.language_outlined, color: c.fgBase),
             ),
           _BellIcon(
-            hasUnread: hasUnreadNotifications,
+            unreadCount: unreadCount,
             tooltip: s.tooltipNotifications,
             onTap: onNotifications,
           ),
@@ -161,10 +161,10 @@ class _Avatar extends StatelessWidget {
 }
 
 class _BellIcon extends StatelessWidget {
-  final bool hasUnread;
+  final int unreadCount;
   final String tooltip;
   final VoidCallback? onTap;
-  const _BellIcon({required this.hasUnread, required this.tooltip, this.onTap});
+  const _BellIcon({required this.unreadCount, required this.tooltip, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -177,28 +177,41 @@ class _BellIcon extends StatelessWidget {
           onPressed: onTap,
           icon: Icon(LucideIcons.bell, color: c.fgBase, size: 20),
         ),
-        if (hasUnread)
-          const Positioned(right: 10, top: 10, child: _UnreadDot()),
+        if (unreadCount > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: _UnreadBadge(count: unreadCount),
+          ),
       ],
     );
   }
 }
 
-class _UnreadDot extends StatelessWidget {
-  const _UnreadDot();
+class _UnreadBadge extends StatelessWidget {
+  final int count;
+  const _UnreadBadge({required this.count});
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
+    final label = count > 99 ? '99+' : count.toString();
     return Container(
-      width: 8,
-      height: 8,
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
-        // Notification red — uses theme-aware tag red text token so it
-        // adjusts contrast in dark mode.
         color: c.tagRedText,
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(color: c.bgBase, width: 1.5),
+      ),
+      child: Text(
+        label,
+        style: TypographyManager.labelSmall.copyWith(
+          fontSize: 9,
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+          height: 1.4,
+        ),
       ),
     );
   }

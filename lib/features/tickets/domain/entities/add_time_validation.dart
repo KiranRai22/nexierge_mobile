@@ -85,25 +85,25 @@ AddTimeValidation validateAddTime({
   required CheckedInGuestStay? stay,
 }) {
   if (stay == null) {
-    debugPrint('[AddTimeValidation] stay=null → no constraint, ALLOWED');
+    //debugPrint('[AddTimeValidation] stay=null → no constraint, ALLOWED');
     return AddTimeValidation.allowed();
   }
 
-  debugPrint(
-    '[AddTimeValidation] stay found: ${stay.fullName} room=${stay.roomId} '
-    'status="${stay.status}" checkoutDate="${stay.checkoutDate}"',
-  );
+  //debugPrint(
+  //   '[AddTimeValidation] stay found: ${stay.fullName} room=${stay.roomId} '
+  //   'status="${stay.status}" checkoutDate="${stay.checkoutDate}"',
+  // );
 
   final checkoutDt = _parseCheckoutDate(stay.checkoutDate);
   if (checkoutDt == null) {
-    debugPrint(
-      '[AddTimeValidation] checkoutDate="${stay.checkoutDate}" could not '
-      'be parsed → no constraint, ALLOWED',
-    );
+    //debugPrint(
+    //   '[AddTimeValidation] checkoutDate="${stay.checkoutDate}" could not '
+    //   'be parsed → no constraint, ALLOWED',
+    // );
     return AddTimeValidation.allowed();
   }
 
-  debugPrint('[AddTimeValidation] parsed checkoutDt=$checkoutDt');
+  //debugPrint('[AddTimeValidation] parsed checkoutDt=$checkoutDt');
 
   final statusLower = stay.status.toLowerCase();
   final isActive =
@@ -112,12 +112,12 @@ AddTimeValidation validateAddTime({
       statusLower == 'active' ||
       statusLower == 'currently staying';
 
-  debugPrint(
-    '[AddTimeValidation] statusLower="$statusLower" isActive=$isActive',
-  );
+  //debugPrint(
+  //   '[AddTimeValidation] statusLower="$statusLower" isActive=$isActive',
+  // );
 
   if (!isActive) {
-    debugPrint('[AddTimeValidation] BLOCKED — guest not active');
+    //debugPrint('[AddTimeValidation] BLOCKED — guest not active');
     return AddTimeValidation.blocked(
       reason: _blockedMessage(stay),
       checkoutDeadline: checkoutDt,
@@ -132,24 +132,24 @@ AddTimeValidation validateAddTime({
   final minutesUntilCheckout = checkoutDt.difference(anchor).inMinutes;
 
   final hoursLeft = minutesUntilCheckout / 60;
-  debugPrint(
-    '\n╔══════════════════════════════════════════════════════\n'
-    '║  [AddTimeValidation] Checkout Budget Check\n'
-    '╠══════════════════════════════════════════════════════\n'
-    '║  Guest         : ${stay.fullName} (Room #${stay.roomNumber})\n'
-    '║  Status        : ${stay.status}\n'
-    '║  Checkout date : $checkoutDt\n'
-    '╠──────────────────────────────────────────────────────\n'
-    '║  Current time  : $now\n'
-    '║  Anchor (+15m) : $anchor\n'
-    '╠──────────────────────────────────────────────────────\n'
-    '║  Budget (checkout − anchor)\n'
-    '║    = $minutesUntilCheckout min  (≈ ${hoursLeft.toStringAsFixed(1)} hrs)\n'
-    '║  Requested ext : $extensionMinutes min\n'
-    '╠──────────────────────────────────────────────────────\n'
-    '║  Decision      : ${minutesUntilCheckout < 0 ? "BLOCKED — even +15 min exceeds checkout" : extensionMinutes > minutesUntilCheckout ? "BLOCKED — $extensionMinutes min > budget $minutesUntilCheckout min" : "ALLOWED — $extensionMinutes min ≤ budget $minutesUntilCheckout min"}\n'
-    '╚══════════════════════════════════════════════════════',
-  );
+  //debugPrint(
+  //   '\n╔══════════════════════════════════════════════════════\n'
+  //   '║  [AddTimeValidation] Checkout Budget Check\n'
+  //   '╠══════════════════════════════════════════════════════\n'
+  //   '║  Guest         : ${stay.fullName} (Room #${stay.roomNumber})\n'
+  //   '║  Status        : ${stay.status}\n'
+  //   '║  Checkout date : $checkoutDt\n'
+  //   '╠──────────────────────────────────────────────────────\n'
+  //   '║  Current time  : $now\n'
+  //   '║  Anchor (+15m) : $anchor\n'
+  //   '╠──────────────────────────────────────────────────────\n'
+  //   '║  Budget (checkout − anchor)\n'
+  //   '║    = $minutesUntilCheckout min  (≈ ${hoursLeft.toStringAsFixed(1)} hrs)\n'
+  //   '║  Requested ext : $extensionMinutes min\n'
+  //   '╠──────────────────────────────────────────────────────\n'
+  //   '║  Decision      : ${minutesUntilCheckout < 0 ? "BLOCKED — even +15 min exceeds checkout" : extensionMinutes > minutesUntilCheckout ? "BLOCKED — $extensionMinutes min > budget $minutesUntilCheckout min" : "ALLOWED — $extensionMinutes min ≤ budget $minutesUntilCheckout min"}\n'
+  //   '╚══════════════════════════════════════════════════════',
+  // );
 
   if (minutesUntilCheckout < 0) {
     // Even the minimum 15-min window exceeds checkout — nothing allowed.

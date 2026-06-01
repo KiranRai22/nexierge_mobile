@@ -73,7 +73,7 @@ abstract class ErrorHandler {
   static AppException handle(dynamic error) {
     if (error is AppException) return error;
 
-    debugPrint('[ErrorHandler] $error');
+    //debugPrint('[ErrorHandler] $error');
 
     if (error == null) {
       return const AppException(type: AppErrorType.unknown);

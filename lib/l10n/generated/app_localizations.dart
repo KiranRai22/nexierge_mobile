@@ -824,6 +824,12 @@ abstract class AppLocalizations {
   /// **'TICKET INFORMATION'**
   String get ticketSectionInformation;
 
+  /// No description provided for @ticketFieldId.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket ID'**
+  String get ticketFieldId;
+
   /// No description provided for @ticketFieldGuest.
   ///
   /// In en, this message translates to:
@@ -1057,6 +1063,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Force Done'**
   String get ticketActionForceDone;
+
+  /// No description provided for @markDoneSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark ticket as done'**
+  String get markDoneSheetTitle;
+
+  /// No description provided for @markDoneSheetSubtitleOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optionally add a resolution note before closing this ticket.'**
+  String get markDoneSheetSubtitleOptional;
+
+  /// No description provided for @markDoneSheetSubtitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This ticket is overdue. A resolution reason is required before closing.'**
+  String get markDoneSheetSubtitleRequired;
+
+  /// No description provided for @markDoneSheetHintOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution note (optional)...'**
+  String get markDoneSheetHintOptional;
+
+  /// No description provided for @markDoneSheetHintRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution reason (required)...'**
+  String get markDoneSheetHintRequired;
 
   /// No description provided for @ticketActionMoveToBacklog.
   ///
@@ -2354,23 +2390,35 @@ abstract class AppLocalizations {
   /// **'{count} total'**
   String notificationsTotal(int count);
 
-  /// No description provided for @notificationsMarkAllRead.
-  ///
-  /// In en, this message translates to:
-  /// **'Mark all as read'**
-  String get notificationsMarkAllRead;
-
-  /// No description provided for @notificationsTabAll.
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get notificationsTabAll;
-
   /// No description provided for @notificationsTabUnread.
   ///
   /// In en, this message translates to:
   /// **'Unread'**
   String get notificationsTabUnread;
+
+  /// No description provided for @notificationsTabRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get notificationsTabRead;
+
+  /// No description provided for @notificationsInfoUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread notifications are automatically cleared for everyone after 72 hours.'**
+  String get notificationsInfoUnread;
+
+  /// No description provided for @notificationsInfoRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read notifications are automatically cleared after 48 hours.'**
+  String get notificationsInfoRead;
+
+  /// No description provided for @notificationsClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get notificationsClearAll;
 
   /// No description provided for @notificationsEmpty.
   ///

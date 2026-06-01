@@ -88,15 +88,15 @@ class UserProfileController extends StateNotifier<UserProfileState> {
         if (deptsLookOk) {
           state = state.copyWith(profile: profile);
           hasCached = true;
-          debugPrint(
-            '[UserProfileController] Loaded ${depts.length} dept(s) from cache: '
-            '${depts.map((d) => '${d.id}/${d.name}').join(', ')}',
-          );
+          //debugPrint(
+          //   '[UserProfileController] Loaded ${depts.length} dept(s) from cache: '
+          //   '${depts.map((d) => '${d.id}/${d.name}').join(', ')}',
+          // );
         } else {
-          debugPrint(
-            '[UserProfileController] Cache has ${depts.length} dept(s) but all '
-            'ids are empty — invalidating cache and fetching from network.',
-          );
+          //debugPrint(
+          //   '[UserProfileController] Cache has ${depts.length} dept(s) but all '
+          //   'ids are empty — invalidating cache and fetching from network.',
+          // );
         }
       }
     } catch (_) {

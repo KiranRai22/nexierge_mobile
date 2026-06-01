@@ -36,6 +36,7 @@ import '../widgets/ticket_filters_sheet.dart';
 import '../widgets/mark_done_bottom_sheet.dart';
 import '../widgets/start_work_confirmation_bottom_sheet.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
+import '../../../notifications/presentation/providers/notification_inbox_controller.dart';
 import 'ticket_detail_screen.dart';
 import '../../../shell/presentation/widgets/center_fab.dart';
 import '../../../shell/presentation/screens/create_router.dart';
@@ -75,9 +76,9 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
         TicketsMainTab.incoming => 'newest',
         TicketsMainTab.done => 'newest',
       };
-      debugPrint('[TicketsScreen] initState - Tab: $currentTab, Current filter: "$currentFilter", Expected: "$expectedFilter"');
+      //debugPrint('[TicketsScreen] initState - Tab: $currentTab, Current filter: "$currentFilter", Expected: "$expectedFilter"');
       if (currentFilter != expectedFilter) {
-        debugPrint('[TicketsScreen] initState - Setting filter to: "$expectedFilter"');
+        //debugPrint('[TicketsScreen] initState - Setting filter to: "$expectedFilter"');
         ref.read(ticketsFilterProvider.notifier).state = expectedFilter;
       }
     });
@@ -102,6 +103,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   }
 
   void _openNotifications(BuildContext context) {
+    ref.read(notificationInboxControllerProvider.notifier).refreshUnreadCount();
     NotificationsSheet.show(
       context,
       onOpenTicket: (ticketId) {
@@ -139,7 +141,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
   Widget build(BuildContext context) {
     final mainTab = ref.watch(ticketsMainTabProvider);
     final selectedFilter = ref.watch(ticketsFilterProvider);
-    debugPrint('[TicketsScreen] BUILD - mainTab: $mainTab, selectedFilter: "$selectedFilter"');
+    //debugPrint('[TicketsScreen] BUILD - mainTab: $mainTab, selectedFilter: "$selectedFilter"');
     // Tab transitions: rely on the realtime cache for freshness — no
     // refresh-on-tap. Reset the chip state to the default of each tab so
     // the operator doesn't carry a stale filter across tabs.
@@ -148,23 +150,23 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       // If prev is null, this is the initial load - still apply the filter
       // If prev == next, ignore (no actual change)
       if (prev != null && prev == next) return;
-      debugPrint('[TicketsScreen] ref.listen - Tab changed: $prev -> $next');
+      //debugPrint('[TicketsScreen] ref.listen - Tab changed: $prev -> $next');
       switch (next) {
         case TicketsMainTab.today:
           // Reset Today to 'active' filter (shows non-overdue in-progress tickets)
-          debugPrint('[TicketsScreen] ref.listen - Setting filter to: "active"');
+          //debugPrint('[TicketsScreen] ref.listen - Setting filter to: "active"');
           ref.read(ticketsFilterProvider.notifier).state = 'active';
           break;
         case TicketsMainTab.backlog:
-          debugPrint('[TicketsScreen] ref.listen - Setting filter to: "all"');
+          //debugPrint('[TicketsScreen] ref.listen - Setting filter to: "all"');
           ref.read(ticketsFilterProvider.notifier).state = 'all';
           break;
         case TicketsMainTab.incoming:
-          debugPrint('[TicketsScreen] ref.listen - Setting filter to: "newest"');
+          //debugPrint('[TicketsScreen] ref.listen - Setting filter to: "newest"');
           ref.read(ticketsFilterProvider.notifier).state = 'newest';
           break;
         case TicketsMainTab.done:
-          debugPrint('[TicketsScreen] ref.listen - Setting filter to: "newest"');
+          //debugPrint('[TicketsScreen] ref.listen - Setting filter to: "newest"');
           ref.read(ticketsFilterProvider.notifier).state = 'newest';
           break;
       }
@@ -175,6 +177,9 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
     final themeMode =
         ref.watch(themeModeControllerProvider).valueOrNull ?? ThemeMode.system;
     final isDarkMode = themeMode == ThemeMode.dark;
+    final inboxUnread = ref.watch(
+      notificationInboxControllerProvider.select((v) => v.totalUnreadCount),
+    );
 
     final c = context.themeColors;
 
@@ -219,7 +224,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
               child: TicketsTopBar(
                 avatarInitials: initials,
                 avatarImageUrl: profilePictureUrl,
-                hasUnreadNotifications: true,
+                unreadCount: inboxUnread,
                 isDarkMode: isDarkMode,
                 onThemeToggle: () =>
                     ref.read(themeModeControllerProvider.notifier).toggle(),
@@ -415,13 +420,11 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       return const {'active': 0, 'overdue': 0};
     }
 
-    // Calculate active (non-overdue) and overdue counts from fetched items
-    final activeCount = inProgressState.items
-        .where((t) => t.isInProgress && !t.isOverdue)
-        .length;
-    final overdueCount = inProgressState.items
-        .where((t) => t.isInProgress && t.isOverdue)
-        .length;
+    // Use server-reported overdue_count from the in_progress endpoint.
+    // Active = total in-progress minus the server-reported overdue count.
+    final overdueCount = inProgressState.overdueCount;
+    final activeCount = (inProgressState.itemsTotal - overdueCount)
+        .clamp(0, inProgressState.itemsTotal);
 
     return {
       'active': activeCount,
@@ -688,6 +691,7 @@ Future<void> _markDoneHandler(
   if (ref.read(ticketBusyProvider).contains(ticket.id)) return;
   await MarkDoneBottomSheet.showWithCallback(
     context,
+    isRequired: ticket.isOverdue,
     onConfirm: (note) async {
       final busy = ref.read(ticketBusyProvider.notifier)..mark(ticket.id);
       for (final tab in kAllTicketsTabs) {
@@ -803,16 +807,16 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
       data: (page) {
         // Debug: Log items and their status for troubleshooting
         if (widget.tab == TicketsTab.todayInProgress && page.items.isNotEmpty) {
-          debugPrint('=== DEBUG: Today In Progress Tab ===');
-          debugPrint('Total items from API: ${page.items.length}');
+          //debugPrint('=== DEBUG: Today In Progress Tab ===');
+          //debugPrint('Total items from API: ${page.items.length}');
           for (final item in page.items) {
-            debugPrint('Ticket ${item.id}: status=${item.status}, isInProgress=${item.isInProgress}, isOverdue=${item.isOverdue}, dueAt=${item.dueAt}');
+            //debugPrint('Ticket ${item.id}: status=${item.status}, isInProgress=${item.isInProgress}, isOverdue=${item.isOverdue}, dueAt=${item.dueAt}');
           }
-          debugPrint('Current filter: $filter');
+          //debugPrint('Current filter: $filter');
           final activeCount = page.items.where((t) => t.isInProgress && !t.isOverdue).length;
           final overdueCount = page.items.where((t) => t.isInProgress && t.isOverdue).length;
-          debugPrint('Active count: $activeCount, Overdue count: $overdueCount');
-          debugPrint('=====================================');
+          //debugPrint('Active count: $activeCount, Overdue count: $overdueCount');
+          //debugPrint('=====================================');
         }
         // Apply Backlog sub-filter (all / inprogress / overdue) on top
         // of the server-side status filter. Other tabs use server-side

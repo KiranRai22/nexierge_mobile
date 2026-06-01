@@ -18,7 +18,7 @@ import '../../l10n/generated/app_localizations.dart';
 // messages or when the system notification is suppressed.
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
-  debugPrint('[FCM] Background: ${message.notification?.title}');
+  //debugPrint('[FCM] Background: ${message.notification?.title}');
 
   // Initialize local notifications for background message handling
   final localNotifications = FlutterLocalNotificationsPlugin();
@@ -140,7 +140,7 @@ class NotificationService {
       badge: true,
       sound: true,
     );
-    debugPrint('[FCM] Auth status: ${settings.authorizationStatus}');
+    // //debugPrint('[FCM] Auth status: ${settings.authorizationStatus}');
   }
 
   Future<void> _setupLocalNotifications() async {
@@ -154,7 +154,7 @@ class NotificationService {
     await _localNotifications.initialize(
       const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: (details) {
-        debugPrint('[LocalNotif] Tapped payload: ${details.payload}');
+        // //debugPrint('[LocalNotif] Tapped payload: ${details.payload}');
       },
     );
 
@@ -272,7 +272,7 @@ class NotificationService {
         // String-arg variant — accepts the ticket code.
         return s.notifNewTicket(arg ?? '');
       default:
-        debugPrint('[Notif] Unknown l10n key: $key');
+        // //debugPrint('[Notif] Unknown l10n key: $key');
         return null;
     }
   }
@@ -294,7 +294,7 @@ class NotificationService {
 
   Future<String?> getFCMToken() async {
     final token = await _messaging.getToken();
-    debugPrint('[FCM] Token: $token');
+    //debugPrint('[FCM] Token: $token');
     return token;
   }
 
@@ -328,7 +328,7 @@ class NotificationService {
       try {
         await _messaging.unsubscribeFromTopic(prev);
       } catch (e) {
-        debugPrint('[FCM] Unsubscribe $prev failed: $e');
+        // //debugPrint('[FCM] Unsubscribe $prev failed: $e');
       }
     }
 
@@ -336,7 +336,7 @@ class NotificationService {
       await _messaging.subscribeToTopic(next);
       _subscribedLocaleTopic = next;
     } catch (e) {
-      debugPrint('[FCM] Subscribe $next failed: $e');
+      // //debugPrint('[FCM] Subscribe $next failed: $e');
     }
 
     await _refreshAndroidChannel();

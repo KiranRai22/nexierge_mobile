@@ -7,6 +7,7 @@ import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/entities/notification_inbox_item.dart';
 import '../providers/notification_inbox_controller.dart';
 import 'notification_card.dart';
@@ -14,9 +15,8 @@ import 'notification_card.dart';
 /// Notifications inbox bottom sheet.
 ///
 /// Structure:
-///   drag handle → header (title + unread count + close)
-///   → actions row (mark-all-read + total)
-///   → All / Unread tab bar
+///   drag handle → header row (title + mark-all-read + close)
+///   → Unread / Read underline tab bar with counts
 ///   → scrollable list with pull-to-refresh + infinite scroll
 class NotificationsSheet extends ConsumerWidget {
   /// Called when the user taps a notification that links to a ticket.
@@ -58,9 +58,8 @@ class NotificationsSheet extends ConsumerWidget {
             children: [
               const _Handle(),
               const _Header(),
-              const _ActionsRow(),
               const _TabBar(),
-              const Divider(height: 1),
+              const _InfoBar(),
               Expanded(
                 child: _Body(
                   scrollController: scrollController,
@@ -101,38 +100,24 @@ class _Handle extends StatelessWidget {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 
-class _Header extends ConsumerWidget {
+class _Header extends StatelessWidget {
   const _Header();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final s = context.l10n;
     final c = context.themeColors;
-    final unread = ref.watch(
-      notificationInboxControllerProvider.select((v) => v.unreadCount),
-    );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
+      padding: const EdgeInsets.fromLTRB(20, 12, 8, 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.notificationsTitle,
-                  style: TypographyManager.textTitle.copyWith(color: c.fgBase),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  s.notificationsUnread(unread),
-                  style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
-                ),
-              ],
-            ),
+          Text(
+            s.notificationsTitle,
+            style: TypographyManager.textTitle.copyWith(color: c.fgBase),
           ),
+          const Spacer(),
           IconButton(
             tooltip: s.cancel,
             onPressed: tapSound(
@@ -140,50 +125,6 @@ class _Header extends ConsumerWidget {
               SoundCategory.back,
             ),
             icon: Icon(LucideIcons.x, size: 20, color: c.fgMuted),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Actions row ──────────────────────────────────────────────────────────────
-
-class _ActionsRow extends ConsumerWidget {
-  const _ActionsRow();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final s = context.l10n;
-    final c = context.themeColors;
-    final state = ref.watch(notificationInboxControllerProvider);
-    final controller = ref.read(notificationInboxControllerProvider.notifier);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: state.unreadCount == 0
-                ? null
-                : tapSound(controller.markAllAsRead),
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              child: Text(
-                s.notificationsMarkAllRead,
-                style: TypographyManager.textLabel.copyWith(
-                  color: state.unreadCount == 0
-                      ? c.fgSubtle
-                      : c.tagPurpleIcon,
-                ),
-              ),
-            ),
-          ),
-          const Spacer(),
-          Text(
-            s.notificationsTotal(state.totalCount),
-            style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
           ),
         ],
       ),
@@ -200,26 +141,29 @@ class _TabBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = context.l10n;
     final c = context.themeColors;
-    final currentFilter = ref.watch(
-      notificationInboxControllerProvider.select((v) => v.statusFilter),
-    );
+    final state = ref.watch(notificationInboxControllerProvider);
     final controller = ref.read(notificationInboxControllerProvider.notifier);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: c.borderBase, width: 1)),
+      ),
       child: Row(
         children: [
           _Tab(
-            label: s.notificationsTabAll,
-            selected: currentFilter == 'all',
-            onTap: () => controller.switchTab('all'),
+            label: s.notificationsTabUnread,
+            count: state.totalUnreadCount,
+            icon: LucideIcons.eyeOff,
+            selected: state.statusFilter == 'unread',
+            onTap: tapSound(() => controller.switchTab('unread')),
             c: c,
           ),
-          const SizedBox(width: 8),
           _Tab(
-            label: s.notificationsTabUnread,
-            selected: currentFilter == 'unread',
-            onTap: () => controller.switchTab('unread'),
+            label: s.notificationsTabRead,
+            count: null,
+            icon: LucideIcons.eye,
+            selected: state.statusFilter == 'read',
+            onTap: tapSound(() => controller.switchTab('read')),
             c: c,
           ),
         ],
@@ -230,12 +174,16 @@ class _TabBar extends ConsumerWidget {
 
 class _Tab extends StatelessWidget {
   final String label;
+  final int? count;
+  final IconData icon;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final AppColors c;
 
   const _Tab({
     required this.label,
+    required this.count,
+    required this.icon,
     required this.selected,
     required this.onTap,
     required this.c,
@@ -243,25 +191,98 @@ class _Tab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = selected ? c.fgBase : c.fgMuted;
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
         decoration: BoxDecoration(
-          color: selected ? c.tagPurpleBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? c.tagPurpleIcon : c.borderBase,
-            width: 1,
+          border: Border(
+            bottom: BorderSide(
+              color: selected ? c.fgBase : Colors.transparent,
+              width: 2,
+            ),
           ),
         ),
-        child: Text(
-          label,
-          style: TypographyManager.textLabel.copyWith(
-            color: selected ? c.tagPurpleIcon : c.fgMuted,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TypographyManager.textLabel.copyWith(
+                color: color,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            if (count case final n? when n > 0) ...[
+              const SizedBox(width: 5),
+              Container(
+                width: 18,
+                height: 18,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: selected ? c.tagPurpleBg : c.bgSubtle,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  n > 99 ? '99+' : n.toString(),
+                  style: TypographyManager.textMeta.copyWith(
+                    fontSize: 9,
+                    color: selected ? c.tagPurpleText : c.fgMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Info bar ────────────────────────────────────────────────────────────────
+
+class _InfoBar extends ConsumerWidget {
+  const _InfoBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    final state = ref.watch(notificationInboxControllerProvider);
+    final controller = ref.read(notificationInboxControllerProvider.notifier);
+    final isRead = state.statusFilter == 'read';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              isRead ? s.notificationsInfoRead : s.notificationsInfoUnread,
+              style: TypographyManager.textMeta.copyWith(
+                color: c.fgMuted,
+                fontSize: 11,
+              ),
+            ),
+          ),
+          if (isRead && state.items.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: tapSound(() => controller.clearAllRead()),
+              child: Text(
+                s.notificationsClearAll,
+                style: TypographyManager.textMeta.copyWith(
+                  color: c.tagPurpleIcon,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -309,7 +330,7 @@ class _BodyState extends ConsumerState<_Body> {
 
     // First-page loading
     if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const _NotificationListSkeleton();
     }
 
     // Error state (first page)
@@ -332,15 +353,12 @@ class _BodyState extends ConsumerState<_Body> {
         controller: widget.scrollController,
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
+        itemCount: state.items.length + (state.isLoadingMore ? 10 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (_, index) {
-          // Load-more spinner at bottom
-          if (index == state.items.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
-            );
+          // Load-more skeletons at bottom — one per incoming item slot
+          if (index >= state.items.length) {
+            return const _NotificationCardSkeleton();
           }
 
           final item = state.items[index];
@@ -434,6 +452,86 @@ class _ErrorState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Skeleton loaders ────────────────────────────────────────────────────────
+
+class _NotificationCardSkeleton extends StatelessWidget {
+  const _NotificationCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final radius = BorderRadius.circular(12);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: radius,
+        border: Border.all(color: c.borderBase),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Priority accent bar placeholder
+            Container(
+              width: 4,
+              decoration: BoxDecoration(
+                color: c.bgSubtle,
+                borderRadius: BorderRadius.only(
+                  topLeft: radius.topLeft,
+                  bottomLeft: radius.bottomLeft,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const ShimmerCircle(size: 36),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const ShimmerText(width: 120, height: 14),
+                          const SizedBox(height: 8),
+                          const ShimmerText(width: double.infinity, height: 12),
+                          const SizedBox(height: 6),
+                          const ShimmerText(width: 80, height: 12),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const ShimmerContainer(width: 30, height: 20, borderRadius: 4),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationListSkeleton extends StatelessWidget {
+  final int count;
+  const _NotificationListSkeleton({this.count = 6});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: count,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, __) => const _NotificationCardSkeleton(),
     );
   }
 }

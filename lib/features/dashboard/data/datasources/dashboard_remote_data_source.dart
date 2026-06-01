@@ -38,16 +38,16 @@ class _DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
       } else {
         // Backend can return null/empty when the user has no hotel context.
         // Treat as an empty payload rather than crashing the bootstrap.
-        debugPrint(
-          '[DashboardRemoteDataSource] Hotel details: empty/null response '
-          '(${res.data?.runtimeType}); returning empty DTO',
-        );
+        //debugPrint(
+        //   '[DashboardRemoteDataSource] Hotel details: empty/null response '
+        //   '(${res.data?.runtimeType}); returning empty DTO',
+        // );
         return HotelDetailsDto();
       }
 
       return HotelDetailsDto.fromJson(data);
     } catch (e) {
-      debugPrint('[DashboardRemoteDataSource] Hotel details API failed: $e');
+      //debugPrint('[DashboardRemoteDataSource] Hotel details API failed: $e');
       rethrow;
     }
   }
@@ -79,7 +79,7 @@ class _DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
 
       return DashboardNumbersDto.fromJson(data);
     } catch (e) {
-      debugPrint('[DashboardRemoteDataSource] Numbers API failed: $e');
+      //debugPrint('[DashboardRemoteDataSource] Numbers API failed: $e');
       rethrow;
     }
   }
@@ -99,7 +99,7 @@ class _DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         rawList = res.data as List;
       } else if (res.data is Map<String, dynamic>) {
         final map = res.data as Map<String, dynamic>;
-        debugPrint('[DashboardRemoteDataSource] Needs attention wrapped response keys: ${map.keys.toList()}');
+        //debugPrint('[DashboardRemoteDataSource] Needs attention wrapped response keys: ${map.keys.toList()}');
         // Try common wrapper keys
         final candidate = map['items'] ?? map['data'] ?? map['result'] ?? map['tickets'];
         if (candidate is List) {
@@ -115,7 +115,7 @@ class _DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
           .map((e) => NeedsAttentionDto.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      debugPrint('[DashboardRemoteDataSource] Needs attention API failed: $e');
+      //debugPrint('[DashboardRemoteDataSource] Needs attention API failed: $e');
       rethrow;
     }
   }
@@ -181,9 +181,9 @@ class DashboardNumbersDto {
 
   factory DashboardNumbersDto.fromJson(Map<String, dynamic> json) {
     // Debug: log all keys in the response
-    debugPrint(
-      '[DashboardNumbersDto] Parsing JSON keys: ${json.keys.toList()}',
-    );
+    //debugPrint(
+    //   '[DashboardNumbersDto] Parsing JSON keys: ${json.keys.toList()}',
+    // );
 
     return DashboardNumbersDto(
       inprogress: json['in_progress']?.toString(),

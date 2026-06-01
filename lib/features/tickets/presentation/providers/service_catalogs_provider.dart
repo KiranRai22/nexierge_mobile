@@ -41,7 +41,7 @@ class ServiceCatalogsNotifier extends AutoDisposeAsyncNotifier<ServiceCatalogsSt
     final hotelId = bootstrap?.userProfile?.hotelDetails.hotel.id;
 
     if (hotelId == null || hotelId.isEmpty) {
-      debugPrint('[ServiceCatalogsNotifier] No hotelId from bootstrap');
+      //debugPrint('[ServiceCatalogsNotifier] No hotelId from bootstrap');
       return ServiceCatalogsState();
     }
 
@@ -50,14 +50,14 @@ class ServiceCatalogsNotifier extends AutoDisposeAsyncNotifier<ServiceCatalogsSt
 
   Future<ServiceCatalogsState> _fetchCatalogs(String hotelId) async {
     try {
-      debugPrint('[ServiceCatalogsNotifier] Fetching catalogs for hotel: $hotelId');
+      //debugPrint('[ServiceCatalogsNotifier] Fetching catalogs for hotel: $hotelId');
       final repo = ref.read(ticketRepositoryProvider);
       final catalogs = await repo.fetchServiceCatalogs(hotelId: hotelId);
-      debugPrint('[ServiceCatalogsNotifier] Fetched ${catalogs.length} catalogs');
+      //debugPrint('[ServiceCatalogsNotifier] Fetched ${catalogs.length} catalogs');
       return ServiceCatalogsState(catalogs: catalogs);
     } catch (e, st) {
-      debugPrint('[ServiceCatalogsNotifier] Error fetching catalogs: $e');
-      debugPrint('[ServiceCatalogsNotifier] Stack trace: $st');
+      //debugPrint('[ServiceCatalogsNotifier] Error fetching catalogs: $e');
+      //debugPrint('[ServiceCatalogsNotifier] Stack trace: $st');
       return ServiceCatalogsState(error: e.toString());
     }
   }

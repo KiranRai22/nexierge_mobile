@@ -114,7 +114,7 @@ class DashboardBootstrapController
       // Trigger version check after successful authentication and bootstrap
       ref.read(versionCheckProvider.notifier).checkAfterAuth();
     } catch (e, st) {
-      debugPrint('[DashboardBootstrap] runBootstrap failed: $e\n$st');
+      //debugPrint('[DashboardBootstrap] runBootstrap failed: $e\n$st');
       state = AsyncError(e, st);
     }
   }
@@ -186,21 +186,21 @@ class DashboardBootstrapController
         .firstOrNull;
 
     if (ticketsHub == null) {
-      debugPrint(
-        '[DashboardBootstrap] Cannot join hub_notifications: no hub_access entry with a valid id',
-      );
+      //debugPrint(
+      //   '[DashboardBootstrap] Cannot join hub_notifications: no hub_access entry with a valid id',
+      // );
       return;
     }
 
-    debugPrint(
-      '[DashboardBootstrap] Joining hub_notifications/$hotelId/${ticketsHub.hubPresetId} '
-      '(hub_code: ${ticketsHub.hubCode})',
-    );
+    //debugPrint(
+    //   '[DashboardBootstrap] Joining hub_notifications/$hotelId/${ticketsHub.hubPresetId} '
+    //   '(hub_code: ${ticketsHub.hubCode})',
+    // );
     _socketService.joinHubNotificationsChannel(
       hotelId: hotelId,
       ticketHubTicketId: ticketsHub.hubPresetId,
     );
-    debugPrint('[DashboardBootstrap] Connected to hub_notifications channel');
+    //debugPrint('[DashboardBootstrap] Connected to hub_notifications channel');
   }
 }
 

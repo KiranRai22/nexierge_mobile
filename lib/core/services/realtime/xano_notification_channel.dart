@@ -44,8 +44,8 @@ final xanoNotificationChannelProvider = Provider<void>((ref) {
 /// applies them to [notificationInboxControllerProvider].
 ///
 /// Handles:
-///   - `notification_read` → marks the notification read locally so the
-///     unread dot disappears without a full refetch.
+///   - `notification_created` → refreshes the inbox and unread count to fetch new notifications.
+///   - `notification_read` → refreshes the inbox to sync read state.
 ///
 /// The channel JOIN itself is performed by `dashboard_bootstrap_controller`
 /// right after auth/me, before this provider is even initialised.
@@ -64,30 +64,30 @@ final xanoHubNotificationsListenerProvider = Provider<void>((ref) {
       final payload = decoded['payload'];
       if (payload is! Map<String, dynamic>) return;
 
-      final eventAction = payload['event_action'] as String?;
+      final data = payload['data'] as Map<String, dynamic>?;
+      if (data == null) return;
 
-      switch (eventAction) {
+      final typeKey = data['type_key'] as String?;
+
+      switch (typeKey) {
         case 'notification_read':
           _handleNotificationRead(ref, payload);
 
         default:
-          // Log unknown event actions in debug for future extension
-          if (kDebugMode) {
-            debugPrint(
-              '[HubNotificationsListener] unhandled event_action: $eventAction',
-            );
-          }
+          // Any other hub_notifications event (ticket_created, sla_overdue, etc.)
+          // → refresh the unread count.
+          _handleNotificationCreated(ref, payload);
       }
     },
     onError: (Object e) {
-      debugPrint('[HubNotificationsListener] stream error: $e');
+      //debugPrint('[HubNotificationsListener] stream error: $e');
     },
   );
 
   ref.onDispose(sub.cancel);
 
   if (kDebugMode) {
-    debugPrint('[HubNotificationsListener] subscribed to hub_notifications');
+    //debugPrint('[HubNotificationsListener] subscribed to hub_notifications');
   }
 });
 
@@ -100,13 +100,43 @@ final xanoHubNotificationsLoggerProvider = Provider<void>((ref) {
 
 // ─── Handlers ────────────────────────────────────────────────────────────────
 
+void _handleNotificationCreated(Ref ref, Map<String, dynamic> payload) {
+  // Extract the data object which contains the notification details
+  final data = payload['data'] as Map<String, dynamic>?;
+  if (data == null) return;
+
+  final hotelId = data['hotel_id'] as String?;
+  if (hotelId == null) return;
+
+  // Verify this notification is for the current user's hotel.
+  // All hub_notifications are scoped to the current user already by the server,
+  // so if it arrived on the channel, it's for us.
+  final profile = ref
+      .read(dashboardBootstrapControllerProvider)
+      .valueOrNull
+      ?.userProfile;
+  final currentHotelId = profile?.hotelDetails?.hotel.id;
+
+  if (currentHotelId == null || hotelId != currentHotelId) return;
+
+  ref
+      .read(notificationInboxControllerProvider.notifier)
+      .refreshUnreadCount();
+
+  if (kDebugMode) {
+    //debugPrint(
+    //   '[HubNotificationsListener] notification_created → refresh triggered',
+    // );
+  }
+}
+
 void _handleNotificationRead(Ref ref, Map<String, dynamic> payload) {
   final notificationId = payload['notification_event_id'] as String?;
   final readByUserId = payload['read_by_hotel_user_id'] as String?;
 
-  if (notificationId == null || readByUserId == null) return;
+  if (readByUserId == null) return;
 
-  // Only update if this event is for the current user (user-level isolation).
+  // Only refresh for the current user's reads to avoid unnecessary API calls.
   final profile = ref
       .read(dashboardBootstrapControllerProvider)
       .valueOrNull
@@ -117,12 +147,12 @@ void _handleNotificationRead(Ref ref, Map<String, dynamic> payload) {
 
   ref
       .read(notificationInboxControllerProvider.notifier)
-      .markReadLocally(notificationId);
+      .refresh();
 
   if (kDebugMode) {
-    debugPrint(
-      '[HubNotificationsListener] notification_read applied locally: $notificationId',
-    );
+    //debugPrint(
+    //   '[HubNotificationsListener] notification_read → refresh triggered for: $notificationId',
+    // );
   }
 }
 

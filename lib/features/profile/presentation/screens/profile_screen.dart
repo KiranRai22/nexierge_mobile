@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
@@ -445,7 +446,10 @@ class _ProfileBodyState extends State<_ProfileBody> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        // TODO: Navigate to Terms & Conditions
+                        launchUrl(
+                          Uri.parse('https://app.nexierge.io/terms'),
+                          mode: LaunchMode.inAppBrowserView,
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: ColorPalette.opsPurple,
@@ -465,7 +469,10 @@ class _ProfileBodyState extends State<_ProfileBody> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        // TODO: Navigate to Privacy Policy
+                        launchUrl(
+                          Uri.parse('https://app.nexierge.io/privacy'),
+                          mode: LaunchMode.inAppBrowserView,
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: ColorPalette.opsPurple,

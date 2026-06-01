@@ -533,10 +533,10 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                   ref.invalidate(serviceCatalogItemsProvider(catalog.id)),
             ),
             data: (allItems) {
-              debugPrint('[CreateScreenCatalog] Catalog: ${catalog?.name}, ID: ${catalog?.id}');
-              debugPrint('[CreateScreenCatalog] API returned ${allItems.length} items');
+              //debugPrint('[CreateScreenCatalog] Catalog: ${catalog?.name}, ID: ${catalog?.id}');
+              //debugPrint('[CreateScreenCatalog] API returned ${allItems.length} items');
               final items = _filtered(allItems);
-              debugPrint('[CreateScreenCatalog] After filtering: ${items.length} items (query: "$_query")');
+              //debugPrint('[CreateScreenCatalog] After filtering: ${items.length} items (query: "$_query")');
               if (items.isEmpty) {
                 return Center(
                   child: Padding(
@@ -704,9 +704,9 @@ class _CatalogMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(
-      '[CatalogMenuCard] Item: ${item.name}, ImageUrl: ${item.imageUrl}, Emoji: ${item.emoji}',
-    );
+    //debugPrint(
+    //   '[CatalogMenuCard] Item: ${item.name}, ImageUrl: ${item.imageUrl}, Emoji: ${item.emoji}',
+    // );
 
     final s = context.l10n;
     final qty = draft.quantityFor(item.id);
@@ -773,9 +773,9 @@ class _CatalogMenuCard extends StatelessWidget {
                               );
                             },
                             errorBuilder: (context, error, stackTrace) {
-                              debugPrint(
-                                '[CatalogMenuCard] Image load error for ${item.name}: $error',
-                              );
+                              //debugPrint(
+                              //   '[CatalogMenuCard] Image load error for ${item.name}: $error',
+                              // );
                               return Container(
                                 width: 56,
                                 height: 56,

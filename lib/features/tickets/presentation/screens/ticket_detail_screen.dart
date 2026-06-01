@@ -48,6 +48,7 @@ Ticket _mergeTicket({
       : null;
   return Ticket(
     id: detail.id,
+    opsTicketId: p?.opsTicketId ?? detail.opsTicketId,
     code: p?.code ?? detail.id.substring(0, 8),
     title: p?.title ?? _fallbackTitle(detail, deptNamesById),
     kind: p?.kind ?? _mapKindFromType(detail.type),
@@ -315,6 +316,10 @@ class _OverviewTab extends StatelessWidget {
         CollapsibleTicketSection(
           label: s.ticketSectionInformation,
           rows: [
+            TicketInfoRow(
+              label: s.ticketFieldId,
+              value: ticket.opsTicketId,
+            ),
             TicketInfoRow(
               label: s.ticketFieldStatus,
               trailing: _statusPill(context, ticket.status),

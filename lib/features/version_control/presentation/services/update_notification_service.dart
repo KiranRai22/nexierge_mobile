@@ -26,7 +26,7 @@ class UpdateNotificationService {
     await _plugin.initialize(
       const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: (details) {
-        debugPrint('[UpdateNotif] Tapped: ${details.payload}');
+        //debugPrint('[UpdateNotif] Tapped: ${details.payload}');
       },
     );
 
@@ -77,7 +77,7 @@ class UpdateNotificationService {
     );
 
     await prefs.setString(_shownVersionKey, platformVersion);
-    debugPrint('[UpdateNotif] Shown for version $platformVersion');
+    //debugPrint('[UpdateNotif] Shown for version $platformVersion');
   }
 
   Future<void> cancel() async {
