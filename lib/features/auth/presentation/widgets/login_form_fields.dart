@@ -269,7 +269,7 @@ class SecretField extends StatelessWidget {
         hasError: errorText != null,
         isEmail: isEmail,
         onChanged: onChanged,
-        onSubmitted: onSubmitted,
+        // onSubmitted: onSubmitted,
         trailing: isEmail
             ? Row(
                 mainAxisSize: MainAxisSize.min,
@@ -280,7 +280,10 @@ class SecretField extends StatelessWidget {
                     color: ColorPalette.loginInputDivider,
                   ),
                   IconButton(
-                    onPressed: tapSound(onToggleObscure, SoundCategory.preference),
+                    onPressed: tapSound(
+                      onToggleObscure,
+                      SoundCategory.preference,
+                    ),
                     splashRadius: 20,
                     icon: Icon(
                       obscure

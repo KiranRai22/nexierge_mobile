@@ -109,7 +109,9 @@ class _FilterChip extends StatelessWidget {
     final showCount = count != null;
     return GestureDetector(
       onTap: tapSound(onTap, SoundCategory.preference),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
         decoration: BoxDecoration(
           color: bg,

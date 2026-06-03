@@ -56,6 +56,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
     with WidgetsBindingObserver {
   late final TextEditingController _searchCtl;
   bool _isSearchVisible = false;
+  bool _backlogExpanded = false;
 
   @override
   void initState() {
@@ -218,7 +219,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
         bottom: false,
         child: Column(
           children: [
-            // Top bar with search toggle, theme, and notifications
+            // Top bar: avatar + "All Tickets" title (left), search / filter / bell (right)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TicketsTopBar(
@@ -226,6 +227,11 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                 avatarImageUrl: profilePictureUrl,
                 unreadCount: inboxUnread,
                 isDarkMode: isDarkMode,
+                title:
+                    '${context.l10n.activityTypeAll} ${context.l10n.navTickets}',
+                onFilter: () => _showFilterSheet(context),
+                filterActiveCount:
+                    ref.watch(resolvedTicketsFilterProvider).activeCount,
                 onThemeToggle: () =>
                     ref.read(themeModeControllerProvider.notifier).toggle(),
                 onNotifications: () => _openNotifications(context),
@@ -236,81 +242,6 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
               ),
             ),
 
-            // Title row: All Tickets + filter button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Row(
-                children: [
-                  Text(
-                    '${context.l10n.activityTypeAll} ${context.l10n.navTickets}',
-                    style: TypographyManager.headlineSmall.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 24,
-                      color: c.fgBase,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Funnel filter button in circle with badge
-                  Semantics(
-                    button: true,
-                    label: context.l10n.filterTitle,
-                    child: InkWell(
-                      onTap: tapSound(() => _showFilterSheet(context)),
-                      borderRadius: BorderRadius.circular(999),
-                      child: Stack(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: c.bgSubtle,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: c.borderBase),
-                            ),
-                            child: Icon(
-                              LucideIcons.funnel,
-                              size: 18,
-                              color: c.fgBase,
-                            ),
-                          ),
-                          // Show count badge for active filter selections
-                          Consumer(
-                            builder: (context, ref, _) {
-                              final activeCount = ref.watch(resolvedTicketsFilterProvider).activeCount;
-                              if (activeCount == 0) return const SizedBox.shrink();
-                              return Positioned(
-                                right: 0,
-                                top: 0,
-                                child: Container(
-                                  width: 18,
-                                  height: 18,
-                                  decoration: BoxDecoration(
-                                    color: c.tagPurpleIcon,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: c.bgBase, width: 1.5),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      '$activeCount',
-                                      style: TypographyManager.labelSmall.copyWith(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
             // Search field (toggleable)
             if (_isSearchVisible)
               Padding(
@@ -318,7 +249,7 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                 child: _SearchField(controller: _searchCtl),
               ),
 
-            // Main tabs with counts
+            // Main tabs with counts (Backlog collapsible)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: TicketsMainTabs(
@@ -326,32 +257,61 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                 onChanged: (tab) =>
                     ref.read(ticketsMainTabProvider.notifier).state = tab,
                 counts: counts,
+                isBacklogExpanded: _backlogExpanded,
+                onToggleBacklog: () {
+                  final collapsing = _backlogExpanded;
+                  setState(() => _backlogExpanded = !_backlogExpanded);
+                  // If collapsing while backlog is selected, switch to Today
+                  if (collapsing &&
+                      ref.read(ticketsMainTabProvider) ==
+                          TicketsMainTab.backlog) {
+                    ref.read(ticketsMainTabProvider.notifier).state =
+                        TicketsMainTab.today;
+                  }
+                },
               ),
             ),
 
-            // Filter chips based on selected main tab - only show if tab has filters
-            if (_tabHasFilters(mainTab))
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-                child: TicketsFilterChips(
-                  selectedTab: mainTab,
-                  selectedFilter: selectedFilter,
-                  filterCounts: mainTab == TicketsMainTab.backlog
-                      ? _backlogFilterCounts()
-                      : mainTab == TicketsMainTab.today
-                          ? _todayFilterCounts()
-                          : null,
-                  onFilterChanged: (filter) =>
-                      ref.read(ticketsFilterProvider.notifier).state = filter,
-                ),
-              ),
+            // Filter chips — slide in/out smoothly when tab changes
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeInOut,
+              child: _tabHasFilters(mainTab)
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+                      child: TicketsFilterChips(
+                        selectedTab: mainTab,
+                        selectedFilter: selectedFilter,
+                        filterCounts: mainTab == TicketsMainTab.backlog
+                            ? _backlogFilterCounts()
+                            : mainTab == TicketsMainTab.today
+                                ? _todayFilterCounts()
+                                : null,
+                        onFilterChanged: (filter) =>
+                            ref.read(ticketsFilterProvider.notifier).state =
+                                filter,
+                      ),
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
 
-            // Tickets list
+            // Tickets list — fade between tabs
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: _refresh,
-                color: c.tagPurpleIcon,
-                child: _buildList(mainTab),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOut,
+                  ),
+                  child: child,
+                ),
+                child: RefreshIndicator(
+                  key: ValueKey(mainTab),
+                  onRefresh: _refresh,
+                  color: c.tagPurpleIcon,
+                  child: _buildList(mainTab),
+                ),
               ),
             ),
           ],

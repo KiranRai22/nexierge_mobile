@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @subTabDone.
   ///
   /// In en, this message translates to:
-  /// **'Done'**
+  /// **'Completed Today'**
   String get subTabDone;
 
   /// No description provided for @sectionIncomingNow.

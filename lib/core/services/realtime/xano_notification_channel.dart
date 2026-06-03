@@ -101,33 +101,11 @@ final xanoHubNotificationsLoggerProvider = Provider<void>((ref) {
 // ─── Handlers ────────────────────────────────────────────────────────────────
 
 void _handleNotificationCreated(Ref ref, Map<String, dynamic> payload) {
-  // Extract the data object which contains the notification details
-  final data = payload['data'] as Map<String, dynamic>?;
-  if (data == null) return;
-
-  final hotelId = data['hotel_id'] as String?;
-  if (hotelId == null) return;
-
-  // Verify this notification is for the current user's hotel.
-  // All hub_notifications are scoped to the current user already by the server,
-  // so if it arrived on the channel, it's for us.
-  final profile = ref
-      .read(dashboardBootstrapControllerProvider)
-      .valueOrNull
-      ?.userProfile;
-  final currentHotelId = profile?.hotelDetails?.hotel.id;
-
-  if (currentHotelId == null || hotelId != currentHotelId) return;
-
+  // All hub_notifications are scoped to this user/hotel by the server —
+  // if this frame arrived on our channel, it is meant for us.
   ref
       .read(notificationInboxControllerProvider.notifier)
       .refreshUnreadCount();
-
-  if (kDebugMode) {
-    //debugPrint(
-    //   '[HubNotificationsListener] notification_created → refresh triggered',
-    // );
-  }
 }
 
 void _handleNotificationRead(Ref ref, Map<String, dynamic> payload) {

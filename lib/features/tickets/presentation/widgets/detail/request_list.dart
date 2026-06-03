@@ -36,7 +36,7 @@ class _ItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
         color: ColorPalette.itemTileBg,
         borderRadius: BorderRadius.circular(12),
@@ -61,8 +61,7 @@ class _ItemRow extends StatelessWidget {
             ),
           ),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: ColorPalette.opsSurface,
               borderRadius: BorderRadius.circular(999),

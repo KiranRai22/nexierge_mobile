@@ -106,7 +106,6 @@ class MyApp extends ConsumerWidget {
         ref.watch(localeControllerProvider).valueOrNull ?? AppLocale.system;
     final session = ref.watch(authSessionControllerProvider);
     final bootstrap = ref.watch(dashboardBootstrapControllerProvider);
-    final soundEnabled = ref.watch(soundPreferencesProvider);
 
     // Realtime socket: connects after login, disconnects on logout.
     // Reconnect on transport drops handled inside the service.
@@ -118,8 +117,11 @@ class MyApp extends ConsumerWidget {
     // Log all events received from the hub_notifications channel
     ref.watch(xanoHubNotificationsLoggerProvider);
 
-    // Sync sound manager with preferences
-    SoundManager.instance.setEnabled(soundEnabled);
+    // Sync sound manager with preferences in a listener.
+    ref.listen<bool>(soundPreferencesProvider, (_, next) {
+      SoundManager.instance.setEnabled(next);
+    });
+    SoundManager.instance.setEnabled(ref.read(soundPreferencesProvider));
 
     // Listen for session changes and trigger bootstrap when authenticated
     ref.listen(authSessionControllerProvider, (prev, next) {

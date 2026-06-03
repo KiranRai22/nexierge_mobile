@@ -6,14 +6,25 @@ import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-/// Top bar for the tickets screen — avatar, theme toggle, notifications bell with
-/// unread dot, and a search toggle button. Mirrors [AppTopBar] layout.
+/// Top bar for the tickets screen — avatar + title (left), search / filter /
+/// bell (right). The filter button sits between search and notifications,
+/// matching the design. Supply [onFilter] + [filterActiveCount] to show it.
 class TicketsTopBar extends StatelessWidget {
   final String avatarInitials;
   final String? avatarImageUrl;
   final int unreadCount;
   final bool isDarkMode;
   final bool isSearchVisible;
+
+  /// Optional screen title shown next to the avatar, e.g. "All Tickets".
+  final String? title;
+
+  /// Opens the filter sheet. Supply to show the funnel button.
+  final VoidCallback? onFilter;
+
+  /// Badge count on the filter button (purple badge when > 0).
+  final int filterActiveCount;
+
   final VoidCallback? onThemeToggle;
   final VoidCallback? onNotifications;
   final VoidCallback? onSearchToggle;
@@ -27,6 +38,9 @@ class TicketsTopBar extends StatelessWidget {
     this.unreadCount = 0,
     this.isDarkMode = false,
     this.isSearchVisible = false,
+    this.title,
+    this.onFilter,
+    this.filterActiveCount = 0,
     this.onThemeToggle,
     this.onNotifications,
     this.onSearchToggle,
@@ -37,8 +51,9 @@ class TicketsTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final c = context.themeColors;
     return SizedBox(
-      height: 56,
+      height: 60,
       child: Row(
         children: [
           // Avatar
@@ -47,7 +62,22 @@ class TicketsTopBar extends StatelessWidget {
             imageUrl: avatarImageUrl,
             onTap: onAvatarTap,
           ),
-          const Spacer(),
+          // Title next to avatar
+          if (title != null) ...[
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TypographyManager.textHeading.copyWith(
+                  color: c.fgBase,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ] else
+            const Spacer(),
           // Search toggle
           _CircleIconButton(
             tooltip: s.ticketsSearchHint,
@@ -55,22 +85,17 @@ class TicketsTopBar extends StatelessWidget {
             icon: isSearchVisible ? LucideIcons.x : LucideIcons.search,
           ),
           const SizedBox(width: 8),
-          // Refresh
-          if (onRefresh != null) ...[
+          // Filter funnel — between search and notifications
+          if (onFilter != null) ...[
             _CircleIconButton(
-              tooltip: 'Refresh',
-              onPressed: onRefresh,
-              icon: LucideIcons.refreshCw,
+              tooltip: s.filterTitle,
+              onPressed: onFilter,
+              icon: LucideIcons.funnel,
+              unreadCount: filterActiveCount,
+              badgeColor: c.tagPurpleIcon,
             ),
             const SizedBox(width: 8),
           ],
-          // Theme toggle
-          _CircleIconButton(
-            tooltip: s.tooltipToggleTheme,
-            onPressed: onThemeToggle,
-            icon: isDarkMode ? LucideIcons.sun : LucideIcons.moon,
-          ),
-          const SizedBox(width: 8),
           // Notifications bell
           _CircleIconButton(
             tooltip: s.tooltipNotifications,
@@ -101,8 +126,8 @@ class _Avatar extends StatelessWidget {
               onTap!();
             },
       child: Container(
-        width: 36,
-        height: 36,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: c.bgSubtle,
           shape: BoxShape.circle,
@@ -112,8 +137,8 @@ class _Avatar extends StatelessWidget {
           child: imageUrl != null
               ? Image.network(
                   imageUrl!,
-                  width: 36,
-                  height: 36,
+                  width: 44,
+                  height: 44,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     // Fallback to initials on error
@@ -149,12 +174,14 @@ class _CircleIconButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final IconData icon;
   final int unreadCount;
+  final Color? badgeColor;
 
   const _CircleIconButton({
     required this.tooltip,
     this.onPressed,
     required this.icon,
     this.unreadCount = 0,
+    this.badgeColor,
   });
 
   @override
@@ -185,7 +212,7 @@ class _CircleIconButton extends StatelessWidget {
                 constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
                 padding: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
-                  color: c.tagRedText,
+                  color: badgeColor ?? c.tagRedText,
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(color: c.bgBase, width: 1.5),
                 ),

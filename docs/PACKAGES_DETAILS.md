@@ -156,6 +156,14 @@ Last updated: 2026-04-26.
 - **Description:** Pure-Dart Flutter binding for the Lucide icon set (~1500 SVG glyphs exposed as `IconData`). No native code; works on Android, iOS, web, desktop. Active maintenance with frequent releases tracking upstream Lucide.
 - **Why we use it:** The HotelOps web prototype uses Lucide icons across the dashboard (`Sun`, `Moon`, `Clock`, `AlertCircle`, `CheckCheck`, `ChevronRight`, `PauseCircle`, `PlayCircle`, `Bell`). Matching the visual identity 1:1 in Flutter requires the same glyph set — Material Icons cannot reproduce Lucide's stroke-style consistently.
 
+### `web_socket_channel`
+- **Package name:** `web_socket_channel`
+- **Version:** `^2.4.0`
+- **Owner:** Dart team / Dart community
+- **License:** BSD-3-Clause
+- **Description:** Provides WebSocket client and server channel wrappers for Dart. Exposes platform-specific implementations such as `IOWebSocketChannel` and `HtmlWebSocketChannel` while preserving a consistent stream/sink interface.
+- **Why we use it:** The Xano realtime socket implementation requires a broadcast-capable WebSocket stream wrapper to fan out incoming frames to multiple listeners without stealing subscriptions. `web_socket_channel` is the standard Dart package for this purpose and is commercially safe.
+
 ### `permission_handler`
 - **Package name:** `permission_handler`
 - **Version:** `^11.3.1`

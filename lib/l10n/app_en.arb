@@ -96,7 +96,7 @@
   "subTabToday": "In Progress",
   "subTabOverdue": "Overdue",
   "subTabBacklog": "Backlog",
-  "subTabDone": "Done",
+  "subTabDone": "Completed Today",
 
   "sectionIncomingNow": "INCOMING NOW",
   "sectionInProgress": "IN PROGRESS",

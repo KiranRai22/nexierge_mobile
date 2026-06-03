@@ -17,7 +17,7 @@ class LoginAdminFooter extends StatelessWidget {
     return SizedBox(
       width: width,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.only(top: 24),
         child: Column(
           children: [
             Text(

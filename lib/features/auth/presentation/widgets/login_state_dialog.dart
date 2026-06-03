@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
@@ -21,27 +22,32 @@ abstract class LoginStateDialog {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: Row(
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(8, 8, 12, 12),
+          actionsAlignment: MainAxisAlignment.end,
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons.error_outline,
+                LucideIcons.triangleAlert,
                 color: ColorPalette.activityOverdueFg,
-                size: 22,
+                size: 32,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TypographyManager.titleMedium.copyWith(
-                    color: ColorPalette.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: TypographyManager.titleMedium.copyWith(
+                  color: ColorPalette.textPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
           content: Text(
             message,
+            textAlign: TextAlign.center,
             style: TypographyManager.bodyMedium.copyWith(
               color: ColorPalette.textSecondary,
               height: 1.4,

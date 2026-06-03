@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Nexierge UAT Test Plan v2</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown-light.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Nexierge UAT Test Plan v2</h1>
+</header>
+<h1 id="nexierge--uat-test-plan--qa-handbook-v2">Nexierge — UAT Test
+Plan &amp; QA Handbook (v2)</h1>
+<p><strong>Document owner:</strong> QA Lead <strong>Last
+updated:</strong> 2026-06-03 <strong>Status:</strong> Draft for UAT
+sign-off <strong>Supersedes:</strong> <code>UAT_TEST_PLAN.md</code>
+(v1)</p>
+<hr />
+<h2 id="1-purpose--scope">1. Purpose &amp; Scope</h2>
+<p>This document is the canonical acceptance-test reference for the
+Nexierge mobile app (HotelOps). It defines:</p>
+<ul>
+<li>The features under test and their acceptance criteria.</li>
+<li>The environment, test data, and tooling required to execute
+UAT.</li>
+<li>The defect lifecycle, severity matrix, and exit criteria.</li>
+<li>The roles and responsibilities for sign-off.</li>
+</ul>
+<p><strong>In scope:</strong> Flutter mobile app (Android + iOS),
+backend integration, FCM push, Socket.IO realtime, version control,
+i18n. <strong>Out of scope:</strong> Backend-only API correctness
+(covered by API test suite), admin web console, infra/SRE concerns.</p>
+<hr />
+<h2 id="2-test-environment">2. Test Environment</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backend environment</td>
+<td><code>uat.nexierge.io</code> (sandbox)</td>
+</tr>
+<tr>
+<td>Socket endpoint</td>
+<td><code>wss://uat.nexierge.io/realtime</code></td>
+</tr>
+<tr>
+<td>FCM project</td>
+<td><code>nexierge-uat</code></td>
+</tr>
+<tr>
+<td>App build channel</td>
+<td><code>uat</code> flavor, signed UAT keystore (Android) / TestFlight
+(iOS)</td>
+</tr>
+<tr>
+<td>Min Android</td>
+<td>API 24 (Android 7)</td>
+</tr>
+<tr>
+<td>Min iOS</td>
+<td>iOS 14</td>
+</tr>
+<tr>
+<td>Required devices</td>
+<td>1× low-end Android (e.g. Pixel 4a), 1× recent Android (Pixel 8 /
+Samsung S23), 1× iPhone (XR or later), 1× iPad (optional)</td>
+</tr>
+<tr>
+<td>Network conditions</td>
+<td>WiFi, 4G, 3G-throttled, Offline (via Charles / Network Link
+Conditioner)</td>
+</tr>
+<tr>
+<td>Locales to verify</td>
+<td><code>en</code>, <code>es</code> (+ any locale active in
+<code>app_localizations</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="21-test-data-setup">2.1 Test Data Setup</h3>
+<p>Before UAT begins, the QA lead must seed:</p>
+<ul>
+<li><strong>Users:</strong> at least one per role (FrontDesk,
+Housekeeping, Maintenance, F&amp;B, Manager/Admin).</li>
+<li><strong>Rooms:</strong> ≥20 rooms across multiple floors; include
+OOO/OOS states.</li>
+<li><strong>Tickets:</strong> seed open, in-progress, completed, and
+overdue tickets across departments.</li>
+<li><strong>Catalog:</strong> at least 5 priced catalog items + 3
+universal items.</li>
+<li><strong>Notifications:</strong> trigger a backlog of ≥10 unread
+notifications per test user.</li>
+<li><strong>Version control:</strong> server-flagged "optional" and
+"forced" update payloads ready to toggle.</li>
+</ul>
+<p>Credentials are stored in 1Password vault
+<strong><code>Nexierge-UAT</code></strong> (request access from QA
+lead).</p>
+<hr />
+<h2 id="3-roles--responsibilities-raci">3. Roles &amp; Responsibilities
+(RACI)</h2>
+<table>
+<thead>
+<tr>
+<th>Activity</th>
+<th>QA Lead</th>
+<th>QA Tester</th>
+<th>Dev</th>
+<th>PM</th>
+<th>Stakeholder</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Test plan ownership</td>
+<td><strong>R/A</strong></td>
+<td>C</td>
+<td>C</td>
+<td>I</td>
+<td>I</td>
+</tr>
+<tr>
+<td>Test execution</td>
+<td>A</td>
+<td><strong>R</strong></td>
+<td>I</td>
+<td>I</td>
+<td>I</td>
+</tr>
+<tr>
+<td>Defect triage</td>
+<td>R</td>
+<td>C</td>
+<td><strong>A</strong></td>
+<td>C</td>
+<td>I</td>
+</tr>
+<tr>
+<td>Severity assignment</td>
+<td><strong>R/A</strong></td>
+<td>C</td>
+<td>C</td>
+<td>I</td>
+<td>I</td>
+</tr>
+<tr>
+<td>Sign-off</td>
+<td>C</td>
+<td>I</td>
+<td>C</td>
+<td><strong>R</strong></td>
+<td><strong>A</strong></td>
+</tr>
+</tbody>
+</table>
+<p>R = Responsible, A = Accountable, C = Consulted, I = Informed.</p>
+<hr />
+<h2 id="4-entry-criteria">4. Entry Criteria</h2>
+<p>UAT begins only when <strong>all</strong> of the following are
+true:</p>
+<ol type="1">
+<li>Latest UAT build deployed to TestFlight / Firebase App
+Distribution.</li>
+<li>Backend UAT environment healthy (smoke test green).</li>
+<li>Test data seeded (§2.1).</li>
+<li>Known critical (P0/P1) defects from prior cycle are closed or have
+approved waivers.</li>
+<li>Release notes published, listing changes since last cycle.</li>
+</ol>
+<hr />
+<h2 id="5-exit-criteria">5. Exit Criteria</h2>
+<p>UAT is <strong>passed</strong> when:</p>
+<ul>
+<li>100% of P0/P1 test cases pass.</li>
+<li>≥95% of P2 test cases pass; any failures have agreed
+mitigation.</li>
+<li>Zero open P0/P1 defects.</li>
+<li>≤3 open P2 defects, each with an agreed workaround or scheduled
+fix.</li>
+<li>Performance benchmarks (§16) within thresholds on at least one
+Android + one iOS device.</li>
+<li>Sign-off captured from PM and Stakeholder (§22).</li>
+</ul>
+<hr />
+<h2 id="6-defect-severity-matrix">6. Defect Severity Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Definition</th>
+<th>Example</th>
+<th>Target fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0 — Critical</strong></td>
+<td>App unusable, data loss, security breach, crash on launch</td>
+<td>Cannot log in; tickets lost on save</td>
+<td>Same day</td>
+</tr>
+<tr>
+<td><strong>P1 — High</strong></td>
+<td>Major feature broken, no workaround</td>
+<td>Push notifications not delivered; cannot create ticket</td>
+<td>Within cycle</td>
+</tr>
+<tr>
+<td><strong>P2 — Medium</strong></td>
+<td>Feature degraded, workaround exists</td>
+<td>Filter resets on tab switch; minor i18n gap</td>
+<td>Next cycle</td>
+</tr>
+<tr>
+<td><strong>P3 — Low</strong></td>
+<td>Cosmetic, edge case</td>
+<td>Misaligned icon at certain zoom</td>
+<td>Backlog</td>
+</tr>
+</tbody>
+</table>
+<h3 id="61-defect-report-template">6.1 Defect Report Template</h3>
+<pre><code>ID:           DEF-YYYYMMDD-###
+Title:        &lt;one-line summary&gt;
+Severity:     P0 | P1 | P2 | P3
+Module:       Auth | Dashboard | Tickets | …
+Build:        &lt;version + buildNumber&gt;
+Device/OS:    &lt;model, OS version&gt;
+Network:      WiFi | 4G | Offline
+Locale:       en | es | …
+Steps:        1. … 2. … 3. …
+Expected:     &lt;what should happen&gt;
+Actual:       &lt;what happened&gt;
+Frequency:    Always | Intermittent | Once
+Attachments:  &lt;screenshot/video/log refs&gt;
+Logs:         &lt;crashlytics ID / log excerpt&gt;
+Notes:        &lt;regression? blocking other tests?&gt;</code></pre>
+<hr />
+<h2 id="7-test-case-conventions">7. Test Case Conventions</h2>
+<ul>
+<li><strong>ID format:</strong> <code>&lt;MODULE&gt;-&lt;NN&gt;</code>
+(e.g., <code>TICK-05</code>). Stable across cycles.</li>
+<li><strong>Priority column</strong> added to every test case:
+<strong>P0</strong> (must-pass), <strong>P1</strong> (must-pass for
+release), <strong>P2</strong> (should-pass), <strong>P3</strong>
+(nice-to-have).</li>
+<li>Each case records: scenario, steps, expected outcome, priority, and
+notes.</li>
+<li>Pass/Fail captured per device + locale in the execution sheet.</li>
+</ul>
+<hr />
+<h2 id="8-authentication-auth">8. Authentication (Auth)</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Steps</th>
+<th>Expected Outcome</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AUTH-01</td>
+<td>P0</td>
+<td>Email/password login success</td>
+<td>Open app → enter valid email → password → submit</td>
+<td>Login succeeds, navigates to dashboard</td>
+<td>Clean install + post-logout</td>
+</tr>
+<tr>
+<td>AUTH-02</td>
+<td>P0</td>
+<td>Employee code login success</td>
+<td>Toggle mode → enter employee code + login code → submit</td>
+<td>Login succeeds</td>
+<td>Verify toggle retains form state</td>
+</tr>
+<tr>
+<td>AUTH-03</td>
+<td>P0</td>
+<td>Invalid credentials</td>
+<td>Submit wrong creds</td>
+<td>Inline error, login blocked</td>
+<td>Should not navigate</td>
+</tr>
+<tr>
+<td>AUTH-04</td>
+<td>P1</td>
+<td>Empty required fields</td>
+<td>Blank fields → submit</td>
+<td>Validation per field; no network call</td>
+<td></td>
+</tr>
+<tr>
+<td>AUTH-05</td>
+<td>P1</td>
+<td>Network failure during login</td>
+<td>Disable network → submit valid creds</td>
+<td>Friendly error, no crash; retry available</td>
+<td></td>
+</tr>
+<tr>
+<td>AUTH-06</td>
+<td>P0</td>
+<td>Session persistence</td>
+<td>Login → kill → relaunch</td>
+<td>User remains logged in, routes to HomeShell</td>
+<td></td>
+</tr>
+<tr>
+<td>AUTH-07</td>
+<td>P0</td>
+<td>Logout</td>
+<td>Profile → logout → confirm</td>
+<td>Session cleared, login screen; back-stack not re-entered</td>
+<td></td>
+</tr>
+<tr>
+<td>AUTH-08</td>
+<td>P1</td>
+<td>Device token registration</td>
+<td>Login → inspect token state</td>
+<td>FCM token registered/persisted, doesn't block login</td>
+<td></td>
+</tr>
+<tr>
+<td>AUTH-09</td>
+<td>P1</td>
+<td>Token expiry mid-session</td>
+<td>Force-expire token server-side, perform protected action</td>
+<td>App refreshes silently or prompts re-login; no silent failure</td>
+<td>New</td>
+</tr>
+<tr>
+<td>AUTH-10</td>
+<td>P1</td>
+<td>Concurrent login on second device</td>
+<td>Log in on Device B with same account</td>
+<td>Define behaviour: allowed concurrent OR Device A invalidated.
+Confirm matches spec</td>
+<td>New</td>
+</tr>
+<tr>
+<td>AUTH-11</td>
+<td>P2</td>
+<td>Deep link while logged out</td>
+<td>Open ticket deep link with no session</td>
+<td>Routes to login; after login returns to original target</td>
+<td>New</td>
+</tr>
+<tr>
+<td>AUTH-12</td>
+<td>P2</td>
+<td>Biometric/quick re-auth (if enabled)</td>
+<td>Enable biometric → relaunch</td>
+<td>Prompt appears; fallback to password works</td>
+<td>New — skip if feature not shipped</td>
+</tr>
+<tr>
+<td>AUTH-13</td>
+<td>P2</td>
+<td>Brute force / rate limit feedback</td>
+<td>Submit wrong creds repeatedly</td>
+<td>Server-side throttle reflected in UI (e.g., "try again in N s")</td>
+<td>New</td>
+</tr>
+<tr>
+<td>AUTH-14</td>
+<td>P2</td>
+<td>Login with leading/trailing whitespace</td>
+<td>Paste email with spaces</td>
+<td>Trimmed and accepted, or clear validation message</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9-dashboard">9. Dashboard</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Steps</th>
+<th>Expected Outcome</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DASH-01</td>
+<td>P0</td>
+<td>Bootstrap loading</td>
+<td>Login → first launch</td>
+<td>Shimmer until data loads; no blank content</td>
+<td></td>
+</tr>
+<tr>
+<td>DASH-02</td>
+<td>P0</td>
+<td>KPI counts accuracy</td>
+<td>Dashboard loads</td>
+<td>Four KPI values match API response</td>
+<td>Cross-check API</td>
+</tr>
+<tr>
+<td>DASH-03</td>
+<td>P1</td>
+<td>Needs Attention list</td>
+<td>Dashboard loads</td>
+<td>High-priority tickets shown; tap → correct detail</td>
+<td></td>
+</tr>
+<tr>
+<td>DASH-04</td>
+<td>P0</td>
+<td>Real-time KPI update</td>
+<td>Trigger ticket change via socket</td>
+<td>Counts update without manual refresh</td>
+<td></td>
+</tr>
+<tr>
+<td>DASH-05</td>
+<td>P1</td>
+<td>Empty state</td>
+<td>Zero counts</td>
+<td>Graceful empty UI, no crash</td>
+<td></td>
+</tr>
+<tr>
+<td>DASH-06</td>
+<td>P1</td>
+<td>KPI navigation</td>
+<td>Tap KPI card</td>
+<td>Routes to filtered ticket list; back returns to dashboard</td>
+<td></td>
+</tr>
+<tr>
+<td>DASH-07</td>
+<td>P1</td>
+<td>Pull-to-refresh</td>
+<td>Swipe down</td>
+<td>Triggers refetch; spinner shown; data updates</td>
+<td>New</td>
+</tr>
+<tr>
+<td>DASH-08</td>
+<td>P2</td>
+<td>Stale data indicator after reconnect</td>
+<td>Lose connection → regain</td>
+<td>Indicator shows refresh; reconciliation runs</td>
+<td>New</td>
+</tr>
+<tr>
+<td>DASH-09</td>
+<td>P1</td>
+<td>Performance on cold load</td>
+<td>Launch with realistic data</td>
+<td>First paint &lt; 1s on mid-tier device</td>
+<td>See §16</td>
+</tr>
+<tr>
+<td>DASH-10</td>
+<td>P2</td>
+<td>RBAC visibility</td>
+<td>Login as restricted role</td>
+<td>Only role-permitted KPIs visible</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-tickets">10. Tickets</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Steps</th>
+<th>Expected Outcome</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TICK-01</td>
+<td>P0</td>
+<td>List load</td>
+<td>Open tickets tab</td>
+<td>List loads; no blank screen</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-02</td>
+<td>P1</td>
+<td>Filter by status/scope</td>
+<td>Switch tabs</td>
+<td>Correct tickets per scope</td>
+<td>Tab highlight</td>
+</tr>
+<tr>
+<td>TICK-03</td>
+<td>P1</td>
+<td>Search by guest/room</td>
+<td>Enter query</td>
+<td>Debounced filtered results</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-04</td>
+<td>P0</td>
+<td>Detail view</td>
+<td>Tap ticket</td>
+<td>All metadata, timeline, guest info correct</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-05</td>
+<td>P0</td>
+<td>Accept incoming + ETA</td>
+<td>Open incoming → accept w/ ETA</td>
+<td>Status → accepted/in-progress; timeline entry added</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-06</td>
+<td>P0</td>
+<td>Mark done</td>
+<td>Mark as done</td>
+<td>Ticket completes; list updates</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-07</td>
+<td>P1</td>
+<td>Add note</td>
+<td>Submit note</td>
+<td>Appears in timeline; no duplicates</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-08</td>
+<td>P1</td>
+<td>Reassign</td>
+<td>Change department</td>
+<td>Department + assignee updated</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-09</td>
+<td>P0</td>
+<td>Create universal</td>
+<td>Universal flow → submit</td>
+<td>Created and appears in list</td>
+<td>Required-field enforcement</td>
+</tr>
+<tr>
+<td>TICK-10</td>
+<td>P0</td>
+<td>Create catalog</td>
+<td>Catalog flow w/ pricing</td>
+<td>Created; pricing matches selection</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-11</td>
+<td>P0</td>
+<td>Create manual</td>
+<td>Manual flow → submit</td>
+<td>Created</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-12</td>
+<td>P1</td>
+<td>Missing required data</td>
+<td>Blank submit</td>
+<td>Specific per-field errors; no create call</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-13</td>
+<td>P1</td>
+<td>API failure on create</td>
+<td>Force 500</td>
+<td>Error UI; retry works; no orphan ticket</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-14</td>
+<td>P1</td>
+<td>Realtime ticket update</td>
+<td>Trigger external change</td>
+<td>List updates; no duplicates or stale data</td>
+<td></td>
+</tr>
+<tr>
+<td>TICK-15</td>
+<td>P1</td>
+<td>Long list performance</td>
+<td>Scroll 200+ tickets</td>
+<td>Smooth scroll; lazy load functional</td>
+<td>See §16</td>
+</tr>
+<tr>
+<td>TICK-16</td>
+<td>P1</td>
+<td>Draft persistence on create</td>
+<td>Start create → background app 30s → resume</td>
+<td>Draft preserved (or explicit discard prompt)</td>
+<td>New</td>
+</tr>
+<tr>
+<td>TICK-17</td>
+<td>P2</td>
+<td>Attachments / images</td>
+<td>Attach image to ticket</td>
+<td>Uploads with progress; size limit enforced; thumbnail in detail</td>
+<td>New — verify feature exists first</td>
+</tr>
+<tr>
+<td>TICK-18</td>
+<td>P2</td>
+<td>Priority / SLA badge</td>
+<td>Open ticket near SLA breach</td>
+<td>Priority and SLA timer displayed; escalates correctly</td>
+<td>New</td>
+</tr>
+<tr>
+<td>TICK-19</td>
+<td>P2</td>
+<td>Escalation rules</td>
+<td>Wait past SLA threshold</td>
+<td>Ticket auto-escalates per backend rule; UI reflects new state</td>
+<td>New</td>
+</tr>
+<tr>
+<td>TICK-20</td>
+<td>P1</td>
+<td>Concurrent edit conflict</td>
+<td>User A and User B edit same ticket</td>
+<td>Last-write-wins or conflict toast, per spec; no silent data
+loss</td>
+<td>New</td>
+</tr>
+<tr>
+<td>TICK-21</td>
+<td>P1</td>
+<td>Offline create then reconnect</td>
+<td>Create ticket offline (if supported)</td>
+<td>Either disabled offline OR queued + synced on reconnect</td>
+<td>New — confirm policy</td>
+</tr>
+<tr>
+<td>TICK-22</td>
+<td>P2</td>
+<td>RBAC on actions</td>
+<td>Login as restricted role</td>
+<td>Restricted actions (reassign, mark done) hidden/disabled</td>
+<td>New</td>
+</tr>
+<tr>
+<td>TICK-23</td>
+<td>P2</td>
+<td>PII redaction</td>
+<td>Inspect logs / screenshots in dev mode</td>
+<td>No guest PII written to logs / crash reports</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-notifications-in-app-inbox">11. Notifications (In-App
+Inbox)</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Steps</th>
+<th>Expected Outcome</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NOTIF-01</td>
+<td>P0</td>
+<td>Open inbox</td>
+<td>Tap bell</td>
+<td>Sheet opens with unread count</td>
+<td>Scrollable</td>
+</tr>
+<tr>
+<td>NOTIF-02</td>
+<td>P0</td>
+<td>Foreground push</td>
+<td>Send FCM while open</td>
+<td>Foreground toast + inbox updates</td>
+<td></td>
+</tr>
+<tr>
+<td>NOTIF-03</td>
+<td>P0</td>
+<td>Background push</td>
+<td>Send FCM while backgrounded</td>
+<td>System tray entry; tap deep-links correctly</td>
+<td></td>
+</tr>
+<tr>
+<td>NOTIF-04</td>
+<td>P1</td>
+<td>Mark read</td>
+<td>Mark item read</td>
+<td>Item updates; badge decreases</td>
+<td></td>
+</tr>
+<tr>
+<td>NOTIF-05</td>
+<td>P1</td>
+<td>Clear all</td>
+<td>Use clear-all</td>
+<td>Empties or empty state shown</td>
+<td>BE/UI sync</td>
+</tr>
+<tr>
+<td>NOTIF-06</td>
+<td>P0</td>
+<td>Deep link tap</td>
+<td>Tap notification</td>
+<td>Lands on correct ticket/page with context</td>
+<td></td>
+</tr>
+<tr>
+<td>NOTIF-07</td>
+<td>P2</td>
+<td>Offline inbox</td>
+<td>Open with no network</td>
+<td>Cached items shown; graceful error otherwise</td>
+<td></td>
+</tr>
+<tr>
+<td>NOTIF-08</td>
+<td>P1</td>
+<td>Unread badge realtime</td>
+<td>Push arrives</td>
+<td>Bell badge updates live</td>
+<td></td>
+</tr>
+<tr>
+<td>NOTIF-09</td>
+<td>P1</td>
+<td>Reconciliation on resume</td>
+<td>Background app → resume</td>
+<td>Inbox reconciles missed events (no gaps, no dupes)</td>
+<td>New</td>
+</tr>
+<tr>
+<td>NOTIF-10</td>
+<td>P2</td>
+<td>Notification grouping / channels</td>
+<td>Send multiple notifications fast</td>
+<td>Grouped sensibly on Android channels / iOS threading</td>
+<td>New</td>
+</tr>
+<tr>
+<td>NOTIF-11</td>
+<td>P2</td>
+<td>Notification sound + vibration per channel</td>
+<td>Trigger each category</td>
+<td>Matches platform notification settings</td>
+<td>New</td>
+</tr>
+<tr>
+<td>NOTIF-12</td>
+<td>P2</td>
+<td>Quiet hours / DND respect</td>
+<td>Enable DND</td>
+<td>Pushes respect OS DND; in-app inbox still updates</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="12-profile">12. Profile</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Steps</th>
+<th>Expected Outcome</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PROF-01</td>
+<td>P0</td>
+<td>View profile</td>
+<td>Open profile</td>
+<td>Name, email, hotel, subscription correct</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-02</td>
+<td>P1</td>
+<td>Edit name</td>
+<td>Edit → save</td>
+<td>Persists locally + server</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-03</td>
+<td>P1</td>
+<td>Avatar from gallery</td>
+<td>Upload</td>
+<td>Progress shown; new avatar visible</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-04</td>
+<td>P1</td>
+<td>Avatar from camera</td>
+<td>Upload</td>
+<td>Permission prompt; upload works</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-05</td>
+<td>P0</td>
+<td>Theme toggle</td>
+<td>Toggle light/dark</td>
+<td>Switches instantly; persisted (<code>app.themeMode</code>)</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-06</td>
+<td>P0</td>
+<td>Language change</td>
+<td>Pick locale</td>
+<td>UI updates immediately; persisted (<code>app.locale</code>)</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-07</td>
+<td>P0</td>
+<td>Logout</td>
+<td>Logout + confirm</td>
+<td>Session cleared</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-08</td>
+<td>P2</td>
+<td>Invalid edit data</td>
+<td>Bad input</td>
+<td>Validation blocks request</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-09</td>
+<td>P1</td>
+<td>Profile API failure</td>
+<td>Force failure</td>
+<td>Error + retry path</td>
+<td></td>
+</tr>
+<tr>
+<td>PROF-10</td>
+<td>P2</td>
+<td>Avatar size/format limits</td>
+<td>Upload &gt;max size / unsupported format</td>
+<td>Clear error; no crash</td>
+<td>New</td>
+</tr>
+<tr>
+<td>PROF-11</td>
+<td>P2</td>
+<td>Theme/locale survives logout-login</td>
+<td>Toggle → logout → login</td>
+<td>Restored on next session</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="13-activity-feed">13. Activity Feed</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Steps</th>
+<th>Expected Outcome</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ACT-01</td>
+<td>P0</td>
+<td>Timeline load</td>
+<td>Open tab</td>
+<td>Events load, grouped by day</td>
+<td></td>
+</tr>
+<tr>
+<td>ACT-02</td>
+<td>P1</td>
+<td>Event-type filter</td>
+<td>Select</td>
+<td>Only matching events</td>
+<td>Persists while visible</td>
+</tr>
+<tr>
+<td>ACT-03</td>
+<td>P1</td>
+<td>Department filter</td>
+<td>Apply</td>
+<td>Only relevant events</td>
+<td>Combine filters supported</td>
+</tr>
+<tr>
+<td>ACT-04</td>
+<td>P0</td>
+<td>Navigate from event</td>
+<td>Tap row</td>
+<td>Opens ticket detail; message if missing</td>
+<td></td>
+</tr>
+<tr>
+<td>ACT-05</td>
+<td>P1</td>
+<td>Realtime event</td>
+<td>Trigger new event</td>
+<td>Appears live, no dupes</td>
+<td></td>
+</tr>
+<tr>
+<td>ACT-06</td>
+<td>P2</td>
+<td>Empty state</td>
+<td>No events</td>
+<td>Clear empty UI</td>
+<td></td>
+</tr>
+<tr>
+<td>ACT-07</td>
+<td>P1</td>
+<td>Scroll performance</td>
+<td>Scroll fast</td>
+<td>Smooth on long feed</td>
+<td>See §16</td>
+</tr>
+<tr>
+<td>ACT-08</td>
+<td>P2</td>
+<td>Timezone correctness</td>
+<td>Change device TZ</td>
+<td>Timestamps render in correct local TZ</td>
+<td>New</td>
+</tr>
+<tr>
+<td>ACT-09</td>
+<td>P2</td>
+<td>Date format per locale</td>
+<td>Switch locale</td>
+<td>Date/number formatting respects locale</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="14-rooms--catalog--fcm--languages--modules--version--shell">14.
+Rooms / Catalog / FCM / Languages / Modules / Version / Shell</h2>
+<blockquote>
+<p>Cases from v1 retained; additions below.</p>
+</blockquote>
+<h3 id="141-rooms">14.1 Rooms</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ROOM-01</td>
+<td>P1</td>
+<td>Room selection in ticket creation</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>ROOM-02</td>
+<td>P1</td>
+<td>Room context in tickets</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>ROOM-03</td>
+<td>P2</td>
+<td>No-room state</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>ROOM-04</td>
+<td>P2</td>
+<td>Room OOO/OOS state visibility</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<h3 id="142-fcm--push">14.2 FCM / Push</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FCM-01</td>
+<td>P0</td>
+<td>Initial token registration</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>FCM-02</td>
+<td>P1</td>
+<td>Token refresh</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>FCM-03</td>
+<td>P0</td>
+<td>iOS/Android permission flow</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>FCM-04</td>
+<td>P0</td>
+<td>Payload routing</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>FCM-05</td>
+<td>P0</td>
+<td>Terminated-state launch via push</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>FCM-06</td>
+<td>P2</td>
+<td>Notification permission revoked at runtime</td>
+<td>New — surface in-app prompt + settings link</td>
+</tr>
+<tr>
+<td>FCM-07</td>
+<td>P2</td>
+<td>Token rotation after app reinstall</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<h3 id="143-languages--i18n">14.3 Languages / i18n</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LANG-01</td>
+<td>P0</td>
+<td>Change locale in profile</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>LANG-02</td>
+<td>P0</td>
+<td>Locale persists across restart</td>
+<td>v1; key <code>app.locale</code></td>
+</tr>
+<tr>
+<td>LANG-03</td>
+<td>P1</td>
+<td>Fallback to system locale</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>LANG-04</td>
+<td>P1</td>
+<td>Translation coverage</td>
+<td>v1; sweep ARB keys</td>
+</tr>
+<tr>
+<td>LANG-05</td>
+<td>P2</td>
+<td>RTL layout (if supported)</td>
+<td>New</td>
+</tr>
+<tr>
+<td>LANG-06</td>
+<td>P1</td>
+<td>No hardcoded strings (UI/snackbars/dialogs/notifications)</td>
+<td>Per CLAUDE.md i18n rule</td>
+</tr>
+</tbody>
+</table>
+<h3 id="144-modules-placeholder">14.4 Modules placeholder</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MOD-01</td>
+<td>P2</td>
+<td>Coming-soon screen</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>MOD-02</td>
+<td>P3</td>
+<td>Placeholder under rotation</td>
+<td>v1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="145-version-control">14.5 Version Control</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VER-01</td>
+<td>P1</td>
+<td>Optional update prompt</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>VER-02</td>
+<td>P0</td>
+<td>Forced update gating</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>VER-03</td>
+<td>P1</td>
+<td>Up-to-date path</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>VER-04</td>
+<td>P1</td>
+<td>Version check once per session</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>VER-05</td>
+<td>P2</td>
+<td>App store link opens correct store per platform</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<h3 id="146-shell--navigation">14.6 Shell / Navigation</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SHELL-01</td>
+<td>P0</td>
+<td>Bottom nav switching</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>SHELL-02</td>
+<td>P0</td>
+<td>Deep link routing (cold, warm, terminated)</td>
+<td>v1 + verify all three states</td>
+</tr>
+<tr>
+<td>SHELL-03</td>
+<td>P1</td>
+<td>Back stack across tabs</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>SHELL-04</td>
+<td>P1</td>
+<td>HomeShell resume stability</td>
+<td>v1</td>
+</tr>
+<tr>
+<td>SHELL-05</td>
+<td>P2</td>
+<td>Tablet / landscape layout</td>
+<td>New</td>
+</tr>
+<tr>
+<td>SHELL-06</td>
+<td>P2</td>
+<td>Split-screen / multi-window (Android)</td>
+<td>New</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="15-realtime--socket-resilience">15. Realtime / Socket
+Resilience</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Expected Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RT-01</td>
+<td>P0</td>
+<td>Initial socket connect on login</td>
+<td>Connection established; auth handshake succeeds</td>
+</tr>
+<tr>
+<td>RT-02</td>
+<td>P0</td>
+<td>Reconnect after network drop</td>
+<td>Exponential backoff; reconnects without manual action</td>
+</tr>
+<tr>
+<td>RT-03</td>
+<td>P0</td>
+<td>Reconcile-on-reconnect</td>
+<td>Missed events fetched via REST diff (no UI gaps, no dupes)</td>
+</tr>
+<tr>
+<td>RT-04</td>
+<td>P1</td>
+<td>Reconcile on app resume from background</td>
+<td>Same as RT-03</td>
+</tr>
+<tr>
+<td>RT-05</td>
+<td>P1</td>
+<td>Heartbeat / ping behaviour</td>
+<td>No false disconnects on idle</td>
+</tr>
+<tr>
+<td>RT-06</td>
+<td>P2</td>
+<td>Periodic poll fallback (last resort)</td>
+<td>Only engages if socket unhealthy beyond threshold</td>
+</tr>
+<tr>
+<td>RT-07</td>
+<td>P1</td>
+<td>Auth-failure on socket (expired token)</td>
+<td>Triggers token refresh and reconnect</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="16-performance--stability-benchmarks">16. Performance &amp;
+Stability Benchmarks</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Metric</th>
+<th>Target</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PERF-01</td>
+<td>P1</td>
+<td>Cold start to first interactable frame</td>
+<td>≤ 2.5s mid-tier Android, ≤ 2s iPhone</td>
+<td>Stopwatch + Flutter DevTools</td>
+</tr>
+<tr>
+<td>PERF-02</td>
+<td>P1</td>
+<td>Dashboard first paint after auth</td>
+<td>≤ 1s with cached data, ≤ 2s cold</td>
+<td>DevTools timeline</td>
+</tr>
+<tr>
+<td>PERF-03</td>
+<td>P1</td>
+<td>Screen transition jank</td>
+<td>&lt; 1% frames &gt; 16ms</td>
+<td>DevTools</td>
+</tr>
+<tr>
+<td>PERF-04</td>
+<td>P2</td>
+<td>Memory after 30 min usage</td>
+<td>No upward leak trend</td>
+<td>DevTools memory tab</td>
+</tr>
+<tr>
+<td>PERF-05</td>
+<td>P1</td>
+<td>Network loss resilience</td>
+<td>Graceful errors; recovery on reconnect</td>
+<td>Charles offline toggle</td>
+</tr>
+<tr>
+<td>PERF-06</td>
+<td>P1</td>
+<td>API 5xx handling</td>
+<td>Friendly error + retry on critical calls</td>
+<td>Charles rewrite rules</td>
+</tr>
+<tr>
+<td>PERF-07</td>
+<td>P2</td>
+<td>Offline cache fallback</td>
+<td>Stale-data indicator shown</td>
+<td></td>
+</tr>
+<tr>
+<td>PERF-08</td>
+<td>P0</td>
+<td>No crashes during smoke run</td>
+<td>Zero crashes across full P0 pass</td>
+<td>Crashlytics</td>
+</tr>
+<tr>
+<td>PERF-09</td>
+<td>P0</td>
+<td>Session expiry</td>
+<td>Clean re-login prompt, no unauthorised access</td>
+<td></td>
+</tr>
+<tr>
+<td>PERF-10</td>
+<td>P1</td>
+<td>Localization completeness</td>
+<td>No missing strings; no overflow in <code>es</code></td>
+<td>Visual sweep + ARB diff</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="17-accessibility-a11y">17. Accessibility (A11y)</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Expected Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A11Y-01</td>
+<td>P1</td>
+<td>TalkBack / VoiceOver labels on primary actions</td>
+<td>All interactive elements announced meaningfully</td>
+</tr>
+<tr>
+<td>A11Y-02</td>
+<td>P1</td>
+<td>Dynamic text scale 130%</td>
+<td>Layouts adapt without clipping/overflow</td>
+</tr>
+<tr>
+<td>A11Y-03</td>
+<td>P2</td>
+<td>Color contrast (WCAG AA)</td>
+<td>Text vs background passes AA</td>
+</tr>
+<tr>
+<td>A11Y-04</td>
+<td>P2</td>
+<td>Focus order with external keyboard (iPad)</td>
+<td>Logical focus traversal</td>
+</tr>
+<tr>
+<td>A11Y-05</td>
+<td>P2</td>
+<td>Tap target size ≥ 44×44 pt</td>
+<td>Verified on key actions</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="18-security--privacy">18. Security &amp; Privacy</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Expected Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEC-01</td>
+<td>P0</td>
+<td>Tokens stored in secure storage (Keychain/Keystore)</td>
+<td>Not in shared prefs / logs</td>
+</tr>
+<tr>
+<td>SEC-02</td>
+<td>P0</td>
+<td>TLS only; no cleartext traffic</td>
+<td>Verified via <code>networkSecurityConfig</code> / ATS</td>
+</tr>
+<tr>
+<td>SEC-03</td>
+<td>P1</td>
+<td>Auth headers redacted in logs</td>
+<td>No bearer tokens in Crashlytics/logcat</td>
+</tr>
+<tr>
+<td>SEC-04</td>
+<td>P1</td>
+<td>Deep link target validation</td>
+<td>Malformed / external links rejected</td>
+</tr>
+<tr>
+<td>SEC-05</td>
+<td>P1</td>
+<td>Backgrounded app blurs sensitive screens (iOS app switcher)</td>
+<td>If feature shipped, verify; else flag as known gap</td>
+</tr>
+<tr>
+<td>SEC-06</td>
+<td>P2</td>
+<td>Clipboard hygiene for guest PII</td>
+<td>Sensitive fields don't auto-copy</td>
+</tr>
+<tr>
+<td>SEC-07</td>
+<td>P1</td>
+<td>Logout invalidates server session</td>
+<td>Old token rejected on next call</td>
+</tr>
+<tr>
+<td>SEC-08</td>
+<td>P1</td>
+<td>Crash reports contain no PII</td>
+<td>Manual inspection of recent Crashlytics events</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="19-observability">19. Observability</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Scenario</th>
+<th>Expected Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OBS-01</td>
+<td>P1</td>
+<td>Crashlytics receives crashes</td>
+<td>Force-crash dev build; entry appears</td>
+</tr>
+<tr>
+<td>OBS-02</td>
+<td>P2</td>
+<td>Analytics events fire for key actions</td>
+<td>login, ticket_create, ticket_complete, push_open</td>
+</tr>
+<tr>
+<td>OBS-03</td>
+<td>P2</td>
+<td>Performance traces (cold start, ticket list)</td>
+<td>Visible in Firebase Performance</td>
+</tr>
+<tr>
+<td>OBS-04</td>
+<td>P2</td>
+<td>Structured logs (no PII)</td>
+<td>Log review on a sample session</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="20-regression-suite-smoke--must-pass-every-build">20. Regression
+Suite (Smoke — must pass every build)</h2>
+<p>Run this short list on every build before deeper UAT:</p>
+<p><code>AUTH-01</code>, <code>AUTH-06</code>, <code>AUTH-07</code>,
+<code>DASH-01</code>, <code>DASH-02</code>, <code>DASH-04</code>,
+<code>TICK-01</code>, <code>TICK-04</code>, <code>TICK-05</code>,
+<code>TICK-06</code>, <code>TICK-09</code>, <code>NOTIF-01</code>,
+<code>NOTIF-03</code>, <code>NOTIF-06</code>, <code>PROF-05</code>,
+<code>PROF-06</code>, <code>FCM-01</code>, <code>FCM-04</code>,
+<code>LANG-01</code>, <code>VER-02</code>, <code>SHELL-01</code>,
+<code>RT-01</code>, <code>RT-03</code>, <code>PERF-08</code>.</p>
+<p><strong>Smoke target:</strong> complete in ≤ 60 minutes on one
+Android + one iOS device.</p>
+<hr />
+<h2 id="21-traceability-matrix-requirement--test">21. Traceability
+Matrix (Requirement → Test)</h2>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Covered by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-AUTH: Secure login + session persistence</td>
+<td>AUTH-01..14, SEC-01, SEC-07</td>
+</tr>
+<tr>
+<td>R-DASH: Live KPIs + needs attention</td>
+<td>DASH-01..10, RT-04</td>
+</tr>
+<tr>
+<td>R-TICK: Full ticket lifecycle</td>
+<td>TICK-01..23, RT-03</td>
+</tr>
+<tr>
+<td>R-NOTIF: Inbox + push</td>
+<td>NOTIF-01..12, FCM-01..07</td>
+</tr>
+<tr>
+<td>R-PROF: Profile + preferences</td>
+<td>PROF-01..11, LANG-01..06</td>
+</tr>
+<tr>
+<td>R-ACT: Activity feed</td>
+<td>ACT-01..09</td>
+</tr>
+<tr>
+<td>R-VER: Update gating</td>
+<td>VER-01..05</td>
+</tr>
+<tr>
+<td>R-A11Y: Accessibility baseline</td>
+<td>A11Y-01..05</td>
+</tr>
+<tr>
+<td>R-SEC: Security &amp; privacy</td>
+<td>SEC-01..08</td>
+</tr>
+<tr>
+<td>R-OBS: Observability</td>
+<td>OBS-01..04</td>
+</tr>
+</tbody>
+</table>
+<p>Update this table whenever a requirement is added or retired.</p>
+<hr />
+<h2 id="22-sign-off">22. Sign-off</h2>
+<p>UAT is complete when the following sign off in writing (email or PR
+comment):</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Name</th>
+<th>Date</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>QA Lead</td>
+<td></td>
+<td></td>
+<td>Pass / Fail</td>
+</tr>
+<tr>
+<td>Dev Lead</td>
+<td></td>
+<td></td>
+<td>Pass / Fail</td>
+</tr>
+<tr>
+<td>PM</td>
+<td></td>
+<td></td>
+<td>Pass / Fail</td>
+</tr>
+<tr>
+<td>Stakeholder</td>
+<td></td>
+<td></td>
+<td>Pass / Fail</td>
+</tr>
+</tbody>
+</table>
+<p>Attach: execution sheet (per-case Pass/Fail per device/locale),
+open-defect list with severity &amp; owner, performance benchmark
+capture.</p>
+<hr />
+<h2 id="23-gaps--open-questions-to-confirm-before-uat-starts">23. Gaps
+&amp; Open Questions (to confirm before UAT starts)</h2>
+<p>The following items in v1 were ambiguous; confirm with product before
+execution:</p>
+<ol type="1">
+<li><strong>Concurrent login policy</strong> (AUTH-10) — allow or
+invalidate?</li>
+<li><strong>Offline ticket create</strong> (TICK-21) — disabled or
+queued?</li>
+<li><strong>Concurrent edit conflict</strong> (TICK-20) —
+last-write-wins, lock, or merge?</li>
+<li><strong>Attachments</strong> (TICK-17) — supported in this
+release?</li>
+<li><strong>Biometric auth</strong> (AUTH-12) — in scope?</li>
+<li><strong>RTL support</strong> (LANG-05) — required for current
+locales?</li>
+<li><strong>Backgrounded-screen blur for PII</strong> (SEC-05) —
+implemented?</li>
+</ol>
+<hr />
+<h2 id="24-change-log">24. Change Log</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Author</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1</td>
+<td>(existing)</td>
+<td>—</td>
+<td>Initial test plan in <code>UAT_TEST_PLAN.md</code></td>
+</tr>
+<tr>
+<td>v2</td>
+<td>2026-06-03</td>
+<td>QA Lead</td>
+<td>Expanded to full QA handbook: env, RACI, severity, exit criteria,
+traceability, accessibility, security, observability, realtime
+resilience, and ~40 new test cases</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="appendix-a--converting-this-document-to-pdf">Appendix A —
+Converting this document to PDF</h2>
+<p>Use any of the methods in <code>CONVERT_TO_PDF.md</code>.
+Quickest:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># From repo root</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pandoc</span> docs/UAT_TEST_PLAN_v2.md <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-o</span> docs/UAT_TEST_PLAN_v2.pdf <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--from</span> gfm <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--pdf-engine</span><span class="op">=</span>xelatex <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-V</span> geometry:margin=0.7in <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-V</span> mainfont=<span class="st">&quot;Helvetica&quot;</span></span></code></pre></div>
+<p>If <code>pandoc</code> / LaTeX is unavailable, use VS Code's
+<strong>Markdown PDF</strong> extension (right-click → Export PDF) or
+the Node script at <code>scripts/</code>.</p>
+</body>
+</html>

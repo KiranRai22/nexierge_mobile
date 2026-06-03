@@ -7,8 +7,11 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Shared top bar used by Dashboard / Tickets / Activity. Mirrors the React
-/// HotelOps shell: avatar (left) · theme toggle · optional language ·
+/// HotelOps shell: avatar (left) · optional greeting · optional language ·
 /// notifications bell with red dot (right). All glyphs are Lucide.
+///
+/// Supply [greeting] + [subGreeting] to show a greeting column next to the
+/// avatar (used by the dashboard). Leave them null for a plain avatar + actions layout.
 ///
 /// The language button is opt-in — supply `onLanguageTap` to show it. The
 /// dashboard hides it (matching `Dashboard.tsx`); other screens keep it.
@@ -26,6 +29,12 @@ class AppTopBar extends StatelessWidget {
   final VoidCallback? onAvatarTap;
   final VoidCallback? onRefresh;
 
+  /// Greeting headline shown next to the avatar, e.g. "Good morning, Kiran".
+  final String? greeting;
+
+  /// Secondary line shown below [greeting], e.g. "Thursday · 12:08 AM".
+  final String? subGreeting;
+
   const AppTopBar({
     super.key,
     required this.avatarInitials,
@@ -37,6 +46,8 @@ class AppTopBar extends StatelessWidget {
     this.onNotifications,
     this.onAvatarTap,
     this.onRefresh,
+    this.greeting,
+    this.subGreeting,
   });
 
   @override
@@ -44,7 +55,7 @@ class AppTopBar extends StatelessWidget {
     final s = context.l10n;
     final c = context.themeColors;
     return SizedBox(
-      height: 56,
+      height: 60,
       child: Row(
         children: [
           _Avatar(
@@ -52,34 +63,58 @@ class AppTopBar extends StatelessWidget {
             imageUrl: avatarImageUrl,
             onTap: onAvatarTap,
           ),
-          const Spacer(),
-          if (onRefresh != null)
-            IconButton(
-              tooltip: 'Refresh',
-              onPressed: () async {
-                await SoundManager.instance.play(SoundCategory.preference);
-                onRefresh!();
-              },
-              icon: Icon(
-                LucideIcons.refreshCw,
-                color: c.fgBase,
-                size: 20,
+          if (greeting != null) ...[
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    greeting!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TypographyManager.textHeading.copyWith(
+                      color: c.fgBase,
+                    ),
+                  ),
+                  if (subGreeting != null)
+                    Text(
+                      subGreeting!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TypographyManager.textMeta.copyWith(
+                        color: c.fgMuted,
+                      ),
+                    ),
+                ],
               ),
             ),
-          IconButton(
-            tooltip: s.tooltipToggleTheme,
-            onPressed: onThemeToggle == null
-                ? null
-                : () async {
-                    await SoundManager.instance.play(SoundCategory.preference);
-                    onThemeToggle!();
-                  },
-            icon: Icon(
-              isDarkMode ? LucideIcons.sun : LucideIcons.moon,
-              color: c.fgBase,
-              size: 20,
-            ),
-          ),
+          ] else
+            const Spacer(),
+          // if (onRefresh != null)
+          //   IconButton(
+          //   tooltip: 'Refresh',
+          //   onPressed: () async {
+          //     await SoundManager.instance.play(SoundCategory.preference);
+          //     onRefresh!();
+          //   },
+          //   icon: Icon(LucideIcons.refreshCw, color: c.fgBase, size: 20),
+          // ),
+          // IconButton(
+          //   tooltip: s.tooltipToggleTheme,
+          //   onPressed: onThemeToggle == null
+          //       ? null
+          //       : () async {
+          //           await SoundManager.instance.play(SoundCategory.preference);
+          //           onThemeToggle!();
+          //         },
+          //   icon: Icon(
+          //     isDarkMode ? LucideIcons.sun : LucideIcons.moon,
+          //     color: c.fgBase,
+          //     size: 20,
+          //   ),
+          // ),
           if (onLanguageTap != null)
             IconButton(
               tooltip: s.tooltipLanguage,
@@ -117,8 +152,8 @@ class _Avatar extends StatelessWidget {
               onTap!();
             },
       child: Container(
-        width: 36,
-        height: 36,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: c.bgSubtle,
           shape: BoxShape.circle,
@@ -128,8 +163,8 @@ class _Avatar extends StatelessWidget {
           child: imageUrl != null
               ? Image.network(
                   imageUrl!,
-                  width: 36,
-                  height: 36,
+                  width: 44,
+                  height: 44,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     // Fallback to initials on error
@@ -164,7 +199,11 @@ class _BellIcon extends StatelessWidget {
   final int unreadCount;
   final String tooltip;
   final VoidCallback? onTap;
-  const _BellIcon({required this.unreadCount, required this.tooltip, this.onTap});
+  const _BellIcon({
+    required this.unreadCount,
+    required this.tooltip,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -178,11 +217,7 @@ class _BellIcon extends StatelessWidget {
           icon: Icon(LucideIcons.bell, color: c.fgBase, size: 20),
         ),
         if (unreadCount > 0)
-          Positioned(
-            right: 6,
-            top: 6,
-            child: _UnreadBadge(count: unreadCount),
-          ),
+          Positioned(right: 6, top: 6, child: _UnreadBadge(count: unreadCount)),
       ],
     );
   }

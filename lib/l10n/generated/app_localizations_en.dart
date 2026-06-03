@@ -264,7 +264,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subTabBacklog => 'Backlog';
 
   @override
-  String get subTabDone => 'Done';
+  String get subTabDone => 'Completed Today';
 
   @override
   String get sectionIncomingNow => 'INCOMING NOW';

@@ -435,7 +435,8 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String reason,
   }) async {
     final url = APIEndpoints.ticketsV2AddTime(ticketId);
-    final extensionMinutes = ((newDueAt - DateTime.now().millisecondsSinceEpoch) / 60000).round();
+    final extensionMinutes =
+        ((newDueAt - DateTime.now().millisecondsSinceEpoch) / 60000).round();
     final payload = <String, dynamic>{
       'tickets_v2_id': ticketId,
       'reason': reason,
@@ -448,10 +449,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: IN_PROGRESS -> CHANGE_DUE\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(
-      url,
-      data: payload,
-    );
+    final res = await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] changeDueTime response: ${res.data}',
     // );
@@ -475,8 +473,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required int dueAt,
     String? notes,
   }) async {
-    final url = APIEndpoints.ticketsAcknowledge(ticketId);
-    //debugPrint('[TicketRemoteDataSource] acknowledgeTicket: $url');
+    final url = APIEndpoints.ticketsV2Start(ticketId);
     await _dio.post(url, data: {'due_at': dueAt, 'notes': notes});
   }
 
@@ -486,8 +483,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required int dueAt,
     String? notes,
   }) async {
-    final url = APIEndpoints.ticketsAcknowledgeAndStart(ticketId);
-    //debugPrint('[TicketRemoteDataSource] acknowledgeAndStartTicket: $url');
+    final url = APIEndpoints.ticketsV2Start(ticketId);
     await _dio.post(url, data: {'due_at': dueAt, 'notes': notes});
   }
 
@@ -512,7 +508,8 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     if (departmentId != null) q['department'] = departmentId;
     if (source != null) q['source'] = source;
     if (ticketType != null) q['ticket_type'] = ticketType;
-    if (createdAtStartDate != null) q['created_at_start_date'] = createdAtStartDate;
+    if (createdAtStartDate != null)
+      q['created_at_start_date'] = createdAtStartDate;
     if (createdAtEndDate != null) q['created_at_end_date'] = createdAtEndDate;
 
     //debugPrint('[TicketRemoteDataSource][v2] GET $url params=$q');
@@ -531,16 +528,16 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     int? createdAtStartDate,
     int? createdAtEndDate,
   }) => _fetchTicketsV2Page(
-        url: APIEndpoints.ticketsV2New,
-        hotelId: hotelId,
-        page: page,
-        perPage: perPage,
-        departmentId: departmentId,
-        source: source,
-        ticketType: ticketType,
-        createdAtStartDate: createdAtStartDate,
-        createdAtEndDate: createdAtEndDate,
-      );
+    url: APIEndpoints.ticketsV2New,
+    hotelId: hotelId,
+    page: page,
+    perPage: perPage,
+    departmentId: departmentId,
+    source: source,
+    ticketType: ticketType,
+    createdAtStartDate: createdAtStartDate,
+    createdAtEndDate: createdAtEndDate,
+  );
 
   @override
   Future<TicketsPageDto> getTicketsV2Backlog({
@@ -553,16 +550,16 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     int? createdAtStartDate,
     int? createdAtEndDate,
   }) => _fetchTicketsV2Page(
-        url: APIEndpoints.ticketsV2Backlog,
-        hotelId: hotelId,
-        page: page,
-        perPage: perPage,
-        departmentId: departmentId,
-        source: source,
-        ticketType: ticketType,
-        createdAtStartDate: createdAtStartDate,
-        createdAtEndDate: createdAtEndDate,
-      );
+    url: APIEndpoints.ticketsV2Backlog,
+    hotelId: hotelId,
+    page: page,
+    perPage: perPage,
+    departmentId: departmentId,
+    source: source,
+    ticketType: ticketType,
+    createdAtStartDate: createdAtStartDate,
+    createdAtEndDate: createdAtEndDate,
+  );
 
   @override
   Future<TicketsPageDto> getTicketsV2InProgress({
@@ -575,16 +572,16 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     int? createdAtStartDate,
     int? createdAtEndDate,
   }) => _fetchTicketsV2Page(
-        url: APIEndpoints.ticketsV2InProgress,
-        hotelId: hotelId,
-        page: page,
-        perPage: perPage,
-        departmentId: departmentId,
-        source: source,
-        ticketType: ticketType,
-        createdAtStartDate: createdAtStartDate,
-        createdAtEndDate: createdAtEndDate,
-      );
+    url: APIEndpoints.ticketsV2InProgress,
+    hotelId: hotelId,
+    page: page,
+    perPage: perPage,
+    departmentId: departmentId,
+    source: source,
+    ticketType: ticketType,
+    createdAtStartDate: createdAtStartDate,
+    createdAtEndDate: createdAtEndDate,
+  );
 
   @override
   Future<TicketsPageDto> getTicketsV2DoneToday({
@@ -597,16 +594,16 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     int? createdAtStartDate,
     int? createdAtEndDate,
   }) => _fetchTicketsV2Page(
-        url: APIEndpoints.ticketsV2DoneToday,
-        hotelId: hotelId,
-        page: page,
-        perPage: perPage,
-        departmentId: departmentId,
-        source: source,
-        ticketType: ticketType,
-        createdAtStartDate: createdAtStartDate,
-        createdAtEndDate: createdAtEndDate,
-      );
+    url: APIEndpoints.ticketsV2DoneToday,
+    hotelId: hotelId,
+    page: page,
+    perPage: perPage,
+    departmentId: departmentId,
+    source: source,
+    ticketType: ticketType,
+    createdAtStartDate: createdAtStartDate,
+    createdAtEndDate: createdAtEndDate,
+  );
 
   @override
   Future<TicketsPageDto> getTicketsV2DoneHistory({
@@ -619,16 +616,16 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     int? createdAtStartDate,
     int? createdAtEndDate,
   }) => _fetchTicketsV2Page(
-        url: APIEndpoints.ticketsV2DoneHistory,
-        hotelId: hotelId,
-        page: page,
-        perPage: perPage,
-        departmentId: departmentId,
-        source: source,
-        ticketType: ticketType,
-        createdAtStartDate: createdAtStartDate,
-        createdAtEndDate: createdAtEndDate,
-      );
+    url: APIEndpoints.ticketsV2DoneHistory,
+    hotelId: hotelId,
+    page: page,
+    perPage: perPage,
+    departmentId: departmentId,
+    source: source,
+    ticketType: ticketType,
+    createdAtStartDate: createdAtStartDate,
+    createdAtEndDate: createdAtEndDate,
+  );
 
   @override
   Future<void> startTicketV2({
@@ -636,10 +633,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required DateTime dueAt,
   }) async {
     final url = APIEndpoints.ticketsV2Start(ticketId);
-    final payload = {
-      'tickets_v2_id': ticketId,
-      'due_at': null,
-    };
+    final payload = {'tickets_v2_id': ticketId, 'due_at': null};
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] startTicketV2\n'
     //   '  URL: $url\n'
@@ -662,9 +656,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     final note = (resolutionNote != null && resolutionNote.isNotEmpty)
         ? resolutionNote
         : null;
-    final payload = <String, dynamic>{
-      'tickets_v2_id': ticketId,
-    };
+    final payload = <String, dynamic>{'tickets_v2_id': ticketId};
     if (note != null) {
       payload['resolution_notes'] = note;
     }
@@ -687,10 +679,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String reason,
   }) async {
     const url = APIEndpoints.ticketsV2BacklogToInProgress;
-    final payload = {
-      'tickets_v2_id': ticketId,
-      'reason': reason,
-    };
+    final payload = {'tickets_v2_id': ticketId, 'reason': reason};
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] moveToInProgressV2\n'
     //   '  URL: POST $url\n'
@@ -710,10 +699,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String reason,
   }) async {
     final url = APIEndpoints.ticketsV2BacklogMove;
-    final payload = {
-      'tickets_v2_id': ticketId,
-      'reason': reason,
-    };
+    final payload = {'tickets_v2_id': ticketId, 'reason': reason};
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] moveToBacklogV2\n'
     //   '  URL: POST $url\n'
@@ -760,10 +746,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String reason,
   }) async {
     final url = APIEndpoints.ticketsV2ResetAcknowledge(ticketId);
-    final payload = {
-      'tickets_v2_id': ticketId,
-      'reason': reason,
-    };
+    final payload = {'tickets_v2_id': ticketId, 'reason': reason};
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] resetAcknowledgeV2\n'
     //   '  URL: $url\n'
@@ -783,10 +766,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     required String reason,
   }) async {
     final url = APIEndpoints.ticketsV2Cancel;
-    final payload = {
-      'tickets_v2_id': ticketId,
-      'reason': reason,
-    };
+    final payload = {'tickets_v2_id': ticketId, 'reason': reason};
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] cancelTicketV2\n'
     //   '  URL: POST $url\n'
@@ -982,11 +962,15 @@ class MyTicketDto {
       confirmedAt: i('confirmed_at'),
       closedAt: json['closed_at'] as String?,
       roomDetails: json['room_details'] as Map<String, dynamic>?,
-      universalDetails: _parseUniversalDetails(json['_universal_request_order_details']),
+      universalDetails: _parseUniversalDetails(
+        json['_universal_request_order_details'],
+      ),
     );
   }
 
-  static List<UniversalRequestOrderItemDto> _parseUniversalDetails(dynamic raw) {
+  static List<UniversalRequestOrderItemDto> _parseUniversalDetails(
+    dynamic raw,
+  ) {
     if (raw is! List) return const [];
     return raw
         .whereType<Map<String, dynamic>>()
@@ -1067,9 +1051,7 @@ class UniversalRequestOrderItemDto {
       thumbnailUrl: thumb?['url'] as String?,
       nameI18n: i18nRaw == null
           ? const {}
-          : i18nRaw.map(
-              (k, v) => MapEntry(k.toString(), (v as String?) ?? ''),
-            ),
+          : i18nRaw.map((k, v) => MapEntry(k.toString(), (v as String?) ?? '')),
       etaStart: (active?['eta_start'] as num?)?.toInt() ?? 0,
       etaEnd: (active?['eta_end'] as num?)?.toInt() ?? 0,
       slaTargetMinutes: (json['sla_target_minutes'] as num?)?.toInt() ?? 0,
@@ -1099,12 +1081,15 @@ class ServiceCatalogOrderItemDto {
     final firstImage = images.isNotEmpty ? images.first?.toString() : null;
     final qty = (json['quantity'] as num?)?.toInt() ?? 1;
     final price = (json['price'] as num?)?.toDouble() ?? 0;
-    final total = (json['total_price'] as num?)?.toDouble() ??
+    final total =
+        (json['total_price'] as num?)?.toDouble() ??
         (json['item_total'] as num?)?.toDouble() ??
         price * qty;
     return ServiceCatalogOrderItemDto(
       itemName: (json['item_name'] as String?) ?? '',
-      imageUrl: (firstImage != null && firstImage.isNotEmpty) ? firstImage : null,
+      imageUrl: (firstImage != null && firstImage.isNotEmpty)
+          ? firstImage
+          : null,
       quantity: qty,
       unitPrice: price,
       lineTotal: total,
@@ -1148,9 +1133,8 @@ class ServiceCatalogOrderDetailsDto {
       slaTargetMinutes: (json['sla_target_minutes'] as num?)?.toInt() ?? 0,
       items: itemsRaw
           .map(
-            (e) => ServiceCatalogOrderItemDto.fromJson(
-              e as Map<String, dynamic>,
-            ),
+            (e) =>
+                ServiceCatalogOrderItemDto.fromJson(e as Map<String, dynamic>),
           )
           .toList(growable: false),
     );

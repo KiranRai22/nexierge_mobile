@@ -105,7 +105,6 @@ class _XanoSocketServiceImpl implements XanoSocketService {
     try {
       // Use HttpClient with proper WebSocket upgrade handling
       final client = HttpClient();
-      client.badCertificateCallback = (cert, host, port) => true;
 
       // Build the WebSocket handshake request
       final key = _generateWebSocketKey();
@@ -150,7 +149,9 @@ class _XanoSocketServiceImpl implements XanoSocketService {
 
       // Flush any messages that were queued before the connection was ready.
       if (_pendingMessages.isNotEmpty) {
-        debugPrint('[XanoSocket] Flushing ${_pendingMessages.length} pending message(s)');
+        debugPrint(
+          '[XanoSocket] Flushing ${_pendingMessages.length} pending message(s)',
+        );
         for (final msg in _pendingMessages) {
           final json = jsonEncode(msg);
           debugPrint('[XanoSocket] Sending (queued): $json');
@@ -267,7 +268,9 @@ class _XanoSocketServiceImpl implements XanoSocketService {
   @override
   void sendMessage(Map<String, dynamic> message) {
     if (_socketChannel == null) {
-      debugPrint('[XanoSocket] Not connected — queuing message for when socket is ready');
+      debugPrint(
+        '[XanoSocket] Not connected — queuing message for when socket is ready',
+      );
       _pendingMessages.add(message);
       return;
     }

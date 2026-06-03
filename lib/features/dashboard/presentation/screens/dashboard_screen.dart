@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
+import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
-import '../../../../core/theme/typography_manager.dart';
 import '../../../notifications/presentation/providers/notification_inbox_controller.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';
 import '../../../shell/presentation/widgets/app_bottom_nav.dart';
@@ -17,7 +19,6 @@ import '../providers/dashboard_bootstrap_controller.dart';
 import '../providers/dashboard_counts_controller.dart';
 import '../providers/dashboard_view.dart';
 import '../providers/needs_attention_controller.dart';
-import '../widgets/dashboard_greeting.dart';
 import '../widgets/dashboard_stats_compact.dart';
 import '../widgets/dashboard_stats_grid.dart';
 import '../widgets/needs_attention_api_list.dart';
@@ -37,94 +38,61 @@ class DashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen>
-    with SingleTickerProviderStateMixin {
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   final ScrollController _scrollController = ScrollController();
-  late AnimationController _headerAnimationController;
 
-  /// Maximum height of the stats sliver header — full 3-row grid plus its
-  /// bottom padding. Generous enough to hold all four KPI cards with their
-  /// dotted divider + footer text fully visible; under-sizing this clips
-  /// the bottom "Not started" card.
   static const double _statsMaxExtent = 470.0;
-
-  /// Minimum height — compact 1-row chip strip plus its bottom padding.
-  /// Stays pinned at the top once the user has scrolled past `_statsMaxExtent
-  ///  - _statsMinExtent`, so Needs Attention cards flow underneath rather
-  /// than getting hidden behind it.
-  ///
-  /// Sized to fit each chip's intrinsic Column (icon 20 + gap 4 + value 22 =
-  /// 46) plus the chip's vertical chrome (~24) plus the strip's 12px
-  /// bottom padding — total ~82, with a small buffer for fonts that scale.
   static const double _statsMinExtent = 88.0;
 
-  /// Current header state: 0.0 = expanded, 1.0 = collapsed
-  double _headerShrinkProgress = 0.0;
-
-  /// Whether header is fully collapsed (allows content scrolling)
-  bool _isHeaderCollapsed = false;
+  // Tracks the last scroll direction so snap knows which boundary to target.
+  ScrollDirection _lastScrollDirection = ScrollDirection.idle;
 
   @override
   void initState() {
     super.initState();
-    _headerAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-    _headerAnimationController.addListener(() {
-      setState(() {
-        _headerShrinkProgress = _headerAnimationController.value;
-      });
-    });
-    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _headerAnimationController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
+  /// Called by the NotificationListener on every scroll event.
+  /// Tracks direction while scrolling; snaps to a boundary when the user
+  /// lifts their finger (UserScrollNotification direction == idle).
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollUpdateNotification) {
+      final delta = notification.scrollDelta ?? 0;
+      if (delta != 0) {
+        _lastScrollDirection =
+            delta > 0 ? ScrollDirection.forward : ScrollDirection.reverse;
+      }
+    } else if (notification is UserScrollNotification &&
+        notification.direction == ScrollDirection.idle) {
+      _snapHeaderIfNeeded();
+    }
+    return false;
+  }
+
+  /// Snaps the header to either fully expanded (offset 0) or fully collapsed
+  /// (offset == maxShrinkOffset) when the finger is released mid-transition.
+  /// Direction of the last movement determines which boundary wins.
+  void _snapHeaderIfNeeded() {
+    if (!_scrollController.hasClients) return;
     final offset = _scrollController.offset;
-    final maxShrinkOffset = _statsMaxExtent - _statsMinExtent;
+    const maxShrinkOffset = _statsMaxExtent - _statsMinExtent;
+    if (offset <= 0 || offset >= maxShrinkOffset) return;
 
-    if (_isHeaderCollapsed) {
-      // When at top, allow header to expand
-      if (offset <= 0) {
-        _isHeaderCollapsed = false;
-        _headerShrinkProgress = 0.0;
-        _headerAnimationController.value = 0.0;
-        setState(() {});
-      }
-      return;
-    }
+    final target = _lastScrollDirection == ScrollDirection.forward
+        ? maxShrinkOffset // snap to collapsed
+        : 0.0; // snap to expanded
 
-    // Header is expanded - map scroll offset to header shrink progress
-    if (offset > 0) {
-      if (offset <= maxShrinkOffset) {
-        // During header collapse phase - animate header based on scroll
-        final progress = (offset / maxShrinkOffset).clamp(0.0, 1.0);
-        if (_headerShrinkProgress != progress) {
-          _headerShrinkProgress = progress;
-          _headerAnimationController.value = progress;
-          setState(() {});
-        }
-      } else {
-        // Header fully collapsed, mark as collapsed state
-        _isHeaderCollapsed = true;
-        _headerShrinkProgress = 1.0;
-        _headerAnimationController.value = 1.0;
-        setState(() {});
-      }
-    } else if (offset < 0 && _headerShrinkProgress > 0) {
-      // Overscroll up - expand header
-      _headerShrinkProgress = 0.0;
-      _headerAnimationController.value = 0.0;
-      setState(() {});
-    }
+    _scrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
   }
 
   void _openNotifications(BuildContext context) {
@@ -221,6 +189,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         userProfile?.firstName ?? session.displayName.split(' ').first;
     final profilePictureUrl = userProfile?.pictureProfile?.url;
 
+    // Compute greeting text inline (previously owned by DashboardGreeting widget)
+    final s = context.l10n;
+    final now = DateTime.now();
+    final greetingText = now.hour < 12
+        ? s.dashboardGreetingMorning(firstName)
+        : now.hour < 18
+        ? s.dashboardGreetingAfternoon(firstName)
+        : s.dashboardGreetingEvening(firstName);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final deptHint = () {
+      final role = userProfile?.userHotelStatus.hierarchyRole;
+      if (role != null) {
+        try {
+          return Department.values.firstWhere((d) => d.name == role);
+        } catch (_) {
+          return null;
+        }
+      }
+      return session.homeDepartment;
+    }();
+    final dateLine = [
+      DateFormat.EEEE(locale).format(now),
+      '·',
+      DateFormat.jm(locale).format(now),
+      if (deptHint != null) '· ${deptHint.label(s)}',
+    ].join(' ');
+
     return Container(
       color: c.bgSubtle,
       child: SafeArea(
@@ -228,7 +223,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Fixed top: app bar
+            // Top bar with greeting integrated next to avatar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: AppTopBar(
@@ -236,6 +231,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 avatarImageUrl: profilePictureUrl,
                 isDarkMode: isDark,
                 unreadCount: inboxUnread,
+                greeting: greetingText,
+                subGreeting: dateLine,
                 onThemeToggle: () =>
                     ref.read(themeModeControllerProvider.notifier).toggle(),
                 onNotifications: () => _openNotifications(context),
@@ -244,37 +241,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               ),
             ),
 
-            // Fixed greeting under the app bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: DashboardGreeting(
-                firstName: firstName,
-                deptHint: () {
-                  final role = userProfile?.userHotelStatus.hierarchyRole;
-                  if (role != null) {
-                    try {
-                      return Department.values.firstWhere(
-                        (dept) => dept.name == role,
-                      );
-                    } catch (_) {
-                      return null;
-                    }
-                  }
-                  return session.homeDepartment;
-                }(),
-                now: DateTime.now(),
-              ),
-            ),
-
-            // Scrollable content. The stats grid lives inside a pinned
-            // SliverPersistentHeader that smoothly shrinks + cross-fades
-            // into the compact 1-row strip as the user scrolls, instead of
-            // toggling layouts at a threshold (which jumped abruptly and
-            // could hide the first Needs Attention card behind the strip).
+            // Scrollable content. A NotificationListener catches scroll
+            // events so we can snap the stats header to either fully
+            // expanded or fully collapsed — the user never has to scroll
+            // carefully through the transition zone.
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refresh,
-                child: CustomScrollView(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _onScrollNotification,
+                  child: CustomScrollView(
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
@@ -285,23 +261,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         minHeight: _statsMinExtent,
                         backgroundColor: c.bgSubtle,
                         fullGrid: asyncCounts.when(
-                          data: (counts) => DashboardStatsGrid(
-                            incoming: counts.incomingCount,
-                            inProgress: counts.inProgressCount,
-                            overdue: counts.overdueCount,
-                            done: counts.doneCount,
-                            breakdown: asyncView.maybeWhen(
-                              data: (v) => v.incomingBreakdown,
-                              orElse: () => const IncomingBreakdown(
-                                universal: 0,
-                                catalog: 0,
-                                manual: 0,
+                          data: (counts) => Padding(
+                            padding: const EdgeInsets.only(top: 20.0),
+                            child: DashboardStatsGrid(
+                              incoming: counts.incomingCount,
+                              inProgress: counts.inProgressCount,
+                              overdue: counts.overdueCount,
+                              done: counts.doneCount,
+                              breakdown: asyncView.maybeWhen(
+                                data: (v) => v.incomingBreakdown,
+                                orElse: () => const IncomingBreakdown(
+                                  universal: 0,
+                                  catalog: 0,
+                                  manual: 0,
+                                ),
                               ),
+                              onTapIncoming: _navigateToIncoming,
+                              onTapInProgress: _navigateToInProgress,
+                              onTapOverdue: _navigateToOverdue,
+                              onTapDone: _navigateToDone,
                             ),
-                            onTapIncoming: _navigateToIncoming,
-                            onTapInProgress: _navigateToInProgress,
-                            onTapOverdue: _navigateToOverdue,
-                            onTapDone: _navigateToDone,
                           ),
                           loading: () => const _StatsSkeleton(),
                           error: (_, _) => const _StatsSkeleton(),
@@ -358,6 +337,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                       ),
                     ),
                   ],
+                ),
                 ),
               ),
             ),
@@ -423,24 +403,31 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    // Calculate shrink progress from offset (0.0 = expanded, 1.0 = collapsed)
     final maxShrinkOffset = maxHeight - minHeight;
     final t = (shrinkOffset / maxShrinkOffset).clamp(0.0, 1.0);
+
+    // Sequential (non-overlapping) transition:
+    //   t 0.0→0.5  full grid fades out completely
+    //   t 0.5→1.0  compact strip fades in
+    // The two layouts are never both visible at the same time.
+    final fullGridOpacity = (1.0 - t * 2).clamp(0.0, 1.0);
+    final compactOpacity = ((t - 0.5) * 2).clamp(0.0, 1.0);
+
     return Container(
       color: backgroundColor,
       child: ClipRect(
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Full grid — fades out as header shrinks
+            // Full grid — fades out in first half of collapse
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: IgnorePointer(
-                ignoring: t > 0.5,
+                ignoring: t >= 0.5,
                 child: Opacity(
-                  opacity: 1.0 - t,
+                  opacity: fullGridOpacity,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: fullGrid,
@@ -448,7 +435,7 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
                 ),
               ),
             ),
-            // Compact strip — anchored to bottom of header, fades in
+            // Compact strip — fades in during second half of collapse
             Positioned(
               left: 0,
               right: 0,
@@ -456,7 +443,7 @@ class _DashboardStatsHeaderDelegate extends SliverPersistentHeaderDelegate {
               child: IgnorePointer(
                 ignoring: t < 0.5,
                 child: Opacity(
-                  opacity: t,
+                  opacity: compactOpacity,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                     child: compactStrip,

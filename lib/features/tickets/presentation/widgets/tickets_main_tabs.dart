@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:nexierge/l10n/generated/app_localizations.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
@@ -6,23 +7,34 @@ import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 
-/// Full-width tabs for Incoming, In Progress, Backlog, Done with counts
+/// Full-width tabs for Incoming, In Progress, Done with optional collapsible Backlog.
+/// Backlog is hidden by default and revealed via the toggle button at the end.
 class TicketsMainTabs extends StatelessWidget {
   final TicketsMainTab selectedTab;
   final ValueChanged<TicketsMainTab> onChanged;
   final Map<TicketsMainTab, int> counts;
+  final bool isBacklogExpanded;
+  final VoidCallback onToggleBacklog;
 
   const TicketsMainTabs({
     super.key,
     required this.selectedTab,
     required this.onChanged,
     required this.counts,
+    required this.isBacklogExpanded,
+    required this.onToggleBacklog,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final s = context.l10n;
+
+    final visibleTabs = isBacklogExpanded
+        ? TicketsMainTab.values.toList()
+        : TicketsMainTab.values
+              .where((t) => t != TicketsMainTab.backlog)
+              .toList();
 
     return Container(
       height: 40,
@@ -31,20 +43,34 @@ class TicketsMainTabs extends StatelessWidget {
         color: c.borderBase,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        children: TicketsMainTab.values.map((tab) {
-          final isSelected = selectedTab == tab;
-          final count = counts[tab] ?? 0;
-          return Expanded(
-            child: _TabItem(
-              label: _getTabLabel(s, tab),
-              count: count,
-              isSelected: isSelected,
-              onTap: () => onChanged(tab),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 240),
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+          child: child,
+        ),
+        child: Row(
+          key: ValueKey(isBacklogExpanded),
+          children: [
+            ...visibleTabs.map((tab) {
+              final isSelected = selectedTab == tab;
+              return Expanded(
+                child: _TabItem(
+                  label: _getTabLabel(s, tab),
+                  count: counts[tab] ?? 0,
+                  isSelected: isSelected,
+                  onTap: () => onChanged(tab),
+                  colors: c,
+                ),
+              );
+            }),
+            _BacklogToggleButton(
+              isExpanded: isBacklogExpanded,
+              onTap: onToggleBacklog,
               colors: c,
             ),
-          );
-        }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -132,6 +158,68 @@ class _TabItem extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BacklogToggleButton extends StatelessWidget {
+  final bool isExpanded;
+  final VoidCallback onTap;
+  final AppColors colors;
+
+  const _BacklogToggleButton({
+    required this.isExpanded,
+    required this.onTap,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = colors;
+    return GestureDetector(
+      onTap: tapSound(onTap, SoundCategory.navigation),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 38,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // if (!isExpanded) ...[
+            //   Text(
+            //     '...',
+            //     style: TypographyManager.tabText.copyWith(
+            //       fontSize: 9,
+            //       color: c.fgMuted,
+            //       fontWeight: FontWeight.w700,
+            //       height: 1,
+            //     ),
+            //   ),
+            //   const SizedBox(height: 2),
+            // ],
+            Container(
+              width: 20,
+              height: 20,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: c.bgSubtle,
+                shape: BoxShape.circle,
+                border: Border.all(color: c.borderBase),
+              ),
+              child: AnimatedRotation(
+                turns: isExpanded ? 0.5 : 0.0,
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeInOut,
+                child: Icon(
+                  LucideIcons.chevronLeft,
+                  size: 11,
+                  color: c.fgMuted,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

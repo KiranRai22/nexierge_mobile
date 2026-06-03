@@ -91,7 +91,7 @@
   "subTabToday": "En Progreso",
   "subTabOverdue": "Vencidos",
   "subTabBacklog": "Pendientes",
-  "subTabDone": "Hechos",
+  "subTabDone": "Completado Hoy",
 
   "sectionIncomingNow": "ENTRANTES AHORA",
   "sectionInProgress": "EN CURSO",
