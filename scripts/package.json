@@ -1,0 +1,12 @@
+{
+  "name": "nexierge-docs-converter",
+  "version": "1.0.0",
+  "description": "Convert markdown documentation to PDF",
+  "main": "convert-to-pdf.js",
+  "scripts": {
+    "convert": "node convert-to-pdf.js"
+  },
+  "dependencies": {
+    "md-to-pdf": "^5.2.0"
+  }
+}

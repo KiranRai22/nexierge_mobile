@@ -18,7 +18,13 @@ import '../../l10n/generated/app_localizations.dart';
 // messages or when the system notification is suppressed.
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
-  //debugPrint('[FCM] Background: ${message.notification?.title}');
+  debugPrint('[FCM] Background: ${message.notification?.title}');
+
+  // APNs (iOS) and the FCM SDK (Android) automatically display messages that
+  // carry a `notification` payload when the app is not in foreground.
+  // Showing a local notification here too would produce a duplicate banner.
+  // Only handle data-only messages (no `notification` object).
+  if (message.notification != null) return;
 
   // Initialize local notifications for background message handling
   final localNotifications = FlutterLocalNotificationsPlugin();
@@ -47,10 +53,9 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
     await androidPlugin.createNotificationChannel(channel);
   }
 
-  // Show notification with custom sound
-  final title = message.notification?.title ?? 'Nexierge';
-  final body = message.notification?.body ?? '';
-
+  // Data-only message — build title/body from the data map.
+  final title = message.data['title'] as String? ?? 'Nexierge';
+  final body = message.data['body'] as String? ?? '';
   await localNotifications.show(
     message.hashCode,
     title,
@@ -68,8 +73,8 @@ Future<void> _onBackgroundMessage(RemoteMessage message) async {
       iOS: DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
-        presentSound: true,
-        sound: 'notification_sound.caf',
+        // presentSound: true,
+        // sound: 'notification_sound.caf',
       ),
     ),
     payload: message.data.toString(),
@@ -126,9 +131,18 @@ class NotificationService {
   ValueNotifier<RemoteMessage?> get onNotificationTap => _onNotificationTap;
 
   Future<void> initialize() async {
+    print("Initializing notification service");
     FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
     await _requestPermissions();
     await _setupLocalNotifications();
+    // Allow iOS to display FCM notification banners while the app is in
+    // foreground. Without this, iOS silently swallows the system banner and
+    // we rely solely on flutter_local_notifications — which can fail silently.
+    await _messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
     _listenForeground();
     _listenTaps();
     await _checkInitialMessage();
@@ -138,9 +152,9 @@ class NotificationService {
     final settings = await _messaging.requestPermission(
       alert: true,
       badge: true,
-      sound: true,
+      // sound: true,
     );
-    // //debugPrint('[FCM] Auth status: ${settings.authorizationStatus}');
+    debugPrint('[FCM] Auth status: ${settings.authorizationStatus}');
   }
 
   Future<void> _setupLocalNotifications() async {
@@ -154,7 +168,7 @@ class NotificationService {
     await _localNotifications.initialize(
       const InitializationSettings(android: android, iOS: ios),
       onDidReceiveNotificationResponse: (details) {
-        // //debugPrint('[LocalNotif] Tapped payload: ${details.payload}');
+        debugPrint('[LocalNotif] Tapped payload: ${details.payload}');
       },
     );
 
@@ -193,38 +207,43 @@ class NotificationService {
   }
 
   // Show heads-up banner while app is in foreground.
+  // setForegroundNotificationPresentationOptions handles the system banner on
+  // iOS for notification-type messages. This local-notification path is the
+  // fallback for data-only messages and Android.
   void _listenForeground() {
-    FirebaseMessaging.onMessage.listen((message) {
+    print("Listening to foreground fcm");
+    FirebaseMessaging.onMessage.listen((message) async {
       final localized = _localizeFromPayload(message);
       if (localized.title == null && localized.body == null) return;
-
+      print("Showing notification: ${localized.title} - ${localized.body}");
       final s = LocaleAwareStrings.instance.strings;
-      _localNotifications.show(
-        message.hashCode,
-        localized.title,
-        localized.body,
-        NotificationDetails(
-          // Android: sound set on the channel, not here. On Android 8+ the
-          // channel value wins regardless of what we pass.
-          android: AndroidNotificationDetails(
-            _channelId,
-            s.notifChannelName,
-            channelDescription: s.notifChannelDescription,
-            importance: Importance.high,
-            priority: Priority.high,
-            playSound: true,
-            sound: const RawResourceAndroidNotificationSound(_soundAndroid),
+      try {
+        await _localNotifications.show(
+          message.hashCode,
+          localized.title,
+          localized.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              _channelId,
+              s.notifChannelName,
+              channelDescription: s.notifChannelDescription,
+              importance: Importance.high,
+              priority: Priority.high,
+              playSound: true,
+              sound: const RawResourceAndroidNotificationSound(_soundAndroid),
+            ),
+            iOS: const DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+              sound: _soundIos,
+            ),
           ),
-          // iOS uses the per-notification sound — no channels.
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-            sound: _soundIos,
-          ),
-        ),
-        payload: message.data.toString(),
-      );
+          payload: message.data.toString(),
+        );
+      } catch (e) {
+        debugPrint('[Notif] foreground show failed: $e');
+      }
     });
   }
 
@@ -237,6 +256,7 @@ class NotificationService {
   ///   2. `notification.title` / `notification.body` (server pre-localized
   ///      via topic-per-locale strategy).
   _LocalizedNotification _localizeFromPayload(RemoteMessage m) {
+    print("Localizing payload: ${m.data}");
     final s = LocaleAwareStrings.instance.strings;
     final data = m.data;
     final n = m.notification;
@@ -272,7 +292,7 @@ class NotificationService {
         // String-arg variant — accepts the ticket code.
         return s.notifNewTicket(arg ?? '');
       default:
-        // //debugPrint('[Notif] Unknown l10n key: $key');
+        debugPrint('[Notif] Unknown l10n key: $key');
         return null;
     }
   }
@@ -286,6 +306,7 @@ class NotificationService {
 
   // App launched from terminated state via notification tap.
   Future<void> _checkInitialMessage() async {
+    debugPrint("Checking initial message");
     final initial = await _messaging.getInitialMessage();
     if (initial != null) {
       _onNotificationTap.value = initial;
@@ -294,7 +315,7 @@ class NotificationService {
 
   Future<String?> getFCMToken() async {
     final token = await _messaging.getToken();
-    //debugPrint('[FCM] Token: $token');
+    debugPrint('[FCM] Token: $token');
     return token;
   }
 
@@ -328,7 +349,7 @@ class NotificationService {
       try {
         await _messaging.unsubscribeFromTopic(prev);
       } catch (e) {
-        // //debugPrint('[FCM] Unsubscribe $prev failed: $e');
+        debugPrint('[FCM] Unsubscribe $prev failed: $e');
       }
     }
 
@@ -336,7 +357,7 @@ class NotificationService {
       await _messaging.subscribeToTopic(next);
       _subscribedLocaleTopic = next;
     } catch (e) {
-      // //debugPrint('[FCM] Subscribe $next failed: $e');
+      debugPrint('[FCM] Subscribe $next failed: $e');
     }
 
     await _refreshAndroidChannel();

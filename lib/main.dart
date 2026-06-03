@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/i18n/app_locale.dart';
 import 'core/i18n/locale_controller.dart';
@@ -40,6 +42,11 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // iOS Keychain persists across app deletion; SharedPreferences does not.
+  // Wipe stale Keychain data on a fresh install so auto-login can't resurrect
+  // a session from a previous install.
+  await _clearKeychainOnFreshInstall();
 
   // Firebase must initialize before any Firebase service is used (Critical)
   await FirebaseService.initialize();
@@ -261,4 +268,22 @@ class _AuthBootstrapSplash extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
+}
+
+/// iOS Keychain entries survive app deletion (system-level storage).
+/// SharedPreferences lives in the app sandbox and IS wiped on delete.
+/// We use that asymmetry: if the launch flag is absent → fresh install →
+/// nuke the Keychain so a stale session can't resurrect auto-login.
+Future<void> _clearKeychainOnFreshInstall() async {
+  if (!Platform.isIOS) return;
+  final prefs = await SharedPreferences.getInstance();
+  const kLaunchFlag = 'app.has_launched';
+  if (prefs.getBool(kLaunchFlag) == true) return;
+  const storage = FlutterSecureStorage(
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
+  await storage.deleteAll();
+  await prefs.setBool(kLaunchFlag, true);
 }

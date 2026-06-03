@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../../l10n/generated/app_localizations.dart';
 import '../i18n/locale_aware_strings.dart';
 

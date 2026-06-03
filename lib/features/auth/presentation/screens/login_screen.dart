@@ -213,6 +213,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             fcm_token: deviceToken,
           );
 
+    debugPrint('Device token: $deviceToken');
+
     await ref.read(loginControllerProvider.notifier).submit(credentials);
     // Success path: the root widget reacts to `authSessionControllerProvider`.
     // Failure path: rendered by the `ref.listen` in `build`.
