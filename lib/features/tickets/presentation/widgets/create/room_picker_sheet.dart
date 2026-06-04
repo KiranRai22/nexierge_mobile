@@ -12,11 +12,11 @@ import '../skeletons/ticket_skeletons.dart';
 /// Bottom sheet for selecting a room.
 ///
 /// Sourced from `checkedInGuestStaysProvider` — only rooms with a currently
-/// checked-in guest are shown. Returns the row's `guest_stay_id` so callers
-/// can look up the contact + guest name in one shot.
+/// checked-in guest are shown. Returns the full [CheckedInGuestStay] so
+/// callers get room UUID + contact + room number in one shot.
 class RoomPickerSheet {
-  static Future<String?> showCheckedIn(BuildContext context) {
-    return showModalBottomSheet<String>(
+  static Future<CheckedInGuestStay?> showCheckedIn(BuildContext context) {
+    return showModalBottomSheet<CheckedInGuestStay>(
       context: context,
       isScrollControlled: true,
       backgroundColor: ColorPalette.opsSurface,
@@ -50,8 +50,7 @@ class _CheckedInRoomSheetBody extends ConsumerWidget {
                 child: async.when(
                   data: (stays) => _CheckedInGrid(
                     stays: stays,
-                    onPick: (guestStayId) =>
-                        Navigator.of(context).pop(guestStayId),
+                    onPick: (stay) => Navigator.of(context).pop(stay),
                   ),
                   loading: () => const PickerListSkeleton(),
                   error: (e, _) => _ErrorView(
@@ -71,12 +70,16 @@ class _CheckedInRoomSheetBody extends ConsumerWidget {
 
 class _CheckedInGrid extends StatelessWidget {
   final List<CheckedInGuestStay> stays;
-  final ValueChanged<String> onPick;
+  final ValueChanged<CheckedInGuestStay> onPick;
   const _CheckedInGrid({required this.stays, required this.onPick});
 
   @override
   Widget build(BuildContext context) {
-    if (stays.isEmpty) {
+    // Deduplicate — one cell per physical room
+    final seen = <String>{};
+    final unique = stays.where((s) => seen.add(s.roomId)).toList();
+
+    if (unique.isEmpty) {
       return Center(
         child: Text(
           context.l10n.emptyState,
@@ -94,12 +97,12 @@ class _CheckedInGrid extends StatelessWidget {
         mainAxisSpacing: 12,
         mainAxisExtent: 52,
       ),
-      itemCount: stays.length,
+      itemCount: unique.length,
       itemBuilder: (_, i) {
-        final s = stays[i];
+        final s = unique[i];
         return _RoomCell(
           label: s.roomNumber,
-          onTap: () => onPick(s.guestStayId),
+          onTap: () => onPick(s),
         );
       },
     );
@@ -209,6 +212,132 @@ class _RoomCell extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Guest picker
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Bottom sheet listing all guests currently checked into the room with [roomId].
+/// Returns the selected [CheckedInGuestStay], or null if dismissed.
+class GuestPickerSheet {
+  static Future<CheckedInGuestStay?> show(
+    BuildContext context, {
+    required String roomId,
+  }) {
+    return showModalBottomSheet<CheckedInGuestStay>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: ColorPalette.opsSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _GuestPickerSheetBody(roomId: roomId),
+    );
+  }
+}
+
+class _GuestPickerSheetBody extends ConsumerWidget {
+  final String roomId;
+  const _GuestPickerSheetBody({required this.roomId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final async = ref.watch(checkedInGuestStaysProvider);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: viewInsets),
+      child: SafeArea(
+        top: false,
+        child: FractionallySizedBox(
+          heightFactor: 0.5,
+          child: Column(
+            children: [
+              const _Handle(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 8, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        context.l10n.guestPickerTitle,
+                        style: TypographyManager.titleMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      color: ColorPalette.textSecondary,
+                      onPressed: tapSound(
+                        () => Navigator.of(context).pop(),
+                        SoundCategory.back,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: async.when(
+                  data: (stays) {
+                    final guests = stays
+                        .where((s) => s.roomId == roomId)
+                        .toList(growable: false);
+                    if (guests.isEmpty) {
+                      return Center(
+                        child: Text(
+                          context.l10n.emptyState,
+                          style: TypographyManager.bodyMedium.copyWith(
+                            color: ColorPalette.textSecondary,
+                          ),
+                        ),
+                      );
+                    }
+                    return ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      itemCount: guests.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: ColorPalette.opsBorder,
+                      ),
+                      itemBuilder: (_, i) {
+                        final g = guests[i];
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                          ),
+                          title: Text(
+                            g.fullName.isNotEmpty ? g.fullName : '—',
+                            style: TypographyManager.titleSmall.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.chevron_right_rounded,
+                            color: ColorPalette.textSecondary,
+                          ),
+                          onTap: tapSound(
+                            () => Navigator.of(context).pop(g),
+                            SoundCategory.card,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const PickerListSkeleton(),
+                  error: (e, _) => _ErrorView(
+                    message: e.toString(),
+                    onRetry: () => ref.invalidate(checkedInGuestStaysProvider),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

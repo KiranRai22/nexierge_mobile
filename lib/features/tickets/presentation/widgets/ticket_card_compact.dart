@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -7,9 +9,11 @@ import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/time/server_clock.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/models/ticket.dart';
+
 /// Compact 3-row ticket card — fits 4+ cards on screen vs the original 2.
 ///
 /// Layout:
@@ -54,8 +58,21 @@ class TicketCardCompact extends StatelessWidget {
   }
 
   bool get _showAccept => ticket.status == TicketStatus.incoming;
-  bool get _showMarkDone => ticket.status == TicketStatus.inProgress;
+  bool get _showMarkDone =>
+      ticket.status == TicketStatus.inProgress ||
+      ticket.status == TicketStatus.backlog;
   bool get _showStartWork => ticket.status == TicketStatus.accepted;
+
+  /// ETA label derived from the first universal item's preset range, e.g. "15–30 min".
+  String? get _etaLabel {
+    final data = ticket.kindData;
+    if (data is UniversalKindData && data.etaEnd > 0) {
+      return data.etaStart > 0
+          ? '${data.etaStart}–${data.etaEnd} min'
+          : '${data.etaEnd} min';
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,8 +118,11 @@ class TicketCardCompact extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _Row1(ticket: ticket),
-                          _RowTitle(ticket: ticket),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 2),
+                          _RowTitle(ticket: ticket, etaLabel: _etaLabel),
+                          const SizedBox(height: 6),
+                          _Row3(ticket: ticket),
+                          const SizedBox(height: 6),
                           _Row2(
                             ticket: ticket,
                             showAccept: _showAccept,
@@ -112,8 +132,6 @@ class TicketCardCompact extends StatelessWidget {
                             onMarkDone: onMarkDone,
                             onStartWork: onStartWork,
                           ),
-                          const SizedBox(height: 6),
-                          _Row3(ticket: ticket),
                         ],
                       ),
                     ),
@@ -132,7 +150,7 @@ class TicketCardCompact extends StatelessWidget {
 
 class _Row1 extends StatelessWidget {
   final Ticket ticket;
-  
+
   const _Row1({required this.ticket});
   @override
   Widget build(BuildContext context) {
@@ -188,13 +206,15 @@ class _Row1 extends StatelessWidget {
 
 class _RowTitle extends StatelessWidget {
   final Ticket ticket;
-  const _RowTitle({required this.ticket});
+  final String? etaLabel;
+  const _RowTitle({required this.ticket, this.etaLabel});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.themeColors;
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Title
         Expanded(
           child: Text(
             ticket.title,
@@ -203,6 +223,17 @@ class _RowTitle extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (etaLabel != null) ...[
+          const SizedBox(width: 8),
+          Text(
+            etaLabel!,
+            style: TypographyManager.cardMeta.copyWith(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w500,
+              color: c.fgMuted,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -239,10 +270,16 @@ class _Row2 extends StatelessWidget {
 
     final deptLabel = ticket.departmentName ?? ticket.department.label(s);
 
-    final metaStyle = TypographyManager.cardMeta.copyWith(fontSize: 11.5, color: c.fgMuted);
+    final metaStyle = TypographyManager.cardMeta.copyWith(
+      fontSize: 11.5,
+      color: c.fgMuted,
+    );
     final divider = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
-      child: Text('·', style: TypographyManager.cardMeta.copyWith(color: c.fgSubtle)),
+      child: Text(
+        '·',
+        style: TypographyManager.cardMeta.copyWith(color: c.fgSubtle),
+      ),
     );
 
     return Row(
@@ -253,11 +290,7 @@ class _Row2 extends StatelessWidget {
         divider,
         // Col 2: room icon + number
         Icon(LucideIcons.doorOpen, size: 12, color: c.fgMuted),
-        Text(
-          ticket.room.number,
-          style: metaStyle,
-          maxLines: 1,
-        ),
+        Text(ticket.room.number, style: metaStyle, maxLines: 1),
         divider,
         // Col 3: department — takes all remaining space
         Expanded(
@@ -273,7 +306,10 @@ class _Row2 extends StatelessWidget {
         if (showAccept) ...[
           _AcceptButton(onAccept: onAccept),
         ] else if (showMarkDone) ...[
-          _MarkDoneButton(onMarkDone: onMarkDone),
+          _MarkDoneButton(
+            onMarkDone: onMarkDone,
+            isForce: ticket.isOverdue || ticket.status == TicketStatus.backlog,
+          ),
         ] else if (showStartWork) ...[
           _StartWorkButton(onStartWork: onStartWork),
         ],
@@ -282,131 +318,260 @@ class _Row2 extends StatelessWidget {
   }
 }
 
-// ─── Row 3: created · due · time left ────────────────────────────────────────
+// ─── Row 3: created · due · time indicator ───────────────────────────────────
+//
+// States:
+//   Healthy     (!isOverdue)                      → countdown purple
+//   Grace       (isOverdue && isInProgress)        → "Grace Period" orange + red due
+//   Overdue     (isOverdue && !isInProgress)       → "Overdue Xm Ys" red + red due
+//   Done/Cancel                                    → no indicator
 
-class _Row3 extends StatelessWidget {
+class _Row3 extends StatefulWidget {
   final Ticket ticket;
   const _Row3({required this.ticket});
+
+  @override
+  State<_Row3> createState() => _Row3State();
+}
+
+class _Row3State extends State<_Row3> {
+  Timer? _timer;
+
+  bool get _needsTimer {
+    final s = widget.ticket.status;
+    return s != TicketStatus.done && s != TicketStatus.canceled;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_needsTimer) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(_Row3 old) {
+    super.didUpdateWidget(old);
+    if (_needsTimer && _timer == null) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    } else if (!_needsTimer && _timer != null) {
+      _timer?.cancel();
+      _timer = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final s = context.l10n;
-    final overdue = ticket.isOverdue;
-    final due = ticket.eta ?? ticket.dueAtWithGrace;
-    final isDone = ticket.status == TicketStatus.done;
+    final ticket = widget.ticket;
+    final now = ServerClock.now();
 
-    final timeColor = overdue
+    final isOverdue = ticket.isOverdue;
+    final isDone =
+        ticket.status == TicketStatus.done ||
+        ticket.status == TicketStatus.canceled;
+    final isInProgress =
+        ticket.status == TicketStatus.inProgress ||
+        ticket.status == TicketStatus.accepted;
+
+    // Due date display time — prefer dueAtWithGrace for display, fall back to eta
+    final displayDue = ticket.eta ?? ticket.dueAtWithGrace;
+    final dueColor = (!isDone && isOverdue)
         ? ColorPalette.statusOverdue
-        : ColorPalette.statusInProgress;
+        : c.fgMuted;
 
-    return Row(
-      children: [
-        // Created at
-        _TimeChip(
-          label: s.ticketCreatedAt,
-          time: AppDateUtils.clock(ticket.createdAt),
-          color: c.fgMuted,
-        ),
-        _dot(c),
-        // Due at
-        if (due != null) ...[
-          _TimeChip(
-            label: s.ticketDueAt,
-            time: AppDateUtils.clock(due),
-            color: overdue ? ColorPalette.statusOverdue : c.fgMuted,
-          ),
-        ],
-        const Spacer(),
-        // Time left / Overdue by — hidden on done tickets
-        if (due != null && !isDone) _TimeLeftChip(eta: due, overdue: overdue, color: timeColor, s: s),
-      ],
-    );
-  }
+    // Time indicator on the right
+    Widget? indicator;
+    if (!isDone) {
+      if (!isOverdue) {
+        // ── Healthy: countdown to dueAtWithGrace (or eta if no grace) ─────────
+        final deadline = ticket.dueAtWithGrace ?? ticket.eta;
+        if (deadline != null) {
+          final timeLeft = deadline.difference(now);
+          indicator = _CountdownIndicator(
+            label: s.ticketTimeLeftLabel,
+            duration: timeLeft.isNegative ? Duration.zero : timeLeft,
+            color: ColorPalette.statusInProgress,
+          );
+        }
+      } else if (isInProgress) {
+        // ── Grace Period (in-progress overdue) ────────────────────────────────
+        indicator = _LabelIndicator(
+          topLabel: s.ticketTimeLeftLabel,
+          valueLabel: s.ticketGracePeriod,
+          color: c.tagOrangeIcon,
+        );
+      } else {
+        // ── Overdue by X (backlog / incoming overdue) ─────────────────────────
+        final overdueRef = ticket.dueAtWithGrace ?? ticket.eta;
+        final overdueBy = overdueRef != null
+            ? now.difference(overdueRef)
+            : Duration.zero;
+        indicator = _CountdownIndicator(
+          label: s.ticketOverdueByLabel,
+          duration: overdueBy.isNegative ? Duration.zero : overdueBy,
+          color: ColorPalette.statusOverdue,
+          countingUp: true,
+        );
+      }
+    }
 
-  Widget _dot(AppColors c) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: Text(
-          '·',
-          style: TypographyManager.cardMeta.copyWith(color: c.fgSubtle),
-        ),
-      );
-}
-
-class _TimeChip extends StatelessWidget {
-  final String label;
-  final String time;
-  final Color color;
-  const _TimeChip({required this.label, required this.time, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return RichText(
-      text: TextSpan(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: c.bgSubtle,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextSpan(
-            text: '$label ',
-            style: TypographyManager.cardMeta.copyWith(
-              fontSize: 10.5,
-              color: context.themeColors.fgSubtle,
-            ),
+          _TimeChip(
+            label: s.ticketCreatedAt,
+            time: AppDateUtils.clock(ticket.createdAt),
+            color: c.fgMuted,
           ),
-          TextSpan(
-            text: time,
-            style: TypographyManager.cardMeta.copyWith(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
+          if (displayDue != null) ...[
+            const SizedBox(width: 14),
+            _TimeChip(
+              label: s.ticketDueAt,
+              time: AppDateUtils.clock(displayDue),
+              color: dueColor,
             ),
-          ),
+          ],
+          const Spacer(),
+          if (indicator != null) indicator,
         ],
       ),
     );
   }
 }
 
-class _TimeLeftChip extends StatelessWidget {
-  final DateTime eta;
-  final bool overdue;
+/// Two-line indicator: small label above + bold value below.
+class _CountdownIndicator extends StatelessWidget {
+  final String label;
+  final Duration duration;
   final Color color;
-  final AppLocalizations s;
-  const _TimeLeftChip({
-    required this.eta,
-    required this.overdue,
+  final bool countingUp;
+
+  const _CountdownIndicator({
+    required this.label,
+    required this.duration,
     required this.color,
-    required this.s,
+    this.countingUp = false,
   });
 
-  String _label() {
-    final delta = eta.difference(DateTime.now());
-    if (overdue) {
-      final abs = delta.abs();
-      if (abs.inMinutes < 60) return s.overdueByMinutes(abs.inMinutes);
-      final h = abs.inHours;
-      final m = abs.inMinutes % 60;
-      return m > 0 ? s.overdueByHoursMinutes(h, m) : s.overdueByHours(h);
-    }
-    if (delta.inMinutes < 1) return s.timeLeftNow;
-    if (delta.inMinutes < 60) return s.timeLeftMinutes(delta.inMinutes);
-    return s.timeLeftHours(delta.inHours);
+  String _format() {
+    final h = duration.inHours;
+    final m = duration.inMinutes % 60;
+    final s = duration.inSeconds % 60;
+    if (h > 0) return '${h}h ${m}m';
+    return '${m}m ${s}s';
   }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          overdue ? LucideIcons.alertCircle : LucideIcons.clock,
-          size: 12,
-          color: color,
-        ),
-        const SizedBox(width: 3),
         Text(
-          _label(),
+          label,
+          style: TypographyManager.cardMeta.copyWith(
+            fontSize: 9.5,
+            color: context.themeColors.fgSubtle,
+          ),
+        ),
+        Text(
+          _format(),
           style: TypographyManager.labelSmall.copyWith(
             fontSize: 11,
             fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Two-line label indicator (e.g. "Time left" / "Grace Period").
+class _LabelIndicator extends StatelessWidget {
+  final String topLabel;
+  final String valueLabel;
+  final Color color;
+  const _LabelIndicator({
+    required this.topLabel,
+    required this.valueLabel,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          topLabel,
+          style: TypographyManager.cardMeta.copyWith(
+            fontSize: 9.5,
+            color: c.fgSubtle,
+          ),
+        ),
+        Text(
+          valueLabel,
+          style: TypographyManager.labelSmall.copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TimeChip extends StatelessWidget {
+  final String label;
+  final String time;
+  final Color color;
+  const _TimeChip({
+    required this.label,
+    required this.time,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: TypographyManager.cardMeta.copyWith(
+            fontSize: 9.5,
+            color: context.themeColors.fgSubtle,
+          ),
+        ),
+        Text(
+          time,
+          style: TypographyManager.cardMeta.copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
             color: color,
           ),
         ),
@@ -421,7 +586,8 @@ class _KindBadge extends StatelessWidget {
   final TicketKind kind;
   const _KindBadge({required this.kind});
 
-  ({IconData icon, Color bg, Color fg, String Function(AppLocalizations) label}) _spec() {
+  ({IconData icon, Color bg, Color fg, String Function(AppLocalizations) label})
+  _spec() {
     switch (kind) {
       case TicketKind.catalog:
         return (
@@ -571,16 +737,20 @@ class _AcceptButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: ColorPalette.chipCatalogFg,
+          color: ColorPalette.opsPurple,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.play_arrow_rounded, size: 13, color: Colors.white),
-            const SizedBox(width: 3),
+            const Icon(
+              Icons.arrow_forward_rounded,
+              size: 13,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 4),
             Text(
-              context.l10n.actionAcceptShort,
+              context.l10n.actionMarkInProgress,
               style: TypographyManager.labelSmall.copyWith(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -596,26 +766,33 @@ class _AcceptButton extends StatelessWidget {
 
 class _MarkDoneButton extends StatelessWidget {
   final VoidCallback? onMarkDone;
-  const _MarkDoneButton({this.onMarkDone});
+  final bool isForce;
+  const _MarkDoneButton({this.onMarkDone, this.isForce = false});
 
   @override
   Widget build(BuildContext context) {
-    final green = context.themeColors.tagGreenIcon;
+    final color = isForce
+        ? ColorPalette.statusOverdue
+        : context.themeColors.tagGreenIcon;
+    final label = isForce
+        ? context.l10n.ticketActionForceDone
+        : context.l10n.ticketActionMarkDone;
+    final icon = isForce ? LucideIcons.alertCircle : LucideIcons.circleCheck;
     return GestureDetector(
       onTap: onMarkDone != null ? tapSound(onMarkDone!) : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: green,
+          color: color,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.circleCheck, size: 13, color: Colors.white),
+            Icon(icon, size: 13, color: Colors.white),
             const SizedBox(width: 3),
             Text(
-              context.l10n.ticketActionMarkDone,
+              label,
               style: TypographyManager.labelSmall.copyWith(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -640,16 +817,20 @@ class _StartWorkButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: ColorPalette.chipCatalogFg,
+          color: ColorPalette.opsPurple,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(LucideIcons.play, size: 13, color: Colors.white),
-            const SizedBox(width: 3),
+            const Icon(
+              Icons.arrow_forward_rounded,
+              size: 13,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 4),
             Text(
-              context.l10n.ticketActionStartWork,
+              context.l10n.actionMarkInProgress,
               style: TypographyManager.labelSmall.copyWith(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -662,3 +843,4 @@ class _StartWorkButton extends StatelessWidget {
     );
   }
 }
+

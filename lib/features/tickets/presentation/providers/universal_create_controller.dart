@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/utils/string_utils.dart';
+import '../../domain/entities/checked_in_guest_stay.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../domain/models/universal_catalog.dart';
@@ -12,7 +13,6 @@ import '../../domain/repositories/tickets_repository.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../../data/services/universal_request_service.dart';
 import '../../data/dtos/universal_request_order_dto.dart';
-import 'checked_in_guest_stays_provider.dart';
 import 'repository_providers.dart';
 import 'session_providers.dart';
 
@@ -43,6 +43,9 @@ class UniversalDraftState {
   /// state-shape stability with earlier versions of this controller.
   final String? selectedRoomId;
 
+  /// Actual room UUID (`room_details.id`). Used to filter guests for the same room.
+  final String? roomId;
+
   /// contact_id of the guest on the picked stay. Used as the order's
   /// contact when posting `/universal_requests/order/create`.
   final String? contactId;
@@ -59,6 +62,7 @@ class UniversalDraftState {
     this.step = UniversalStep.selectItems,
     this.picks = const {},
     this.selectedRoomId,
+    this.roomId,
     this.contactId,
     this.selectedRoomNumber,
     this.guestName = '',
@@ -99,6 +103,7 @@ class UniversalDraftState {
     UniversalStep? step,
     Map<String, PickedLine>? picks,
     String? selectedRoomId,
+    String? roomId,
     String? contactId,
     String? selectedRoomNumber,
     bool clearRoom = false,
@@ -114,6 +119,7 @@ class UniversalDraftState {
       selectedRoomId: clearRoom
           ? null
           : (selectedRoomId ?? this.selectedRoomId),
+      roomId: clearRoom ? null : (roomId ?? this.roomId),
       contactId: clearRoom ? null : (contactId ?? this.contactId),
       selectedRoomNumber: clearRoom
           ? null
@@ -164,26 +170,21 @@ class UniversalDraftController
     state = state.copyWith(picks: const {});
   }
 
-  /// Picker returns the `guest_stay_id`. Same flow as
-  /// `ManualDraftController.selectGuestStay`: look up the row, stamp
-  /// guest_stay_id + contact_id + room number + guest name in one shot.
-  ///
-  /// If the picked stay has no name on file, [guestName] is intentionally
-  /// blanked rather than left at its previous value — the operator can
-  /// still type one in by hand.
-  void selectRoom(String guestStayId) {
-    final stay = ref.read(checkedInStayByIdProvider(guestStayId));
-    if (stay == null) {
-      //debugPrint(
-      //   '[UniversalDraftController] selectRoom: no stay row for $guestStayId',
-      // );
-      return;
-    }
+  void selectRoom(CheckedInGuestStay stay) {
     state = state.copyWith(
       selectedRoomId: stay.guestStayId,
+      roomId: stay.roomId,
       contactId: stay.contactId,
       selectedRoomNumber: stay.roomNumber,
-      guestName: stay.fullName,
+      guestName: '',  // operator picks guest separately
+    );
+  }
+
+  void selectGuest(CheckedInGuestStay guest) {
+    state = state.copyWith(
+      selectedRoomId: guest.guestStayId,
+      contactId: guest.contactId,
+      guestName: StringUtils.capitalizeFirst(guest.fullName),
     );
   }
 

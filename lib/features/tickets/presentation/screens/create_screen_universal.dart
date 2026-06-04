@@ -1,7 +1,8 @@
 part of 'create_screen.dart';
 
 class _UniversalTabBody extends ConsumerWidget {
-  const _UniversalTabBody();
+  final bool showSearch;
+  const _UniversalTabBody({this.showSearch = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -13,7 +14,7 @@ class _UniversalTabBody extends ConsumerWidget {
       transitionBuilder: (child, anim) =>
           FadeTransition(opacity: anim, child: child),
       child: step == UniversalStep.selectItems
-          ? const _UniversalStepSelect(key: ValueKey('uni-select'))
+          ? _UniversalStepSelect(key: const ValueKey('uni-select'), showSearch: showSearch)
           : const _UniversalStepDetails(key: ValueKey('uni-details')),
     );
   }
@@ -24,7 +25,8 @@ class _UniversalTabBody extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _UniversalStepSelect extends ConsumerStatefulWidget {
-  const _UniversalStepSelect({super.key});
+  final bool showSearch;
+  const _UniversalStepSelect({super.key, this.showSearch = false});
 
   @override
   ConsumerState<_UniversalStepSelect> createState() =>
@@ -34,6 +36,16 @@ class _UniversalStepSelect extends ConsumerStatefulWidget {
 class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
   final _searchCtl = TextEditingController();
   String _query = '';
+  String? _selectedCategory;
+
+  @override
+  void didUpdateWidget(_UniversalStepSelect oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.showSearch && oldWidget.showSearch) {
+      _searchCtl.clear();
+      setState(() => _query = '');
+    }
+  }
 
   @override
   void dispose() {
@@ -52,7 +64,7 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
 
     return Column(
       children: [
-        // Selection info bar (above search per spec)
+        // 1. Selection info bar
         AnimatedSize(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
@@ -63,47 +75,77 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
                 )
               : const SizedBox.shrink(),
         ),
-        // Search bar
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: TextField(
-            controller: _searchCtl,
-            onChanged: (v) => setState(() => _query = v.trim()),
-            style: TypographyManager.bodyMedium,
-            decoration: InputDecoration(
-              hintText: s.createSearchHint,
-              hintStyle: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textSecondary,
-              ),
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-                size: 20,
-                color: ColorPalette.textSecondary,
-              ),
-              filled: true,
-              fillColor: ColorPalette.opsSurfaceSubtle,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: ColorPalette.opsBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: ColorPalette.opsBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: ColorPalette.opsPurple),
-              ),
-            ),
-          ),
+        // 2. Collapsible search bar
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: widget.showSearch
+              ? Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: TextField(
+                    controller: _searchCtl,
+                    autofocus: true,
+                    onChanged: (v) => setState(() => _query = v.trim()),
+                    style: TypographyManager.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: s.createSearchHint,
+                      hintStyle: TypographyManager.bodyMedium.copyWith(
+                        color: ColorPalette.textSecondary,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        size: 20,
+                        color: ColorPalette.textSecondary,
+                      ),
+                      filled: true,
+                      fillColor: ColorPalette.opsSurfaceSubtle,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: ColorPalette.opsBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: ColorPalette.opsBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            const BorderSide(color: ColorPalette.opsPurple),
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
+        // 3. Category chips — built inside data callback below; placeholder here
+        catalogAsync.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (catalog) {
+            if (_query.isNotEmpty) return const SizedBox.shrink();
+            final depts = catalog.departments
+                .where((d) => d.items.isNotEmpty)
+                .toList();
+            if (depts.length <= 1) return const SizedBox.shrink();
+            final categories = depts.map((d) => d.name).toList();
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 0, 8),
+              child: _CategoryChips(
+                categories: categories,
+                selected: _selectedCategory,
+                onSelect: (cat) => setState(() => _selectedCategory = cat),
+              ),
+            );
+          },
+        ),
+        // 4. Divider
         Divider(height: 1, thickness: 1, color: ColorPalette.opsBorder),
-        // Item list with department sections — dynamic from API.
-        SizedBox.square(dimension: 10),
+        // 5. Item list with department sections — dynamic from API.
+        const SizedBox(height: 10),
         Expanded(
           child: catalogAsync.when(
             loading: () => const CatalogGridSkeleton(),
@@ -117,9 +159,19 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
                 ),
                 padding: EdgeInsets.fromLTRB(16, 0, 16, hasPicks ? 96 : 24),
                 children: [
-                  if (_query.isEmpty) ...[
+                  if (_query.isNotEmpty) ...[
+                    _CategorySection(
+                      label: '',
+                      items: catalog.search(_query),
+                      draft: draft,
+                      onToggle: ctl.togglePick,
+                      onQuantity: ctl.setQuantity,
+                    ),
+                  ] else ...[
                     for (final dept in catalog.departments)
-                      if (dept.items.isNotEmpty)
+                      if (dept.items.isNotEmpty &&
+                          (_selectedCategory == null ||
+                              _selectedCategory == dept.name))
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: _CategorySection(
@@ -131,14 +183,6 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
                           ),
                         ),
                     if (catalog.isEmpty) _CatalogEmpty(),
-                  ] else ...[
-                    _CategorySection(
-                      label: '',
-                      items: catalog.search(_query),
-                      draft: draft,
-                      onToggle: ctl.togglePick,
-                      onQuantity: ctl.setQuantity,
-                    ),
                   ],
                 ],
               ),
@@ -691,19 +735,63 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                           required: false,
                         ),
                         const SizedBox(height: 6),
-                        TextField(
-                          controller: _guestCtl,
-                          onChanged: ctl.setGuestName,
-                          style: TypographyManager.bodyMedium,
-                          decoration: _inputDecoration(
-                            hint: s.createGuestHint,
-                            prefixIcon: const Icon(
-                              Icons.person_outline,
-                              size: 18,
-                              color: ColorPalette.textSecondary,
+                        if (draft.selectedRoomId != null && draft.roomId != null)
+                          GestureDetector(
+                            onTap: () async {
+                              SoundManager.instance.play(SoundCategory.button);
+                              final picked = await GuestPickerSheet.show(
+                                context,
+                                roomId: draft.roomId!,
+                              );
+                              if (picked != null) ctl.selectGuest(picked);
+                            },
+                            child: Container(
+                              height: 48,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: ColorPalette.opsSurfaceSubtle,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: ColorPalette.opsBorder),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      draft.guestName.isNotEmpty
+                                          ? draft.guestName
+                                          : s.guestPickerTitle,
+                                      style: TypographyManager.bodyMedium.copyWith(
+                                        color: draft.guestName.isNotEmpty
+                                            ? ColorPalette.textPrimary
+                                            : ColorPalette.textSecondary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    size: 16,
+                                    color: ColorPalette.textSecondary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          TextField(
+                            controller: _guestCtl,
+                            onChanged: ctl.setGuestName,
+                            style: TypographyManager.bodyMedium,
+                            decoration: _inputDecoration(
+                              hint: s.createGuestHint,
+                              prefixIcon: const Icon(
+                                Icons.person_outline,
+                                size: 18,
+                                color: ColorPalette.textSecondary,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),

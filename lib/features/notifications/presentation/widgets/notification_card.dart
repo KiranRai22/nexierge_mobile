@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
@@ -7,24 +8,36 @@ import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../tickets/presentation/providers/my_tickets_list_controller.dart';
 import '../../domain/entities/notification_inbox_item.dart';
 
 /// One inbox row.
 ///
 /// Layout: `[priority accent] [icon circle] [title / subtitle] [time + unread dot]`
 ///
-/// Pure presentation — tap routing and read-state mutations live in the
-/// caller. Keeps this widget testable in isolation.
-class NotificationCard extends StatelessWidget {
+/// Read-tab cards additionally show who acknowledged the linked ticket
+/// (resolved from the cached ticket's assigneeName).
+class NotificationCard extends ConsumerWidget {
   final NotificationInboxItem item;
   final VoidCallback onTap;
 
   const NotificationCard({super.key, required this.item, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.themeColors;
     final radius = BorderRadius.circular(12);
+
+    // For Read-tab cards that link to a ticket, look up the assignee name
+    // from the cached ticket (populated from the API's `_user` block).
+    String? readByName;
+    if (!item.unread && item.ticketId != null) {
+      final ticket = ref.watch(cachedTicketByIdProvider(item.ticketId!));
+      final name = ticket?.assigneeName;
+      if (name != null && name.isNotEmpty) {
+        readByName = name.split(' ').first;
+      }
+    }
 
     return Material(
       color: item.unread ? c.bgBase : c.bgSubtle,
@@ -52,7 +65,7 @@ class NotificationCard extends StatelessWidget {
                         _LeadingIcon(item: item),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _Body(item: item, c: c),
+                          child: _Body(item: item, c: c, readByName: readByName),
                         ),
                         const SizedBox(width: 8),
                         _Trailing(item: item, c: c, s: context.l10n),
@@ -137,8 +150,9 @@ class _LeadingIcon extends StatelessWidget {
 class _Body extends StatelessWidget {
   final NotificationInboxItem item;
   final AppColors c;
+  final String? readByName;
 
-  const _Body({required this.item, required this.c});
+  const _Body({required this.item, required this.c, this.readByName});
 
   @override
   Widget build(BuildContext context) {
@@ -161,6 +175,20 @@ class _Body extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
+          ),
+        ],
+        if (readByName != null) ...[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.eye, size: 11, color: c.fgSubtle),
+              const SizedBox(width: 3),
+              Text(
+                readByName!,
+                style: TypographyManager.textCaption.copyWith(color: c.fgSubtle),
+              ),
+            ],
           ),
         ],
       ],

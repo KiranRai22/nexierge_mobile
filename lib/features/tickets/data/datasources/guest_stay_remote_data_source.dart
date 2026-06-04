@@ -98,7 +98,7 @@ class RoomDetailsDto {
 
   factory RoomDetailsDto.fromJson(Map<String, dynamic> json) => RoomDetailsDto(
     id: (json['id'] as String?) ?? '',
-    onbRoomNumber: (json['onb_room_number'] as String?) ?? '',
+    onbRoomNumber: json['onb_room_number']?.toString() ?? '',
   );
 }
 

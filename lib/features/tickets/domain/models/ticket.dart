@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show immutable;
+
 import '../../../../core/time/server_clock.dart';
 import 'department.dart';
 
@@ -84,6 +86,30 @@ sealed class TicketKindData {
   const TicketKindData();
 }
 
+/// One item in a universal request order — used in the detail screen's Orders tab.
+@immutable
+class UniversalItemSnapshot {
+  final String displayName;
+  final String? thumbnailUrl;
+  final String? emoji;
+  final Map<String, String> nameI18n;
+
+  const UniversalItemSnapshot({
+    required this.displayName,
+    this.thumbnailUrl,
+    this.emoji,
+    this.nameI18n = const {},
+  });
+
+  String resolveName(String languageCode) {
+    final exact = nameI18n[languageCode];
+    if (exact != null && exact.isNotEmpty) return exact;
+    final en = nameI18n['en'];
+    if (en != null && en.isNotEmpty) return en;
+    return displayName;
+  }
+}
+
 class UniversalKindData extends TicketKindData {
   /// Fallback display name (typically the `item` field). Use [resolveName]
   /// to pick the locale-appropriate value.
@@ -100,6 +126,10 @@ class UniversalKindData extends TicketKindData {
   final int etaStart;
   final int etaEnd;
 
+  /// Full ordered items list — populated from `_universal_request_order_details`.
+  /// Used by the detail screen's Orders tab to list every item with qty badges.
+  final List<UniversalItemSnapshot> allItems;
+
   const UniversalKindData({
     required this.displayName,
     this.thumbnailUrl,
@@ -108,6 +138,7 @@ class UniversalKindData extends TicketKindData {
     this.nameI18n = const {},
     this.etaStart = 0,
     this.etaEnd = 0,
+    this.allItems = const [],
   });
 
   /// Picks the best display name for [languageCode] — exact match, then
@@ -131,6 +162,13 @@ class CatalogKindData extends TicketKindData {
   final List<String> itemThumbnails;
   final List<String> itemNames;
 
+  /// Per-item quantities — parallel to [itemNames] and [itemThumbnails].
+  final List<int> itemQuantities;
+
+  /// Per-item unit prices and line totals — parallel to [itemNames].
+  final List<double> itemUnitPrices;
+  final List<double> itemLineTotals;
+
   const CatalogKindData({
     required this.catalogName,
     this.logoUrl,
@@ -140,6 +178,9 @@ class CatalogKindData extends TicketKindData {
     required this.itemCount,
     required this.itemThumbnails,
     required this.itemNames,
+    this.itemQuantities = const [],
+    this.itemUnitPrices = const [],
+    this.itemLineTotals = const [],
   });
 }
 

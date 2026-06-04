@@ -217,6 +217,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptySearch => 'No results found.';
 
   @override
+  String get liveEmptyAiOnWatch => 'AI is on watch';
+
+  @override
+  String get liveEmptyWaitingForGuests => 'Waiting for guests';
+
+  @override
+  String get liveEmptyChannelsOpen => 'Channels are open';
+
+  @override
+  String get liveEmptyListening => 'Listening for new requests';
+
+  @override
+  String get liveEmptyRealtimeLabel => 'Live · realtime connected';
+
+  @override
   String get requiredField => 'This field is required.';
 
   @override
@@ -681,10 +696,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get ticketCreatedAt => 'Created';
+  String get ticketCreatedAt => 'Created at';
 
   @override
-  String get ticketDueAt => 'Due';
+  String get ticketDueAt => 'Due at';
+
+  @override
+  String get ticketTimeLeftLabel => 'Time left';
+
+  @override
+  String get ticketGracePeriod => 'Grace Period';
+
+  @override
+  String get ticketOverdueByLabel => 'Overdue by';
 
   @override
   String overdueByMinutes(int minutes) {
@@ -862,6 +886,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roomPickerTitle => 'Select room';
+
+  @override
+  String get guestPickerTitle => 'Select guest';
 
   @override
   String get roomPickerRecent => 'Recent';
@@ -1303,11 +1330,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsInfoUnread =>
-      'Unread notifications are automatically cleared for everyone after 72 hours.';
+      'Unread notifications are automatically cleared for everyone after 48 hours.';
 
   @override
   String get notificationsInfoRead =>
-      'Read notifications are automatically cleared after 48 hours.';
+      'Read notifications are automatically cleared after 24 hours.';
 
   @override
   String get notificationsClearAll => 'Clear all';
@@ -1392,6 +1419,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionAcceptShort => 'Accept';
+
+  @override
+  String get actionMarkInProgress => 'Mark as In Progress';
 
   @override
   String get filterNewestFirst => 'Newest';

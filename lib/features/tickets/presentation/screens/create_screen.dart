@@ -63,11 +63,13 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
     _tabs.addListener(_onTabChanged);
   }
 
+  bool _isSearchVisible = false;
+
   void _onTabChanged() {
     if (_tabs.indexIsChanging) return;
     if (_tabs.index == _lastTabIndex) return;
     _lastTabIndex = _tabs.index;
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _isSearchVisible = false);
   }
 
   @override
@@ -172,6 +174,10 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
                   // onCustom: showCustom ? () => _tabs.animateTo(2) : null,
                   onCustom: null,
                   customLabel: s.createCustomButton,
+                  showSearchIcon: showCustom || isCatalogItems,
+                  isSearchVisible: _isSearchVisible,
+                  onSearchToggle: () =>
+                      setState(() => _isSearchVisible = !_isSearchVisible),
                 ),
                 Divider(
                   height: .5,
@@ -190,9 +196,9 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
         physics: (isUniversalDetails || isCatalogDetails)
             ? const NeverScrollableScrollPhysics()
             : null,
-        children: const [
-          _UniversalTabBody(),
-          _CatalogTabBody(),
+        children: [
+          _UniversalTabBody(showSearch: _isSearchVisible),
+          _CatalogTabBody(showSearch: _isSearchVisible),
           // _ManualTabBody(), // Manual creation temporarily disabled
         ],
       ),
@@ -211,6 +217,9 @@ class _CreateAppBar extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback? onCustom;
   final String customLabel;
+  final bool showSearchIcon;
+  final bool isSearchVisible;
+  final VoidCallback onSearchToggle;
 
   const _CreateAppBar({
     required this.title,
@@ -219,6 +228,9 @@ class _CreateAppBar extends StatelessWidget {
     required this.onClose,
     required this.onCustom,
     required this.customLabel,
+    this.showSearchIcon = false,
+    this.isSearchVisible = false,
+    required this.onSearchToggle,
   });
 
   @override
@@ -281,6 +293,16 @@ class _CreateAppBar extends StatelessWidget {
                 ),
               ),
               child: Text(customLabel),
+            ),
+            const SizedBox(width: 8),
+          ],
+          if (showSearchIcon) ...[
+            _CircleIconButton(
+              icon: isSearchVisible
+                  ? Icons.search_off_rounded
+                  : Icons.search_rounded,
+              onPressed: onSearchToggle,
+              soundCategory: SoundCategory.preference,
             ),
             const SizedBox(width: 8),
           ],
@@ -402,6 +424,83 @@ class _SegmentCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared filter-chip widgets (accessible from all part files)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CategoryChips extends StatelessWidget {
+  final List<String> categories;
+  final String? selected;
+  final ValueChanged<String?> onSelect;
+  const _CategoryChips({
+    required this.categories,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.only(right: 16),
+      child: Row(
+        children: [
+          _FilterChipItem(
+            label: s.activityTypeAll,
+            selected: selected == null,
+            onTap: () => onSelect(null),
+          ),
+          for (final cat in categories) ...[
+            const SizedBox(width: 6),
+            _FilterChipItem(
+              label: cat,
+              selected: selected == cat,
+              onTap: () => onSelect(cat),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChipItem extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FilterChipItem({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: tapSound(onTap, SoundCategory.preference),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? ColorPalette.opsPurple : ColorPalette.opsSurface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? ColorPalette.opsPurple : ColorPalette.opsBorder,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TypographyManager.labelMedium.copyWith(
+            color: selected ? ColorPalette.white : ColorPalette.textPrimary,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ),

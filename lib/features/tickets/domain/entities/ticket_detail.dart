@@ -59,7 +59,7 @@ class TicketDetail {
   factory TicketDetail.fromJson(Map<String, dynamic> json) {
     final ticket = json['ticket'] as Map<String, dynamic>;
     final eventsList = json['events'] as List? ?? [];
-    String s(String key) => (ticket[key] as String?) ?? '';
+    String s(String key) => ticket[key]?.toString() ?? '';
     int i(String key) => (ticket[key] as num?)?.toInt() ?? 0;
     bool b(String key) => (ticket[key] as bool?) ?? false;
     return TicketDetail(
@@ -68,7 +68,7 @@ class TicketDetail {
       createdAt: i('created_at'),
       hotelId: s('hotel_id'),
       departmentId: s('department_id'),
-      assignedToUserId: ticket['assigned_to_user_id'] as String?,
+      assignedToUserId: ticket['assigned_to_user_id']?.toString(),
       createdByAi: b('created_by_ai'),
       type: s('type'),
       status: s('status'),
@@ -80,7 +80,7 @@ class TicketDetail {
       incidentNotes: s('incident_notes'),
       room: s('room'),
       guestName: s('guest_name'),
-      acknowledgedByUserId: ticket['acknowledged_by_user_id'] as String?,
+      acknowledgedByUserId: ticket['acknowledged_by_user_id']?.toString(),
       acknowledgedAt: i('acknowledged_at'),
       resolutionCode: s('resolution_code'),
       resolutionNotes: s('resolution_notes'),
@@ -121,7 +121,7 @@ class TicketEvent {
   });
 
   factory TicketEvent.fromJson(Map<String, dynamic> json) {
-    String s(String key) => (json[key] as String?) ?? '';
+    String s(String key) => json[key]?.toString() ?? '';
     return TicketEvent(
       createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
       eventType: s('event_type'),

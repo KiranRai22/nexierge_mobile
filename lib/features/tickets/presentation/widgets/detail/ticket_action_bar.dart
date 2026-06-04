@@ -67,7 +67,6 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   // ────────── HOLD (ACCEPTED|IN_PROGRESS → ON_HOLD) ──────────
 
-
   // ────────── START FROM BACKLOG (BACKLOG → IN_PROGRESS) ──────────
 
   Future<void> _onStartFromBacklog() async {
@@ -120,17 +119,28 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
             // Refresh the backlog tab (server-curated, cannot infer locally)
             // and the source tab so removed ticket disappears.
             ref
-                .read(ticketsPagedProvider(specForTab(TicketsTab.backlog)).notifier)
+                .read(
+                  ticketsPagedProvider(specForTab(TicketsTab.backlog)).notifier,
+                )
                 .refresh();
             ref
-                .read(ticketsPagedProvider(specForTab(TicketsTab.incoming)).notifier)
+                .read(
+                  ticketsPagedProvider(
+                    specForTab(TicketsTab.incoming),
+                  ).notifier,
+                )
                 .refresh();
             ref
-                .read(ticketsPagedProvider(specForTab(TicketsTab.todayInProgress)).notifier)
+                .read(
+                  ticketsPagedProvider(
+                    specForTab(TicketsTab.todayInProgress),
+                  ).notifier,
+                )
                 .refresh();
             if (mounted) Navigator.of(context).pop();
           } catch (e) {
-            if (mounted) context.showFailure('Failed to move ticket to backlog');
+            if (mounted)
+              context.showFailure('Failed to move ticket to backlog');
           }
         });
       },
@@ -307,10 +317,7 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
       try {
         await ref
             .read(ticketRepositoryProvider)
-            .resetAcknowledgeV2(
-              ticketId: t.id,
-              reason: 'Reset by user',
-            );
+            .resetAcknowledgeV2(ticketId: t.id, reason: 'Reset by user');
         _patchStatus(t.id, 'NEW');
         if (!mounted) return;
         Navigator.of(context).pop();
@@ -420,17 +427,20 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
         minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: switch (t.status) {
           // ───── NEW / INCOMING ─────
-          TicketStatus.incoming => overdue
-              ? _buildOverdueLayout(context, s, c)
-              : _buildNewLayout(context, s, c),
+          TicketStatus.incoming =>
+            overdue
+                ? _buildOverdueLayout(context, s, c)
+                : _buildNewLayout(context, s, c),
           // ───── IN PROGRESS ─────
-          TicketStatus.inProgress => overdue
-              ? _buildOverdueLayout(context, s, c)
-              : _buildInProgressLayout(context, s, c),
+          TicketStatus.inProgress =>
+            overdue
+                ? _buildOverdueLayout(context, s, c)
+                : _buildInProgressLayout(context, s, c),
           // ───── BACKLOG ─────
-          TicketStatus.backlog => overdue
-              ? _buildBacklogOverdueLayout(context, s, c)
-              : _buildBacklogLayout(context, s, c),
+          TicketStatus.backlog =>
+            overdue
+                ? _buildBacklogOverdueLayout(context, s, c)
+                : _buildBacklogLayout(context, s, c),
           // ───── ACCEPTED ───── (legacy v1 path)
           TicketStatus.accepted => _buildAcceptedLayout(context, s, c),
           // ───── ON HOLD ─────
@@ -444,7 +454,11 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   // ───── Layout Builders ─────
 
   /// INCOMING healthy: Accept & Start (primary) + Add Time | Backlog | Cancel
-  Widget _buildNewLayout(BuildContext context, AppLocalizations s, AppColors c) {
+  Widget _buildNewLayout(
+    BuildContext context,
+    AppLocalizations s,
+    AppColors c,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -464,7 +478,9 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
               child: _SecondaryButton(
                 icon: LucideIcons.circlePlus,
                 label: s.ticketActionChangeDue,
-                onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+                onTap: _busy
+                    ? null
+                    : tapSound(_onChangeDue, SoundCategory.preference),
               ),
             ),
             const SizedBox(width: 8),
@@ -491,7 +507,11 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   }
 
   /// IN_PROGRESS healthy: Mark Done (primary) + Add Time | Reset | Backlog | Cancel
-  Widget _buildInProgressLayout(BuildContext context, AppLocalizations s, AppColors c) {
+  Widget _buildInProgressLayout(
+    BuildContext context,
+    AppLocalizations s,
+    AppColors c,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -511,7 +531,9 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
               child: _SecondaryButton(
                 icon: LucideIcons.circlePlus,
                 label: s.ticketActionChangeDue,
-                onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+                onTap: _busy
+                    ? null
+                    : tapSound(_onChangeDue, SoundCategory.preference),
               ),
             ),
             const SizedBox(width: 8),
@@ -551,7 +573,11 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
 
   /// Shared overdue layout for INCOMING + IN_PROGRESS:
   /// Force Done (primary) + Move to Backlog | Cancel
-  Widget _buildOverdueLayout(BuildContext context, AppLocalizations s, AppColors c) {
+  Widget _buildOverdueLayout(
+    BuildContext context,
+    AppLocalizations s,
+    AppColors c,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -559,9 +585,9 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _busy ? null : tapSound(_onMarkDone),
-            icon: const Icon(LucideIcons.checkCheck, size: 18),
+            icon: const Icon(LucideIcons.circleCheck, size: 18),
             label: Text(s.ticketActionForceDone),
-            style: _primaryStyle(c),
+            style: _dangerStyle(c),
           ),
         ),
         const SizedBox(height: 8),
@@ -590,7 +616,11 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   }
 
   /// BACKLOG healthy: Resume to In Progress (primary) + Cancel
-  Widget _buildBacklogLayout(BuildContext context, AppLocalizations s, AppColors c) {
+  Widget _buildBacklogLayout(
+    BuildContext context,
+    AppLocalizations s,
+    AppColors c,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -620,7 +650,11 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
   }
 
   /// BACKLOG overdue: Force Done (primary) + Cancel
-  Widget _buildBacklogOverdueLayout(BuildContext context, AppLocalizations s, AppColors c) {
+  Widget _buildBacklogOverdueLayout(
+    BuildContext context,
+    AppLocalizations s,
+    AppColors c,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -629,9 +663,9 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _busy ? null : tapSound(_onMarkDone),
-                icon: const Icon(LucideIcons.checkCheck, size: 18),
+                icon: const Icon(LucideIcons.circleCheck, size: 18),
                 label: Text(s.ticketActionForceDone),
-                style: _primaryStyle(c),
+                style: _dangerStyle(c),
               ),
             ),
             const SizedBox(width: 8),
@@ -655,10 +689,27 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     disabledBackgroundColor: c.bgDisabled,
     minimumSize: const Size.fromHeight(48),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    textStyle: TypographyManager.labelLarge.copyWith(fontWeight: FontWeight.w600),
+    textStyle: TypographyManager.labelLarge.copyWith(
+      fontWeight: FontWeight.w600,
+    ),
   );
 
-  Widget _buildAcceptedLayout(BuildContext context, AppLocalizations s, AppColors c) {
+  ButtonStyle _dangerStyle(AppColors c) => ElevatedButton.styleFrom(
+    backgroundColor: c.buttonDanger,
+    foregroundColor: c.fgOnInverted,
+    disabledBackgroundColor: c.bgDisabled,
+    minimumSize: const Size.fromHeight(48),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    textStyle: TypographyManager.labelLarge.copyWith(
+      fontWeight: FontWeight.w600,
+    ),
+  );
+
+  Widget _buildAcceptedLayout(
+    BuildContext context,
+    AppLocalizations s,
+    AppColors c,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -691,7 +742,9 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
               child: _SecondaryButton(
                 icon: LucideIcons.circlePlus,
                 label: 'Add Time',
-                onTap: _busy ? null : tapSound(_onChangeDue, SoundCategory.preference),
+                onTap: _busy
+                    ? null
+                    : tapSound(_onChangeDue, SoundCategory.preference),
               ),
             ),
             const SizedBox(width: 8),
@@ -717,7 +770,11 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
     );
   }
 
-  Widget _buildOnHoldLayout(BuildContext context, AppLocalizations s, AppColors c) {
+  Widget _buildOnHoldLayout(
+    BuildContext context,
+    AppLocalizations s,
+    AppColors c,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

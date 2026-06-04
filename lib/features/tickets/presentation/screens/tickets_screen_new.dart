@@ -4,6 +4,7 @@
 // Uses v2 paged providers for KPI counts and filtering.
 // ─────────────────────────────────────────────────────────────────
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -29,6 +30,7 @@ import '../providers/tickets_paged_notifier.dart';
 import '../widgets/skeletons/ticket_skeletons.dart';
 // import '../widgets/ticket_card_new.dart'; // ← backup — uncomment to revert
 import '../widgets/ticket_card_compact.dart';
+import '../widgets/live_empty_state.dart';
 import '../widgets/tickets_top_bar.dart';
 import '../widgets/tickets_main_tabs.dart';
 import '../widgets/tickets_filter_chips.dart';
@@ -41,6 +43,7 @@ import 'ticket_detail_screen.dart';
 import '../../../shell/presentation/widgets/center_fab.dart';
 import '../../../shell/presentation/screens/create_router.dart';
 import '../../data/repositories/ticket_repository.dart';
+import '../../../../core/error/error_handler.dart';
 
 /// Updated tickets screen matching the provided design
 class TicketsScreenNew extends ConsumerStatefulWidget {
@@ -151,25 +154,28 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
       // If prev is null, this is the initial load - still apply the filter
       // If prev == next, ignore (no actual change)
       if (prev != null && prev == next) return;
-      //debugPrint('[TicketsScreen] ref.listen - Tab changed: $prev -> $next');
       switch (next) {
         case TicketsMainTab.today:
-          // Reset Today to 'active' filter (shows non-overdue in-progress tickets)
-          //debugPrint('[TicketsScreen] ref.listen - Setting filter to: "active"');
           ref.read(ticketsFilterProvider.notifier).state = 'active';
           break;
         case TicketsMainTab.backlog:
-          //debugPrint('[TicketsScreen] ref.listen - Setting filter to: "all"');
           ref.read(ticketsFilterProvider.notifier).state = 'all';
           break;
         case TicketsMainTab.incoming:
-          //debugPrint('[TicketsScreen] ref.listen - Setting filter to: "newest"');
           ref.read(ticketsFilterProvider.notifier).state = 'newest';
           break;
         case TicketsMainTab.done:
-          //debugPrint('[TicketsScreen] ref.listen - Setting filter to: "newest"');
           ref.read(ticketsFilterProvider.notifier).state = 'newest';
           break;
+      }
+      // Refresh the newly-selected tab if its data is older than 30 s.
+      // This keeps lists fresh without hammering the API on every rapid swipe.
+      if (prev != null) {
+        final tab = _ticketsTabFromMain(next);
+        final spec = ref.read(ticketsPagedSpecProvider(tab));
+        ref
+            .read(ticketsPagedProvider(spec).notifier)
+            .refreshIfStale(const Duration(seconds: 30));
       }
     });
 
@@ -295,16 +301,28 @@ class _TicketsScreenNewState extends ConsumerState<TicketsScreenNew>
                   : const SizedBox(width: double.infinity),
             ),
 
-            // Tickets list — fade between tabs
+            // Tickets list — fade in new tab only; old tab hidden immediately
+            // to prevent stale content from a previous tab bleeding through
+            // during the transition.
             Expanded(
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
+                duration: const Duration(milliseconds: 200),
                 transitionBuilder: (child, animation) => FadeTransition(
                   opacity: CurvedAnimation(
                     parent: animation,
-                    curve: Curves.easeInOut,
+                    curve: Curves.easeIn,
                   ),
                   child: child,
+                ),
+                layoutBuilder: (currentChild, previousChildren) => Stack(
+                  alignment: Alignment.topCenter,
+                  children: <Widget>[
+                    // Collapse previous tab content instantly — no fade-out
+                    ...previousChildren.map(
+                      (child) => Opacity(opacity: 0.0, child: child),
+                    ),
+                    if (currentChild != null) currentChild,
+                  ],
                 ),
                 child: RefreshIndicator(
                   key: ValueKey(mainTab),
@@ -731,7 +749,10 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
   void _onScroll() {
     if (!_scrollCtl.hasClients) return;
     final pos = _scrollCtl.position;
-    // Trigger when within ~3 ticket cards (~300px) of the bottom.
+    // Guard: list must actually be long enough to scroll before triggering.
+    // Without this, short lists (e.g. 2 overdue cards) always satisfy
+    // `pixels >= maxScrollExtent - 300` and fire a spurious API call.
+    if (pos.maxScrollExtent < 1) return;
     if (pos.pixels >= pos.maxScrollExtent - 300) {
       final spec = ref.read(ticketsPagedSpecProvider(widget.tab));
       ref.read(ticketsPagedProvider(spec).notifier).loadNextPage();
@@ -763,7 +784,7 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
 
     return asyncState.when(
       loading: () => const _LoadingList(),
-      error: (e, _) => _ErrorView(error: e.toString()),
+      error: (e, _) => _ErrorView(error: e),
       data: (page) {
         // Debug: Log items and their status for troubleshooting
         if (widget.tab == TicketsTab.todayInProgress && page.items.isNotEmpty) {
@@ -786,7 +807,7 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
           page.items,
           filter,
         );
-        if (visibleItems.isEmpty) return const _EmptyView();
+        if (visibleItems.isEmpty) return const LiveEmptyState();
         final tickets = visibleItems
             .map(
               (mt) => mapMyTicketToTicket(
@@ -891,39 +912,22 @@ class _LoadingList extends StatelessWidget {
   }
 }
 
-class _EmptyView extends StatelessWidget {
-  const _EmptyView();
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        const SizedBox(height: 80),
-        Icon(
-          Icons.inbox_outlined,
-          size: 56,
-          color: context.themeColors.fgDisabled,
-        ),
-        const SizedBox(height: 12),
-        Center(
-          child: Text(
-            context.l10n.emptyState,
-            style: TypographyManager.bodyMedium.copyWith(
-              color: context.themeColors.fgMuted,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _ErrorView extends StatelessWidget {
-  final String error;
+  final Object error;
   const _ErrorView({required this.error});
 
   @override
   Widget build(BuildContext context) {
+    final message = error is AppException
+        ? (error as AppException).localizedMessage(context.l10n)
+        : context.l10n.unknownError;
+
+    if (kDebugMode) {
+      final orig = error is AppException ? (error as AppException).originalError : null;
+      debugPrint('[_ErrorView] type=${error.runtimeType} | $error | originalError=$orig');
+    }
+
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
@@ -933,18 +937,20 @@ class _ErrorView extends StatelessWidget {
           size: 56,
           color: context.themeColors.tagRedIcon,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Text(
-          context.l10n.unknownError,
+          message,
           style: TypographyManager.bodyMedium,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
-        Text(
-          error,
-          style: TypographyManager.bodySmall,
-          textAlign: TextAlign.center,
-        ),
+        if (kDebugMode) ...[
+          const SizedBox(height: 12),
+          Text(
+            error.toString(),
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ],
     );
   }

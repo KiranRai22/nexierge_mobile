@@ -91,6 +91,8 @@ class MyTicket {
   final String? departmentIconUrl;
   final String? departmentCode;
   final String? assignedToUserId;
+  /// Resolved display name from the `_user` block (e.g. "Kiran R. C.").
+  final String? assigneeName;
   final String createdByUserId;
   final bool createdByAi;
   final String type;
@@ -137,6 +139,7 @@ class MyTicket {
     this.departmentIconUrl,
     this.departmentCode,
     this.assignedToUserId,
+    this.assigneeName,
     required this.createdByUserId,
     required this.createdByAi,
     required this.type,
@@ -181,6 +184,7 @@ class MyTicket {
     String? departmentIconUrl,
     String? departmentCode,
     String? assignedToUserId,
+    String? assigneeName,
     String? createdByUserId,
     bool? createdByAi,
     String? type,
@@ -224,6 +228,7 @@ class MyTicket {
       departmentIconUrl: departmentIconUrl ?? this.departmentIconUrl,
       departmentCode: departmentCode ?? this.departmentCode,
       assignedToUserId: assignedToUserId ?? this.assignedToUserId,
+      assigneeName: assigneeName ?? this.assigneeName,
       createdByUserId: createdByUserId ?? this.createdByUserId,
       createdByAi: createdByAi ?? this.createdByAi,
       type: type ?? this.type,

@@ -204,9 +204,9 @@ abstract class APIEndpoints {
   // Timeouts & headers
   // ---------------------------------------------------------------------------
 
-  static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
-  static const Duration sendTimeout = Duration(seconds: 30);
+  static const Duration connectTimeout = Duration(seconds: 45);
+  static const Duration receiveTimeout = Duration(seconds: 45);
+  static const Duration sendTimeout = Duration(seconds: 45);
 
   static const String contentTypeJson = 'application/json';
   static const String authorizationHeader = 'Authorization';

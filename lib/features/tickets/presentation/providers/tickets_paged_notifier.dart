@@ -8,6 +8,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/error_handler.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/entities/my_ticket.dart';
@@ -127,6 +128,11 @@ class TicketsPageState {
   /// Drives the slide-in / flash animation on the card.
   final Set<String> freshlyArrivedIds;
 
+  /// Wall-clock time of the last successful page-1 fetch. Used by
+  /// [TicketsPagedNotifier.refreshIfStale] to decide whether a tab-switch
+  /// should trigger a server round-trip.
+  final DateTime? lastFetchedAt;
+
   const TicketsPageState({
     this.items = const [],
     this.nextPage = 1,
@@ -135,6 +141,7 @@ class TicketsPageState {
     this.isLoadingMore = false,
     this.sortOrder = TicketsSortOrder.newestFirst,
     this.freshlyArrivedIds = const {},
+    this.lastFetchedAt,
   });
 
   bool get hasMore => nextPage != null;
@@ -148,6 +155,7 @@ class TicketsPageState {
     bool? isLoadingMore,
     TicketsSortOrder? sortOrder,
     Set<String>? freshlyArrivedIds,
+    DateTime? lastFetchedAt,
   }) {
     return TicketsPageState(
       items: items ?? this.items,
@@ -157,6 +165,7 @@ class TicketsPageState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       sortOrder: sortOrder ?? this.sortOrder,
       freshlyArrivedIds: freshlyArrivedIds ?? this.freshlyArrivedIds,
+      lastFetchedAt: lastFetchedAt ?? this.lastFetchedAt,
     );
   }
 }
@@ -201,21 +210,28 @@ class TicketsPagedNotifier
   Future<TicketsPageState> _fetchPage({
     required int page,
     required String hotelId,
+    int attempt = 1,
   }) async {
-    //debugPrint(
-    //   '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
-    //   'departmentId=${_spec.departmentId} page=$page',
-    // );
-    final res = await _repo.fetchTicketsV2Page(
-      tab: _spec.v2Tab,
-      hotelId: hotelId,
-      page: page,
-      perPage: _spec.perPage,
-      departmentId: _spec.departmentId,
-      ticketType: _spec.ticketType,
-      createdAtStartDate: _spec.createdAtStartDate,
-      createdAtEndDate: _spec.createdAtEndDate,
-    );
+    const maxAttempts = 3;
+    late final dynamic res;
+    try {
+      res = await _repo.fetchTicketsV2Page(
+        tab: _spec.v2Tab,
+        hotelId: hotelId,
+        page: page,
+        perPage: _spec.perPage,
+        departmentId: _spec.departmentId,
+        ticketType: _spec.ticketType,
+        createdAtStartDate: _spec.createdAtStartDate,
+        createdAtEndDate: _spec.createdAtEndDate,
+      );
+    } on AppException catch (e) {
+      if (e.type == AppErrorType.timeout && attempt < maxAttempts) {
+        await Future<void>.delayed(Duration(seconds: attempt));
+        return _fetchPage(page: page, hotelId: hotelId, attempt: attempt + 1);
+      }
+      rethrow;
+    }
     //debugPrint(
     //   '[TicketsPagedNotifier] _fetchPage: tab=${_spec.tab} '
     //   'departmentId=${_spec.departmentId} page=$page got=${res.items.length} total=${res.itemsTotal} '
@@ -237,7 +253,20 @@ class TicketsPagedNotifier
       isLoadingMore: false,
       sortOrder: current?.sortOrder ?? TicketsSortOrder.newestFirst,
       freshlyArrivedIds: current?.freshlyArrivedIds ?? const {},
+      lastFetchedAt: page == 1 ? DateTime.now() : current?.lastFetchedAt,
     );
+  }
+
+  /// Refresh only if data is older than [maxAge]. No-op if still fresh or
+  /// currently loading. Used by tab-switch logic to avoid stale lists without
+  /// hammering the API on every rapid swipe.
+  Future<void> refreshIfStale(Duration maxAge) async {
+    if (state.isLoading) return;
+    final current = state.valueOrNull;
+    final fetchedAt = current?.lastFetchedAt;
+    if (fetchedAt == null || DateTime.now().difference(fetchedAt) > maxAge) {
+      await refresh();
+    }
   }
 
   /// Force-refetch from page 1. Discards any in-memory pages and resets
@@ -261,12 +290,11 @@ class TicketsPagedNotifier
     try {
       final next = await _fetchPage(page: page, hotelId: hotelId);
       state = AsyncData(next);
-    } catch (e, st) {
-      //debugPrint('[TicketsPagedNotifier] loadNextPage error: $e');
-      state = AsyncError<TicketsPageState>(
-        e,
-        st,
-      ).copyWithPrevious(AsyncData(current.copyWith(isLoadingMore: false)));
+    } catch (_) {
+      // Pagination failure — keep the current data visible rather than
+      // replacing the screen with an error. The user can pull-to-refresh
+      // if they want a hard retry.
+      state = AsyncData(current.copyWith(isLoadingMore: false, clearNextPage: true));
     }
   }
 

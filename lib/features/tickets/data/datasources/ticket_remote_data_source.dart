@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
-// import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/error_handler.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
 
@@ -512,9 +513,26 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
       q['created_at_start_date'] = createdAtStartDate;
     if (createdAtEndDate != null) q['created_at_end_date'] = createdAtEndDate;
 
-    //debugPrint('[TicketRemoteDataSource][v2] GET $url params=$q');
+    debugPrint('[v2 fetch] GET $url params=$q');
     final res = await _dio.get(url, queryParameters: q);
-    return TicketsPageDto.fromJson(res.data as Map<String, dynamic>);
+    debugPrint('[v2 fetch] status=${res.statusCode} dataType=${res.data?.runtimeType}');
+    final raw = res.data;
+    if (raw is Map<String, dynamic>) {
+      return TicketsPageDto.fromJson(raw);
+    }
+    if (raw is List) {
+      // Endpoint returned a bare array — wrap into the standard envelope shape.
+      return TicketsPageDto.fromJson({
+        'items': raw,
+        'itemsTotal': raw.length,
+        'curPage': page,
+        'nextPage': null,
+      });
+    }
+    throw AppException(
+      type: AppErrorType.serverError,
+      overrideMessage: 'Unexpected response type: ${raw?.runtimeType}',
+    );
   }
 
   @override
@@ -929,7 +947,7 @@ class MyTicketDto {
   });
 
   factory MyTicketDto.fromJson(Map<String, dynamic> json) {
-    String s(String key) => (json[key] as String?) ?? '';
+    String s(String key) => json[key]?.toString() ?? '';
     int i(String key) => (json[key] as num?)?.toInt() ?? 0;
     bool b(String key) => (json[key] as bool?) ?? false;
     return MyTicketDto(
@@ -938,7 +956,7 @@ class MyTicketDto {
       createdAt: i('created_at'),
       hotelId: s('hotel_id'),
       departmentId: s('department_id'),
-      assignedToUserId: json['assigned_to_user_id'] as String?,
+      assignedToUserId: json['assigned_to_user_id']?.toString(),
       createdByUserId: s('created_by_user_id'),
       createdByAi: b('created_by_ai'),
       type: s('type'),
@@ -955,12 +973,12 @@ class MyTicketDto {
       incidentNotes: s('incident_notes'),
       room: s('room'),
       guestName: s('guest_name'),
-      acknowledgedByUserId: json['acknowledged_by_user_id'] as String?,
+      acknowledgedByUserId: json['acknowledged_by_user_id']?.toString(),
       acknowledgedAt: i('acknowledged_at'),
       resolutionCode: s('resolution_code'),
       resolutionNotes: s('resolution_notes'),
       confirmedAt: i('confirmed_at'),
-      closedAt: json['closed_at'] as String?,
+      closedAt: json['closed_at']?.toString(),
       roomDetails: json['room_details'] as Map<String, dynamic>?,
       universalDetails: _parseUniversalDetails(
         json['_universal_request_order_details'],
@@ -1045,10 +1063,10 @@ class UniversalRequestOrderItemDto {
     final thumb = preset?['thumbnail_image'] as Map?;
     final i18nRaw = preset?['name_i18n'] as Map?;
     return UniversalRequestOrderItemDto(
-      id: (json['id'] as String?) ?? '',
-      item: (json['item'] as String?) ?? '',
-      emoji: (preset?['icon'] as String?) ?? '',
-      thumbnailUrl: thumb?['url'] as String?,
+      id: json['id']?.toString() ?? '',
+      item: json['item']?.toString() ?? '',
+      emoji: preset?['icon']?.toString() ?? '',
+      thumbnailUrl: thumb?['url']?.toString(),
       nameI18n: i18nRaw == null
           ? const {}
           : i18nRaw.map((k, v) => MapEntry(k.toString(), (v as String?) ?? '')),
@@ -1080,13 +1098,16 @@ class ServiceCatalogOrderItemDto {
     final images = (details?['image'] as List?) ?? const [];
     final firstImage = images.isNotEmpty ? images.first?.toString() : null;
     final qty = (json['quantity'] as num?)?.toInt() ?? 1;
-    final price = (json['price'] as num?)?.toDouble() ?? 0;
+    // Top-level price may be 0 when the item details object carries the real price.
+    final priceTop = (json['price'] as num?)?.toDouble() ?? 0;
+    final priceDetails = (details?['price'] as num?)?.toDouble() ?? 0;
+    final price = priceTop > 0 ? priceTop : priceDetails;
     final total =
         (json['total_price'] as num?)?.toDouble() ??
         (json['item_total'] as num?)?.toDouble() ??
         price * qty;
     return ServiceCatalogOrderItemDto(
-      itemName: (json['item_name'] as String?) ?? '',
+      itemName: json['item_name']?.toString() ?? '',
       imageUrl: (firstImage != null && firstImage.isNotEmpty)
           ? firstImage
           : null,
@@ -1125,9 +1146,9 @@ class ServiceCatalogOrderDetailsDto {
     final orderItem = json['order_item_details'] as Map?;
     final itemsRaw = (orderItem?['items'] as List?) ?? const [];
     return ServiceCatalogOrderDetailsDto(
-      catalogName: (svc?['name'] as String?) ?? '',
-      logoUrl: logo?['url'] as String?,
-      brandColorHex: svc?['brand_color'] as String?,
+      catalogName: svc?['name']?.toString() ?? '',
+      logoUrl: logo?['url']?.toString(),
+      brandColorHex: svc?['brand_color']?.toString(),
       grandTotal: (json['grand_total'] as num?)?.toDouble() ?? 0,
       currency: (json['currency'] as String?) ?? '',
       slaTargetMinutes: (json['sla_target_minutes'] as num?)?.toInt() ?? 0,
@@ -1152,8 +1173,8 @@ class ManualTicketDetailsDto {
 
   factory ManualTicketDetailsDto.fromJson(Map<String, dynamic> json) {
     return ManualTicketDetailsDto(
-      summary: (json['summary'] as String?) ?? '',
-      details: (json['details'] as String?) ?? '',
+      summary: json['summary']?.toString() ?? '',
+      details: json['details']?.toString() ?? '',
     );
   }
 }
@@ -1201,6 +1222,9 @@ class AllTicketDto {
   /// Room data block: `{ id, onb_room_number, ... }`.
   final Map<String, dynamic>? roomData;
 
+  /// Resolved name of the assigned/acknowledged operator from `_user`.
+  final String? assigneeName;
+
   /// Per-kind nested detail blocks. Exactly one of these is populated for
   /// a given row, matching the discriminator in [ticketType]:
   ///   - `universal_request` → [universalDetails]
@@ -1247,11 +1271,17 @@ class AllTicketDto {
     this.universalDetails = const [],
     this.catalogDetails,
     this.manualDetails,
+    this.assigneeName,
   });
 
   factory AllTicketDto.fromJson(Map<String, dynamic> json) {
-    String s(String key) => (json[key] as String?) ?? '';
+    String s(String key) => json[key]?.toString() ?? '';
     int i(String key) => (json[key] as num?)?.toInt() ?? 0;
+    // _user carries the assigned/acknowledged operator's name.
+    final user = json['_user'] as Map?;
+    final firstName = user?['first_name']?.toString() ?? '';
+    final lastName = user?['last_name']?.toString() ?? '';
+    final assigneeName = [firstName, lastName].where((p) => p.isNotEmpty).join(' ');
     bool b(String key) => (json[key] as bool?) ?? false;
 
     final universalRaw =
@@ -1278,7 +1308,7 @@ class AllTicketDto {
       lastTransitionAt: i('last_transition_at'),
       hotelId: s('hotel_id'),
       opsTicketId: s('ops_ticket_id'),
-      assignedToUserId: json['assigned_to_user_id'] as String?,
+      assignedToUserId: json['assigned_to_user_id']?.toString(),
       createdByUserId: s('created_by_user_id'),
       createdByAi: b('created_by_ai'),
       type: s('type'),
@@ -1296,7 +1326,7 @@ class AllTicketDto {
       incidentNotes: s('incident_notes'),
       room: s('room'),
       guestName: s('guest_name'),
-      acknowledgedByUserId: json['acknowledged_by_user_id'] as String?,
+      acknowledgedByUserId: json['acknowledged_by_user_id']?.toString(),
       acknowledgedAt: i('acknowledged_at'),
       resolutionCode: s('resolution_code'),
       resolutionNotes: s('resolution_notes'),
@@ -1308,6 +1338,7 @@ class AllTicketDto {
       universalDetails: universal,
       catalogDetails: catalog,
       manualDetails: manual,
+      assigneeName: assigneeName.isNotEmpty ? assigneeName : null,
     );
   }
 }
@@ -1476,7 +1507,10 @@ class ServiceCatalogItemDto {
       description: json['description'] as String?,
       images:
           (json['images'] as List<dynamic>? ?? json['image'] as List<dynamic>?)
-              ?.map((e) => e.toString())
+              ?.map((e) {
+                if (e is Map) return (e['url'] ?? '').toString();
+                return e.toString();
+              })
               .where((s) => s.isNotEmpty)
               .toList() ??
           const [],

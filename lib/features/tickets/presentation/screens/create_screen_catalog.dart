@@ -26,7 +26,8 @@ class _GroupedListItem {
 }
 
 class _CatalogTabBody extends ConsumerWidget {
-  const _CatalogTabBody();
+  final bool showSearch;
+  const _CatalogTabBody({this.showSearch = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,8 +42,9 @@ class _CatalogTabBody extends ConsumerWidget {
         CatalogStep.selectCatalog => const _CatalogStepSelect(
           key: ValueKey('cat-select'),
         ),
-        CatalogStep.selectItems => const _CatalogStepItems(
-          key: ValueKey('cat-items'),
+        CatalogStep.selectItems => _CatalogStepItems(
+          key: const ValueKey('cat-items'),
+          showSearch: showSearch,
         ),
         CatalogStep.fillDetails => const _CatalogStepDetailsPlaceholder(
           key: ValueKey('cat-details'),
@@ -368,7 +370,8 @@ class _CatalogSelectError extends StatelessWidget {
 // ── Step 2 — Menu list ────────────────────────────────────────────────────
 
 class _CatalogStepItems extends ConsumerStatefulWidget {
-  const _CatalogStepItems({super.key});
+  final bool showSearch;
+  const _CatalogStepItems({super.key, this.showSearch = false});
 
   @override
   ConsumerState<_CatalogStepItems> createState() => _CatalogStepItemsState();
@@ -377,6 +380,16 @@ class _CatalogStepItems extends ConsumerStatefulWidget {
 class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
   final _searchCtl = TextEditingController();
   String _query = '';
+  String? _selectedCategory;
+
+  @override
+  void didUpdateWidget(_CatalogStepItems oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.showSearch && oldWidget.showSearch) {
+      _searchCtl.clear();
+      setState(() => _query = '');
+    }
+  }
 
   @override
   void dispose() {
@@ -471,59 +484,81 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
 
     return Column(
       children: [
-        // Search
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: TextField(
-            controller: _searchCtl,
-            onChanged: (v) => setState(() => _query = v.trim()),
-            style: TypographyManager.bodyMedium,
-            decoration: InputDecoration(
-              hintText: s.catalogSearchHintNamed(catalog.name),
-              hintStyle: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textSecondary,
-              ),
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-                size: 20,
-                color: ColorPalette.textSecondary,
-              ),
-              filled: true,
-              fillColor: ColorPalette.opsSurfaceSubtle,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: ColorPalette.opsBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: ColorPalette.opsBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: ColorPalette.opsPurple),
-              ),
-            ),
-          ),
+        // 1. Collapsible search bar
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: widget.showSearch
+              ? Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: TextField(
+                    controller: _searchCtl,
+                    autofocus: true,
+                    onChanged: (v) => setState(() => _query = v.trim()),
+                    style: TypographyManager.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: s.catalogSearchHintNamed(catalog.name),
+                      hintStyle: TypographyManager.bodyMedium.copyWith(
+                        color: ColorPalette.textSecondary,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        size: 20,
+                        color: ColorPalette.textSecondary,
+                      ),
+                      filled: true,
+                      fillColor: ColorPalette.opsSurfaceSubtle,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: ColorPalette.opsBorder),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: ColorPalette.opsBorder),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:
+                            const BorderSide(color: ColorPalette.opsPurple),
+                      ),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
+
+        // 2. Category chips — built from loaded items
+        asyncItems.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (allItems) {
+            if (_query.isNotEmpty) return const SizedBox.shrink();
+            final categories = allItems
+                .map((i) =>
+                    i.category?.isNotEmpty == true ? i.category! : 'Other')
+                .toSet()
+                .toList()
+              ..sort();
+            if (categories.length <= 1) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 0, 8),
+              child: _CategoryChips(
+                categories: categories,
+                selected: _selectedCategory,
+                onSelect: (cat) => setState(() => _selectedCategory = cat),
+              ),
+            );
+          },
+        ),
+
+        // 3. Divider
         Divider(height: 1, thickness: 1, color: ColorPalette.opsBorder),
 
-        // Section heading
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              s.catalogAvailableSection,
-              style: TypographyManager.sectionOverline,
-            ),
-          ),
-        ),
-
-        // Item list
+        // 4. Item list
         Expanded(
           child: asyncItems.when(
             loading: () => const _CatalogItemsShimmer(),
@@ -533,18 +568,25 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                   ref.invalidate(serviceCatalogItemsProvider(catalog.id)),
             ),
             data: (allItems) {
-              //debugPrint('[CreateScreenCatalog] Catalog: ${catalog?.name}, ID: ${catalog?.id}');
-              //debugPrint('[CreateScreenCatalog] API returned ${allItems.length} items');
-              final items = _filtered(allItems);
-              //debugPrint('[CreateScreenCatalog] After filtering: ${items.length} items (query: "$_query")');
+              // Apply category filter first (ignored when searching)
+              final preFiltered = (_query.isEmpty && _selectedCategory != null)
+                  ? allItems
+                      .where((i) =>
+                          (i.category?.isNotEmpty == true
+                              ? i.category!
+                              : 'Other') ==
+                          _selectedCategory)
+                      .toList()
+                  : allItems;
+              final items = _filtered(preFiltered);
               if (items.isEmpty) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(
                       _query.isEmpty
-                          ? 'No items in this catalog yet'
-                          : 'No items match your search',
+                          ? s.emptyState
+                          : s.emptyState,
                       textAlign: TextAlign.center,
                       style: TypographyManager.bodyMedium.copyWith(
                         color: ColorPalette.textSecondary,
@@ -553,10 +595,7 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                   ),
                 );
               }
-              
-              // Group items by category
               final groupedItems = _groupItemsByCategory(items);
-              
               return RefreshIndicator(
                 onRefresh: () async =>
                     ref.invalidate(serviceCatalogItemsProvider(catalog.id)),
@@ -568,8 +607,6 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                   itemCount: groupedItems.length,
                   itemBuilder: (_, i) {
                     final groupedItem = groupedItems[i];
-                    
-                    // Category header
                     if (groupedItem.isHeader) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 16, bottom: 8),
@@ -581,8 +618,6 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                         ),
                       );
                     }
-                    
-                    // Regular item card
                     final item = groupedItem.item!;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
@@ -618,7 +653,6 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
           ),
         ),
 
-        // Sticky bottom (info bar + Continue) — full version lands in Phase D.
         if (hasCart) _CatalogStickyContinue(draft: draft, ctl: ctl),
       ],
     );
@@ -1373,19 +1407,63 @@ class _CatalogStepDetailsState
                           required: false,
                         ),
                         const SizedBox(height: 6),
-                        TextField(
-                          controller: _guestCtl,
-                          onChanged: ctl.setGuestName,
-                          style: TypographyManager.bodyMedium,
-                          decoration: _catalogInput(
-                            hint: s.createGuestHint,
-                            prefixIcon: const Icon(
-                              Icons.person_outline,
-                              size: 18,
-                              color: ColorPalette.textSecondary,
+                        if (draft.selectedRoomId != null && draft.roomId != null)
+                          GestureDetector(
+                            onTap: () async {
+                              SoundManager.instance.play(SoundCategory.button);
+                              final picked = await GuestPickerSheet.show(
+                                context,
+                                roomId: draft.roomId!,
+                              );
+                              if (picked != null) ctl.selectGuest(picked);
+                            },
+                            child: Container(
+                              height: 48,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: ColorPalette.opsSurfaceSubtle,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: ColorPalette.opsBorder),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      draft.guestName.isNotEmpty
+                                          ? draft.guestName
+                                          : s.guestPickerTitle,
+                                      style: TypographyManager.bodyMedium.copyWith(
+                                        color: draft.guestName.isNotEmpty
+                                            ? ColorPalette.textPrimary
+                                            : ColorPalette.textSecondary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    size: 16,
+                                    color: ColorPalette.textSecondary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          TextField(
+                            controller: _guestCtl,
+                            onChanged: ctl.setGuestName,
+                            style: TypographyManager.bodyMedium,
+                            decoration: _catalogInput(
+                              hint: s.createGuestHint,
+                              prefixIcon: const Icon(
+                                Icons.person_outline,
+                                size: 18,
+                                color: ColorPalette.textSecondary,
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),

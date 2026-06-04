@@ -46,7 +46,7 @@ class TicketsFilterChips extends StatelessWidget {
               count: count,
               isSelected: isSelected,
               isDanger: filter.isDanger,
-              onTap: () => onFilterChanged(isSelected ? null : filter.key),
+              onTap: () { if (!isSelected) onFilterChanged(filter.key); },
             ),
           );
         }).toList(),

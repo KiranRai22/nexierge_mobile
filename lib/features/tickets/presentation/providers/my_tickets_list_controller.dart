@@ -87,7 +87,7 @@ Ticket _mapToTicket(MyTicket t, {int? workStartedEpoch}) {
         : null,
     workStartedAt: workStartedAt,
     items: const [],
-    assigneeName: t.assignedToUserId,
+    assigneeName: t.assigneeName,
     isTransitioning: t.isTransitioning,
     kindData: kindData,
   );
@@ -121,6 +121,14 @@ TicketKindData? _buildKindData(MyTicket t, TicketKind kind) {
         nameI18n: first.nameI18n,
         etaStart: first.etaStart,
         etaEnd: first.etaEnd,
+        allItems: t.universalItems
+            .map((u) => UniversalItemSnapshot(
+                  displayName: u.item,
+                  thumbnailUrl: u.thumbnailUrl,
+                  emoji: u.emoji.isEmpty ? null : u.emoji,
+                  nameI18n: u.nameI18n,
+                ))
+            .toList(growable: false),
       );
     case TicketKind.catalog:
       final c = t.catalogDetails;
@@ -137,6 +145,9 @@ TicketKindData? _buildKindData(MyTicket t, TicketKind kind) {
             if (i.imageUrl != null && i.imageUrl!.isNotEmpty) i.imageUrl!,
         ],
         itemNames: c.items.map((i) => i.itemName).toList(growable: false),
+        itemQuantities: c.items.map((i) => i.quantity).toList(growable: false),
+        itemUnitPrices: c.items.map((i) => i.unitPrice).toList(growable: false),
+        itemLineTotals: c.items.map((i) => i.lineTotal).toList(growable: false),
       );
     case TicketKind.manual:
       final m = t.manualDetails;

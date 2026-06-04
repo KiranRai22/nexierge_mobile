@@ -7,11 +7,11 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/utils/string_utils.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
+import '../../domain/entities/checked_in_guest_stay.dart';
 import '../../data/datasources/ticket_remote_data_source.dart';
 import '../../data/repositories/ticket_repository.dart';
 import '../../domain/models/catalog.dart';
 import '../../domain/models/ticket.dart';
-import 'checked_in_guest_stays_provider.dart';
 import 'my_tickets_notifier.dart';
 
 /// Three-step Catalog create flow:
@@ -30,6 +30,9 @@ class CatalogDraftState {
   /// state-shape stability (was a room id originally).
   final String? selectedRoomId;
 
+  /// Actual room UUID (`room_details.id`). Used to filter guests for the same room.
+  final String? roomId;
+
   /// Resolved `contact_id` from the picked checked-in stay. Sent on the
   /// create-order payload alongside `guest_stay_id`.
   final String? selectedContactId;
@@ -44,6 +47,7 @@ class CatalogDraftState {
     this.selectedCatalog,
     this.cart = const [],
     this.selectedRoomId,
+    this.roomId,
     this.selectedContactId,
     this.guestName = '',
     this.source,
@@ -80,6 +84,7 @@ class CatalogDraftState {
     bool clearCatalog = false,
     List<CartLine>? cart,
     String? selectedRoomId,
+    String? roomId,
     String? selectedContactId,
     bool clearRoom = false,
     String? guestName,
@@ -97,10 +102,11 @@ class CatalogDraftState {
       selectedRoomId: clearRoom
           ? null
           : (selectedRoomId ?? this.selectedRoomId),
+      roomId: clearRoom ? null : (roomId ?? this.roomId),
       selectedContactId: clearRoom
           ? null
           : (selectedContactId ?? this.selectedContactId),
-      guestName: guestName ?? this.guestName,
+      guestName: clearRoom ? '' : (guestName ?? this.guestName),
       source: clearSource ? null : (source ?? this.source),
       note: note ?? this.note,
       submitting: submitting ?? this.submitting,
@@ -228,16 +234,20 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
   void clearCart() => state = state.copyWith(cart: const []);
 
   // ── Form fields ───────────────────────────────────────────────────────────
-  /// Picker now returns `guest_stay_id` (sourced from checked-in stays),
-  /// not a room id. We keep the field name `selectedRoomId` for state shape
-  /// stability; semantically it's the guest_stay_id. Also auto-fills the
-  /// guest name from the resolved stay so the operator can still edit it.
-  void selectRoom(String guestStayId) {
-    final stay = ref.read(checkedInStayByIdProvider(guestStayId));
+  void selectRoom(CheckedInGuestStay stay) {
     state = state.copyWith(
-      selectedRoomId: guestStayId,
-      selectedContactId: stay?.contactId,
-      guestName: stay?.fullName ?? state.guestName,
+      selectedRoomId: stay.guestStayId,
+      roomId: stay.roomId,
+      selectedContactId: stay.contactId,
+      guestName: '',  // operator picks guest separately
+    );
+  }
+
+  void selectGuest(CheckedInGuestStay guest) {
+    state = state.copyWith(
+      selectedRoomId: guest.guestStayId,
+      selectedContactId: guest.contactId,
+      guestName: StringUtils.capitalizeFirst(guest.fullName),
     );
   }
 

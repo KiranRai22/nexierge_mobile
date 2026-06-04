@@ -488,6 +488,36 @@ abstract class AppLocalizations {
   /// **'No results found.'**
   String get emptySearch;
 
+  /// No description provided for @liveEmptyAiOnWatch.
+  ///
+  /// In en, this message translates to:
+  /// **'AI is on watch'**
+  String get liveEmptyAiOnWatch;
+
+  /// No description provided for @liveEmptyWaitingForGuests.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for guests'**
+  String get liveEmptyWaitingForGuests;
+
+  /// No description provided for @liveEmptyChannelsOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels are open'**
+  String get liveEmptyChannelsOpen;
+
+  /// No description provided for @liveEmptyListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening for new requests'**
+  String get liveEmptyListening;
+
+  /// No description provided for @liveEmptyRealtimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Live · realtime connected'**
+  String get liveEmptyRealtimeLabel;
+
   /// No description provided for @requiredField.
   ///
   /// In en, this message translates to:
@@ -1349,14 +1379,32 @@ abstract class AppLocalizations {
   /// No description provided for @ticketCreatedAt.
   ///
   /// In en, this message translates to:
-  /// **'Created'**
+  /// **'Created at'**
   String get ticketCreatedAt;
 
   /// No description provided for @ticketDueAt.
   ///
   /// In en, this message translates to:
-  /// **'Due'**
+  /// **'Due at'**
   String get ticketDueAt;
+
+  /// No description provided for @ticketTimeLeftLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Time left'**
+  String get ticketTimeLeftLabel;
+
+  /// No description provided for @ticketGracePeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Grace Period'**
+  String get ticketGracePeriod;
+
+  /// No description provided for @ticketOverdueByLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue by'**
+  String get ticketOverdueByLabel;
 
   /// No description provided for @overdueByMinutes.
   ///
@@ -1657,6 +1705,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select room'**
   String get roomPickerTitle;
+
+  /// No description provided for @guestPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select guest'**
+  String get guestPickerTitle;
 
   /// No description provided for @roomPickerRecent.
   ///
@@ -2405,13 +2459,13 @@ abstract class AppLocalizations {
   /// No description provided for @notificationsInfoUnread.
   ///
   /// In en, this message translates to:
-  /// **'Unread notifications are automatically cleared for everyone after 72 hours.'**
+  /// **'Unread notifications are automatically cleared for everyone after 48 hours.'**
   String get notificationsInfoUnread;
 
   /// No description provided for @notificationsInfoRead.
   ///
   /// In en, this message translates to:
-  /// **'Read notifications are automatically cleared after 48 hours.'**
+  /// **'Read notifications are automatically cleared after 24 hours.'**
   String get notificationsInfoRead;
 
   /// No description provided for @notificationsClearAll.
@@ -2527,6 +2581,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Accept'**
   String get actionAcceptShort;
+
+  /// No description provided for @actionMarkInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as In Progress'**
+  String get actionMarkInProgress;
 
   /// No description provided for @filterNewestFirst.
   ///

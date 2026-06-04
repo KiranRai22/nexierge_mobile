@@ -137,12 +137,10 @@ MyTicket _dtoToDomain(MyTicketDto dto) {
     closedAt: dto.closedAt,
     roomDetails: dto.roomDetails != null
         ? RoomDetails(
-            id: (dto.roomDetails!['id'] as String?) ?? '',
-            onbRoomNumber:
-                (dto.roomDetails!['onb_room_number'] as String?) ?? '',
-            floorId: (dto.roomDetails!['floor_id'] as String?) ?? '',
-            onbRoomTypeId:
-                (dto.roomDetails!['onb_room_type_id'] as String?) ?? '',
+            id: dto.roomDetails!['id']?.toString() ?? '',
+            onbRoomNumber: dto.roomDetails!['onb_room_number']?.toString() ?? '',
+            floorId: dto.roomDetails!['floor_id']?.toString() ?? '',
+            onbRoomTypeId: dto.roomDetails!['onb_room_type_id']?.toString() ?? '',
           )
         : null,
     universalItems: dto.universalDetails

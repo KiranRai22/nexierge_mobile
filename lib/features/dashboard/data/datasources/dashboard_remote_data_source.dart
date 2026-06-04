@@ -226,8 +226,8 @@ class NeedsAttentionDto {
     final dept = json['department'] ?? json['_department'];
     // Room number lives inside the nested 'room_data' object.
     final roomData = json['room_data'];
-    final onbRoomNumber = roomData is Map<String, dynamic>
-        ? (roomData['onb_room_number'] as String?) ?? ''
+    final onbRoomNumber = roomData is Map
+        ? roomData['onb_room_number']?.toString() ?? ''
         : s('onb_room_number');
     return NeedsAttentionDto(
       id: s('id'),

@@ -92,6 +92,30 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
     });
   }
 
+  Timer? doneTodayDebounce;
+  void scheduleDoneTodayRefresh() {
+    doneTodayDebounce?.cancel();
+    doneTodayDebounce = Timer(const Duration(milliseconds: 600), () {
+      ref
+          .read(
+            ticketsPagedProvider(specForTab(TicketsTab.todayDone)).notifier,
+          )
+          .refresh();
+    });
+  }
+
+  Timer? doneHistoryDebounce;
+  void scheduleDoneHistoryRefresh() {
+    doneHistoryDebounce?.cancel();
+    doneHistoryDebounce = Timer(const Duration(milliseconds: 600), () {
+      ref
+          .read(
+            ticketsPagedProvider(specForTab(TicketsTab.doneHistory)).notifier,
+          )
+          .refresh();
+    });
+  }
+
   final sub = socket.messageStream.listen(
     (raw) {
       final event = parseTicketRealtimeEvent(raw);
@@ -118,6 +142,16 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
           // Refresh In-Progress tabs when tickets are accepted/started
           if (ticket.status == 'ACCEPTED' || ticket.status == 'IN_PROGRESS') {
             scheduleInProgressRefresh();
+          }
+          // Refresh Done tabs when a ticket is completed
+          if (ticket.status == 'DONE') {
+            scheduleDoneTodayRefresh();
+            scheduleDoneHistoryRefresh();
+          }
+          // When a ticket transitions to BACKLOG, refresh Incoming so stale
+          // NEW tickets are removed from that tab server-side
+          if (ticket.status == 'BACKLOG') {
+            scheduleIncomingRefresh();
           }
           // If the user is viewing this ticket's detail, pull the latest
           // payload so the activity timeline picks up the new transition
@@ -147,6 +181,8 @@ final ticketsRealtimeListenerProvider = Provider<void>((ref) {
     backlogDebounce?.cancel();
     incomingDebounce?.cancel();
     inProgressDebounce?.cancel();
+    doneTodayDebounce?.cancel();
+    doneHistoryDebounce?.cancel();
     sub.cancel();
   });
 

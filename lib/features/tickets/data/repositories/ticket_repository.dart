@@ -277,12 +277,10 @@ class _TicketRepositoryImpl implements TicketRepository {
             final roomData = d.roomData;
             final roomDetails = roomData != null
                 ? RoomDetails(
-                    id: (roomData['id'] as String?) ?? '',
-                    onbRoomNumber:
-                        (roomData['onb_room_number'] as String?) ?? '',
-                    floorId: (roomData['floor_id'] as String?) ?? '',
-                    onbRoomTypeId:
-                        (roomData['onb_room_type_id'] as String?) ?? '',
+                    id: roomData['id']?.toString() ?? '',
+                    onbRoomNumber: roomData['onb_room_number']?.toString() ?? '',
+                    floorId: roomData['floor_id']?.toString() ?? '',
+                    onbRoomTypeId: roomData['onb_room_type_id']?.toString() ?? '',
                   )
                 : null;
             final universalItems = d.universalDetails
@@ -337,6 +335,7 @@ class _TicketRepositoryImpl implements TicketRepository {
               departmentIconUrl: deptIconUrl.isEmpty ? null : deptIconUrl,
               departmentCode: deptCode.isEmpty ? null : deptCode,
               assignedToUserId: d.assignedToUserId,
+              assigneeName: d.assigneeName,
               createdByUserId: d.createdByUserId,
               createdByAi: d.createdByAi,
               type: d.type,
@@ -417,14 +416,10 @@ class _TicketRepositoryImpl implements TicketRepository {
               closedAt: dto.closedAt,
               roomDetails: dto.roomDetails != null
                   ? RoomDetails(
-                      id: (dto.roomDetails!['id'] as String?) ?? '',
-                      onbRoomNumber:
-                          (dto.roomDetails!['onb_room_number'] as String?) ??
-                          '',
-                      floorId: (dto.roomDetails!['floor_id'] as String?) ?? '',
-                      onbRoomTypeId:
-                          (dto.roomDetails!['onb_room_type_id'] as String?) ??
-                          '',
+                      id: dto.roomDetails!['id']?.toString() ?? '',
+                      onbRoomNumber: dto.roomDetails!['onb_room_number']?.toString() ?? '',
+                      floorId: dto.roomDetails!['floor_id']?.toString() ?? '',
+                      onbRoomTypeId: dto.roomDetails!['onb_room_type_id']?.toString() ?? '',
                     )
                   : null,
             ),
@@ -639,10 +634,10 @@ class _TicketRepositoryImpl implements TicketRepository {
       final roomData = d.roomData;
       final roomDetails = roomData != null
           ? RoomDetails(
-              id: (roomData['id'] as String?) ?? '',
-              onbRoomNumber: (roomData['onb_room_number'] as String?) ?? '',
-              floorId: (roomData['floor_id'] as String?) ?? '',
-              onbRoomTypeId: (roomData['onb_room_type_id'] as String?) ?? '',
+              id: roomData['id']?.toString() ?? '',
+              onbRoomNumber: roomData['onb_room_number']?.toString() ?? '',
+              floorId: roomData['floor_id']?.toString() ?? '',
+              onbRoomTypeId: roomData['onb_room_type_id']?.toString() ?? '',
             )
           : null;
       final universalItems = d.universalDetails
@@ -695,6 +690,7 @@ class _TicketRepositoryImpl implements TicketRepository {
         departmentIconUrl: deptIconUrl.isEmpty ? null : deptIconUrl,
         departmentCode: deptCode.isEmpty ? null : deptCode,
         assignedToUserId: d.assignedToUserId,
+        assigneeName: d.assigneeName,
         createdByUserId: d.createdByUserId,
         createdByAi: d.createdByAi,
         type: d.type,

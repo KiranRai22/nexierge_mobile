@@ -219,6 +219,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get emptySearch => 'Sin resultados.';
 
   @override
+  String get liveEmptyAiOnWatch => 'IA en vigilancia';
+
+  @override
+  String get liveEmptyWaitingForGuests => 'Esperando huéspedes';
+
+  @override
+  String get liveEmptyChannelsOpen => 'Canales abiertos';
+
+  @override
+  String get liveEmptyListening => 'Escuchando nuevas solicitudes';
+
+  @override
+  String get liveEmptyRealtimeLabel => 'En vivo · tiempo real conectado';
+
+  @override
   String get requiredField => 'Este campo es obligatorio.';
 
   @override
@@ -686,10 +701,19 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get ticketCreatedAt => 'Creado';
+  String get ticketCreatedAt => 'Creado en';
 
   @override
-  String get ticketDueAt => 'Vence';
+  String get ticketDueAt => 'Vence en';
+
+  @override
+  String get ticketTimeLeftLabel => 'Tiempo restante';
+
+  @override
+  String get ticketGracePeriod => 'Período de gracia';
+
+  @override
+  String get ticketOverdueByLabel => 'Vencido por';
 
   @override
   String overdueByMinutes(int minutes) {
@@ -869,6 +893,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get roomPickerTitle => 'Seleccionar habitación';
+
+  @override
+  String get guestPickerTitle => 'Seleccionar huésped';
 
   @override
   String get roomPickerRecent => 'Recientes';
@@ -1311,11 +1338,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notificationsInfoUnread =>
-      'Las notificaciones sin leer se eliminan automáticamente para todos después de 72 horas.';
+      'Las notificaciones sin leer se eliminan automáticamente para todos después de 48 horas.';
 
   @override
   String get notificationsInfoRead =>
-      'Las notificaciones leídas se eliminan automáticamente después de 48 horas.';
+      'Las notificaciones leídas se eliminan automáticamente después de 24 horas.';
 
   @override
   String get notificationsClearAll => 'Limpiar todo';
@@ -1400,6 +1427,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get actionAcceptShort => 'Aceptar';
+
+  @override
+  String get actionMarkInProgress => 'Marcar como en progreso';
 
   @override
   String get filterNewestFirst => 'Nuevo';

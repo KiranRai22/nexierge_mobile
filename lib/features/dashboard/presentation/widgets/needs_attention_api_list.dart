@@ -9,6 +9,7 @@ import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/needs_attention_item.dart';
+import '../../../tickets/presentation/widgets/live_empty_state.dart';
 
 /// "Needs attention" block using API data. Displays items from
 /// dashboard/needs_attention endpoint, or shimmer while loading.
@@ -53,7 +54,7 @@ class NeedsAttentionApiList extends StatelessWidget {
           child: isLoading
               ? const _NeedsAttentionShimmer()
               : items.isEmpty
-              ? const _AllClearEmpty()
+              ? const LiveEmptyState(compact: true)
               : Column(
                   children: [
                     for (var i = 0; i < items.length; i++) ...[
@@ -94,52 +95,6 @@ class _ViewAllButton extends StatelessWidget {
   }
 }
 
-class _AllClearEmpty extends StatelessWidget {
-  const _AllClearEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.l10n;
-    final c = context.themeColors;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Column(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: c.tagGreenBg,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              LucideIcons.checkCheck,
-              color: c.tagGreenIcon,
-              size: 22,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            s.dashboardAllClearTitle,
-            style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            s.dashboardAllClearBody,
-            textAlign: TextAlign.center,
-            style: TypographyManager.textBody.copyWith(color: c.fgMuted),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            s.dashboardAllClearHint,
-            textAlign: TextAlign.center,
-            style: TypographyManager.textMicro.copyWith(color: c.fgSubtle),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _AttentionRow extends StatefulWidget {
   final NeedsAttentionItem item;
@@ -337,14 +292,42 @@ class _AttentionRowState extends State<_AttentionRow> {
                     color: p.iconBg,
                     shape: BoxShape.circle,
                   ),
-                  child: p.emoji != null
-                    ? Center(
-                        child: Text(
-                          p.emoji!,
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                      )
-                    : Icon(LucideIcons.circleDot, color: p.iconFg, size: 18),
+                  clipBehavior: Clip.antiAlias,
+                  child: item.department.icon.url.isNotEmpty
+                      ? Image.network(
+                          item.department.icon.url,
+                          width: 36,
+                          height: 36,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => p.emoji != null
+                              ? Center(
+                                  child: Text(
+                                    p.emoji!,
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                )
+                              : Center(
+                                  child: Icon(
+                                    LucideIcons.circleDot,
+                                    color: p.iconFg,
+                                    size: 18,
+                                  ),
+                                ),
+                        )
+                      : p.emoji != null
+                          ? Center(
+                              child: Text(
+                                p.emoji!,
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                            )
+                          : Center(
+                              child: Icon(
+                                LucideIcons.circleDot,
+                                color: p.iconFg,
+                                size: 18,
+                              ),
+                            ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

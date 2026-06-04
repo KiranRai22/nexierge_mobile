@@ -72,6 +72,11 @@
 
   "emptyState": "Aún no hay nada aquí.",
   "emptySearch": "Sin resultados.",
+  "liveEmptyAiOnWatch": "IA en vigilancia",
+  "liveEmptyWaitingForGuests": "Esperando huéspedes",
+  "liveEmptyChannelsOpen": "Canales abiertos",
+  "liveEmptyListening": "Escuchando nuevas solicitudes",
+  "liveEmptyRealtimeLabel": "En vivo · tiempo real conectado",
 
   "requiredField": "Este campo es obligatorio.",
   "invalidEmail": "Introduce una dirección de correo válida.",
@@ -146,8 +151,11 @@
   "timeLeftNow": "Ahora",
   "timeLeftMinutes": "{minutes}m Rest.",
   "timeLeftHours": "{hours}h Rest.",
-  "ticketCreatedAt": "Creado",
-  "ticketDueAt": "Vence",
+  "ticketCreatedAt": "Creado en",
+  "ticketDueAt": "Vence en",
+  "ticketTimeLeftLabel": "Tiempo restante",
+  "ticketGracePeriod": "Período de gracia",
+  "ticketOverdueByLabel": "Vencido por",
   "overdueByMinutes": "Vencido {minutes}m",
   "overdueByHours": "Vencido {hours}h",
   "overdueByHoursMinutes": "Vencido {hours}h {minutes}m",
@@ -204,6 +212,7 @@
   "itemsSelected": "{count, plural, one{1 artículo seleccionado} other{{count} artículos seleccionados}}",
 
   "roomPickerTitle": "Seleccionar habitación",
+  "guestPickerTitle": "Seleccionar huésped",
   "roomPickerRecent": "Recientes",
   "roomPickerAll": "Todas las habitaciones",
   "roomFloor": "Planta {floor}",
@@ -388,8 +397,8 @@
   },
   "notificationsTabUnread": "Sin leer",
   "notificationsTabRead": "Leído",
-  "notificationsInfoUnread": "Las notificaciones sin leer se eliminan automáticamente para todos después de 72 horas.",
-  "notificationsInfoRead": "Las notificaciones leídas se eliminan automáticamente después de 48 horas.",
+  "notificationsInfoUnread": "Las notificaciones sin leer se eliminan automáticamente para todos después de 48 horas.",
+  "notificationsInfoRead": "Las notificaciones leídas se eliminan automáticamente después de 24 horas.",
   "notificationsClearAll": "Limpiar todo",
   "notificationsEmpty": "Estás al día",
   "notificationsEmptyHint": "La nueva actividad aparecerá aquí.",
@@ -442,6 +451,7 @@
     }
   },
   "actionAcceptShort": "Aceptar",
+  "actionMarkInProgress": "Marcar como en progreso",
 
   "filterNewestFirst": "Nuevo",
   "filterOldestFirst": "Antiguo",

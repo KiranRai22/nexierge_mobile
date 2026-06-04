@@ -9,14 +9,19 @@ import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/unified_theme_manager.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../core/time/server_clock.dart';
-import '../../../../../l10n/generated/app_localizations.dart';
+import '../../../../../core/utils/date_utils.dart';
 import '../../../domain/models/department.dart';
 import '../../../domain/models/ticket.dart';
 
-/// Hero card under the tabs: tool icon · title · status pill.
+/// Hero card shown at the top of every detail tab.
 ///
-/// Shows a status pill (New, In Progress, Overdue, etc.) with proper colors
-/// and a resolution time chip in the right column.
+/// Layout:
+///   ┌───────────┬──────────────────────────────────────┐
+///   │ full-bleed│ Title                      [Status]  │
+///   │  image    │ Created at  Due at   Overdue by      │
+///   └───────────┴──────────────────────────────────────┘
+/// The image column fills the card height with BoxFit.cover.
+/// No inner padding or border on the image — the card clips it.
 class TicketHeroCard extends StatelessWidget {
   final Ticket ticket;
   const TicketHeroCard({super.key, required this.ticket});
@@ -24,132 +29,112 @@ class TicketHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: CardDecoration.standard(
-        colors: c,
-        borderRadius: BorderRadius.circular(12),
-        backgroundColor: c.bgSubtle,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Top row: icon | title | kind pill
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+    final radius = BorderRadius.circular(12);
+    // Fixed height gives the Row bounded cross-axis constraints, avoiding the
+    // CrossAxisAlignment.stretch + ListView unbounded-height crash, and prevents
+    // the semantics.parentDataDirty assertion triggered by Image.network async
+    // loads inside an intrinsic-height measurement context.
+    return SizedBox(
+      height: 110,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Container(
+          decoration: CardDecoration.standard(
+            colors: c,
+            borderRadius: radius,
+            backgroundColor: c.bgSubtle,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: c.bgBase,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: c.borderBase),
-                ),
-                alignment: Alignment.center,
-                child: _buildIconOrImage(ticket, c),
+              // ── Column 1: full-bleed image ─────────────────────────────
+              SizedBox(
+                width: 88,
+                child: _HeroThumbnail(ticket: ticket),
               ),
-              const SizedBox(width: 12),
+              // ── Column 2: title + status + time row ────────────────────
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      ticket.title,
-                      style: TypographyManager.textBodyStrong.copyWith(
-                        color: c.fgBase,
-                        fontWeight: FontWeight.w700,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              ticket.title,
+                              style: TypographyManager.textBodyStrong.copyWith(
+                                color: c.fgBase,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          _StatusPill(ticket: ticket),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    _ElapsedTimeRow(ticket: ticket),
-                  ],
+                      const SizedBox(height: 8),
+                      _HeroTimeRow(ticket: ticket),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              // Right column: ticket kind pill (Manual/Universal/Paid)
-              _KindPill(kind: ticket.kind),
             ],
           ),
-          const SizedBox(height: 8),
-          // Bottom row: created at (centered)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Text(
-                'Created at: ${ticket.createdTime ?? _formatCreatedAt(ticket.createdAt)}',
-                style: TypographyManager.bodySmall.copyWith(
-                  color: c.fgMuted,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
+}
 
-  String _formatCreatedAt(DateTime createdAt) {
-    final now = DateTime.now();
-    final diff = now.difference(createdAt);
+// ── Thumbnail (full-bleed, fills the SizedBox parent) ────────────────────────
 
-    if (diff.inDays > 0) {
-      return '${diff.inDays}d ago';
-    } else if (diff.inHours > 0) {
-      return '${diff.inHours}h ${diff.inMinutes % 60}m ago';
-    } else if (diff.inMinutes > 0) {
-      return '${diff.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
+class _HeroThumbnail extends StatelessWidget {
+  final Ticket ticket;
+  const _HeroThumbnail({required this.ticket});
 
-  /// Builds the appropriate icon or image based on ticket type.
-  /// - Catalog: uses catalog logo image if available
-  /// - Universal: uses department emoji, or emoji from kindData if available
-  /// - Manual: uses department emoji or fallback icon
-  Widget _buildIconOrImage(Ticket ticket, AppColors c) {
-    // For catalog tickets, use the catalog logo image
-    if (ticket.kind == TicketKind.catalog && ticket.kindData is CatalogKindData) {
-      final catalogData = ticket.kindData as CatalogKindData;
-      if (catalogData.logoUrl != null && catalogData.logoUrl!.isNotEmpty) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            catalogData.logoUrl!,
-            width: 36,
-            height: 36,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Icon(_kindIcon(ticket.department), size: 20, color: c.fgBase);
-            },
-          ),
-        );
-      }
-    }
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
 
-    // For universal tickets, use emoji from kindData or department emoji
+    String? imageUrl;
+    String? emojiText;
+
     if (ticket.kind == TicketKind.universal && ticket.kindData is UniversalKindData) {
-      final universalData = ticket.kindData as UniversalKindData;
-      if (universalData.emoji != null && universalData.emoji!.isNotEmpty) {
-        return Text(universalData.emoji!, style: const TextStyle(fontSize: 24));
-      }
+      final u = ticket.kindData as UniversalKindData;
+      imageUrl = u.thumbnailUrl;
+      emojiText = (u.emoji?.isNotEmpty == true) ? u.emoji : null;
+    } else if (ticket.kind == TicketKind.catalog && ticket.kindData is CatalogKindData) {
+      imageUrl = (ticket.kindData as CatalogKindData).logoUrl;
     }
 
-    // Fallback to department emoji
-    if (ticket.departmentEmoji != null && ticket.departmentEmoji!.isNotEmpty) {
-      return Text(ticket.departmentEmoji!, style: const TextStyle(fontSize: 24));
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _fallback(ticket, emojiText, c),
+      );
     }
-
-    // Final fallback to department icon
-    return Icon(_kindIcon(ticket.department), size: 20, color: c.fgBase);
+    return _fallback(ticket, emojiText, c);
   }
 
-  /// Picks a representative icon per department. Falls back to a wrench.
-  IconData _kindIcon(Department d) {
+  Widget _fallback(Ticket ticket, String? emojiText, AppColors c) {
+    final emoji = emojiText ?? ticket.departmentEmoji;
+    return Container(
+      color: c.bgBase,
+      alignment: Alignment.center,
+      child: emoji != null && emoji.isNotEmpty
+          ? Text(emoji, style: const TextStyle(fontSize: 32))
+          : Icon(_deptIcon(ticket.department), size: 28, color: c.fgMuted),
+    );
+  }
+
+  IconData _deptIcon(Department d) {
     switch (d) {
       case Department.maintenance:
         return LucideIcons.wrench;
@@ -166,25 +151,103 @@ class TicketHeroCard extends StatelessWidget {
   }
 }
 
-/// Elapsed/overdue time row showing live timer.
-/// Shows elapsed time for new, overdue time for overdue tickets.
-class _ElapsedTimeRow extends StatefulWidget {
+// ── Status pill ────────────────────────────────────────────────────────────────
+
+class _StatusPill extends StatelessWidget {
   final Ticket ticket;
-  const _ElapsedTimeRow({required this.ticket});
+  const _StatusPill({required this.ticket});
 
   @override
-  State<_ElapsedTimeRow> createState() => _ElapsedTimeRowState();
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+    late Color bg;
+    late Color fg;
+    late String label;
+
+    // isOverdue takes priority over the raw API status
+    if (ticket.isOverdue) {
+      bg = c.tagRedBg;
+      fg = c.tagRedText;
+      label = s.statusOverdue;
+    } else {
+      switch (ticket.status) {
+        case TicketStatus.incoming:
+          bg = c.tagBlueBg;
+          fg = c.tagBlueText;
+          label = s.ticketStatusBadgeNew;
+        case TicketStatus.accepted:
+          bg = c.tagGreenBg;
+          fg = c.tagGreenText;
+          label = s.ticketStatusBadgeAccepted;
+        case TicketStatus.inProgress:
+          bg = c.tagGreenBg;
+          fg = c.tagGreenText;
+          label = s.ticketStatusBadgeInProgress;
+        case TicketStatus.done:
+          bg = c.tagNeutralBg;
+          fg = c.tagNeutralText;
+          label = s.ticketStatusBadgeDone;
+        case TicketStatus.canceled:
+          bg = c.tagRedBg;
+          fg = c.tagRedText;
+          label = s.ticketStatusBadgeCancelled;
+        case TicketStatus.onHold:
+          bg = c.tagPurpleBg;
+          fg = c.tagPurpleText;
+          label = s.ticketStatusBadgeOnHold;
+        case TicketStatus.backlog:
+          bg = c.tagNeutralBg;
+          fg = c.tagNeutralText;
+          label = 'Backlog';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TypographyManager.labelSmall.copyWith(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          color: fg,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
 }
 
-class _ElapsedTimeRowState extends State<_ElapsedTimeRow> {
+// ── Live time row ──────────────────────────────────────────────────────────────
+//
+// Mirrors the compact-card Row 3 format:
+//   Created at    Due at        Overdue by / Time left / Grace Period
+//   08:00 AM     09:15 PM      15m 20s
+
+class _HeroTimeRow extends StatefulWidget {
+  final Ticket ticket;
+  const _HeroTimeRow({required this.ticket});
+
+  @override
+  State<_HeroTimeRow> createState() => _HeroTimeRowState();
+}
+
+class _HeroTimeRowState extends State<_HeroTimeRow> {
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
+    final s = widget.ticket.status;
+    if (s != TicketStatus.done && s != TicketStatus.canceled) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   @override
@@ -193,49 +256,125 @@ class _ElapsedTimeRowState extends State<_ElapsedTimeRow> {
     super.dispose();
   }
 
-  String _formatElapsed(Duration d) {
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+    final ticket = widget.ticket;
+    final now = ServerClock.now();
+
+    final isOverdue = ticket.isOverdue;
+    final isDone = ticket.status == TicketStatus.done ||
+        ticket.status == TicketStatus.canceled;
+    final isInProgress = ticket.status == TicketStatus.inProgress ||
+        ticket.status == TicketStatus.accepted;
+
+    final displayDue = ticket.eta ?? ticket.dueAtWithGrace;
+    final dueColor = (!isDone && isOverdue) ? ColorPalette.statusOverdue : c.fgMuted;
+
+    Widget? indicator;
+    if (!isDone) {
+      if (!isOverdue) {
+        final deadline = ticket.dueAtWithGrace ?? ticket.eta;
+        if (deadline != null) {
+          final timeLeft = deadline.difference(now);
+          indicator = _TwoLineTime(
+            label: s.ticketTimeLeftLabel,
+            value: _fmt(timeLeft.isNegative ? Duration.zero : timeLeft),
+            color: ColorPalette.statusInProgress,
+            alignEnd: true,
+          );
+        }
+      } else if (isInProgress) {
+        indicator = _TwoLineTime(
+          label: s.ticketTimeLeftLabel,
+          value: s.ticketGracePeriod,
+          color: c.tagOrangeIcon,
+          alignEnd: true,
+        );
+      } else {
+        final overdueRef = ticket.dueAtWithGrace ?? ticket.eta;
+        final overdueBy = overdueRef != null ? now.difference(overdueRef) : Duration.zero;
+        indicator = _TwoLineTime(
+          label: s.ticketOverdueByLabel,
+          value: _fmt(overdueBy.isNegative ? Duration.zero : overdueBy),
+          color: ColorPalette.statusOverdue,
+          alignEnd: true,
+        );
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _TwoLineTime(
+            label: s.ticketCreatedAt,
+            value: AppDateUtils.clock(ticket.createdAt),
+            color: c.fgMuted,
+          ),
+          if (displayDue != null) ...[
+            const SizedBox(width: 14),
+            _TwoLineTime(
+              label: s.ticketDueAt,
+              value: AppDateUtils.clock(displayDue),
+              color: dueColor,
+            ),
+          ],
+          const Spacer(),
+          if (indicator != null) indicator,
+        ],
+      ),
+    );
+  }
+
+  String _fmt(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes % 60;
-    final s = d.inSeconds % 60;
-    if (h > 0) return '${h}h ${m}m ${s}s';
-    return '${m}m ${s}s';
+    final sec = d.inSeconds % 60;
+    if (h > 0) return '${h}h ${m}m';
+    return '${m}m ${sec}s';
   }
+}
+
+class _TwoLineTime extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  final bool alignEnd;
+  const _TwoLineTime({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.alignEnd = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-
-    // For overdue tickets, show overdue elapsed time with red timer
-    if (widget.ticket.isOverdue && widget.ticket.eta != null) {
-      final overdue = ServerClock.now().difference(widget.ticket.eta!);
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(LucideIcons.timer, size: 12, color: c.tagRedText),
-          const SizedBox(width: 4),
-          Text(
-            'Overdue: ${_formatElapsed(overdue)}',
-            style: TypographyManager.bodySmall.copyWith(
-              color: c.tagRedText,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // For all other tickets, show elapsed time from creation
-    final elapsed = ServerClock.now().difference(widget.ticket.createdAt);
-    return Row(
+    return Column(
+      crossAxisAlignment:
+          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(LucideIcons.timer, size: 12, color: c.fgMuted),
-        const SizedBox(width: 4),
         Text(
-          'Elapsed Time: ${_formatElapsed(elapsed)}',
-          style: TypographyManager.bodySmall.copyWith(
-            color: c.fgMuted,
-            fontWeight: FontWeight.w500,
+          label,
+          style: TypographyManager.cardMeta.copyWith(
+            fontSize: 9.5,
+            color: c.fgSubtle,
+          ),
+        ),
+        Text(
+          value,
+          style: TypographyManager.labelSmall.copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: color,
           ),
         ),
       ],
@@ -243,53 +382,3 @@ class _ElapsedTimeRowState extends State<_ElapsedTimeRow> {
   }
 }
 
-/// Ticket kind pill showing Manual/Universal/Paid.
-/// Uses the same color scheme as before.
-class _KindPill extends StatelessWidget {
-  final TicketKind kind;
-  const _KindPill({required this.kind});
-
-  ({String label, Color bg, Color fg}) _spec(AppLocalizations s) {
-    switch (kind) {
-      case TicketKind.universal:
-        return (
-          label: s.chipUniversal,
-          bg: ColorPalette.chipUniversalBg,
-          fg: ColorPalette.chipUniversalFg,
-        );
-      case TicketKind.catalog:
-        return (
-          label: s.chipCatalog,
-          bg: ColorPalette.chipCatalogBg,
-          fg: ColorPalette.chipCatalogFg,
-        );
-      case TicketKind.manual:
-        return (
-          label: s.chipManual,
-          bg: ColorPalette.chipManualBg,
-          fg: ColorPalette.chipManualFg,
-        );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final spec = _spec(context.l10n);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: spec.bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        spec.label,
-        style: TypographyManager.labelSmall.copyWith(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
-          color: spec.fg,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-}

@@ -72,6 +72,11 @@
 
   "emptyState": "Nothing here yet.",
   "emptySearch": "No results found.",
+  "liveEmptyAiOnWatch": "AI is on watch",
+  "liveEmptyWaitingForGuests": "Waiting for guests",
+  "liveEmptyChannelsOpen": "Channels are open",
+  "liveEmptyListening": "Listening for new requests",
+  "liveEmptyRealtimeLabel": "Live · realtime connected",
 
   "requiredField": "This field is required.",
   "invalidEmail": "Please enter a valid email address.",
@@ -303,8 +308,11 @@
       "hours": { "type": "int", "example": "1" }
     }
   },
-  "ticketCreatedAt": "Created",
-  "ticketDueAt": "Due",
+  "ticketCreatedAt": "Created at",
+  "ticketDueAt": "Due at",
+  "ticketTimeLeftLabel": "Time left",
+  "ticketGracePeriod": "Grace Period",
+  "ticketOverdueByLabel": "Overdue by",
   "overdueByMinutes": "Overdue {minutes}m",
   "@overdueByMinutes": {
     "placeholders": { "minutes": { "type": "int" } }
@@ -404,6 +412,7 @@
   },
 
   "roomPickerTitle": "Select room",
+  "guestPickerTitle": "Select guest",
   "roomPickerRecent": "Recent",
   "roomPickerAll": "All rooms",
   "roomFloor": "Floor {floor}",
@@ -637,8 +646,8 @@
   },
   "notificationsTabUnread": "Unread",
   "notificationsTabRead": "Read",
-  "notificationsInfoUnread": "Unread notifications are automatically cleared for everyone after 72 hours.",
-  "notificationsInfoRead": "Read notifications are automatically cleared after 48 hours.",
+  "notificationsInfoUnread": "Unread notifications are automatically cleared for everyone after 48 hours.",
+  "notificationsInfoRead": "Read notifications are automatically cleared after 24 hours.",
   "notificationsClearAll": "Clear all",
   "notificationsEmpty": "You're all caught up",
   "notificationsEmptyHint": "New activity will appear here.",
@@ -691,6 +700,7 @@
     }
   },
   "actionAcceptShort": "Accept",
+  "actionMarkInProgress": "Mark as In Progress",
 
   "filterNewestFirst": "Newest",
   "filterOldestFirst": "Oldest",
