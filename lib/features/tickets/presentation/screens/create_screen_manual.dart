@@ -119,7 +119,8 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                             final picked = await RoomPickerSheet.showCheckedIn(
                               context,
                             );
-                            if (picked != null) ctl.selectGuestStay(picked.guestStayId);
+                            if (picked != null)
+                              ctl.selectGuestStay(picked.guestStayId);
                           },
                           child: Container(
                             height: 48,
