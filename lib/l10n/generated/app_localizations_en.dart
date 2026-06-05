@@ -1088,6 +1088,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardNotStartedPill => 'Not started';
 
   @override
+  String get dashboardTicketIdLabel => 'Ticket';
+
+  @override
+  String get dashboardCreatedLabel => 'Created';
+
+  @override
+  String get dashboardDueLabel => 'Due';
+
+  @override
+  String get dashboardSlaLabel => 'SLA';
+
+  @override
+  String get dashboardCreatedByLabel => 'By';
+
+  @override
+  String get dashboardCreatedByGuest => 'Guest';
+
+  @override
+  String get dashboardCreatedByAi => 'AI';
+
+  @override
+  String dashboardSlaMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String dashboardDueIn(String duration) {
+    return 'in $duration';
+  }
+
+  @override
+  String dashboardDueOverdueBy(String duration) {
+    return '$duration overdue';
+  }
+
+  @override
+  String dashboardAgoSuffix(String duration) {
+    return '$duration ago';
+  }
+
+  @override
   String dashboardWaitingPill(int minutes) {
     return 'Waiting ${minutes}m';
   }
@@ -1211,6 +1252,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileSectionWorkInformation => 'Work information';
+
+  @override
+  String get profileTabAccount => 'Account';
+
+  @override
+  String get profileTabWork => 'Work';
+
+  @override
+  String get profileTabPreferences => 'Preferences';
+
+  @override
+  String get profileTabAbout => 'About';
+
+  @override
+  String get profileVibrationTitle => 'Vibration';
+
+  @override
+  String get profileVibrationSubtitle => 'Haptic feedback on taps';
 
   @override
   String get profileFieldName => 'Name';
@@ -1351,6 +1410,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsRetry => 'Retry';
+
+  @override
+  String get notificationsOpenTickets => 'Open Tickets';
+
+  @override
+  String get notificationsActionRead => 'Mark as read';
+
+  @override
+  String get notificationsActionView => 'View ticket details';
+
+  @override
+  String get notificationsCoachTitle => 'Swipe to act on notifications';
+
+  @override
+  String get notificationsCoachSwipeRight =>
+      'Swipe right to view ticket details';
+
+  @override
+  String get notificationsCoachSwipeLeft => 'Swipe left to mark as read';
+
+  @override
+  String get notificationsCoachGotIt => 'Got it';
 
   @override
   String get notificationsItemNewTicket => 'New ticket received';

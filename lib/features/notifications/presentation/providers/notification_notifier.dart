@@ -49,15 +49,15 @@ class NotificationNotifier extends AsyncNotifier<NotificationState> {
     // Register token with backend and keep state in sync on refresh
     if (token != null) await _repo.registerToken(token);
 
-    // Listen for incoming foreground notifications
-    ref.listen<INotificationRepository>(notificationRepositoryProvider, (
-      _,
-      repo,
-    ) {
-      repo.onNotificationReceived.listen(_onNotificationReceived);
-    }, fireImmediately: true);
-
-    _repo.onNotificationReceived.listen(_onNotificationReceived);
+    // Listen for incoming foreground notifications.
+    //
+    // Subscribe exactly once. The previous implementation registered the
+    // same callback twice — once inside a `ref.listen(... fireImmediately:
+    // true)` block and once directly below — so every FCM message was
+    // delivered to `_onNotificationReceived` twice, doubling state updates
+    // and any downstream side effects.
+    final sub = _repo.onNotificationReceived.listen(_onNotificationReceived);
+    ref.onDispose(sub.cancel);
 
     return NotificationState(fcmToken: token);
   }

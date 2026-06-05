@@ -1,30 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/i18n/app_locale.dart';
 import '../../../../core/i18n/l10n_extension.dart';
+import '../../../../core/i18n/locale_controller.dart';
+import '../../../../core/providers/sound_preferences_provider.dart';
+import '../../../../core/providers/vibration_preferences_provider.dart';
+import '../../../../core/services/app_info_service.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/card_theme.dart';
+import '../../../../core/services/vibration_manager.dart';
 import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/name_validator.dart';
-import '../../../../core/widgets/widget_manager.dart';
 import '../../../../core/utils/string_utils.dart';
+import '../../../../core/widgets/widget_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../data/services/image_picker_service.dart';
 import '../../data/services/media_permission_service.dart';
 import '../../domain/entities/user_profile.dart';
-import '../../../../core/services/app_info_service.dart';
 import '../providers/user_profile_controller.dart';
 import '../widgets/change_profile_picture_sheet.dart';
-import '../providers/profile_section_expansion_provider.dart';
-import '../widgets/profile_footer.dart';
 import '../widgets/profile_header_card_animated.dart';
-import '../widgets/profile_info_section.dart';
 import '../widgets/profile_logout_button.dart';
-import '../widgets/profile_preferences_section.dart';
 import '../widgets/skeletons/profile_screen_skeleton.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -225,277 +227,31 @@ class _ProfileBody extends StatefulWidget {
   State<_ProfileBody> createState() => _ProfileBodyState();
 }
 
-class _ProfileBodyState extends State<_ProfileBody> {
-  final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0;
-  static const double _shrinkThreshold = 50;
+class _ProfileBodyState extends State<_ProfileBody>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  final _headerController = ProfileHeaderController();
+  bool _headerCollapsed = false;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    setState(() {
-      _scrollOffset = _scrollController.offset.clamp(0, _shrinkThreshold);
-    });
-  }
-
-  double get _shrinkProgress => (_scrollOffset / _shrinkThreshold).clamp(0, 1);
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.l10n;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-          child: ProfileHeaderCardAnimated(
-            profile: widget.profile,
-            uploadingAvatar: widget.uploadingAvatar,
-            updatingName: widget.updatingName,
-            onChangeAvatar: widget.onChangeAvatar,
-            onEditName: widget.onEditName,
-            scrollController: _scrollController,
-          ),
-        ),
-        Expanded(
-          child: ListView(
-            controller: _scrollController,
-            padding: EdgeInsets.fromLTRB(
-              16,
-              16 +
-                  (_shrinkProgress *
-                      20), // Dynamic top padding when card shrinks
-              16,
-              120,
-            ), // Increased bottom padding for bottom nav
-            children: [
-              ProfileInfoSection(
-                key: const ValueKey(ProfileSectionId.account),
-                sectionId: ProfileSectionId.account,
-                title: s.profileSectionAccountInformation,
-                summary: _buildAccountSummary(widget.profile),
-                rows: [
-                  ProfileInfoRow(
-                    label: s.profileFieldName,
-                    value: widget.profile.fullName,
-                  ),
-                  ProfileInfoRow(
-                    label: s.profileFieldEmail,
-                    value: widget.profile.email,
-                  ),
-                  if (widget.profile.phone != null &&
-                      widget.profile.phone!.isNotEmpty)
-                    ProfileInfoRow(
-                      label: s.profileFieldPhone,
-                      value: widget.profile.phone!,
-                    ),
-                  ProfileInfoRow(
-                    label: s.profileFieldEmployeeCode,
-                    value:
-                        widget.profile.employeeCode ?? s.profileFieldEmptyValue,
-                  ),
-                  ProfileInfoRow(
-                    label: s.profileFieldRole,
-                    value: StringUtils.formatRoleWithMapping(
-                      widget.profile.role,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              ProfileInfoSection(
-                key: const ValueKey(ProfileSectionId.work),
-                sectionId: ProfileSectionId.work,
-                title: s.profileSectionWorkInformation,
-                summary: _buildWorkSummary(widget.profile),
-                rows: [
-                  if (widget.profile.hotelName != null &&
-                      widget.profile.hotelName!.isNotEmpty)
-                    ProfileInfoRow(
-                      label: s.profileFieldHotel,
-                      value: widget.profile.hotelName!,
-                    ),
-                  ProfileInfoRow(
-                    label: s.profileFieldDepartments,
-                    value: widget.profile.departments.isNotEmpty
-                        ? widget.profile.departments.join(', ')
-                        : s.profileFieldEmptyValue,
-                  ),
-                  ProfileInfoRow(
-                    label: s.profileFieldStatus,
-                    value: _statusLabel(s, widget.profile.status),
-                  ),
-                ],
-              ),
-              // ── Hotel Details (hidden) ─────────────────────────────────────
-              // ProfileInfoSection(
-              //   key: const ValueKey(ProfileSectionId.hotel),
-              //   sectionId: ProfileSectionId.hotel,
-              //   title: 'Hotel Details',
-              //   summary: _buildHotelSummary(widget.profile),
-              //   rows: [
-              //     if (widget.profile.hotelBusinessEmail != null &&
-              //         widget.profile.hotelBusinessEmail!.isNotEmpty)
-              //       ProfileInfoRow(
-              //         label: 'Business Email',
-              //         value: widget.profile.hotelBusinessEmail!,
-              //       ),
-              //     if (widget.profile.hotelBusinessPhone != null &&
-              //         widget.profile.hotelBusinessPhone!.isNotEmpty)
-              //       ProfileInfoRow(
-              //         label: 'Business Phone',
-              //         value: widget.profile.hotelBusinessPhone!,
-              //       ),
-              //     if (widget.profile.hotelWebsite != null &&
-              //         widget.profile.hotelWebsite!.isNotEmpty)
-              //       ProfileInfoRow(
-              //         label: 'Website',
-              //         value: widget.profile.hotelWebsite!,
-              //       ),
-              //     if (widget.profile.hotelAddress != null &&
-              //         widget.profile.hotelAddress!.isNotEmpty)
-              //       ProfileInfoRow(
-              //         label: 'Address',
-              //         value: widget.profile.hotelAddress!,
-              //       ),
-              //     if (widget.profile.hotelTimezone != null &&
-              //         widget.profile.hotelTimezone!.isNotEmpty)
-              //       ProfileInfoRow(
-              //         label: 'Timezone',
-              //         value: widget.profile.hotelTimezone!,
-              //       ),
-              //   ],
-              // ),
-              // const SizedBox(height: 24),
-              // ── Subscription (hidden) ─────────────────────────────────────────
-              // ProfileInfoSection(
-              //   key: const ValueKey(ProfileSectionId.subscription),
-              //   sectionId: ProfileSectionId.subscription,
-              //   title: 'Subscription',
-              //   summary: _buildSubscriptionSummary(widget.profile),
-              //   rows: [
-              //     ProfileInfoRow(
-              //       label: 'Plan',
-              //       value: widget.profile.subscriptionPlan ?? 'Not available',
-              //     ),
-              //     ProfileInfoRow(
-              //       label: 'Status',
-              //       value: widget.profile.subscriptionActive ?? false
-              //           ? 'Active'
-              //           : 'Inactive',
-              //     ),
-              //     if (widget.profile.subscriptionStartDate != null)
-              //       ProfileInfoRow(
-              //         label: 'Start Date',
-              //         value: _formatDate(widget.profile.subscriptionStartDate!),
-              //       ),
-              //     if (widget.profile.subscriptionEndDate != null)
-              //       ProfileInfoRow(
-              //         label: 'End Date',
-              //         value: _formatDate(widget.profile.subscriptionEndDate!),
-              //       ),
-              //   ],
-              // ),
-              // const SizedBox(height: 24),
-              // ── System Access (hidden) ────────────────────────────────────────
-              // ProfileInfoSection(
-              //   key: const ValueKey(ProfileSectionId.systemAccess),
-              //   sectionId: ProfileSectionId.systemAccess,
-              //   title: 'System Access',
-              //   summary: _buildAccessSummary(widget.profile),
-              //   rows: [
-              //     ProfileInfoRow(
-              //       label: 'Login Method',
-              //       value: widget.profile.authMethod ?? 'Password',
-              //     ),
-              //     ProfileInfoRow(
-              //       label: 'Interface Access',
-              //       value: widget.profile.interfaceAccess ?? 'Web',
-              //     ),
-              //     if (widget.profile.hubAccess.isNotEmpty)
-              //       ProfileInfoRow(
-              //         label: 'Hub Access',
-              //         value: widget.profile.hubAccess.join(', '),
-              //       ),
-              //     if (widget.profile.lastLoginAt != null)
-              //       ProfileInfoRow(
-              //         label: 'Last Login',
-              //         value: _formatDate(widget.profile.lastLoginAt!),
-              //       ),
-              //   ],
-              // ),
-              // const SizedBox(height: 24),
-              ProfilePreferencesSection(),
-              const SizedBox(height: 24),
-              const ProfileLogoutButton(),
-              const SizedBox(height: 16),
-              // Terms & Conditions and Privacy Policy buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        launchUrl(
-                          Uri.parse('https://app.nexierge.io/terms'),
-                          mode: LaunchMode.inAppBrowserView,
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: ColorPalette.opsPurple,
-                        side: const BorderSide(color: ColorPalette.opsPurple),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        'Terms & Conditions',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        launchUrl(
-                          Uri.parse('https://app.nexierge.io/privacy'),
-                          mode: LaunchMode.inAppBrowserView,
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: ColorPalette.opsPurple,
-                        side: const BorderSide(color: ColorPalette.opsPurple),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        'Privacy Policy',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              ProfileFooter(version: widget.versionLabel),
-            ],
-          ),
-        ),
-      ],
-    );
+  void _toggleHeader() {
+    if (_headerCollapsed) {
+      _headerController.expand();
+    } else {
+      _headerController.collapse();
+    }
+    setState(() => _headerCollapsed = !_headerCollapsed);
   }
 
   String _statusLabel(AppLocalizations s, UserStatus status) {
@@ -507,80 +263,560 @@ class _ProfileBodyState extends State<_ProfileBody> {
     }
   }
 
-  String _buildAccountSummary(UserProfile profile) {
-    final parts = profile.fullName.trim().split(RegExp(r'\s+'));
-    final firstName = parts.isNotEmpty
-        ? StringUtils.formatName(parts.first)
-        : '';
-    final employeeCode = profile.employeeCode ?? '';
-    final role = StringUtils.formatRoleWithMapping(profile.role);
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    final p = widget.profile;
 
-    return 'Name: $firstName, ECode: $employeeCode, Role: $role';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Header card with collapse/expand toggle ──────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Stack(
+            children: [
+              ProfileHeaderCardAnimated(
+                profile: p,
+                uploadingAvatar: widget.uploadingAvatar,
+                updatingName: widget.updatingName,
+                onChangeAvatar: widget.onChangeAvatar,
+                onEditName: widget.onEditName,
+                scrollController: ScrollController(),
+                controller: _headerController,
+              ),
+              // Collapse / expand button — top-right corner
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Material(
+                  color: c.bgSubtle,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: tapSound(_toggleHeader, SoundCategory.preference),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          _headerCollapsed
+                              ? LucideIcons.chevronDown
+                              : LucideIcons.chevronUp,
+                          key: ValueKey(_headerCollapsed),
+                          size: 16,
+                          color: c.fgMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Tab bar ──────────────────────────────────────────────────────────
+        TabBar(
+          controller: _tabController,
+          labelColor: ColorPalette.opsPurple,
+          unselectedLabelColor: c.fgMuted,
+          indicatorColor: ColorPalette.opsPurple,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelStyle: TypographyManager.labelSmall.copyWith(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: TypographyManager.labelSmall.copyWith(
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+          ),
+          tabs: [
+            Tab(text: s.profileTabAccount),
+            Tab(text: s.profileTabWork),
+            Tab(text: s.profileTabPreferences),
+            Tab(text: s.profileTabAbout),
+          ],
+        ),
+        Divider(height: 1, color: c.borderBase),
+
+        // ── Tab content (logout included in each tab's scroll) ──────────────
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _AccountTab(profile: p, statusLabel: _statusLabel),
+              _WorkTab(profile: p, statusLabel: _statusLabel),
+              const _PreferencesTab(),
+              _AboutTab(versionLabel: widget.versionLabel),
+            ],
+          ),
+        ),
+      ],
+    );
   }
+}
 
-  String _buildWorkSummary(UserProfile profile) {
-    final hotelName = StringUtils.formatName(profile.hotelName ?? '');
-    final status = _statusLabel(context.l10n, profile.status);
+// ── Account tab ───────────────────────────────────────────────────────────────
 
-    final List<String> summaryParts = [
-      'Property: $hotelName',
-      'Status: $status',
-    ];
+class _AccountTab extends StatelessWidget {
+  final UserProfile profile;
+  final String Function(AppLocalizations, UserStatus) statusLabel;
+  const _AccountTab({required this.profile, required this.statusLabel});
 
-    // Only add department if it's not empty
-    if (profile.departments.isNotEmpty) {
-      final formattedDepartments = profile.departments
-          .map((dept) => StringUtils.formatName(dept))
-          .join(', ');
-      summaryParts.insert(1, 'Department: $formattedDepartments');
-    }
-
-    return summaryParts.join(', ');
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
+      children: [
+        _InfoCard(rows: [
+          _InfoRow(label: s.profileFieldName, value: profile.fullName, c: c),
+          _InfoRow(label: s.profileFieldEmail, value: profile.email, c: c),
+          if (profile.phone != null && profile.phone!.isNotEmpty)
+            _InfoRow(label: s.profileFieldPhone, value: profile.phone!, c: c),
+          _InfoRow(label: s.profileFieldEmployeeCode, value: profile.employeeCode ?? s.profileFieldEmptyValue, c: c),
+          _InfoRow(label: s.profileFieldRole, value: StringUtils.formatRoleWithMapping(profile.role), c: c, isLast: true),
+        ]),
+        const SizedBox(height: 24),
+        const ProfileLogoutButton(),
+      ],
+    );
   }
+}
 
-  String _buildHotelSummary(UserProfile profile) {
-    final parts = <String>[];
+// ── Work tab ──────────────────────────────────────────────────────────────────
 
-    if (profile.hotelBusinessEmail != null &&
-        profile.hotelBusinessEmail!.isNotEmpty) {
-      parts.add('Email: ${profile.hotelBusinessEmail}');
-    }
-    if (profile.hotelBusinessPhone != null &&
-        profile.hotelBusinessPhone!.isNotEmpty) {
-      parts.add('Phone: ${profile.hotelBusinessPhone}');
-    }
-    if (profile.hotelTimezone != null && profile.hotelTimezone!.isNotEmpty) {
-      parts.add('Timezone: ${profile.hotelTimezone}');
-    }
+class _WorkTab extends StatelessWidget {
+  final UserProfile profile;
+  final String Function(AppLocalizations, UserStatus) statusLabel;
+  const _WorkTab({required this.profile, required this.statusLabel});
 
-    return parts.isNotEmpty ? parts.join(', ') : 'Hotel details available';
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 120),
+      children: [
+        _InfoCard(rows: [
+          if (profile.hotelName != null && profile.hotelName!.isNotEmpty)
+            _InfoRow(label: s.profileFieldHotel, value: profile.hotelName!, c: c),
+          _InfoRow(
+            label: s.profileFieldDepartments,
+            value: profile.departments.isNotEmpty
+                ? profile.departments.join(', ')
+                : s.profileFieldEmptyValue,
+            c: c,
+          ),
+          _InfoRow(label: s.profileFieldStatus, value: statusLabel(s, profile.status), c: c, isLast: true),
+        ]),
+        const SizedBox(height: 24),
+        const ProfileLogoutButton(),
+      ],
+    );
   }
+}
 
-  String _buildSubscriptionSummary(UserProfile profile) {
-    final plan = profile.subscriptionPlan ?? 'No plan';
-    final status = profile.subscriptionActive ?? false ? 'Active' : 'Inactive';
-    return 'Plan: $plan, Status: $status';
+// ── Preferences tab ───────────────────────────────────────────────────────────
+
+class _PreferencesTab extends ConsumerWidget {
+  const _PreferencesTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    final locale = ref.watch(localeControllerProvider).valueOrNull ?? AppLocale.system;
+    final themeMode = ref.watch(themeModeControllerProvider).valueOrNull ?? ThemeMode.system;
+    final soundOn = ref.watch(soundPreferencesProvider);
+    final vibrationOn = ref.watch(vibrationPreferencesProvider);
+
+    String resolvedLocale() {
+      if (locale == AppLocale.spanish) return 'ES';
+      if (locale == AppLocale.english) return 'EN';
+      final code = Localizations.localeOf(context).languageCode;
+      return code == 'es' ? 'ES' : 'EN';
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      children: [
+        // Language
+        _PrefCard(
+          title: s.profileLanguageTitle,
+          subtitle: s.profileLanguageSubtitle,
+          trailing: _SegmentToggle(
+            options: const ['EN', 'ES'],
+            selected: resolvedLocale(),
+            onChanged: (v) => ref.read(localeControllerProvider.notifier)
+                .set(v == 'ES' ? AppLocale.spanish : AppLocale.english),
+            c: c,
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Theme
+        _PrefCard(
+          title: s.profileThemeTitle,
+          subtitle: s.profileThemeSubtitle,
+          child: _ThemeToggle(mode: themeMode, c: c, ref: ref),
+        ),
+        const SizedBox(height: 12),
+        // Sound
+        _PrefCard(
+          title: 'Sound',
+          subtitle: 'Enable or disable app sound effects',
+          trailing: _OnOffToggle(
+            value: soundOn,
+            onChanged: (v) async {
+              await SoundManager.instance.play(SoundCategory.preference);
+              await ref.read(soundPreferencesProvider.notifier).setEnabled(v);
+              SoundManager.instance.setEnabled(v);
+            },
+            c: c,
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Vibration
+        _PrefCard(
+          title: s.profileVibrationTitle,
+          subtitle: s.profileVibrationSubtitle,
+          trailing: _OnOffToggle(
+            value: vibrationOn,
+            onChanged: (v) {
+              ref.read(vibrationPreferencesProvider.notifier).setEnabled(v);
+              if (v) VibrationManager.instance.trigger();
+            },
+            c: c,
+          ),
+        ),
+        const SizedBox(height: 24),
+        const ProfileLogoutButton(),
+      ],
+    );
   }
+}
 
-  String _buildAccessSummary(UserProfile profile) {
-    final parts = <String>[];
+// ── About tab ─────────────────────────────────────────────────────────────────
 
-    if (profile.authMethod != null) {
-      parts.add('Auth: ${profile.authMethod}');
-    }
-    if (profile.interfaceAccess != null) {
-      parts.add('Interface: ${profile.interfaceAccess}');
-    }
-    if (profile.hubAccess.isNotEmpty) {
-      parts.add('Hubs: ${profile.hubAccess.length}');
-    }
+class _AboutTab extends StatelessWidget {
+  final String versionLabel;
+  const _AboutTab({required this.versionLabel});
 
-    return parts.isNotEmpty ? parts.join(', ') : 'Standard access';
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+    final year = DateTime.now().year;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 40, 16, 24),
+      children: [
+        Center(
+          child: Container(
+            width: 88,
+            height: 88,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: c.bgBase,
+              shape: BoxShape.circle,
+              border: Border.all(color: c.borderBase, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Image.asset('assets/images/app_logo.png', fit: BoxFit.contain),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Nexierge',
+          textAlign: TextAlign.center,
+          style: TypographyManager.textHeading.copyWith(
+            color: c.fgBase,
+            fontWeight: FontWeight.w700,
+            fontSize: 22,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          s.profileFooterVersion(versionLabel),
+          textAlign: TextAlign.center,
+          style: TypographyManager.bodyMedium.copyWith(color: c.fgMuted),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          s.profileFooterCopyright(year),
+          textAlign: TextAlign.center,
+          style: TypographyManager.bodySmall.copyWith(color: c.fgSubtle, fontSize: 11),
+        ),
+        const SizedBox(height: 32),
+        const ProfileLogoutButton(),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: tapSound(() => launchUrl(
+                  Uri.parse('https://app.nexierge.io/terms'),
+                  mode: LaunchMode.inAppBrowserView,
+                )),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorPalette.opsPurple,
+                  side: const BorderSide(color: ColorPalette.opsPurple),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  textStyle: TypographyManager.labelSmall.copyWith(fontWeight: FontWeight.w500),
+                ),
+                child: const Text('Terms & Conditions'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: tapSound(() => launchUrl(
+                  Uri.parse('https://app.nexierge.io/privacy'),
+                  mode: LaunchMode.inAppBrowserView,
+                )),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: ColorPalette.opsPurple,
+                  side: const BorderSide(color: ColorPalette.opsPurple),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  textStyle: TypographyManager.labelSmall.copyWith(fontWeight: FontWeight.w500),
+                ),
+                child: const Text('Privacy Policy'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
+}
 
-  String _formatDate(int timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+// ── Shared info card / row ────────────────────────────────────────────────────
+
+class _InfoCard extends StatelessWidget {
+  final List<Widget> rows;
+  const _InfoCard({required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.borderBase),
+      ),
+      child: Column(children: rows),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final AppColors c;
+  final bool isLast;
+  const _InfoRow({required this.label, required this.value, required this.c, this.isLast = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Text(label, style: TypographyManager.bodySmall.copyWith(color: c.fgMuted)),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.end,
+                  style: TypographyManager.bodyMedium.copyWith(color: c.fgBase, fontWeight: FontWeight.w500),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!isLast) Divider(height: 1, indent: 16, endIndent: 16, color: c.borderBase),
+      ],
+    );
+  }
+}
+
+// ── Shared preference card ────────────────────────────────────────────────────
+
+class _PrefCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+  final Widget? child;
+  const _PrefCard({required this.title, required this.subtitle, this.trailing, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.borderBase),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TypographyManager.bodyMedium.copyWith(color: c.fgBase, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: TypographyManager.bodySmall.copyWith(color: c.fgSubtle)),
+                  ],
+                ),
+              ),
+              if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+            ],
+          ),
+          if (child != null) ...[const SizedBox(height: 12), child!],
+        ],
+      ),
+    );
+  }
+}
+
+class _SegmentToggle extends StatelessWidget {
+  final List<String> options;
+  final String selected;
+  final ValueChanged<String> onChanged;
+  final AppColors c;
+  const _SegmentToggle({required this.options, required this.selected, required this.onChanged, required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(color: c.tagNeutralBg, borderRadius: BorderRadius.circular(999)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: options.map((opt) {
+          final sel = opt == selected;
+          return Material(
+            color: sel ? ColorPalette.opsPurple : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+            child: InkWell(
+              onTap: tapSound(() => onChanged(opt), SoundCategory.preference),
+              borderRadius: BorderRadius.circular(999),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                child: Text(opt, style: TypographyManager.labelSmall.copyWith(
+                  color: sel ? Colors.white : c.fgSubtle,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                )),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _OnOffToggle extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final AppColors c;
+  const _OnOffToggle({required this.value, required this.onChanged, required this.c});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SegmentToggle(
+      options: const ['OFF', 'ON'],
+      selected: value ? 'ON' : 'OFF',
+      onChanged: (v) => onChanged(v == 'ON'),
+      c: c,
+    );
+  }
+}
+
+class _ThemeToggle extends StatelessWidget {
+  final ThemeMode mode;
+  final AppColors c;
+  final WidgetRef ref;
+  const _ThemeToggle({required this.mode, required this.c, required this.ref});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(color: c.tagNeutralBg, borderRadius: BorderRadius.circular(999)),
+      child: Row(
+        children: [
+          _ThemeChip(icon: LucideIcons.sun, label: s.profileThemeLight, selected: mode == ThemeMode.light,
+              onTap: () => ref.read(themeModeControllerProvider.notifier).set(ThemeMode.light)),
+          _ThemeChip(icon: LucideIcons.moon, label: s.profileThemeDark, selected: mode == ThemeMode.dark,
+              onTap: () => ref.read(themeModeControllerProvider.notifier).set(ThemeMode.dark)),
+          _ThemeChip(icon: LucideIcons.monitor, label: s.profileThemeSystem, selected: mode == ThemeMode.system,
+              onTap: () => ref.read(themeModeControllerProvider.notifier).set(ThemeMode.system)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ThemeChip({required this.icon, required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Expanded(
+      child: Material(
+        color: selected ? ColorPalette.opsPurple : Colors.transparent,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          onTap: tapSound(onTap, SoundCategory.preference),
+          borderRadius: BorderRadius.circular(999),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 14, color: selected ? Colors.white : c.fgSubtle),
+                const SizedBox(width: 4),
+                Flexible(child: Text(label, style: TypographyManager.labelSmall.copyWith(
+                  color: selected ? Colors.white : c.fgSubtle,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ), overflow: TextOverflow.ellipsis)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

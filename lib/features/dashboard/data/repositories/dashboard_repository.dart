@@ -92,6 +92,14 @@ class _DashboardRepositoryImpl implements DashboardRepository {
                 icon: IconInfo(url: dto.department.icon.url),
               ),
               onbRoomNumber: dto.onbRoomNumber,
+              opsTicketId: dto.opsTicketId,
+              ticketType: dto.ticketType,
+              slaTargetMinutes: dto.slaTargetMinutes,
+              thumbnailUrl: dto.thumbnailUrl,
+              presetEmoji: dto.presetEmoji,
+              creatorFirstName: dto.creatorFirstName,
+              creatorLastName: dto.creatorLastName,
+              createdByAi: dto.createdByAi,
             ),
           )
           .toList();

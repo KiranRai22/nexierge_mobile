@@ -66,6 +66,8 @@ UniversalCatalogSnapshot _parseCatalog(
 
         String emoji = '';
         String title = '';
+        String description = '';
+        String presetImageUrl = '';
         UniversalSourceType sourceType;
 
         if (source == 'PRESET') {
@@ -78,6 +80,11 @@ UniversalCatalogSnapshot _parseCatalog(
           if (title.isEmpty) {
             title = (preset['code'] ?? '').toString();
           }
+          description = _pickI18n(preset['description_i18n'], languageCode);
+          final thumb = preset['thumbnail_image'];
+          if (thumb is Map) {
+            presetImageUrl = (thumb['url'] ?? '').toString();
+          }
         } else if (source == 'CUSTOM') {
           sourceType = UniversalSourceType.custom;
           final custom = r['universal_request_custom'];
@@ -85,6 +92,7 @@ UniversalCatalogSnapshot _parseCatalog(
           if (custom['is_active'] == false) continue;
           emoji = (custom['icon'] ?? '').toString();
           title = (custom['name'] ?? '').toString();
+          description = (custom['description'] ?? '').toString();
         } else {
           continue;
         }
@@ -92,11 +100,21 @@ UniversalCatalogSnapshot _parseCatalog(
         if (emoji.isEmpty) emoji = deptEmoji;
         if (title.isEmpty) continue;
 
+        // active_image (hotel override) wins over the preset thumbnail.
+        String imageUrl = '';
+        final activeImage = r['active_image'];
+        if (activeImage is Map) {
+          imageUrl = (activeImage['url'] ?? '').toString();
+        }
+        if (imageUrl.isEmpty) imageUrl = presetImageUrl;
+
         items.add(
           UniversalItem(
             id: requestId,
             emoji: emoji,
             title: title,
+            description: description,
+            imageUrl: imageUrl,
             departmentId: deptId,
             departmentName: deptName,
             departmentCode: deptCode,

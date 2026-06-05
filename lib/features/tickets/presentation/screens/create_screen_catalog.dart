@@ -149,73 +149,121 @@ class _CatalogSelectorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    final radius = BorderRadius.circular(14);
     return Material(
       color: ColorPalette.opsSurface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: radius,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: tapSound(onTap, SoundCategory.card),
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.all(16),
+        borderRadius: radius,
+        child: DecoratedBox(
           decoration: BoxDecoration(
             border: Border.all(color: ColorPalette.opsBorder),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: radius,
           ),
-          child: Row(
-            children: [
-              _CatalogLogoTile(logoUrl: catalog.logoUrl),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+          child: SizedBox(
+            // Fixed card height so the cover image has a concrete size
+            // without needing IntrinsicHeight on every row.
+            height: 112,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── 30% — cover image, edge-to-edge ───────────────────
+                Expanded(
+                  flex: 3,
+                  child: _CatalogCoverImage(logoUrl: catalog.logoUrl),
+                ),
+                // ── 60% — title + description + item count ────────────
+                Expanded(
+                  flex: 6,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: ColorPalette.opsPurple,
-                            shape: BoxShape.circle,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: ColorPalette.opsPurple,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                catalog.name,
+                                style: TypographyManager.cardTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            catalog.name,
-                            style: TypographyManager.cardTitle,
-                            maxLines: 1,
+                        if ((catalog.description ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            catalog.description!,
+                            style: TypographyManager.cardMeta,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
+                        ],
+                        const SizedBox(height: 4),
+                        Text(
+                          s.createCatalogItemCount(catalog.items),
+                          style: TypographyManager.bodySmall,
                         ),
                       ],
                     ),
-                    if ((catalog.description ?? '').isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        catalog.description!,
-                        style: TypographyManager.cardMeta,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      s.createCatalogItemCount(catalog.items),
-                      style: TypographyManager.bodySmall,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: ColorPalette.textSecondary,
-              ),
-            ],
+                // ── 10% — chevron ─────────────────────────────────────
+                Expanded(
+                  flex: 1,
+                  child: Center(
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: ColorPalette.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Edge-to-edge cover image for a catalog card. Falls back to a neutral
+/// surface with a plate emoji when the catalog has no logo.
+class _CatalogCoverImage extends StatelessWidget {
+  final String? logoUrl;
+  const _CatalogCoverImage({this.logoUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = logoUrl != null && logoUrl!.isNotEmpty;
+    final fallback = ColoredBox(
+      color: ColorPalette.opsSurfaceSubtle,
+      child: const Center(
+        child: Text('🍽️', style: TextStyle(fontSize: 30)),
+      ),
+    );
+    if (!hasImage) return fallback;
+    return Image.network(
+      logoUrl!,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => fallback,
     );
   }
 }
@@ -751,12 +799,72 @@ class _CatalogMenuCard extends StatelessWidget {
         : formatMoney(item.basePrice);
     final showLines = item.hasOptions && lines.isNotEmpty;
 
+    final radius = BorderRadius.circular(14);
+    // Items with no options use an inline quantity stepper on first add.
+    // For those (when at least 1 is in the cart), we drop the third column
+    // entirely and tuck the stepper into the price row of the content
+    // column. Items with options keep the right-side trailing control so
+    // the "+ opens sheet" affordance stays visible.
+    final inlineStepper = !item.hasOptions && qty > 0;
+
+    final contentColumn = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            item.name,
+            style: TypographyManager.titleSmall.copyWith(
+              fontWeight: FontWeight.w700,
+              color: selected
+                  ? ColorPalette.opsPurpleDark
+                  : ColorPalette.textPrimary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            item.description,
+            style: TypographyManager.bodySmall.copyWith(
+              color: ColorPalette.textSecondary,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  priceLabel,
+                  style: TypographyManager.titleSmall.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: ColorPalette.textPrimary,
+                  ),
+                ),
+              ),
+              if (inlineStepper)
+                _CatalogCircleStepper(
+                  value: qty,
+                  onMinus: onDecrement,
+                  onPlus: onIncrement,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: selected
             ? ColorPalette.itemTileSelectedBg
             : ColorPalette.opsSurface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: radius,
         border: Border.all(
           color: selected
               ? ColorPalette.itemTileSelectedBorder
@@ -764,143 +872,109 @@ class _CatalogMenuCard extends StatelessWidget {
           width: selected ? 1.5 : 1,
         ),
       ),
-      padding: const EdgeInsets.all(12),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: ColorPalette.opsSurface,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: ColorPalette.opsBorder),
+          // ── Top row: 25% image · 60% content · 15% trailing ─────────
+          //    (or 25 / 75 when the stepper is hosted inline in content)
+          SizedBox(
+            height: 112,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: 25,
+                  child: _CatalogItemCover(
+                    imageUrl: item.imageUrl,
+                    emoji: item.emoji,
+                  ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                alignment: Alignment.center,
-                child: (item.imageUrl != null && item.imageUrl!.isNotEmpty)
-                    ? Stack(
-                        children: [
-                          Image.network(
-                            item.imageUrl!,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                width: 56,
-                                height: 56,
-                                color: ColorPalette.opsSurface,
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: ColorPalette.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              //debugPrint(
-                              //   '[CatalogMenuCard] Image load error for ${item.name}: $error',
-                              // );
-                              return Container(
-                                width: 56,
-                                height: 56,
-                                color: ColorPalette.opsSurface,
-                                child: Center(
-                                  child: Text(
-                                    item.emoji,
-                                    style: const TextStyle(fontSize: 24),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      )
-                    : Container(
-                        width: 56,
-                        height: 56,
-                        color: ColorPalette.opsSurface,
-                        child: Center(
-                          child: Text(
-                            item.emoji,
-                            style: const TextStyle(fontSize: 24),
-                          ),
-                        ),
+                Expanded(
+                  flex: inlineStepper ? 75 : 60,
+                  child: contentColumn,
+                ),
+                if (!inlineStepper)
+                  Expanded(
+                    flex: 15,
+                    child: Center(
+                      child: _CatalogTrailingControl(
+                        item: item,
+                        quantity: qty,
+                        onAdd: onAdd,
+                        onIncrement: onIncrement,
+                        onDecrement: onDecrement,
                       ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      item.name,
-                      style: TypographyManager.titleSmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: selected
-                            ? ColorPalette.opsPurpleDark
-                            : ColorPalette.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.description,
-                      style: TypographyManager.bodySmall.copyWith(
-                        color: ColorPalette.textSecondary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      priceLabel,
-                      style: TypographyManager.titleSmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: ColorPalette.textPrimary,
+                  ),
+              ],
+            ),
+          ),
+          if (showLines) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+              child: Column(
+                children: [
+                  for (int i = 0; i < lines.length; i++) ...[
+                    if (i == 0)
+                      Divider(height: 1, color: ColorPalette.opsPurple),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 4),
+                      child: _CartLineRow(
+                        index: i + 1,
+                        line: lines[i],
+                        onEdit: () => onEditLine(lines[i]),
+                        onDelete: () => onDeleteLine(lines[i]),
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-              const SizedBox(width: 12),
-              _CatalogTrailingControl(
-                item: item,
-                quantity: qty,
-                onAdd: onAdd,
-                onIncrement: onIncrement,
-                onDecrement: onDecrement,
-              ),
-            ],
-          ),
-          if (showLines) ...[
-            const SizedBox(height: 10),
-            for (int i = 0; i < lines.length; i++) ...[
-              if (i == 0) Divider(height: 1, color: ColorPalette.opsPurple),
-              Padding(
-                padding: const EdgeInsets.only(top: 8, bottom: 4),
-                child: _CartLineRow(
-                  index: i + 1,
-                  line: lines[i],
-                  onEdit: () => onEditLine(lines[i]),
-                  onDelete: () => onDeleteLine(lines[i]),
-                ),
-              ),
-            ],
+            ),
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Edge-to-edge cover image for a catalog item card. Falls back to the
+/// item's emoji on a muted surface when the URL is missing or fails to load.
+class _CatalogItemCover extends StatelessWidget {
+  final String? imageUrl;
+  final String emoji;
+
+  const _CatalogItemCover({required this.imageUrl, required this.emoji});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageUrl != null && imageUrl!.isNotEmpty;
+    final fallback = ColoredBox(
+      color: ColorPalette.opsSurface,
+      child: Center(
+        child: Text(emoji, style: const TextStyle(fontSize: 28)),
+      ),
+    );
+    if (!hasImage) return fallback;
+    return Image.network(
+      imageUrl!,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return ColoredBox(
+          color: ColorPalette.opsSurface,
+          child: Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: ColorPalette.textSecondary,
+              ),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (_, __, ___) => fallback,
     );
   }
 }
@@ -1155,6 +1229,78 @@ class _StepperPlus extends StatelessWidget {
   }
 }
 
+/// Inline circular stepper used in catalog menu cards that don't have
+/// option groups. Mirrors the universal-card style: standalone circular
+/// `−` / `+` icon buttons around the quantity number with no surrounding
+/// container, so it tucks cleanly into the bottom-right of the content
+/// column instead of stealing a whole right-hand column for itself.
+class _CatalogCircleStepper extends StatelessWidget {
+  final int value;
+  final VoidCallback onMinus;
+  final VoidCallback onPlus;
+
+  const _CatalogCircleStepper({
+    required this.value,
+    required this.onMinus,
+    required this.onPlus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _CatalogCircleStepperButton(
+          icon: Icons.remove_rounded,
+          onTap: onMinus,
+        ),
+        SizedBox(
+          width: 28,
+          child: Text(
+            '$value',
+            textAlign: TextAlign.center,
+            style: TypographyManager.titleSmall.copyWith(
+              fontWeight: FontWeight.w800,
+              color: ColorPalette.textPrimary,
+            ),
+          ),
+        ),
+        _CatalogCircleStepperButton(
+          icon: Icons.add_rounded,
+          onTap: onPlus,
+        ),
+      ],
+    );
+  }
+}
+
+class _CatalogCircleStepperButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CatalogCircleStepperButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: ColorPalette.opsPurple,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: tapSound(onTap, SoundCategory.button),
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: Icon(icon, size: 16, color: ColorPalette.white),
+        ),
+      ),
+    );
+  }
+}
+
 class _CatalogStickyContinue extends StatelessWidget {
   final CatalogDraftState draft;
   final CatalogDraftController ctl;
@@ -1166,44 +1312,45 @@ class _CatalogStickyContinue extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Info bar
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: ColorPalette.successTint,
-            border: Border(
-              top: BorderSide(color: ColorPalette.successBorder, width: 1),
-              bottom: BorderSide(color: ColorPalette.successBorder, width: 1),
+        // Info bar — same dark-green pill as the universal selection bar.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0D2A1F),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF1E5E3A), width: 1),
             ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  s.catalogCartSubtitle(
-                    draft.totalUnits,
-                    formatMoney(draft.total),
-                  ),
-                  style: TypographyManager.labelMedium.copyWith(
-                    color: ColorPalette.successText,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: tapSound(ctl.clearCart, SoundCategory.back),
-                behavior: HitTestBehavior.opaque,
-                child: Text(
-                  s.createSelectionBarClearAll,
-                  style: TypographyManager.labelMedium.copyWith(
-                    color: ColorPalette.successText,
-                    decoration: TextDecoration.underline,
-                    fontWeight: FontWeight.w600,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    s.catalogCartSubtitle(
+                      draft.totalUnits,
+                      formatMoney(draft.total),
+                    ),
+                    style: TypographyManager.labelMedium.copyWith(
+                      color: const Color(0xFF2DD47E),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                GestureDetector(
+                  onTap: tapSound(ctl.clearCart, SoundCategory.back),
+                  behavior: HitTestBehavior.opaque,
+                  child: Text(
+                    s.createSelectionBarClearAll,
+                    style: TypographyManager.labelMedium.copyWith(
+                      color: const Color(0xFFB8C2BD),
+                      decoration: TextDecoration.underline,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         // Continue CTA

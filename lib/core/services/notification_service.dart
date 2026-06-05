@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -207,14 +209,31 @@ class NotificationService {
   }
 
   // Show heads-up banner while app is in foreground.
-  // setForegroundNotificationPresentationOptions handles the system banner on
-  // iOS for notification-type messages. This local-notification path is the
-  // fallback for data-only messages and Android.
+  //
+  // Duplication guard: on iOS, [setForegroundNotificationPresentationOptions]
+  // already makes the OS display the banner for any FCM message that carries
+  // a `notification` payload. If we *also* call [_localNotifications.show]
+  // here, the user sees two banners for one push. Android does NOT auto-
+  // display in foreground, so we still need the local notification there.
+  //
+  // Rule:
+  //   - notification payload present:
+  //       iOS  → suppress local (OS handles it)
+  //       Android → show local (OS would otherwise be silent)
+  //   - data-only payload (l10nKey lookup):
+  //       both platforms → show local (only way to surface it)
   void _listenForeground() {
     print("Listening to foreground fcm");
     FirebaseMessaging.onMessage.listen((message) async {
       final localized = _localizeFromPayload(message);
       if (localized.title == null && localized.body == null) return;
+
+      final hasNotificationPayload = message.notification != null;
+      if (hasNotificationPayload && Platform.isIOS) {
+        // iOS will display the banner itself — bail to avoid a duplicate.
+        return;
+      }
+
       print("Showing notification: ${localized.title} - ${localized.body}");
       final s = LocaleAwareStrings.instance.strings;
       try {

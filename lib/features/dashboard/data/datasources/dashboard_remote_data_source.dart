@@ -205,6 +205,14 @@ class NeedsAttentionDto {
   final int acknowledgedAt;
   final DepartmentInfoDto department;
   final String onbRoomNumber;
+  final String opsTicketId;
+  final String ticketType;
+  final int slaTargetMinutes;
+  final String thumbnailUrl;
+  final String presetEmoji;
+  final String creatorFirstName;
+  final String creatorLastName;
+  final bool createdByAi;
 
   NeedsAttentionDto({
     required this.id,
@@ -217,6 +225,14 @@ class NeedsAttentionDto {
     required this.acknowledgedAt,
     required this.department,
     required this.onbRoomNumber,
+    required this.opsTicketId,
+    required this.ticketType,
+    required this.slaTargetMinutes,
+    required this.thumbnailUrl,
+    required this.presetEmoji,
+    required this.creatorFirstName,
+    required this.creatorLastName,
+    required this.createdByAi,
   });
 
   factory NeedsAttentionDto.fromJson(Map<String, dynamic> json) {
@@ -229,6 +245,64 @@ class NeedsAttentionDto {
     final onbRoomNumber = roomData is Map
         ? roomData['onb_room_number']?.toString() ?? ''
         : s('onb_room_number');
+
+    // Resolve thumbnail + SLA + fallback preset emoji from the per-type
+    // sub-object the API ships alongside the ticket.
+    String thumb = '';
+    String emoji = '';
+    int sla = 0;
+
+    final scOrder = json['_service_catalog_order_details'];
+    if (scOrder is Map<String, dynamic>) {
+      sla = (scOrder['sla_target_minutes'] as num?)?.toInt() ?? 0;
+      final orderItem = scOrder['order_item_details'];
+      if (orderItem is Map<String, dynamic>) {
+        final items = orderItem['items'];
+        if (items is List && items.isNotEmpty) {
+          final first = items.first;
+          if (first is Map<String, dynamic>) {
+            final details = first['item_details'];
+            if (details is Map<String, dynamic>) {
+              final imgs = details['image'];
+              if (imgs is List && imgs.isNotEmpty) {
+                final firstImg = imgs.first;
+                if (firstImg is String) thumb = firstImg;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    final urList = json['_universal_request_order_details'];
+    if (thumb.isEmpty && urList is List && urList.isNotEmpty) {
+      final first = urList.first;
+      if (first is Map<String, dynamic>) {
+        if (sla == 0) {
+          sla = (first['sla_target_minutes'] as num?)?.toInt() ?? 0;
+        }
+        final active = first['_hotel_universal_request_active'];
+        if (active is Map<String, dynamic>) {
+          final preset = active['_universal_request_preset'];
+          if (preset is Map<String, dynamic>) {
+            emoji = (preset['icon'] as String?) ?? '';
+            final t = preset['thumbnail_image'];
+            if (t is Map<String, dynamic>) {
+              thumb = (t['url'] as String?) ?? '';
+            }
+          }
+        }
+      }
+    }
+
+    String firstName = '';
+    String lastName = '';
+    final user = json['_user'];
+    if (user is Map<String, dynamic>) {
+      firstName = (user['first_name'] as String?) ?? '';
+      lastName = (user['last_name'] as String?) ?? '';
+    }
+
     return NeedsAttentionDto(
       id: s('id'),
       createdAt: i('created_at'),
@@ -242,6 +316,14 @@ class NeedsAttentionDto {
           ? DepartmentInfoDto.fromJson(dept)
           : DepartmentInfoDto.empty(),
       onbRoomNumber: onbRoomNumber,
+      opsTicketId: s('ops_ticket_id'),
+      ticketType: s('ticket_type'),
+      slaTargetMinutes: sla,
+      thumbnailUrl: thumb,
+      presetEmoji: emoji,
+      creatorFirstName: firstName,
+      creatorLastName: lastName,
+      createdByAi: (json['created_by_ai'] as bool?) ?? false,
     );
   }
 }

@@ -34,6 +34,8 @@ import 'features/version_control/presentation/widgets/force_update_bottom_sheet.
 import 'features/version_control/presentation/widgets/force_update_gate.dart';
 import 'features/version_control/presentation/widgets/optional_update_sheet.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'core/services/vibration_manager.dart';
+import 'core/providers/vibration_preferences_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -126,6 +128,12 @@ class MyApp extends ConsumerWidget {
       SoundManager.instance.setEnabled(next);
     });
     SoundManager.instance.setEnabled(ref.read(soundPreferencesProvider));
+
+    // Sync vibration manager with preferences.
+    ref.listen<bool>(vibrationPreferencesProvider, (_, next) {
+      VibrationManager.instance.setEnabled(next);
+    });
+    VibrationManager.instance.setEnabled(ref.read(vibrationPreferencesProvider));
 
     // Listen for session changes and trigger bootstrap when authenticated
     ref.listen(authSessionControllerProvider, (prev, next) {

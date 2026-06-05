@@ -514,6 +514,29 @@
     "placeholders": { "minutes": { "type": "int" } }
   },
   "dashboardNotStartedPill": "Not started",
+  "dashboardTicketIdLabel": "Ticket",
+  "dashboardCreatedLabel": "Created",
+  "dashboardDueLabel": "Due",
+  "dashboardSlaLabel": "SLA",
+  "dashboardCreatedByLabel": "By",
+  "dashboardCreatedByGuest": "Guest",
+  "dashboardCreatedByAi": "AI",
+  "dashboardSlaMinutes": "{minutes}m",
+  "@dashboardSlaMinutes": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "dashboardDueIn": "in {duration}",
+  "@dashboardDueIn": {
+    "placeholders": { "duration": { "type": "String" } }
+  },
+  "dashboardDueOverdueBy": "{duration} overdue",
+  "@dashboardDueOverdueBy": {
+    "placeholders": { "duration": { "type": "String" } }
+  },
+  "dashboardAgoSuffix": "{duration} ago",
+  "@dashboardAgoSuffix": {
+    "placeholders": { "duration": { "type": "String" } }
+  },
   "dashboardWaitingPill": "Waiting {minutes}m",
   "@dashboardWaitingPill": {
     "placeholders": { "minutes": { "type": "int" } }
@@ -583,6 +606,12 @@
   "profileSectionPreferences": "Preferences",
   "profileSectionAccountInformation": "Account information",
   "profileSectionWorkInformation": "Work information",
+  "profileTabAccount": "Account",
+  "profileTabWork": "Work",
+  "profileTabPreferences": "Preferences",
+  "profileTabAbout": "About",
+  "profileVibrationTitle": "Vibration",
+  "profileVibrationSubtitle": "Haptic feedback on taps",
   "profileFieldName": "Name",
   "profileFieldEmail": "Email",
   "profileFieldEmployeeCode": "Employee code",
@@ -653,6 +682,13 @@
   "notificationsEmptyHint": "New activity will appear here.",
   "notificationsLoadError": "Could not load notifications. Check your connection.",
   "notificationsRetry": "Retry",
+  "notificationsOpenTickets": "Open Tickets",
+  "notificationsActionRead": "Mark as read",
+  "notificationsActionView": "View ticket details",
+  "notificationsCoachTitle": "Swipe to act on notifications",
+  "notificationsCoachSwipeRight": "Swipe right to view ticket details",
+  "notificationsCoachSwipeLeft": "Swipe left to mark as read",
+  "notificationsCoachGotIt": "Got it",
   "notificationsItemNewTicket": "New ticket received",
 
   "relativeJustNow": "Just now",

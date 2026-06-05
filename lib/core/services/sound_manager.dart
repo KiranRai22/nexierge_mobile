@@ -1,6 +1,8 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
+import 'vibration_manager.dart';
+
 /// Sound categories for UI interactions
 enum SoundCategory {
   /// General button clicks
@@ -144,6 +146,7 @@ VoidCallback? tapSound(
 ]) {
   if (cb == null) return null;
   return () {
+    VibrationManager.instance.trigger();
     SoundManager.instance.play(category);
     cb();
   };

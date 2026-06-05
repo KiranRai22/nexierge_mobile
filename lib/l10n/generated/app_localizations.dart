@@ -2036,6 +2036,72 @@ abstract class AppLocalizations {
   /// **'Not started'**
   String get dashboardNotStartedPill;
 
+  /// No description provided for @dashboardTicketIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket'**
+  String get dashboardTicketIdLabel;
+
+  /// No description provided for @dashboardCreatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get dashboardCreatedLabel;
+
+  /// No description provided for @dashboardDueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Due'**
+  String get dashboardDueLabel;
+
+  /// No description provided for @dashboardSlaLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SLA'**
+  String get dashboardSlaLabel;
+
+  /// No description provided for @dashboardCreatedByLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'By'**
+  String get dashboardCreatedByLabel;
+
+  /// No description provided for @dashboardCreatedByGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get dashboardCreatedByGuest;
+
+  /// No description provided for @dashboardCreatedByAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI'**
+  String get dashboardCreatedByAi;
+
+  /// No description provided for @dashboardSlaMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String dashboardSlaMinutes(int minutes);
+
+  /// No description provided for @dashboardDueIn.
+  ///
+  /// In en, this message translates to:
+  /// **'in {duration}'**
+  String dashboardDueIn(String duration);
+
+  /// No description provided for @dashboardDueOverdueBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{duration} overdue'**
+  String dashboardDueOverdueBy(String duration);
+
+  /// No description provided for @dashboardAgoSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'{duration} ago'**
+  String dashboardAgoSuffix(String duration);
+
   /// No description provided for @dashboardWaitingPill.
   ///
   /// In en, this message translates to:
@@ -2251,6 +2317,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Work information'**
   String get profileSectionWorkInformation;
+
+  /// No description provided for @profileTabAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get profileTabAccount;
+
+  /// No description provided for @profileTabWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get profileTabWork;
+
+  /// No description provided for @profileTabPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get profileTabPreferences;
+
+  /// No description provided for @profileTabAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get profileTabAbout;
+
+  /// No description provided for @profileVibrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibration'**
+  String get profileVibrationTitle;
+
+  /// No description provided for @profileVibrationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Haptic feedback on taps'**
+  String get profileVibrationSubtitle;
 
   /// No description provided for @profileFieldName.
   ///
@@ -2497,6 +2599,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get notificationsRetry;
+
+  /// No description provided for @notificationsOpenTickets.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Tickets'**
+  String get notificationsOpenTickets;
+
+  /// No description provided for @notificationsActionRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get notificationsActionRead;
+
+  /// No description provided for @notificationsActionView.
+  ///
+  /// In en, this message translates to:
+  /// **'View ticket details'**
+  String get notificationsActionView;
+
+  /// No description provided for @notificationsCoachTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe to act on notifications'**
+  String get notificationsCoachTitle;
+
+  /// No description provided for @notificationsCoachSwipeRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe right to view ticket details'**
+  String get notificationsCoachSwipeRight;
+
+  /// No description provided for @notificationsCoachSwipeLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe left to mark as read'**
+  String get notificationsCoachSwipeLeft;
+
+  /// No description provided for @notificationsCoachGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get notificationsCoachGotIt;
 
   /// No description provided for @notificationsItemNewTicket.
   ///

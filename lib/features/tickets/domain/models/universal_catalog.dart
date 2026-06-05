@@ -39,6 +39,15 @@ class UniversalItem {
   final String id;
   final String emoji;
   final String title;
+
+  /// Localized description (from `description_i18n` for presets or
+  /// `description` for custom requests). Empty when the backend ships none.
+  final String description;
+
+  /// Best-available thumbnail URL — `active_image.url` overrides the
+  /// preset's `thumbnail_image.url`. Empty when neither is set; the UI
+  /// should fall back to [emoji] in that case.
+  final String imageUrl;
   final String departmentId;
   final String departmentName;
   final String departmentCode;
@@ -48,6 +57,8 @@ class UniversalItem {
     required this.id,
     required this.emoji,
     required this.title,
+    this.description = '',
+    this.imageUrl = '',
     required this.departmentId,
     required this.departmentName,
     required this.departmentCode,

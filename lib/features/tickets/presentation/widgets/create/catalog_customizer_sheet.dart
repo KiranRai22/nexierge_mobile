@@ -32,10 +32,21 @@ class CatalogCustomizerSheet {
     return showModalBottomSheet<CatalogCustomizationResult>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ColorPalette.opsSurface,
+      // Transparent so the image-backed header can paint right to the top
+      // edge without a sliver of the sheet's surface colour showing as a
+      // white line above the cover image. The body itself wraps content in
+      // a clipped, rounded surface.
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      // Material 3 adds a built-in drag handle in a small reserved strip at
+      // the top of the sheet — that strip was showing as a white line above
+      // our cover image. Disable it; we render our own handle inside the
+      // image-backed header instead.
+      showDragHandle: false,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      clipBehavior: Clip.antiAlias,
       builder: (_) => _CustomizerBody(item: item, initial: initial),
     );
   }
@@ -150,10 +161,19 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
         top: false,
         child: FractionallySizedBox(
           heightFactor: 0.88,
-          child: Column(
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
+            ),
+            child: ColoredBox(
+              color: ColorPalette.opsSurface,
+              child: Column(
             children: [
-              const _Handle(),
-              _Header(
+              // Image-backed header: handle + back/close + title/base price +
+              // description all sit on top of a full-bleed cover image with a
+              // readability gradient. The divider that used to sit directly
+              // under the header now lives below this whole block.
+              _ImageBackedHeader(
                 item: widget.item,
                 onBack: () => Navigator.of(context).pop(),
                 onClose: () => Navigator.of(context).pop(),
@@ -164,16 +184,6 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                   children: [
-                    if (widget.item.description.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text(
-                          widget.item.description,
-                          style: TypographyManager.bodyMedium.copyWith(
-                            color: ColorPalette.textSecondary,
-                          ),
-                        ),
-                      ),
                     for (final g in widget.item.optionGroups) ...[
                       _GroupHeader(group: g),
                       const SizedBox(height: 8),
@@ -245,6 +255,8 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
               ),
             ],
           ),
+            ),
+          ),
         ),
       ),
     );
@@ -267,12 +279,17 @@ class _Handle extends StatelessWidget {
   }
 }
 
-class _Header extends StatelessWidget {
+/// Top section of the sheet, with the item image as a full-bleed background
+/// covering the drag handle, the back/close + title row, and the
+/// description. A vertical gradient keeps the white text readable. The
+/// divider below this block now separates description from the preference
+/// groups (it used to sit directly under the header).
+class _ImageBackedHeader extends StatelessWidget {
   final CatalogItem item;
   final VoidCallback onBack;
   final VoidCallback onClose;
 
-  const _Header({
+  const _ImageBackedHeader({
     required this.item,
     required this.onBack,
     required this.onClose,
@@ -280,50 +297,207 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-      child: Row(
+    final hasImage =
+        item.imageUrl != null && item.imageUrl!.isNotEmpty;
+
+    // No-image branch keeps the original inline layout: handle, then a row
+    // with back / title / close, then description below.
+    if (!hasImage) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _CircleIcon(icon: Icons.arrow_back_rounded, onPressed: onBack),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+          const _Handle(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            child: Row(
               children: [
-                Text(
-                  item.name,
-                  style: TypographyManager.titleMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                _CircleIcon(
+                  icon: Icons.arrow_back_rounded,
+                  onPressed: onBack,
                 ),
-                Text(
-                  'Base: ${formatMoney(item.basePrice)}',
-                  style: TypographyManager.bodySmall.copyWith(
-                    color: ColorPalette.textSecondary,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item.name,
+                        style: TypographyManager.titleMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: ColorPalette.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Base: ${formatMoney(item.basePrice)}',
+                        style: TypographyManager.bodySmall.copyWith(
+                          color: ColorPalette.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                _CircleIcon(
+                  icon: Icons.close_rounded,
+                  onPressed: onClose,
                 ),
               ],
             ),
           ),
-          _CircleIcon(icon: Icons.close_rounded, onPressed: onClose),
+          if (item.description.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: Text(
+                item.description,
+                style: TypographyManager.bodyMedium.copyWith(
+                  color: ColorPalette.textSecondary,
+                ),
+              ),
+            ),
+        ],
+      );
+    }
+
+    // Image branch: back/close float in the top corners of the cover, while
+    // the title/base/description anchor at the bottom over the gradient.
+    final bottomBlock = Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            item.name,
+            style: TypographyManager.titleMedium.copyWith(
+              fontWeight: FontWeight.w700,
+              color: ColorPalette.white,
+              shadows: _textShadows,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            'Base: ${formatMoney(item.basePrice)}',
+            style: TypographyManager.bodySmall.copyWith(
+              color: const Color(0xE6FFFFFF),
+              shadows: _textShadows,
+            ),
+          ),
+          if (item.description.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              item.description,
+              style: TypographyManager.bodyMedium.copyWith(
+                color: const Color(0xF2FFFFFF),
+                shadows: _textShadows,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    // Fixed cover height. A Stack whose children are all `Positioned` has
+    // nothing to size itself against, so when the parent constraint has
+    // unbounded height (which is the case inside the bottom sheet), Stack
+    // tries to fill infinity and the layout assertion fires. Anchoring to a
+    // concrete height side-steps that and keeps the cover predictable.
+    return SizedBox(
+      height: 260,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.network(
+              item.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  ColoredBox(color: ColorPalette.opsSurface),
+            ),
+          ),
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0x55000000),
+                    Color(0x88000000),
+                    Color(0xCC000000),
+                  ],
+                  stops: [0.0, 0.55, 1.0],
+                ),
+              ),
+            ),
+          ),
+          // Title + base price + description, anchored bottom so they sit
+          // just above the divider regardless of cover height.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: bottomBlock,
+          ),
+          // Drag handle centered at the very top of the cover.
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Center(child: _Handle()),
+          ),
+          // Back icon — top-left corner.
+          Positioned(
+            top: 14,
+            left: 12,
+            child: _CircleIcon(
+              icon: Icons.arrow_back_rounded,
+              onPressed: onBack,
+              onImage: true,
+            ),
+          ),
+          // Close icon — top-right corner.
+          Positioned(
+            top: 14,
+            right: 12,
+            child: _CircleIcon(
+              icon: Icons.close_rounded,
+              onPressed: onClose,
+              onImage: true,
+            ),
+          ),
         ],
       ),
     );
   }
+
+  static const List<Shadow> _textShadows = [
+    Shadow(color: Color(0xCC000000), blurRadius: 3, offset: Offset(0, 1)),
+  ];
 }
 
 class _CircleIcon extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
-  const _CircleIcon({required this.icon, required this.onPressed});
+
+  /// When the icon sits on top of the cover image, switch to a translucent
+  /// dark background with a white glyph so it stays legible.
+  final bool onImage;
+
+  const _CircleIcon({
+    required this.icon,
+    required this.onPressed,
+    this.onImage = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: ColorPalette.opsSurfaceSubtle,
+      color: onImage
+          ? Colors.black.withValues(alpha: 0.45)
+          : ColorPalette.opsSurfaceSubtle,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -332,7 +506,11 @@ class _CircleIcon extends StatelessWidget {
         child: SizedBox(
           width: 32,
           height: 32,
-          child: Icon(icon, size: 16, color: ColorPalette.textPrimary),
+          child: Icon(
+            icon,
+            size: 16,
+            color: onImage ? Colors.white : ColorPalette.textPrimary,
+          ),
         ),
       ),
     );

@@ -339,14 +339,56 @@ class _TicketIdRow extends StatelessWidget {
 }
 
 /// Title text only (no dot, no pill — those are in _TicketIdRow).
+///
+/// Renders item thumbnails (overlapped) inline before the title for
+/// catalog/universal tickets. Falls back to title-only when no images
+/// are available (e.g. manual tickets, or universal items with no preset).
 class _TitleText extends StatelessWidget {
   final Ticket ticket;
   const _TitleText({required this.ticket});
 
+  /// Collects up to 3 thumbnail URLs from whichever kind data the ticket has.
+  List<String> _resolveThumbnails(Ticket ticket) {
+    final data = ticket.kindData;
+    if (data is CatalogKindData) {
+      return data.itemThumbnails
+          .where((u) => u.isNotEmpty)
+          .take(3)
+          .toList();
+    }
+    if (data is UniversalKindData) {
+      final urls = <String>[];
+      for (final item in data.allItems) {
+        final u = item.thumbnailUrl;
+        if (u != null && u.isNotEmpty) urls.add(u);
+        if (urls.length == 3) break;
+      }
+      if (urls.isEmpty) {
+        final single = data.thumbnailUrl;
+        if (single != null && single.isNotEmpty) urls.add(single);
+      }
+      return urls;
+    }
+    return const [];
+  }
+
+  String _fallbackEmoji(Ticket ticket) {
+    final data = ticket.kindData;
+    if (data is UniversalKindData && (data.emoji?.isNotEmpty ?? false)) {
+      return data.emoji!;
+    }
+    return switch (ticket.kind) {
+      TicketKind.universal => '🧳',
+      TicketKind.catalog => '🍽️',
+      TicketKind.manual => '📝',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
-    return Text(
+    final urls = _resolveThumbnails(ticket);
+    final title = Text(
       _buildTitle(context, ticket),
       style: TypographyManager.cardTitle.copyWith(
         fontWeight: FontWeight.w700,
@@ -355,6 +397,22 @@ class _TitleText extends StatelessWidget {
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+    );
+
+    if (urls.isEmpty && ticket.kind == TicketKind.manual) {
+      return title;
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _InlineStackedThumbnails(
+          imageUrls: urls,
+          fallbackEmoji: _fallbackEmoji(ticket),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: title),
+      ],
     );
   }
 
@@ -948,6 +1006,76 @@ class _StackedThumbnails extends StatelessWidget {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact overlapped thumbnail strip rendered inline next to the title.
+///
+/// Sized smaller than [_StackedThumbnails] so it can sit beside body text
+/// without dominating the row. Shows up to 3 tiles with circular masks and
+/// a thin border so they read as distinct items even on busy backgrounds.
+class _InlineStackedThumbnails extends StatelessWidget {
+  final List<String> imageUrls;
+  final String fallbackEmoji;
+
+  const _InlineStackedThumbnails({
+    required this.imageUrls,
+    required this.fallbackEmoji,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    const tileSize = 24.0;
+    const overlap = 14.0;
+
+    Widget tile(String? url) {
+      return Container(
+        width: tileSize,
+        height: tileSize,
+        decoration: BoxDecoration(
+          color: c.bgBase,
+          shape: BoxShape.circle,
+          border: Border.all(color: c.borderBase, width: 1.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: url == null || url.isEmpty
+            ? Center(
+                child: Text(
+                  fallbackEmoji,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              )
+            : Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Center(
+                  child: Text(
+                    fallbackEmoji,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+      );
+    }
+
+    if (imageUrls.isEmpty) {
+      return tile(null);
+    }
+
+    final visible = imageUrls.take(3).toList();
+    final width = tileSize + (visible.length - 1) * overlap;
+
+    return SizedBox(
+      width: width,
+      height: tileSize,
+      child: Stack(
+        children: [
+          for (var i = 0; i < visible.length; i++)
+            Positioned(left: i * overlap, child: tile(visible[i])),
         ],
       ),
     );

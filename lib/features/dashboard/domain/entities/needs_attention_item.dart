@@ -10,6 +10,14 @@ class NeedsAttentionItem {
   final int acknowledgedAt;
   final DepartmentInfo department;
   final String onbRoomNumber;
+  final String opsTicketId;
+  final String ticketType;
+  final int slaTargetMinutes;
+  final String thumbnailUrl;
+  final String presetEmoji;
+  final String creatorFirstName;
+  final String creatorLastName;
+  final bool createdByAi;
 
   const NeedsAttentionItem({
     required this.id,
@@ -22,7 +30,25 @@ class NeedsAttentionItem {
     required this.acknowledgedAt,
     required this.department,
     required this.onbRoomNumber,
+    this.opsTicketId = '',
+    this.ticketType = '',
+    this.slaTargetMinutes = 0,
+    this.thumbnailUrl = '',
+    this.presetEmoji = '',
+    this.creatorFirstName = '',
+    this.creatorLastName = '',
+    this.createdByAi = false,
   });
+
+  /// "First Last" or just first/last if one is missing. Empty when neither.
+  String get creatorFullName {
+    final f = creatorFirstName.trim();
+    final l = creatorLastName.trim();
+    if (f.isEmpty && l.isEmpty) return '';
+    if (f.isEmpty) return l;
+    if (l.isEmpty) return f;
+    return '$f $l';
+  }
 
   factory NeedsAttentionItem.fromJson(Map<String, dynamic> json) {
     return NeedsAttentionItem(

@@ -131,6 +131,13 @@ class _AttentionRowState extends State<_AttentionRow> {
   _palette(AppColors c) {
     final bool isOverdue = item.dueAt > 0 && item.dueAt < DateTime.now().millisecondsSinceEpoch;
 
+    // Prefer the universal-request preset icon, fall back to department mobile_icon.
+    final String? emoji = item.presetEmoji.isNotEmpty
+        ? item.presetEmoji
+        : (item.department.mobileIcon.isNotEmpty
+              ? item.department.mobileIcon
+              : null);
+
     switch (item.status) {
       case 'ACCEPTED':
         return (
@@ -138,7 +145,7 @@ class _AttentionRowState extends State<_AttentionRow> {
           iconFg: c.tagBlueIcon,
           pillBg: c.tagBlueBg,
           pillFg: c.tagBlueText,
-          emoji: item.department.mobileIcon.isNotEmpty ? item.department.mobileIcon : null,
+          emoji: emoji,
         );
       case 'NEW':
         return (
@@ -146,7 +153,7 @@ class _AttentionRowState extends State<_AttentionRow> {
           iconFg: c.tagNeutralIcon,
           pillBg: isOverdue ? c.tagRedBg : c.tagNeutralBg,
           pillFg: isOverdue ? c.tagRedText : c.tagNeutralText,
-          emoji: item.department.mobileIcon.isNotEmpty ? item.department.mobileIcon : null,
+          emoji: emoji,
         );
       default:
         return (
@@ -154,9 +161,31 @@ class _AttentionRowState extends State<_AttentionRow> {
           iconFg: isOverdue ? c.tagRedIcon : c.tagOrangeIcon,
           pillBg: isOverdue ? c.tagRedBg : c.tagOrangeBg,
           pillFg: isOverdue ? c.tagRedText : c.tagOrangeText,
-          emoji: item.department.mobileIcon.isNotEmpty ? item.department.mobileIcon : null,
+          emoji: emoji,
         );
     }
+  }
+
+  /// Compact relative duration: "5s", "12m", "3h", "2d".
+  String _shortDuration(int ms) {
+    if (ms < 0) ms = -ms;
+    final s = (ms / 1000).floor();
+    if (s < 60) return '${s}s';
+    final m = (s / 60).floor();
+    if (m < 60) return '${m}m';
+    final h = (m / 60).floor();
+    if (h < 24) return '${h}h';
+    final d = (h / 24).floor();
+    return '${d}d';
+  }
+
+  /// "Who created the ticket" label. Prefers the staff user; falls back to
+  /// AI for ai-created tickets, then to "Guest" for guest-originated ones.
+  String _creatorLabel(AppLocalizations s) {
+    final name = item.creatorFullName;
+    if (name.isNotEmpty) return name;
+    if (item.createdByAi) return s.dashboardCreatedByAi;
+    return s.dashboardCreatedByGuest;
   }
 
   String _countdownText() {
@@ -283,111 +312,240 @@ class _AttentionRowState extends State<_AttentionRow> {
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: p.iconBg,
-                    shape: BoxShape.circle,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: item.department.icon.url.isNotEmpty
-                      ? Image.network(
-                          item.department.icon.url,
-                          width: 36,
-                          height: 36,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => p.emoji != null
-                              ? Center(
-                                  child: Text(
-                                    p.emoji!,
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                )
-                              : Center(
-                                  child: Icon(
-                                    LucideIcons.circleDot,
-                                    color: p.iconFg,
-                                    size: 18,
-                                  ),
-                                ),
-                        )
-                      : p.emoji != null
-                          ? Center(
-                              child: Text(
-                                p.emoji!,
-                                style: const TextStyle(fontSize: 18),
-                              ),
-                            )
-                          : Center(
-                              child: Icon(
-                                LucideIcons.circleDot,
-                                color: p.iconFg,
-                                size: 18,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Thumbnail(
+                      url: item.thumbnailUrl,
+                      emoji: p.emoji,
+                      bg: p.iconBg,
+                      fg: p.iconFg,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.guestName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TypographyManager.textBodyStrong.copyWith(
+                              color: c.fgBase,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          if (item.opsTicketId.isNotEmpty)
+                            Text(
+                              '${s.dashboardTicketIdLabel} ${item.opsTicketId}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TypographyManager.textCaption.copyWith(
+                                color: c.fgMuted,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        item.guestName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TypographyManager.textBodyStrong.copyWith(
-                          color: c.fgBase,
-                        ),
+                          Text(
+                            '${_roomLabel()} · ${_departmentLabel()}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TypographyManager.textMeta.copyWith(
+                              color: c.fgMuted,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _roomLabel(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TypographyManager.textMeta.copyWith(
-                          color: c.fgMuted,
-                        ),
-                      ),
-                      Text(
-                        _departmentLabel(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TypographyManager.textMeta.copyWith(
-                          color: c.fgMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _StatusBadge(
-                      label: _statusBadge(c).label,
-                      bg: _statusBadge(c).bg,
-                      fg: _statusBadge(c).fg,
                     ),
-                    if (_pillLabel(s).isNotEmpty) ...[  
-                      const SizedBox(height: 4),
-                      _SeverityPill(
-                        label: _pillLabel(s),
-                        bg: _timePillBg(c),
-                        fg: _timePillFg(c),
-                      ),
-                    ],
+                    const SizedBox(width: 8),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        _StatusBadge(
+                          label: _statusBadge(c).label,
+                          bg: _statusBadge(c).bg,
+                          fg: _statusBadge(c).fg,
+                        ),
+                        if (_pillLabel(s).isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          _SeverityPill(
+                            label: _pillLabel(s),
+                            bg: _timePillBg(c),
+                            fg: _timePillFg(c),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
+                ),
+                const SizedBox(height: 10),
+                Container(height: 1, color: c.borderBase.withValues(alpha: 0.5)),
+                const SizedBox(height: 8),
+                _MetaFooter(
+                  item: item,
+                  s: s,
+                  c: c,
+                  shortDuration: _shortDuration,
+                  creatorLabel: _creatorLabel(s),
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Thumbnail tile shown on the left of each row.
+///
+/// Tries the network image first; on missing URL or load failure falls back
+/// to the supplied emoji, and finally to a neutral glyph if neither exists.
+class _Thumbnail extends StatelessWidget {
+  final String url;
+  final String? emoji;
+  final Color bg;
+  final Color fg;
+
+  const _Thumbnail({
+    required this.url,
+    required this.emoji,
+    required this.bg,
+    required this.fg,
+  });
+
+  Widget _fallback() {
+    if (emoji != null) {
+      return Center(child: Text(emoji!, style: const TextStyle(fontSize: 22)));
+    }
+    return Center(child: Icon(LucideIcons.circleDot, color: fg, size: 22));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: url.isNotEmpty
+          ? Image.network(
+              url,
+              width: 44,
+              height: 44,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _fallback(),
+            )
+          : _fallback(),
+    );
+  }
+}
+
+/// Compact two-line meta footer: created · due · SLA · creator.
+class _MetaFooter extends StatelessWidget {
+  final NeedsAttentionItem item;
+  final AppLocalizations s;
+  final AppColors c;
+  final String Function(int ms) shortDuration;
+  final String creatorLabel;
+
+  const _MetaFooter({
+    required this.item,
+    required this.s,
+    required this.c,
+    required this.shortDuration,
+    required this.creatorLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    // Created — always relative-past.
+    final createdText = item.createdAt > 0
+        ? s.dashboardAgoSuffix(shortDuration(now - item.createdAt))
+        : '—';
+
+    // Due — relative future ("in 20m") or overdue ("12m overdue").
+    String dueText;
+    Color dueColor = c.fgMuted;
+    if (item.dueAt > 0) {
+      final diff = item.dueAt - now;
+      if (diff >= 0) {
+        dueText = s.dashboardDueIn(shortDuration(diff));
+      } else {
+        dueText = s.dashboardDueOverdueBy(shortDuration(-diff));
+        dueColor = c.tagRedText;
+      }
+    } else {
+      dueText = '—';
+    }
+
+    final slaText = item.slaTargetMinutes > 0
+        ? s.dashboardSlaMinutes(item.slaTargetMinutes)
+        : null;
+
+    return Wrap(
+      spacing: 10,
+      runSpacing: 4,
+      children: [
+        _MetaChip(
+          icon: LucideIcons.clock3,
+          label: '${s.dashboardCreatedLabel} $createdText',
+          color: c.fgMuted,
+        ),
+        _MetaChip(
+          icon: LucideIcons.timer,
+          label: '${s.dashboardDueLabel} $dueText',
+          color: dueColor,
+        ),
+        if (slaText != null)
+          _MetaChip(
+            icon: LucideIcons.gauge,
+            label: '${s.dashboardSlaLabel} $slaText',
+            color: c.fgMuted,
+          ),
+        _MetaChip(
+          icon: LucideIcons.user,
+          label: '${s.dashboardCreatedByLabel} $creatorLabel',
+          color: c.fgMuted,
+        ),
+      ],
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _MetaChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 11, color: color),
+        const SizedBox(width: 3),
+        Text(
+          label,
+          style: TypographyManager.textCaption.copyWith(color: color),
+        ),
+      ],
     );
   }
 }

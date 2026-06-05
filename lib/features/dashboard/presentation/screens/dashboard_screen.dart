@@ -104,6 +104,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           builder: (_) => TicketDetailScreen(ticketId: ticketId),
         ),
       ),
+      onOpenAllTickets: () => widget.onSwitchTab(ShellTab.tickets),
     );
   }
 

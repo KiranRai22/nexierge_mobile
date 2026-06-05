@@ -118,10 +118,11 @@ class TicketCardCompact extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _Row1(ticket: ticket),
-                          const SizedBox(height: 2),
-                          _RowTitle(ticket: ticket, etaLabel: _etaLabel),
                           const SizedBox(height: 6),
-                          _Row3(ticket: ticket),
+                          _HeroBodyRow(
+                            ticket: ticket,
+                            etaLabel: _etaLabel,
+                          ),
                           const SizedBox(height: 6),
                           _Row2(
                             ticket: ticket,
@@ -204,36 +205,190 @@ class _Row1 extends StatelessWidget {
   }
 }
 
-class _RowTitle extends StatelessWidget {
+/// Hero body row: large square thumbnail on the left (~30% width) and a
+/// 2-row text column on the right (~70%) holding the title+SLA and the
+/// created/due/time-left line.
+class _HeroBodyRow extends StatelessWidget {
   final Ticket ticket;
   final String? etaLabel;
-  const _RowTitle({required this.ticket, this.etaLabel});
+
+  const _HeroBodyRow({required this.ticket, this.etaLabel});
+
+  List<String> _resolveThumbnails() {
+    final data = ticket.kindData;
+    if (data is CatalogKindData) {
+      return data.itemThumbnails
+          .where((u) => u.isNotEmpty)
+          .take(4)
+          .toList();
+    }
+    if (data is UniversalKindData) {
+      final urls = <String>[];
+      for (final item in data.allItems) {
+        final u = item.thumbnailUrl;
+        if (u != null && u.isNotEmpty) urls.add(u);
+        if (urls.length == 4) break;
+      }
+      if (urls.isEmpty) {
+        final single = data.thumbnailUrl;
+        if (single != null && single.isNotEmpty) urls.add(single);
+      }
+      return urls;
+    }
+    return const [];
+  }
+
+  String _fallbackEmoji() {
+    final data = ticket.kindData;
+    if (data is UniversalKindData && (data.emoji?.isNotEmpty ?? false)) {
+      return data.emoji!;
+    }
+    return switch (ticket.kind) {
+      TicketKind.universal => '🧳',
+      TicketKind.catalog => '🍽️',
+      TicketKind.manual => '📝',
+    };
+  }
+
+  int _totalItemCount() {
+    final data = ticket.kindData;
+    if (data is CatalogKindData) return data.itemCount;
+    if (data is UniversalKindData) return data.itemCount;
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.themeColors;
+    final urls = _resolveThumbnails();
+    final total = _totalItemCount();
+
+    // Fixed square thumbnail — using LayoutBuilder or AspectRatio here would
+    // collide with the outer [IntrinsicHeight], which can't query intrinsic
+    // dimensions through a layout builder.
+    const imageSize = 96.0;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(
-          child: Text(
-            ticket.title,
-            style: TypographyManager.cardTitle.copyWith(fontSize: 14),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+        SizedBox(
+          width: imageSize,
+          height: imageSize,
+          child: _HeroThumbnail(
+            imageUrls: urls,
+            fallbackEmoji: _fallbackEmoji(),
+            totalItemCount: total,
           ),
         ),
-        if (etaLabel != null) ...[
-          const SizedBox(width: 8),
-          Text(
-            etaLabel!,
-            style: TypographyManager.cardMeta.copyWith(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w500,
-              color: c.fgMuted,
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Title + SLA / ETA label.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      ticket.title,
+                      style: TypographyManager.cardTitle.copyWith(fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (etaLabel != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      etaLabel!,
+                      style: TypographyManager.cardMeta.copyWith(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: c.fgMuted,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 6),
+              // Created / Due / Time left.
+              _Row3(ticket: ticket),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Square hero thumbnail. Shows the first item image full-bleed, with a
+/// "+N" badge in the bottom-right when the ticket has more items than the
+/// single tile can represent. Falls back to the supplied emoji on missing
+/// URL or load failure.
+class _HeroThumbnail extends StatelessWidget {
+  final List<String> imageUrls;
+  final String fallbackEmoji;
+  final int totalItemCount;
+
+  const _HeroThumbnail({
+    required this.imageUrls,
+    required this.fallbackEmoji,
+    required this.totalItemCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final radius = BorderRadius.circular(10);
+    final firstUrl = imageUrls.isNotEmpty ? imageUrls.first : null;
+    final extra = totalItemCount > 1 ? totalItemCount - 1 : 0;
+
+    Widget fallback() => Center(
+          child: Text(
+            fallbackEmoji,
+            style: const TextStyle(fontSize: 28),
+          ),
+        );
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: c.bgSubtle,
+            borderRadius: radius,
+            border: Border.all(color: c.borderBase),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: firstUrl == null
+              ? fallback()
+              : Image.network(
+                  firstUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => fallback(),
+                ),
+        ),
+        if (extra > 0)
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '+$extra',
+                style: TypographyManager.labelSmall.copyWith(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
-        ],
       ],
     );
   }

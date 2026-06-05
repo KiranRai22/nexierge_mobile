@@ -5,11 +5,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
+import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/entities/notification_inbox_item.dart';
 import '../providers/notification_inbox_controller.dart';
+import '../providers/swipe_coach_provider.dart';
 import 'notification_card.dart';
 
 /// Notifications inbox bottom sheet.
@@ -22,18 +24,30 @@ class NotificationsSheet extends ConsumerWidget {
   /// Called when the user taps a notification that links to a ticket.
   final ValueChanged<String>? onOpenTicket;
 
-  const NotificationsSheet({super.key, this.onOpenTicket});
+  /// Called when the user taps the "Open Tickets" footer button on the
+  /// Unread tab. When null, the footer button is hidden.
+  final VoidCallback? onOpenAllTickets;
+
+  const NotificationsSheet({
+    super.key,
+    this.onOpenTicket,
+    this.onOpenAllTickets,
+  });
 
   static Future<void> show(
     BuildContext context, {
     ValueChanged<String>? onOpenTicket,
+    VoidCallback? onOpenAllTickets,
   }) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.4),
-      builder: (_) => NotificationsSheet(onOpenTicket: onOpenTicket),
+      builder: (_) => NotificationsSheet(
+        onOpenTicket: onOpenTicket,
+        onOpenAllTickets: onOpenAllTickets,
+      ),
     );
   }
 
@@ -66,10 +80,77 @@ class NotificationsSheet extends ConsumerWidget {
                   onOpenTicket: onOpenTicket,
                 ),
               ),
+              // Always render the footer — its own build decides whether to
+              // show itself (only on the Unread tab, and only when there
+              // are unread items to act on).
+              _OpenTicketsFooter(onPressed: onOpenAllTickets),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+
+class _OpenTicketsFooter extends ConsumerWidget {
+  /// When null, tapping the button just dismisses the sheet — used so the
+  /// footer's visibility no longer depends on whether the caller passed a
+  /// navigation hook.
+  final VoidCallback? onPressed;
+
+  const _OpenTicketsFooter({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    final state = ref.watch(notificationInboxControllerProvider);
+
+    // Visibility rules:
+    //   - Only on the Unread tab (Open Tickets is a per-ticket action).
+    //   - Only when there are unread items to act on; an empty list means
+    //     there's nothing to open.
+    if (state.statusFilter != 'unread') return const SizedBox.shrink();
+    if (state.items.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        border: Border(top: BorderSide(color: c.borderBase, width: 1)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          width: double.infinity,
+          height: 40,
+          child: ElevatedButton.icon(
+            onPressed: tapSound(() {
+              Navigator.of(context).pop();
+              onPressed?.call();
+            }, SoundCategory.button),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 245, 175, 23),
+              foregroundColor: ColorPalette.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: const Icon(LucideIcons.ticket, size: 16),
+            label: Text(
+              s.notificationsOpenTickets,
+              style: TypographyManager.textLabel.copyWith(
+                color: ColorPalette.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -294,10 +375,7 @@ class _Body extends ConsumerStatefulWidget {
   final ScrollController scrollController;
   final ValueChanged<String>? onOpenTicket;
 
-  const _Body({
-    required this.scrollController,
-    required this.onOpenTicket,
-  });
+  const _Body({required this.scrollController, required this.onOpenTicket});
 
   @override
   ConsumerState<_Body> createState() => _BodyState();
@@ -346,6 +424,13 @@ class _BodyState extends ConsumerState<_Body> {
       return const _EmptyState();
     }
 
+    // Show the swipe-coach banner once per device, only on the unread tab
+    // (the only tab where swipe actions exist).
+    final showCoach =
+        state.statusFilter == 'unread' &&
+        !ref.watch(swipeCoachDismissedProvider);
+    final leadingCount = showCoach ? 1 : 0;
+
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(notificationInboxControllerProvider.notifier).refresh(),
@@ -353,18 +438,39 @@ class _BodyState extends ConsumerState<_Body> {
         controller: widget.scrollController,
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: state.items.length + (state.isLoadingMore ? 10 : 0),
+        itemCount:
+            leadingCount + state.items.length + (state.isLoadingMore ? 10 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (_, index) {
+          if (showCoach && index == 0) {
+            return _SwipeCoachBanner(
+              onDismiss: () =>
+                  ref.read(swipeCoachDismissedProvider.notifier).dismiss(),
+            );
+          }
+
+          final itemIndex = index - leadingCount;
+
           // Load-more skeletons at bottom — one per incoming item slot
-          if (index >= state.items.length) {
+          if (itemIndex >= state.items.length) {
             return const _NotificationCardSkeleton();
           }
 
-          final item = state.items[index];
-          return NotificationCard(
+          final item = state.items[itemIndex];
+          final card = NotificationCard(
             item: item,
             onTap: () => _onItemTap(item),
+          );
+
+          // Swipe actions only apply to unread items.
+          if (!item.unread) return card;
+
+          return _SwipeableNotification(
+            key: ValueKey('notif-${item.id}'),
+            item: item,
+            onMarkRead: () => _onMarkRead(item),
+            onView: () => _onView(item),
+            child: card,
           );
         },
       ),
@@ -372,13 +478,131 @@ class _BodyState extends ConsumerState<_Body> {
   }
 
   void _onItemTap(NotificationInboxItem item) {
-    ref.read(notificationInboxControllerProvider.notifier).markRead(item.id);
+    // Tap is intentionally a no-op for unread items — swipe right to view,
+    // swipe left to mark as read. Read-tab items keep the open-ticket
+    // behavior so users can still jump to a ticket they've already seen.
+    if (item.unread) return;
 
     final ticketId = item.ticketId;
     if (ticketId != null && ticketId.isNotEmpty) {
       Navigator.of(context).pop();
       widget.onOpenTicket?.call(ticketId);
     }
+  }
+
+  void _onMarkRead(NotificationInboxItem item) {
+    ref.read(notificationInboxControllerProvider.notifier).markRead(item.id);
+  }
+
+  void _onView(NotificationInboxItem item) {
+    ref.read(notificationInboxControllerProvider.notifier).markRead(item.id);
+    final ticketId = item.ticketId;
+    if (ticketId == null || ticketId.isEmpty) return;
+    Navigator.of(context).pop();
+    widget.onOpenTicket?.call(ticketId);
+  }
+}
+
+// ─── Swipeable notification row ──────────────────────────────────────────────
+
+class _SwipeableNotification extends StatelessWidget {
+  final NotificationInboxItem item;
+  final VoidCallback onMarkRead;
+  final VoidCallback onView;
+  final Widget child;
+
+  const _SwipeableNotification({
+    super.key,
+    required this.item,
+    required this.onMarkRead,
+    required this.onView,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    final radius = BorderRadius.circular(12);
+
+    return ClipRRect(
+      borderRadius: radius,
+      child: Dismissible(
+        key: ValueKey('dismiss-${item.id}'),
+        background: _SwipeBackground(
+          bgColor: c.tagGreenBg,
+          fgColor: c.tagGreenText,
+          icon: LucideIcons.eye,
+          label: s.notificationsActionView,
+          alignment: Alignment.centerLeft,
+          radius: radius,
+        ),
+        secondaryBackground: _SwipeBackground(
+          bgColor: c.tagBlueBg,
+          fgColor: c.tagBlueText,
+          icon: LucideIcons.checkCheck,
+          label: s.notificationsActionRead,
+          alignment: Alignment.centerRight,
+          radius: radius,
+        ),
+        dismissThresholds: const {
+          DismissDirection.startToEnd: 0.3,
+          DismissDirection.endToStart: 0.3,
+        },
+        confirmDismiss: (direction) async {
+          if (direction == DismissDirection.startToEnd) {
+            onView();
+          } else if (direction == DismissDirection.endToStart) {
+            onMarkRead();
+          }
+          // Returning false snaps the row back into place — the action has
+          // already been fired and the list will update on its own.
+          return false;
+        },
+        child: child,
+      ),
+    );
+  }
+}
+
+class _SwipeBackground extends StatelessWidget {
+  final Color bgColor;
+  final Color fgColor;
+  final IconData icon;
+  final String label;
+  final Alignment alignment;
+  final BorderRadius radius;
+
+  const _SwipeBackground({
+    required this.bgColor,
+    required this.fgColor,
+    required this.icon,
+    required this.label,
+    required this.alignment,
+    required this.radius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(color: bgColor, borderRadius: radius),
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: fgColor),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TypographyManager.textLabel.copyWith(
+              color: fgColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -403,7 +627,11 @@ class _EmptyState extends StatelessWidget {
               color: c.tagGreenBg,
               shape: BoxShape.circle,
             ),
-            child: Icon(LucideIcons.checkCheck, color: c.tagGreenIcon, size: 22),
+            child: Icon(
+              LucideIcons.checkCheck,
+              color: c.tagGreenIcon,
+              size: 22,
+            ),
           ),
           const SizedBox(height: 12),
           Text(
@@ -446,10 +674,7 @@ class _ErrorState extends StatelessWidget {
             style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase),
           ),
           const SizedBox(height: 12),
-          TextButton(
-            onPressed: onRetry,
-            child: Text(s.notificationsRetry),
-          ),
+          TextButton(onPressed: onRetry, child: Text(s.notificationsRetry)),
         ],
       ),
     );
@@ -489,7 +714,10 @@ class _NotificationCardSkeleton extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -508,7 +736,11 @@ class _NotificationCardSkeleton extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const ShimmerContainer(width: 30, height: 20, borderRadius: 4),
+                    const ShimmerContainer(
+                      width: 30,
+                      height: 20,
+                      borderRadius: 4,
+                    ),
                   ],
                 ),
               ),
@@ -532,6 +764,313 @@ class _NotificationListSkeleton extends StatelessWidget {
       itemCount: count,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, __) => const _NotificationCardSkeleton(),
+    );
+  }
+}
+
+// ─── Swipe coach banner ──────────────────────────────────────────────────────
+
+/// One-time coach card shown at the top of the unread list teaching the user
+/// about swipe actions. Persists dismissal via [swipeCoachDismissedProvider].
+class _SwipeCoachBanner extends StatefulWidget {
+  final VoidCallback onDismiss;
+
+  const _SwipeCoachBanner({required this.onDismiss});
+
+  @override
+  State<_SwipeCoachBanner> createState() => _SwipeCoachBannerState();
+}
+
+class _SwipeCoachBannerState extends State<_SwipeCoachBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _swipe; // -1 (left) .. 0 (rest) .. 1 (right)
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3200),
+    )..repeat();
+
+    // Two-phase loop: right swipe (View) then left swipe (Read), with rests.
+    _swipe = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 0.0),
+        weight: 10, // rest
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 20, // swipe right
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.0),
+        weight: 10, // hold right
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 10, // snap back
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 0.0),
+        weight: 10, // rest
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.0,
+          end: -1.0,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 20, // swipe left
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: -1.0, end: -1.0),
+        weight: 10, // hold left
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: -1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 10, // snap back
+      ),
+    ]).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.l10n;
+    final c = context.themeColors;
+    final radius = BorderRadius.circular(12);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bgSubtle,
+        borderRadius: radius,
+        border: Border.all(color: c.borderBase),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            s.notificationsCoachTitle,
+            style: TypographyManager.textBodyStrong.copyWith(color: c.fgBase),
+          ),
+          const SizedBox(height: 10),
+          _SwipeCoachDemo(animation: _swipe),
+          const SizedBox(height: 10),
+          _CoachHint(
+            icon: LucideIcons.arrowRight,
+            text: s.notificationsCoachSwipeRight,
+            color: c.tagGreenText,
+          ),
+          const SizedBox(height: 4),
+          _CoachHint(
+            icon: LucideIcons.arrowLeft,
+            text: s.notificationsCoachSwipeLeft,
+            color: c.tagBlueText,
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: SizedBox(
+              height: 32,
+              child: ElevatedButton(
+                onPressed: tapSound(widget.onDismiss, SoundCategory.button),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorPalette.accentDark,
+                  foregroundColor: ColorPalette.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  s.notificationsCoachGotIt,
+                  style: TypographyManager.textLabel.copyWith(
+                    color: ColorPalette.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CoachHint extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  const _CoachHint({
+    required this.icon,
+    required this.text,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The animated demo strip: a mock notification "card" that slides L/R
+/// revealing the colored View / Mark-as-read backgrounds underneath.
+class _SwipeCoachDemo extends StatelessWidget {
+  final Animation<double> animation;
+
+  const _SwipeCoachDemo({required this.animation});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final s = context.l10n;
+    final radius = BorderRadius.circular(10);
+    const stripHeight = 52.0;
+
+    return ClipRRect(
+      borderRadius: radius,
+      child: SizedBox(
+        height: stripHeight,
+        child: AnimatedBuilder(
+          animation: animation,
+          builder: (context, _) {
+            final v = animation.value;
+            final showRight = v > 0;
+            final bgColor = showRight ? c.tagGreenBg : c.tagBlueBg;
+            final fgColor = showRight ? c.tagGreenText : c.tagBlueText;
+            final icon = showRight ? LucideIcons.eye : LucideIcons.checkCheck;
+            final label = showRight
+                ? s.notificationsActionView
+                : s.notificationsActionRead;
+
+            return Stack(
+              children: [
+                // Background slot (revealed by the sliding card).
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(color: bgColor),
+                    alignment: showRight
+                        ? Alignment.centerLeft
+                        : Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Opacity(
+                      opacity: v.abs().clamp(0.0, 1.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(icon, size: 16, color: fgColor),
+                          const SizedBox(width: 6),
+                          Text(
+                            label,
+                            style: TypographyManager.textLabel.copyWith(
+                              color: fgColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Sliding mock card on top.
+                Transform.translate(
+                  offset: Offset(v * 90, 0),
+                  child: _MockNotificationRow(radius: radius),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _MockNotificationRow extends StatelessWidget {
+  final BorderRadius radius;
+
+  const _MockNotificationRow({required this.radius});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bgBase,
+        borderRadius: radius,
+        border: Border.all(color: c.borderBase),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: c.tagPurpleBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(LucideIcons.bell, size: 14, color: c.tagPurpleText),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  height: 8,
+                  width: 110,
+                  decoration: BoxDecoration(
+                    color: c.bgSubtle,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  height: 6,
+                  width: 70,
+                  decoration: BoxDecoration(
+                    color: c.bgSubtle,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

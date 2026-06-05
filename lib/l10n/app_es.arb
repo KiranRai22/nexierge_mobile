@@ -299,6 +299,29 @@
     "placeholders": { "minutes": { "type": "int" } }
   },
   "dashboardNotStartedPill": "Sin iniciar",
+  "dashboardTicketIdLabel": "Ticket",
+  "dashboardCreatedLabel": "Creado",
+  "dashboardDueLabel": "Vence",
+  "dashboardSlaLabel": "SLA",
+  "dashboardCreatedByLabel": "Por",
+  "dashboardCreatedByGuest": "Huésped",
+  "dashboardCreatedByAi": "IA",
+  "dashboardSlaMinutes": "{minutes}m",
+  "@dashboardSlaMinutes": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "dashboardDueIn": "en {duration}",
+  "@dashboardDueIn": {
+    "placeholders": { "duration": { "type": "String" } }
+  },
+  "dashboardDueOverdueBy": "vencido por {duration}",
+  "@dashboardDueOverdueBy": {
+    "placeholders": { "duration": { "type": "String" } }
+  },
+  "dashboardAgoSuffix": "hace {duration}",
+  "@dashboardAgoSuffix": {
+    "placeholders": { "duration": { "type": "String" } }
+  },
   "dashboardWaitingPill": "Esperando {minutes} min",
   "@dashboardWaitingPill": {
     "placeholders": { "minutes": { "type": "int" } }
@@ -348,6 +371,12 @@
   "profileSectionPreferences": "Preferencias",
   "profileSectionAccountInformation": "Información de la cuenta",
   "profileSectionWorkInformation": "Información laboral",
+  "profileTabAccount": "Cuenta",
+  "profileTabWork": "Trabajo",
+  "profileTabPreferences": "Preferencias",
+  "profileTabAbout": "Acerca de",
+  "profileVibrationTitle": "Vibración",
+  "profileVibrationSubtitle": "Respuesta háptica al tocar",
   "profileFieldName": "Nombre",
   "profileFieldEmail": "Correo",
   "profileFieldEmployeeCode": "Código de empleado",
@@ -404,6 +433,13 @@
   "notificationsEmptyHint": "La nueva actividad aparecerá aquí.",
   "notificationsLoadError": "No se pudieron cargar las notificaciones. Verifica tu conexión.",
   "notificationsRetry": "Reintentar",
+  "notificationsOpenTickets": "Abrir tickets",
+  "notificationsActionRead": "Marcar como leído",
+  "notificationsActionView": "Ver detalles del ticket",
+  "notificationsCoachTitle": "Desliza para actuar sobre las notificaciones",
+  "notificationsCoachSwipeRight": "Desliza a la derecha para ver los detalles del ticket",
+  "notificationsCoachSwipeLeft": "Desliza a la izquierda para marcar como leído",
+  "notificationsCoachGotIt": "Entendido",
   "notificationsItemNewTicket": "Nuevo ticket recibido",
 
   "relativeJustNow": "ahora mismo",

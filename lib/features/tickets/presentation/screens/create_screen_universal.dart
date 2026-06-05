@@ -14,7 +14,10 @@ class _UniversalTabBody extends ConsumerWidget {
       transitionBuilder: (child, anim) =>
           FadeTransition(opacity: anim, child: child),
       child: step == UniversalStep.selectItems
-          ? _UniversalStepSelect(key: const ValueKey('uni-select'), showSearch: showSearch)
+          ? _UniversalStepSelect(
+              key: const ValueKey('uni-select'),
+              showSearch: showSearch,
+            )
           : const _UniversalStepDetails(key: ValueKey('uni-details')),
     );
   }
@@ -69,9 +72,15 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
           child: hasPicks
-              ? _SelectionInfoBar(
-                  count: draft.picks.length,
-                  onClearAll: ctl.clearAllPicks,
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: _SelectionInfoBar(
+                      count: draft.picks.length,
+                      onClearAll: ctl.clearAllPicks,
+                    ),
+                  ),
                 )
               : const SizedBox.shrink(),
         ),
@@ -113,8 +122,9 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                            const BorderSide(color: ColorPalette.opsPurple),
+                        borderSide: const BorderSide(
+                          color: ColorPalette.opsPurple,
+                        ),
                       ),
                     ),
                   ),
@@ -250,14 +260,18 @@ class _SelectionInfoBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.l10n;
+    // Matches the desktop selection banner: deep green-tinted black surface
+    // with bright green selection label and a muted "Clear all" link.
+    const bg = Color.fromARGB(255, 181, 229, 210);
+    const borderColor = Color(0xFF1E5E3A);
+    const accent = Color.fromARGB(255, 252, 253, 253);
+    const muted = Color.fromARGB(255, 188, 28, 10);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: ColorPalette.successTint,
-        border: Border(
-          bottom: BorderSide(color: ColorPalette.successBorder, width: 1),
-        ),
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
@@ -265,8 +279,8 @@ class _SelectionInfoBar extends StatelessWidget {
             child: Text(
               s.createSelectionBarSelected(count),
               style: TypographyManager.labelMedium.copyWith(
-                color: ColorPalette.successText,
                 fontWeight: FontWeight.w600,
+                color: const Color.fromARGB(255, 87, 94, 94),
               ),
             ),
           ),
@@ -276,9 +290,9 @@ class _SelectionInfoBar extends StatelessWidget {
             child: Text(
               s.createSelectionBarClearAll,
               style: TypographyManager.labelMedium.copyWith(
-                color: ColorPalette.successText,
-                decoration: TextDecoration.underline,
-                fontWeight: FontWeight.w600,
+                color: muted,
+
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -402,103 +416,152 @@ class _UniversalItemTile extends StatelessWidget {
     required this.onQuantityChanged,
   });
 
+  void _openPreview(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (_) => _ItemPreviewDialog(
+        title: _localizedItemTitle(context, item),
+        description: item.description,
+        imageUrl: item.imageUrl,
+        emoji: item.emoji,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(14);
     return Semantics(
       button: true,
       selected: selected,
       label: _localizedItemTitle(context, item),
       child: Material(
-        color: selected
-            ? ColorPalette.itemTileSelectedBg
-            : ColorPalette.itemTileBg,
-        borderRadius: BorderRadius.circular(14),
+        color: ColorPalette.itemTileBg,
+        borderRadius: radius,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: tapSound(onToggle, SoundCategory.card),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
+          child: SizedBox(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: selected
-                    ? ColorPalette.itemTileSelectedBorder
-                    : ColorPalette.itemTileBorder,
-                width: selected ? 1.5 : 1,
-              ),
-            ),
             child: Stack(
+              fit: StackFit.expand,
               children: [
-                Center(
+                // ── Background: image cover, or emoji fallback ─────────
+                Positioned.fill(
+                  child: _CardCover(imageUrl: item.imageUrl, emoji: item.emoji),
+                ),
+                // ── Readability gradient (stronger at bottom) ─────────
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color.fromARGB(51, 255, 255, 255),
+                          Color.fromARGB(153, 150, 127, 162),
+                          Color.fromARGB(238, 111, 75, 112),
+                        ],
+                        stops: [0.0, 0.55, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+                // ── Title + description (anchored bottom) ─────────────
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: selected ? 56 : 12,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Emoji icon in rounded square
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: ColorPalette.opsSurface,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: ColorPalette.opsBorder),
-                        ),
-                        child: Center(
-                          child: Text(
-                            item.emoji,
-                            style: const TextStyle(fontSize: 20),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       Text(
                         _localizedItemTitle(context, item),
-                        textAlign: TextAlign.center,
                         style: TypographyManager.titleSmall.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: selected
-                              ? ColorPalette.opsPurpleDark
-                              : ColorPalette.textPrimary,
+                          color: ColorPalette.white,
+                          shadows: const [
+                            Shadow(
+                              color: Color(0xCC000000),
+                              blurRadius: 3,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        item.departmentName,
-                        textAlign: TextAlign.center,
-                        style: TypographyManager.bodySmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (selected) ...[
-                        const SizedBox(height: 8),
-                        _QuantityStepper(
-                          value: quantity,
-                          onChanged: onQuantityChanged,
+                      // Hide the description once the item is picked so the
+                      // quantity stepper has room and the card stays clean.
+                      if (!selected && item.description.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          item.description,
+                          style: TypographyManager.bodySmall.copyWith(
+                            color: ColorPalette.white,
+                            shadows: const [
+                              Shadow(
+                                color: Color(0xCC000000),
+                                blurRadius: 3,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ],
                   ),
                 ),
+                // ── Top-left preview button ───────────────────────────
+                Positioned(
+                  top: 6,
+                  left: 6,
+                  child: _CardIconButton(
+                    icon: Icons.visibility_outlined,
+                    tooltip: 'Preview',
+                    onTap: () => _openPreview(context),
+                  ),
+                ),
+                // ── Top-right check mark when selected ────────────────
                 if (selected)
                   Positioned(
-                    top: 0,
-                    right: 0,
+                    top: 8,
+                    right: 8,
                     child: Container(
-                      width: 18,
-                      height: 18,
+                      width: 22,
+                      height: 22,
                       decoration: BoxDecoration(
                         color: ColorPalette.opsPurple,
-                        borderRadius: BorderRadius.circular(9),
+                        borderRadius: BorderRadius.circular(11),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x66000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
                       ),
                       child: const Icon(
                         Icons.check_rounded,
-                        size: 12,
+                        size: 14,
                         color: ColorPalette.white,
+                      ),
+                    ),
+                  ),
+                // ── Bottom-center quantity stepper when selected ──────
+                if (selected)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 10,
+                    child: Center(
+                      child: _QuantityStepper(
+                        value: quantity,
+                        onChanged: onQuantityChanged,
                       ),
                     ),
                   ),
@@ -511,6 +574,69 @@ class _UniversalItemTile extends StatelessWidget {
   }
 }
 
+/// Small translucent circular icon button anchored to a card corner.
+class _CardIconButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _CardIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.45),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: tapSound(onTap, SoundCategory.button),
+        child: Tooltip(
+          message: tooltip,
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: Icon(icon, size: 16, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-bleed cover for the item tile background. Uses the item's image when
+/// available; falls back to a centered emoji on a muted surface so the card
+/// still looks intentional when there's no asset.
+class _CardCover extends StatelessWidget {
+  final String imageUrl;
+  final String emoji;
+
+  const _CardCover({required this.imageUrl, required this.emoji});
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Container(
+      color: ColorPalette.opsSurface,
+      alignment: Alignment.center,
+      child: Text(emoji, style: const TextStyle(fontSize: 48)),
+    );
+    if (imageUrl.isEmpty) return fallback;
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => fallback,
+    );
+  }
+}
+
+/// Quantity stepper rendered as `(−)  N  (+)`.
+///
+/// `−` and `+` are square icons sitting inside white circular containers so
+/// they read well on top of the card's dark gradient. The number sits
+/// between them with a soft shadow for legibility.
 class _QuantityStepper extends StatelessWidget {
   final int value;
   final ValueChanged<int> onChanged;
@@ -518,36 +644,37 @@ class _QuantityStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: ColorPalette.opsSurface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: ColorPalette.itemTileSelectedBorder),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _StepperButton(
-            icon: Icons.remove_rounded,
-            onTap: value > 1 ? () => onChanged(value - 1) : null,
-          ),
-          SizedBox(
-            width: 28,
-            child: Text(
-              '$value',
-              textAlign: TextAlign.center,
-              style: TypographyManager.labelMedium.copyWith(
-                fontWeight: FontWeight.w700,
-                color: ColorPalette.opsPurpleDark,
-              ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _StepperButton(
+          icon: Icons.remove_rounded,
+          onTap: value > 1 ? () => onChanged(value - 1) : null,
+        ),
+        SizedBox(
+          width: 36,
+          child: Text(
+            '$value',
+            textAlign: TextAlign.center,
+            style: TypographyManager.titleSmall.copyWith(
+              fontWeight: FontWeight.w800,
+              color: ColorPalette.white,
+              shadows: const [
+                Shadow(
+                  color: Color(0xCC000000),
+                  blurRadius: 3,
+                  offset: Offset(0, 1),
+                ),
+              ],
             ),
           ),
-          _StepperButton(
-            icon: Icons.add_rounded,
-            onTap: value < 99 ? () => onChanged(value + 1) : null,
-          ),
-        ],
-      ),
+        ),
+        _StepperButton(
+          icon: Icons.add_rounded,
+          onTap: value < 99 ? () => onChanged(value + 1) : null,
+        ),
+      ],
     );
   }
 }
@@ -559,19 +686,132 @@ class _StepperButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap != null ? tapSound(onTap!, SoundCategory.button) : null,
-      borderRadius: BorderRadius.circular(6),
-      child: SizedBox(
-        width: 26,
-        height: 26,
-        child: Icon(
-          icon,
-          size: 14,
-          color: onTap == null
-              ? ColorPalette.textDisabled
-              : ColorPalette.opsPurpleDark,
+    final enabled = onTap != null;
+    return Material(
+      color: enabled
+          ? ColorPalette.white
+          : ColorPalette.white.withValues(alpha: 0.5),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: enabled ? tapSound(onTap!, SoundCategory.button) : null,
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: Icon(
+            icon,
+            size: 16,
+            color: enabled
+                ? ColorPalette.opsPurpleDark
+                : ColorPalette.textDisabled,
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// Full-screen image preview with title, description, and close button.
+/// Uses Flutter's built-in [InteractiveViewer] so the user can pinch-zoom
+/// without pulling in a third-party package.
+class _ItemPreviewDialog extends StatelessWidget {
+  final String title;
+  final String description;
+  final String imageUrl;
+  final String emoji;
+
+  const _ItemPreviewDialog({
+    required this.title,
+    required this.description,
+    required this.imageUrl,
+    required this.emoji,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(16),
+      child: Stack(
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520, maxHeight: 700),
+            child: Container(
+              decoration: BoxDecoration(
+                color: ColorPalette.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: ColoredBox(
+                      color: ColorPalette.opsSurface,
+                      child: imageUrl.isEmpty
+                          ? Center(
+                              child: Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 96),
+                              ),
+                            )
+                          : InteractiveViewer(
+                              minScale: 1,
+                              maxScale: 4,
+                              child: Image.network(
+                                imageUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Center(
+                                  child: Text(
+                                    emoji,
+                                    style: const TextStyle(fontSize: 96),
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: TypographyManager.titleMedium.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: ColorPalette.textPrimary,
+                          ),
+                        ),
+                        if (description.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            description,
+                            style: TypographyManager.bodyMedium.copyWith(
+                              color: ColorPalette.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 6,
+            right: 6,
+            child: _CardIconButton(
+              icon: Icons.close_rounded,
+              tooltip: 'Close',
+              onTap: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -735,7 +975,8 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                           required: false,
                         ),
                         const SizedBox(height: 6),
-                        if (draft.selectedRoomId != null && draft.roomId != null)
+                        if (draft.selectedRoomId != null &&
+                            draft.roomId != null)
                           GestureDetector(
                             onTap: () async {
                               SoundManager.instance.play(SoundCategory.button);
@@ -747,11 +988,15 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                             },
                             child: Container(
                               height: 48,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: ColorPalette.opsSurfaceSubtle,
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: ColorPalette.opsBorder),
+                                border: Border.all(
+                                  color: ColorPalette.opsBorder,
+                                ),
                               ),
                               child: Row(
                                 children: [
@@ -760,11 +1005,12 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                                       draft.guestName.isNotEmpty
                                           ? draft.guestName
                                           : s.guestPickerTitle,
-                                      style: TypographyManager.bodyMedium.copyWith(
-                                        color: draft.guestName.isNotEmpty
-                                            ? ColorPalette.textPrimary
-                                            : ColorPalette.textSecondary,
-                                      ),
+                                      style: TypographyManager.bodyMedium
+                                          .copyWith(
+                                            color: draft.guestName.isNotEmpty
+                                                ? ColorPalette.textPrimary
+                                                : ColorPalette.textSecondary,
+                                          ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
