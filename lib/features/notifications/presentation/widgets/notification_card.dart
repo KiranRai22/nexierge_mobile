@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
@@ -8,7 +7,6 @@ import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/unified_theme_manager.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../tickets/presentation/providers/my_tickets_list_controller.dart';
 import '../../domain/entities/notification_inbox_item.dart';
 
 /// One inbox row.
@@ -17,25 +15,27 @@ import '../../domain/entities/notification_inbox_item.dart';
 ///
 /// Read-tab cards additionally show who acknowledged the linked ticket
 /// (resolved from the cached ticket's assigneeName).
-class NotificationCard extends ConsumerWidget {
+class NotificationCard extends StatelessWidget {
   final NotificationInboxItem item;
   final VoidCallback onTap;
 
   const NotificationCard({super.key, required this.item, required this.onTap});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final c = context.themeColors;
+    final s = context.l10n;
     final radius = BorderRadius.circular(12);
 
-    // For Read-tab cards that link to a ticket, look up the assignee name
-    // from the cached ticket (populated from the API's `_user` block).
+    // Reader name + relative read-time come directly from the API for read-tab items.
     String? readByName;
-    if (!item.unread && item.ticketId != null) {
-      final ticket = ref.watch(cachedTicketByIdProvider(item.ticketId!));
-      final name = ticket?.assigneeName;
-      if (name != null && name.isNotEmpty) {
-        readByName = name.split(' ').first;
+    String? readTimeAgo;
+    if (!item.unread) {
+      if (item.readByName != null && item.readByName!.isNotEmpty) {
+        readByName = item.readByName!.split(' ').first;
+      }
+      if (item.readAt != null) {
+        readTimeAgo = _relativeTime(item.readAt!, s);
       }
     }
 
@@ -65,7 +65,7 @@ class NotificationCard extends ConsumerWidget {
                         _LeadingIcon(item: item),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _Body(item: item, c: c, readByName: readByName),
+                          child: _Body(item: item, c: c, readByName: readByName, readTimeAgo: readTimeAgo),
                         ),
                         const SizedBox(width: 8),
                         _Trailing(item: item, c: c, s: context.l10n),
@@ -80,6 +80,14 @@ class NotificationCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _relativeTime(DateTime t, AppLocalizations s) {
+  final diff = DateTime.now().difference(t);
+  if (diff.inMinutes < 1) return s.relativeJustNow;
+  if (diff.inMinutes < 60) return s.relativeMinutesAgo(diff.inMinutes);
+  if (diff.inHours < 24) return s.relativeHoursAgo(diff.inHours);
+  return s.relativeDaysAgo(diff.inDays);
 }
 
 // ─── Priority accent bar ──────────────────────────────────────────────────────
@@ -151,11 +159,27 @@ class _Body extends StatelessWidget {
   final NotificationInboxItem item;
   final AppColors c;
   final String? readByName;
+  final String? readTimeAgo;
 
-  const _Body({required this.item, required this.c, this.readByName});
+  const _Body({
+    required this.item,
+    required this.c,
+    this.readByName,
+    this.readTimeAgo,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Build "Name · Xm ago" label — name only, time only, or combined.
+    String? readerLabel;
+    if (readByName != null && readTimeAgo != null) {
+      readerLabel = '$readByName · $readTimeAgo';
+    } else if (readByName != null) {
+      readerLabel = readByName;
+    } else if (readTimeAgo != null) {
+      readerLabel = readTimeAgo;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -177,7 +201,7 @@ class _Body extends StatelessWidget {
             style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
           ),
         ],
-        if (readByName != null) ...[
+        if (readerLabel != null) ...[
           const SizedBox(height: 4),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -185,7 +209,7 @@ class _Body extends StatelessWidget {
               Icon(LucideIcons.eye, size: 11, color: c.fgSubtle),
               const SizedBox(width: 3),
               Text(
-                readByName!,
+                readerLabel,
                 style: TypographyManager.textCaption.copyWith(color: c.fgSubtle),
               ),
             ],

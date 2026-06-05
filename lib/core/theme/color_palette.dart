@@ -62,34 +62,34 @@ abstract class ColorPalette {
   static const Color segmentedThumb = Color(0xFFFFFFFF);
 
   // ---------------------------------------------------------------------------
-  // Login (dark) screen tokens
+  // Login (always-light) screen tokens
   // ---------------------------------------------------------------------------
-  static const Color loginBgTop = Color(0xFF2A1B4A);
-  static const Color loginBgBottom = Color(0xFF0E0A1B);
-  static const Color loginCardBg = Color(0x12FFFFFF);
-  static const Color loginCardBorder = Color(0x14FFFFFF);
-  static const Color loginDivider = Color(0x1AFFFFFF);
-  static const Color loginLogoBg = Color(0x14FFFFFF);
-  static const Color loginLogoBorder = Color(0x33FFFFFF);
-  static const Color loginLogoIcon = Color(0xFFFFFFFF);
-  static const Color loginTitle = Color(0xFFFFFFFF);
-  static const Color loginSubtitle = Color(0xFF9A93AE);
-  static const Color loginFieldLabel = Color(0xFFFFFFFF);
+  static const Color loginBgTop = Color(0xFFEFE8FF);
+  static const Color loginBgBottom = Color(0xFFFFFFFF);
+  static const Color loginCardBg = Color(0xFFFFFFFF);
+  static const Color loginCardBorder = Color(0x1A000000);
+  static const Color loginDivider = Color(0x1A000000);
+  static const Color loginLogoBg = Color(0xFFE8E5F0);
+  static const Color loginLogoBorder = Color(0x1A000000);
+  static const Color loginLogoIcon = Color(0xFF6B5FA0);
+  static const Color loginTitle = Color(0xFF1A1025);
+  static const Color loginSubtitle = Color(0xFF6B6082);
+  static const Color loginFieldLabel = Color(0xFF2D2540);
   static const Color loginRequiredAsterisk = Color(0xFFE91E63);
-  static const Color loginTabTrack = Color(0x0AFFFFFF);
-  static const Color loginTabBorder = Color(0x1FFFFFFF);
-  static const Color loginTabSelectedBg = Color(0xFF1A1230);
-  static const Color loginTabSelectedFg = Color(0xFFFFFFFF);
-  static const Color loginTabUnselectedFg = Color(0xFF7A7390);
-  static const Color loginInputBg = Color(0x0AFFFFFF);
-  static const Color loginInputBorder = Color(0x1FFFFFFF);
-  static const Color loginInputIcon = Color(0xFF7A7390);
-  static const Color loginInputText = Color(0xFFFFFFFF);
-  static const Color loginInputHint = Color(0xFF6B6582);
-  static const Color loginInputDivider = Color(0x1FFFFFFF);
-  static const Color loginButtonDisabledBg = Color(0xFF2A2440);
-  static const Color loginButtonDisabledFg = Color(0xFF8A8499);
-  static const Color loginFooterText = Color(0xFF8A8499);
+  static const Color loginTabTrack = Color(0xFFF0EDF8);
+  static const Color loginTabBorder = Color(0xFFDDD9E8);
+  static const Color loginTabSelectedBg = Color(0xFFFFFFFF);
+  static const Color loginTabSelectedFg = Color(0xFF1A1025);
+  static const Color loginTabUnselectedFg = Color(0xFF9A93AE);
+  static const Color loginInputBg = Color(0xFFF5F3FA);
+  static const Color loginInputBorder = Color(0x24000000);
+  static const Color loginInputIcon = Color(0xFF9A93AE);
+  static const Color loginInputText = Color(0xFF1A1025);
+  static const Color loginInputHint = Color(0xFFB0ABBE);
+  static const Color loginInputDivider = Color(0x1F000000);
+  static const Color loginButtonDisabledBg = Color(0xFFE5E1F0);
+  static const Color loginButtonDisabledFg = Color(0xFF9A93AE);
+  static const Color loginFooterText = Color(0xFF9A93AE);
 
   // ---------------------------------------------------------------------------
   // HotelOps (Tickets / Activity) design tokens

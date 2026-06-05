@@ -7,6 +7,10 @@ import '../../data/datasources/fcm_remote_data_source.dart';
 
 abstract class FcmRepository {
   Future<void> update({required String deviceType, required String fcmToken});
+
+  /// Send `remove: false` to update the stored token, `remove: true` to
+  /// deregister the device (call on logout so the server stops pushing).
+  Future<void> edit({required String fcmToken, required bool remove});
 }
 
 class _FcmRepositoryImpl implements FcmRepository {
@@ -20,6 +24,17 @@ class _FcmRepositoryImpl implements FcmRepository {
   }) async {
     try {
       return await _remote.update(deviceType: deviceType, fcmToken: fcmToken);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    } catch (e) {
+      throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<void> edit({required String fcmToken, required bool remove}) async {
+    try {
+      return await _remote.edit(fcmToken: fcmToken, remove: remove);
     } on DioException catch (e) {
       throw mapDioError(e);
     } catch (e) {

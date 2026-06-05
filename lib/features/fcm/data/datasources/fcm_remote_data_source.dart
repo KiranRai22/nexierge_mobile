@@ -6,6 +6,9 @@ import '../../../../core/network/api_endpoints.dart';
 
 abstract class FcmRemoteDataSource {
   Future<void> update({required String deviceType, required String fcmToken});
+
+  /// POST /fcm_token/edit — update (remove: false) or deregister (remove: true).
+  Future<void> edit({required String fcmToken, required bool remove});
 }
 
 class _FcmRemoteDataSourceImpl implements FcmRemoteDataSource {
@@ -20,6 +23,14 @@ class _FcmRemoteDataSourceImpl implements FcmRemoteDataSource {
     await _dio.post(
       APIEndpoints.fcmUpdate,
       data: {'device_type': deviceType, 'fcm_token': fcmToken},
+    );
+  }
+
+  @override
+  Future<void> edit({required String fcmToken, required bool remove}) async {
+    await _dio.post(
+      APIEndpoints.fcmTokenEdit,
+      data: {'fcm_token': fcmToken, 'remove': remove},
     );
   }
 }

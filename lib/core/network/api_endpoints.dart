@@ -55,6 +55,10 @@ abstract class APIEndpoints {
   // FCM
   static const String fcmUpdate = '$baseUrl/fcm_update';
 
+  /// POST `/fcm_token/edit` — update or remove FCM token.
+  /// Body: `{fcm_token: String, remove: bool}`
+  static const String fcmTokenEdit = '$_host/api:bAt3sLZU/fcm_token/edit';
+
   // Firebase helper
   static const String firebaseSignUp = '$baseUrl/firebase/sign_up';
 

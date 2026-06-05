@@ -80,6 +80,12 @@ class NotificationInboxItem {
   /// Route hint from the API payload, e.g. "ticket_detail".
   final String? routeHint;
 
+  /// Name of the staff member who read this notification (read tab only).
+  final String? readByName;
+
+  /// When this notification was marked as read (epoch ms). Null if unread.
+  final DateTime? readAt;
+
   const NotificationInboxItem({
     required this.id,
     required this.kind,
@@ -91,6 +97,8 @@ class NotificationInboxItem {
     required this.groupHexColor,
     this.ticketId,
     this.routeHint,
+    this.readByName,
+    this.readAt,
   });
 
   // ── Factory: build from Xano DTO ──────────────────────────────────────────
@@ -118,6 +126,10 @@ class NotificationInboxItem {
       groupHexColor: dto.groupHexColor,
       ticketId: dto.targetRouteHint == 'ticket_detail' ? dto.targetId : null,
       routeHint: dto.targetRouteHint,
+      readByName: dto.readByName,
+      readAt: dto.readAt != null
+          ? DateTime.fromMillisecondsSinceEpoch(dto.readAt!)
+          : null,
     );
   }
 
@@ -147,6 +159,8 @@ class NotificationInboxItem {
       groupHexColor: groupHexColor,
       ticketId: ticketId,
       routeHint: routeHint,
+      readByName: readByName,
+      readAt: readAt,
     );
   }
 }

@@ -21,6 +21,7 @@ import 'core/theme/unified_theme_manager.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'core/utils/string_manager.dart';
 import 'features/auth/domain/entities/auth_session.dart';
+import 'features/fcm/presentation/providers/fcm_token_sync_provider.dart';
 import 'features/auth/presentation/providers/auth_session_controller.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/dashboard/domain/entities/dashboard_bootstrap_state.dart';
@@ -110,6 +111,9 @@ class MyApp extends ConsumerWidget {
     // Realtime socket: connects after login, disconnects on logout.
     // Reconnect on transport drops handled inside the service.
     ref.watch(xanoSocketLifecycleProvider);
+
+    // FCM token refresh: keeps backend in sync whenever Firebase rotates the token.
+    ref.watch(fcmTokenSyncProvider);
 
     // Auto-join notification channel when socket connects
     ref.watch(xanoNotificationChannelProvider);

@@ -9,12 +9,13 @@ import '../../../../core/theme/typography_manager.dart';
 import '../../../auth/presentation/providers/auth_session_controller.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart'
     as auth_ctrl;
+import '../../../fcm/data/repositories/fcm_repository.dart';
+import '../../../../core/services/device_token_service.dart';
 import 'logout_confirmation_bottom_sheet.dart';
 
 /// Full-width destructive CTA at the bottom of the profile screen. Confirms
-/// before signing out, then clears the auth session — the FCM device token
-/// in `DeviceTokenService` is intentionally left alone so push notifications
-/// can be re-bound on the next sign-in without re-requesting permission.
+/// before signing out. Deregisters the FCM token from the backend (remove: true)
+/// before clearing the auth session so the server stops pushing to this device.
 ///
 /// No imperative navigation: the root widget watches
 /// `authSessionControllerProvider` and swaps to `LoginScreen` when the
@@ -38,6 +39,16 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
 
     setState(() => _busy = true);
     try {
+      // Deregister FCM token from backend so the server stops pushing to this device.
+      final token = await DeviceTokenService.getToken();
+      if (token != null && token.isNotEmpty) {
+        try {
+          await ref.read(fcmRepositoryProvider).edit(fcmToken: token, remove: true);
+        } catch (_) {
+          // Best-effort: proceed with logout even if deregister fails.
+        }
+      }
+
       // Clear cached profile from SharedPreferences so the next user starts
       // fresh. Must happen before clearing the session so the controller can
       // still read its providers during teardown.

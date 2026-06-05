@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/color_palette.dart';
 
 /// Circular brand mark used at the top of the dark login screen.
 ///
@@ -15,8 +16,9 @@ class AuthLogo extends StatelessWidget {
       height: size,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE5E5E5), // Light gray background
+        color: const Color(0xFFFFFFFF),
         shape: BoxShape.circle,
+        border: Border.all(color: ColorPalette.loginBgTop, width: 2),
       ),
       child: Image.asset(
         'assets/images/app_logo_with_shadow.png',

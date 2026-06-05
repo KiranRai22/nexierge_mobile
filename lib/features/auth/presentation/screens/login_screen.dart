@@ -253,7 +253,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     });
 
-    return Scaffold(
+    return Theme(
+      data: ThemeData.light(useMaterial3: true),
+      child: Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
@@ -261,8 +263,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1A1025), // Dark purple top
-              Color(0xFF0D0612), // Almost black purple bottom
+              ColorPalette.loginBgTop,
+              ColorPalette.loginBgBottom,
             ],
           ),
         ),
@@ -312,6 +314,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -377,7 +380,11 @@ class _Card extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: ColorPalette.loginCardBg,
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [ColorPalette.loginBgBottom, ColorPalette.loginBgTop],
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: ColorPalette.loginCardBorder, width: 1),
       ),

@@ -47,6 +47,13 @@ class NotificationTicketEventDto {
   /// Localised type label in Spanish, e.g. "Nuevo ticket creado".
   final String? typeLabelEs;
 
+  /// First name (or full name) of the staff member who read/acknowledged
+  /// this notification. Only present on read-tab items.
+  final String? readByName;
+
+  /// Epoch ms when this notification was marked as read. Null if unread.
+  final int? readAt;
+
   const NotificationTicketEventDto({
     required this.id,
     required this.typeKey,
@@ -60,6 +67,8 @@ class NotificationTicketEventDto {
     required this.groupHexColor,
     this.typeLabelEn,
     this.typeLabelEs,
+    this.readByName,
+    this.readAt,
   });
 
   factory NotificationTicketEventDto.fromJson(Map<String, dynamic> json) {
@@ -110,6 +119,17 @@ class NotificationTicketEventDto {
       }
     }
 
+    // --- read-by metadata (present on read-tab items) ---
+    // Try several possible field shapes the backend may use.
+    final rawReadByName = json['read_by_name'] as String? ??
+        json['read_by'] as String? ??
+        json['acknowledged_by_name'] as String?;
+    final readByNameValue =
+        (rawReadByName?.isNotEmpty == true) ? rawReadByName : null;
+
+    final readAtValue = (json['read_at'] as num?)?.toInt() ??
+        (json['acknowledged_at'] as num?)?.toInt();
+
     return NotificationTicketEventDto(
       id: json['id'] as String,
       typeKey: json['type_key'] as String? ?? '',
@@ -124,6 +144,8 @@ class NotificationTicketEventDto {
       groupHexColor: hexColor,
       typeLabelEn: labelEn,
       typeLabelEs: labelEs,
+      readByName: readByNameValue,
+      readAt: readAtValue,
     );
   }
 }
