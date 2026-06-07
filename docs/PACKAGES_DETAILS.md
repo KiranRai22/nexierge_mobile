@@ -262,6 +262,14 @@ Last updated: 2026-04-26.
 - **Description:** Opens URLs in the system browser or native app (including App Store / Play Store deep links). BSD-3-Clause permits commercial and closed-source use.
 - **Why we use it:** Used to redirect users to the App Store / Play Store from the force-update and optional-update prompts.
 
+### `connectivity_plus`
+- **Package name:** `connectivity_plus`
+- **Version:** `^6.0.5`
+- **Owner:** Flutter Community (fluttercommunity.dev)
+- **License:** BSD-3-Clause
+- **Description:** Streams native network-interface state (wifi / mobile / ethernet / none) on iOS and Android. BSD-3-Clause permits commercial and closed-source use.
+- **Why we use it:** Powers the `ConnectivityService` that continuously monitors network availability. Interface events are paired with an active DNS probe (`InternetAddress.lookup`) because interface "connected" does not guarantee real internet (captive portals, upstream outages). The service drives the global "No Internet Connection" dialog mounted via `ConnectivityGate` at the MaterialApp root.
+
 ---
 
 All planned i18n packages are now landed and documented above:

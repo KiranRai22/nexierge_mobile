@@ -799,5 +799,8 @@
   "updateDialogOptionalTitle": "Actualización Disponible",
   "updateDialogOptionalBody": "Hay una nueva versión de la app con mejoras y correcciones de errores.",
   "updateDialogUpdateNow": "Actualizar Ahora",
-  "updateDialogRemindLater": "Recordarme Después"
+  "updateDialogRemindLater": "Recordarme Después",
+
+  "noInternetTitle": "Sin conexión a Internet",
+  "noInternetBody": "Por favor revisa tu red e inténtalo de nuevo. Nos reconectaremos automáticamente cuando vuelvas a estar en línea."
 }

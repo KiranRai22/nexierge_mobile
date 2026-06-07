@@ -948,5 +948,8 @@
   "updateDialogOptionalTitle": "Update Available",
   "updateDialogOptionalBody": "A new version of the app is available with improvements and bug fixes.",
   "updateDialogUpdateNow": "Update Now",
-  "updateDialogRemindLater": "Remind Me Later"
+  "updateDialogRemindLater": "Remind Me Later",
+
+  "noInternetTitle": "No Internet Connection",
+  "noInternetBody": "Please check your network and try again. We'll reconnect automatically once you're back online."
 }

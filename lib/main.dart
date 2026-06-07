@@ -20,6 +20,7 @@ import 'core/services/sound_manager.dart';
 import 'core/theme/unified_theme_manager.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'core/utils/string_manager.dart';
+import 'core/widgets/no_internet_dialog.dart';
 import 'features/auth/domain/entities/auth_session.dart';
 import 'features/fcm/presentation/providers/fcm_token_sync_provider.dart';
 import 'features/auth/presentation/providers/auth_session_controller.dart';
@@ -229,6 +230,8 @@ class MyApp extends ConsumerWidget {
       // 3. Session + Bootstrap loading → Shimmer
       // 4. Session + Bootstrap complete → HomeShell
       navigatorKey: _navigatorKey,
+      builder: (context, child) =>
+          ConnectivityGate(child: child ?? const SizedBox.shrink()),
       home: _resolveHome(session, bootstrap, ref),
     );
   }

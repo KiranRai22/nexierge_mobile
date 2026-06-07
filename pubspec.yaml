@@ -94,7 +94,12 @@ dependencies:
   
   # Date time picker
   awesome_datetime_picker: ^0.1.1
-  
+
+  # Network connectivity monitoring (interface change events; paired with
+  # active DNS probe to verify real internet reachability).
+  connectivity_plus: ^6.0.5
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

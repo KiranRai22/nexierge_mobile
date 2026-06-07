@@ -1963,4 +1963,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateDialogRemindLater => 'Remind Me Later';
+
+  @override
+  String get noInternetTitle => 'No Internet Connection';
+
+  @override
+  String get noInternetBody =>
+      'Please check your network and try again. We\'ll reconnect automatically once you\'re back online.';
 }

@@ -3481,6 +3481,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remind Me Later'**
   String get updateDialogRemindLater;
+
+  /// No description provided for @noInternetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Internet Connection'**
+  String get noInternetTitle;
+
+  /// No description provided for @noInternetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your network and try again. We\'ll reconnect automatically once you\'re back online.'**
+  String get noInternetBody;
 }
 
 class _AppLocalizationsDelegate

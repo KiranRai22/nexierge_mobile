@@ -1975,4 +1975,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get updateDialogRemindLater => 'Recordarme Después';
+
+  @override
+  String get noInternetTitle => 'Sin conexión a Internet';
+
+  @override
+  String get noInternetBody =>
+      'Por favor revisa tu red e inténtalo de nuevo. Nos reconectaremos automáticamente cuando vuelvas a estar en línea.';
 }
