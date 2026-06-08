@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../notifications/presentation/providers/notification_inbox_controller.dart';
 import '../../../notifications/presentation/widgets/notifications_sheet.dart';

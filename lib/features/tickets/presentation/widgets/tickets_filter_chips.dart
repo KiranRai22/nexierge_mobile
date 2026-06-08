@@ -3,7 +3,7 @@ import 'package:nexierge/l10n/generated/app_localizations.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import 'tickets_main_tabs.dart';
 

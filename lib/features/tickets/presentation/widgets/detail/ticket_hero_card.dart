@@ -5,8 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/card_theme.dart';
-import '../../../../../core/theme/color_palette.dart';
-import '../../../../../core/theme/unified_theme_manager.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../core/time/server_clock.dart';
 import '../../../../../core/utils/date_utils.dart';
@@ -270,7 +269,7 @@ class _HeroTimeRowState extends State<_HeroTimeRow> {
         ticket.status == TicketStatus.accepted;
 
     final displayDue = ticket.eta ?? ticket.dueAtWithGrace;
-    final dueColor = (!isDone && isOverdue) ? ColorPalette.statusOverdue : c.fgMuted;
+    final dueColor = (!isDone && isOverdue) ? context.appColors.fgDanger : c.fgMuted;
 
     Widget? indicator;
     if (!isDone) {
@@ -281,7 +280,7 @@ class _HeroTimeRowState extends State<_HeroTimeRow> {
           indicator = _TwoLineTime(
             label: s.ticketTimeLeftLabel,
             value: _fmt(timeLeft.isNegative ? Duration.zero : timeLeft),
-            color: ColorPalette.statusInProgress,
+            color: context.appColors.brandPrimary,
             alignEnd: true,
           );
         }
@@ -298,7 +297,7 @@ class _HeroTimeRowState extends State<_HeroTimeRow> {
         indicator = _TwoLineTime(
           label: s.ticketOverdueByLabel,
           value: _fmt(overdueBy.isNegative ? Duration.zero : overdueBy),
-          color: ColorPalette.statusOverdue,
+          color: context.appColors.fgDanger,
           alignEnd: true,
         );
       }

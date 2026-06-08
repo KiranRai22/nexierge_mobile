@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Brief transition shown after a successful login (spec §7 / §8).
 /// Renders the same dark gradient as the login screen so the swap
@@ -15,13 +15,13 @@ class LoginLoadingScreen extends StatelessWidget {
     final s = context.l10n;
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              ColorPalette.loginBgTop,
-              ColorPalette.loginBgBottom,
+              context.appColors.loginBgTop,
+              context.appColors.loginBgBottom,
             ],
           ),
         ),
@@ -29,19 +29,19 @@ class LoginLoadingScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(
+              SizedBox(
                 width: 40,
                 height: 40,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
-                  color: ColorPalette.white,
+                  color: context.appColors.fgOnBrand,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 s.loading,
                 style: TypographyManager.bodyMedium.copyWith(
-                  color: ColorPalette.loginSubtitle,
+                  color: context.appColors.loginSubtitle,
                 ),
               ),
             ],

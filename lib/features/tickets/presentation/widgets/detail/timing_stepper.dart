@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
-import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../core/utils/date_utils.dart';
 import '../../../domain/models/ticket.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 /// Vertical stepper that shows a ticket's lifecycle: Created · Accepted ·
 /// Done. Inactive steps are dimmed; reached steps are filled.
@@ -69,8 +69,8 @@ class _StepRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = step.reached
-        ? ColorPalette.opsPurple
-        : ColorPalette.textDisabled;
+        ? context.appColors.brandPrimary
+        : context.appColors.fgDisabled;
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,8 +83,8 @@ class _StepRow extends StatelessWidget {
                 margin: const EdgeInsets.only(top: 2),
                 decoration: BoxDecoration(
                   color: step.reached
-                      ? ColorPalette.opsPurple
-                      : ColorPalette.opsSurface,
+                      ? context.appColors.brandPrimary
+                      : context.appColors.bgBase,
                   shape: BoxShape.circle,
                   border: Border.all(color: color, width: 2),
                 ),
@@ -93,7 +93,7 @@ class _StepRow extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: ColorPalette.opsBorder,
+                    color: context.appColors.borderBase,
                   ),
                 ),
             ],
@@ -111,8 +111,8 @@ class _StepRow extends StatelessWidget {
                     style: TypographyManager.titleSmall.copyWith(
                       fontWeight: FontWeight.w600,
                       color: step.reached
-                          ? ColorPalette.textPrimary
-                          : ColorPalette.textDisabled,
+                          ? context.appColors.fgBase
+                          : context.appColors.fgDisabled,
                     ),
                   ),
                   const SizedBox(height: 2),

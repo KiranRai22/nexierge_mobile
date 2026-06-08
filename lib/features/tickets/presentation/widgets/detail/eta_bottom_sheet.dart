@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/services/sound_manager.dart';
-import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../core/utils/date_utils.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 /// Result returned to the caller — the chosen ETA duration.
 typedef EtaPick = Duration;
@@ -20,7 +20,7 @@ class EtaBottomSheet {
     return showModalBottomSheet<EtaPick>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -114,7 +114,7 @@ class _Handle extends StatelessWidget {
       height: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: ColorPalette.opsBorder,
+        color: context.appColors.borderBase,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -203,13 +203,13 @@ class _Pill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: selected
-                ? ColorPalette.opsPurpleTint
-                : ColorPalette.opsSurfaceSubtle,
+                ? context.appColors.brandPrimaryTint
+                : context.appColors.bgSubtle,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
-                  ? ColorPalette.opsPurple
-                  : ColorPalette.opsBorder,
+                  ? context.appColors.brandPrimary
+                  : context.appColors.borderBase,
               width: selected ? 1.4 : 1,
             ),
           ),
@@ -218,8 +218,8 @@ class _Pill extends StatelessWidget {
             style: TypographyManager.titleSmall.copyWith(
               fontWeight: FontWeight.w600,
               color: selected
-                  ? ColorPalette.opsPurpleDark
-                  : ColorPalette.textPrimary,
+                  ? context.appColors.brandPrimaryHover
+                  : context.appColors.fgBase,
             ),
           ),
         ),
@@ -237,10 +237,10 @@ class _NotifyHint extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.notifications_active_outlined,
             size: 16,
-            color: ColorPalette.opsPurple,
+            color: context.appColors.brandPrimary,
           ),
           const SizedBox(width: 6),
           Expanded(
@@ -279,15 +279,15 @@ class _ConfirmButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: tapSound(onTap),
           style: ElevatedButton.styleFrom(
-            backgroundColor: ColorPalette.opsPurple,
-            foregroundColor: ColorPalette.white,
+            backgroundColor: context.appColors.brandPrimary,
+            foregroundColor: context.appColors.fgOnBrand,
             minimumSize: const Size.fromHeight(48),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
             textStyle: TypographyManager.titleSmall.copyWith(
               fontWeight: FontWeight.w700,
-              color: ColorPalette.white,
+              color: context.appColors.fgOnBrand,
             ),
           ),
           child: Text(_label(context.l10n)),

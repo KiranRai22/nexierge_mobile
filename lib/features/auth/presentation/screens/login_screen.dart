@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/device_token_service.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/login_credentials.dart';
@@ -258,13 +258,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              ColorPalette.loginBgTop,
-              ColorPalette.loginBgBottom,
+              context.appColors.loginBgTop,
+              context.appColors.loginBgBottom,
             ],
           ),
         ),
@@ -380,13 +380,13 @@ class _Card extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [ColorPalette.loginBgBottom, ColorPalette.loginBgTop],
+          colors: [context.appColors.loginBgBottom, context.appColors.loginBgTop],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: ColorPalette.loginCardBorder, width: 1),
+        border: Border.all(color: context.appColors.loginCardBorder, width: 1),
       ),
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -440,7 +440,7 @@ class _Heading extends StatelessWidget {
           s.loginWelcomeTitle,
           textAlign: TextAlign.center,
           style: TypographyManager.headlineMedium.copyWith(
-            color: ColorPalette.loginTitle,
+            color: context.appColors.loginTitle,
             fontWeight: FontWeight.w600,
             letterSpacing: -0.4,
             height: 1.15,
@@ -451,7 +451,7 @@ class _Heading extends StatelessWidget {
           s.loginWelcomeSubtitle,
           textAlign: TextAlign.center,
           style: TypographyManager.bodyMedium.copyWith(
-            color: ColorPalette.loginSubtitle,
+            color: context.appColors.loginSubtitle,
             height: 1.4,
           ),
         ),
@@ -465,7 +465,7 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 1, color: ColorPalette.loginDivider);
+    return Container(height: 1, color: context.appColors.loginDivider);
   }
 }
 
@@ -490,33 +490,33 @@ class _SignInButton extends StatelessWidget {
         onPressed: tapSound(onPressed),
         style: ElevatedButton.styleFrom(
           backgroundColor: isDisabled
-              ? ColorPalette.loginButtonDisabledBg
-              : ColorPalette.primary,
+              ? context.appColors.loginButtonDisabledBg
+              : context.appColors.brandPrimary,
           foregroundColor: isDisabled
-              ? ColorPalette.loginButtonDisabledFg
-              : ColorPalette.white,
-          disabledBackgroundColor: ColorPalette.loginButtonDisabledBg,
-          disabledForegroundColor: ColorPalette.loginButtonDisabledFg,
+              ? context.appColors.loginButtonDisabledFg
+              : context.appColors.fgOnBrand,
+          disabledBackgroundColor: context.appColors.loginButtonDisabledBg,
+          disabledForegroundColor: context.appColors.loginButtonDisabledFg,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.4,
-                  color: ColorPalette.white,
+                  color: context.appColors.fgOnBrand,
                 ),
               )
             : Text(
                 label,
                 style: TypographyManager.titleMedium.copyWith(
                   color: isDisabled
-                      ? ColorPalette.loginButtonDisabledFg
-                      : ColorPalette.white,
+                      ? context.appColors.loginButtonDisabledFg
+                      : context.appColors.fgOnBrand,
                   fontWeight: FontWeight.w600,
                 ),
               ),

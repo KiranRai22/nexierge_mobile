@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/notification_inbox_item.dart';
@@ -100,9 +100,10 @@ class _PriorityAccent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final color = switch (priority) {
-      NotificationPriority.urgent => const Color(0xFFE53935),        // red
-      NotificationPriority.actionRequired => const Color(0xFFFB8C00), // amber
+      NotificationPriority.urgent => c.fgDanger,
+      NotificationPriority.actionRequired => c.fgWarning,
       NotificationPriority.informational => Colors.transparent,
     };
 
@@ -141,8 +142,8 @@ class _LeadingIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = item.parsedGroupColor.withValues(alpha: 0.15);
-    final iconColor = item.parsedGroupColor;
+    final iconColor = item.parsedGroupColor(context.appColors.fgInfo);
+    final bgColor = iconColor.withValues(alpha: 0.15);
 
     return Container(
       width: 36,
@@ -254,7 +255,7 @@ class _Trailing extends StatelessWidget {
             height: 8,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: item.parsedGroupColor,
+                color: item.parsedGroupColor(context.appColors.fgInfo),
                 shape: BoxShape.circle,
               ),
             ),

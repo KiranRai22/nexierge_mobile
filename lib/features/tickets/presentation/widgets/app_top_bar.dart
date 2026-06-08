@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Shared top bar used by Dashboard / Tickets / Activity. Mirrors the React
@@ -243,7 +243,7 @@ class _UnreadBadge extends StatelessWidget {
         label,
         style: TypographyManager.labelSmall.copyWith(
           fontSize: 9,
-          color: Colors.white,
+          color: context.appColors.fgOnBrand,
           fontWeight: FontWeight.w700,
           height: 1.4,
         ),

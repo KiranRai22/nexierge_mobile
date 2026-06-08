@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 typedef CancelConfirmCallback = Future<void> Function(String reason);
@@ -187,24 +187,24 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
                 child: ElevatedButton.icon(
                   onPressed: _canConfirm ? tapSound(_handleConfirm) : null,
                   icon: _submitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                                AlwaysStoppedAnimation<Color>(context.appColors.fgOnBrand),
                           ),
                         )
                       : Icon(
                           LucideIcons.circleX,
                           size: 18,
-                          color: _canConfirm ? Colors.white : c.fgMuted,
+                          color: _canConfirm ? context.appColors.fgOnBrand : c.fgMuted,
                         ),
                   label: const Text('Confirm'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.tagRedIcon,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.appColors.fgOnBrand,
                     disabledBackgroundColor: c.bgDisabled,
                     minimumSize: const Size.fromHeight(48),
                     shape: RoundedRectangleBorder(

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/color_palette.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -18,21 +17,22 @@ class TicketCard extends StatelessWidget {
 
   const TicketCard({super.key, required this.ticket, this.onTap});
 
-  Color get _stripeColor {
-    if (ticket.isOverdue) return ColorPalette.ticketStripeOverdue;
+  Color _stripeColor(BuildContext context) {
+    final c = context.appColors;
+    if (ticket.isOverdue) return c.fgDanger;
     switch (ticket.status) {
       case TicketStatus.done:
-        return ColorPalette.ticketStripeDone;
+        return c.fgSuccess;
       case TicketStatus.inProgress:
       case TicketStatus.accepted:
       case TicketStatus.onHold:
-        return ColorPalette.ticketStripeInProgress;
+        return c.brandPrimary;
       case TicketStatus.canceled:
-        return ColorPalette.statusUnassigned;
+        return c.fgMuted;
       case TicketStatus.incoming:
-        return ColorPalette.ticketStripeUniversal;
+        return c.brandPrimary;
       case TicketStatus.backlog:
-        return ColorPalette.statusUnassigned;
+        return c.fgMuted;
     }
   }
 
@@ -42,7 +42,7 @@ class TicketCard extends StatelessWidget {
       button: true,
       label: '${ticket.code} ${ticket.title}',
       child: Material(
-        color: ColorPalette.opsSurface,
+        color: context.appColors.bgBase,
         borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -67,7 +67,7 @@ class TicketCard extends StatelessWidget {
                         height: 8,
                         margin: const EdgeInsets.only(right: 10, top: 4),
                         decoration: BoxDecoration(
-                          color: _stripeColor,
+                          color: _stripeColor(context),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -98,9 +98,9 @@ class TicketCard extends StatelessWidget {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: ColorPalette.opsSurfaceSubtle,
+                        color: context.appColors.bgSubtle,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: ColorPalette.opsBorder),
+                        border: Border.all(color: context.appColors.borderBase),
                       ),
                       child: Row(
                         children: [
@@ -109,13 +109,13 @@ class TicketCard extends StatelessWidget {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: ColorPalette.grey100,
+                              color: context.appColors.bgSubtle,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.restaurant_menu_rounded,
                               size: 18,
-                              color: ColorPalette.textSecondary,
+                              color: context.appColors.fgSubtle,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -135,7 +135,7 @@ class TicketCard extends StatelessWidget {
                                 Text(
                                   ticket.items.first.subtitle,
                                   style: TypographyManager.bodySmall.copyWith(
-                                    color: ColorPalette.textSecondary,
+                                    color: context.appColors.fgSubtle,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -148,7 +148,7 @@ class TicketCard extends StatelessWidget {
                             onPressed: () =>
                                 _showStartWorkConfirmation(context),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: ColorPalette.chipCatalogFg,
+                              backgroundColor: context.appColors.tagBlueText,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -158,15 +158,15 @@ class TicketCard extends StatelessWidget {
                               ),
                               minimumSize: const Size(96, 36),
                             ),
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.play_arrow,
                               size: 16,
-                              color: Colors.white,
+                              color: context.appColors.fgOnBrand,
                             ),
                             label: Text(
                               'Start Work',
                               style: TypographyManager.labelSmall.copyWith(
-                                color: ColorPalette.white,
+                                color: context.appColors.fgOnBrand,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -287,32 +287,33 @@ class _KindChip extends StatelessWidget {
   final TicketKind kind;
   const _KindChip({required this.kind});
 
-  ({String label, Color bg, Color fg}) _spec(AppLocalizations s) {
+  ({String label, Color bg, Color fg}) _spec(BuildContext context, AppLocalizations s) {
+    final c = context.appColors;
     switch (kind) {
       case TicketKind.universal:
         return (
           label: s.chipUniversal,
-          bg: ColorPalette.chipUniversalBg,
-          fg: ColorPalette.chipUniversalFg,
+          bg: c.brandPrimaryTint,
+          fg: c.brandPrimaryHover,
         );
       case TicketKind.catalog:
         return (
           label: s.chipCatalog,
-          bg: ColorPalette.chipCatalogBg,
-          fg: ColorPalette.chipCatalogFg,
+          bg: c.tagBlueBg,
+          fg: c.tagBlueText,
         );
       case TicketKind.manual:
         return (
           label: s.chipManual,
-          bg: ColorPalette.chipManualBg,
-          fg: ColorPalette.chipManualFg,
+          bg: c.tagOrangeBg,
+          fg: c.tagOrangeText,
         );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final spec = _spec(context.l10n);
+    final spec = _spec(context, context.l10n);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -336,40 +337,35 @@ class _StatusBadge extends StatelessWidget {
   final Ticket ticket;
   const _StatusBadge({required this.ticket});
 
-  ({String label, Color color}) _spec(AppLocalizations s) {
+  ({String label, Color color}) _spec(BuildContext context, AppLocalizations s) {
+    final c = context.appColors;
     if (ticket.isOverdue) {
-      return (label: s.statusOverdue, color: ColorPalette.statusOverdue);
+      return (label: s.statusOverdue, color: c.fgDanger);
     }
     switch (ticket.status) {
       case TicketStatus.incoming:
         return (
           label: ticket.assigneeName == null ? s.statusUnassigned : s.statusNew,
-          color: ColorPalette.statusUnassigned,
+          color: c.fgMuted,
         );
       case TicketStatus.accepted:
-        return (label: s.statusAccepted, color: ColorPalette.statusInProgress);
+        return (label: s.statusAccepted, color: c.brandPrimary);
       case TicketStatus.inProgress:
-        return (
-          label: s.statusInProgress,
-          color: ColorPalette.statusInProgress,
-        );
+        return (label: s.statusInProgress, color: c.brandPrimary);
       case TicketStatus.done:
-        return (label: s.statusDone, color: ColorPalette.statusDone);
+        return (label: s.statusDone, color: c.fgSuccess);
       case TicketStatus.canceled:
-        return (label: s.statusCancelled, color: ColorPalette.statusUnassigned);
+        return (label: s.statusCancelled, color: c.fgMuted);
       case TicketStatus.onHold:
-        return (
-          label: s.ticketStatusBadgeOnHold,
-          color: ColorPalette.statusInProgress,
-        );
+        return (label: s.ticketStatusBadgeOnHold, color: c.brandPrimary);
       case TicketStatus.backlog:
-        return (label: 'Backlog', color: ColorPalette.statusUnassigned);
+        return (label: 'Backlog', color: c.fgMuted);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final spec = _spec(context.l10n);
+    final spec = _spec(context, context.l10n);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -409,8 +405,8 @@ class _EtaBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = overdue
-        ? ColorPalette.statusOverdue
-        : ColorPalette.statusInProgress;
+        ? context.appColors.fgDanger
+        : context.appColors.brandPrimary;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

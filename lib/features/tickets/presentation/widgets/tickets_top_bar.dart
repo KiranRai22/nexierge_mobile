@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Top bar for the tickets screen — avatar + title (left), search / filter /
@@ -220,7 +220,7 @@ class _CircleIconButton extends StatelessWidget {
                   unreadCount > 99 ? '99+' : unreadCount.toString(),
                   style: TypographyManager.labelSmall.copyWith(
                     fontSize: 8,
-                    color: Colors.white,
+                    color: context.appColors.fgOnBrand,
                     fontWeight: FontWeight.w700,
                     height: 1.4,
                   ),

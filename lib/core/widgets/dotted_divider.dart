@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/unified_theme_manager.dart';
+import '../theme/app_colors.dart';
 
 class DottedDivider extends StatelessWidget {
   final Color? color;

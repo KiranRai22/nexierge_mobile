@@ -4,8 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/entities/user_profile.dart';
@@ -186,12 +185,12 @@ class _InitialsDisc extends StatelessWidget {
     return Container(
       width: 128,
       height: 128,
-      color: ColorPalette.opsPurple,
+      color: context.appColors.brandPrimary,
       alignment: Alignment.center,
       child: Text(
         initials,
         style: TypographyManager.headlineMedium.copyWith(
-          color: Colors.white,
+          color: context.appColors.fgOnBrand,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.4,
         ),
@@ -211,13 +210,13 @@ class _RolePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: ColorPalette.opsPurpleSoft,
+        color: context.appColors.brandPrimaryTint,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: TypographyManager.labelSmall.copyWith(
-          color: ColorPalette.opsPurpleDark,
+          color: context.appColors.brandPrimaryHover,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.3,
         ),

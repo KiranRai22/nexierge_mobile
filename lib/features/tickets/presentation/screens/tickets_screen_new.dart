@@ -12,7 +12,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../shared/widgets/app_toast.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/time/server_clock.dart';
@@ -947,7 +947,7 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             error.toString(),
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
+            style: TextStyle(fontSize: 11, color: context.appColors.fgMuted),
             textAlign: TextAlign.center,
           ),
         ],

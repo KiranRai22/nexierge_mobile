@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
-import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../domain/models/ticket.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 /// Top-of-detail chips row: kind, department.
 class HeaderChips extends StatelessWidget {
@@ -18,38 +18,40 @@ class HeaderChips extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        _kindChip(s),
-        _deptChip(s),
+        _kindChip(context, s),
+        _deptChip(context, s),
       ],
     );
   }
 
-  Widget _kindChip(AppLocalizations s) {
+  Widget _kindChip(BuildContext context, AppLocalizations s) {
+    final c = context.appColors;
     String label;
     Color bg;
     Color fg;
     switch (ticket.kind) {
       case TicketKind.universal:
         label = s.chipUniversal;
-        bg = ColorPalette.chipUniversalBg;
-        fg = ColorPalette.chipUniversalFg;
+        bg = c.brandPrimaryTint;
+        fg = c.brandPrimaryHover;
       case TicketKind.catalog:
         label = s.chipCatalog;
-        bg = ColorPalette.chipCatalogBg;
-        fg = ColorPalette.chipCatalogFg;
+        bg = c.tagBlueBg;
+        fg = c.tagBlueText;
       case TicketKind.manual:
         label = s.chipManual;
-        bg = ColorPalette.chipManualBg;
-        fg = ColorPalette.chipManualFg;
+        bg = c.tagOrangeBg;
+        fg = c.tagOrangeText;
     }
     return _Chip(label: label, bg: bg, fg: fg);
   }
 
-  Widget _deptChip(AppLocalizations s) {
+  Widget _deptChip(BuildContext context, AppLocalizations s) {
+    final c = context.appColors;
     return _Chip(
       label: ticket.department.label(s),
-      bg: ColorPalette.opsSurfaceSubtle,
-      fg: ColorPalette.textPrimary,
+      bg: c.bgSubtle,
+      fg: c.fgBase,
     );
   }
 }

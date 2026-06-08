@@ -135,15 +135,16 @@ class NotificationInboxItem {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  /// Parse [groupHexColor] into a Flutter [Color]. Returns a default blue
-  /// if the hex string is invalid.
-  Color get parsedGroupColor {
+  /// Parse [groupHexColor] into a Flutter [Color]. Returns [fallback] if
+  /// the hex string is invalid. Callers should pass a theme-derived color
+  /// (e.g. `context.appColors.fgInfo`) so the fallback flips with the theme.
+  Color parsedGroupColor(Color fallback) {
     try {
       final hex = groupHexColor.replaceAll('#', '');
       final value = int.parse(hex, radix: 16);
       return Color(0xFF000000 | value);
     } catch (_) {
-      return const Color(0xFF4D8DFF);
+      return fallback;
     }
   }
 

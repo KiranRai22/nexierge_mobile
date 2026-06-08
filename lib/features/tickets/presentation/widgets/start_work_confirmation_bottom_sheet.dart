@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Optional async callback. If provided, the sheet keeps itself open
@@ -116,7 +116,7 @@ class _StartWorkConfirmationBottomSheetState
           //           color: c.tagPurpleIcon,
           //           borderRadius: BorderRadius.circular(8),
           //         ),
-          //         child: const Icon(LucideIcons.play, size: 20, color: Colors.white),
+          //         child: Icon(LucideIcons.play, size: 20, color: context.appColors.fgOnBrand),
           //       ),
           //       const SizedBox(width: 12),
           //       Expanded(
@@ -175,13 +175,13 @@ class _StartWorkConfirmationBottomSheetState
                   child: ElevatedButton.icon(
                     onPressed: _submitting ? null : tapSound(_handleConfirm),
                     icon: _submitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                                  AlwaysStoppedAnimation<Color>(context.appColors.fgOnBrand),
                             ),
                           )
                         : const Icon(LucideIcons.circlePlay, size: 18),

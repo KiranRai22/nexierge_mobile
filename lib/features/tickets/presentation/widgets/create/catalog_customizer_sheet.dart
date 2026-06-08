@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/services/sound_manager.dart';
-import '../../../../../core/theme/color_palette.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/models/catalog.dart';
 import '../../screens/create_screen.dart' show formatMoney;
@@ -166,7 +166,7 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
               top: Radius.circular(24),
             ),
             child: ColoredBox(
-              color: ColorPalette.opsSurface,
+              color: context.appColors.bgBase,
               child: Column(
             children: [
               // Image-backed header: handle + back/close + title/base price +
@@ -178,7 +178,7 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
                 onBack: () => Navigator.of(context).pop(),
                 onClose: () => Navigator.of(context).pop(),
               ),
-              Divider(height: 1, color: ColorPalette.opsBorder),
+              Divider(height: 1, color: context.appColors.borderBase),
               Expanded(
                 child: ListView(
                   physics: const BouncingScrollPhysics(),
@@ -227,7 +227,7 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
                   ],
                 ),
               ),
-              Divider(height: 1, color: ColorPalette.opsBorder),
+              Divider(height: 1, color: context.appColors.borderBase),
               _TotalRow(
                 label: s.catalogItemTotalLabel,
                 amount: formatMoney(_total),
@@ -238,10 +238,10 @@ class _CustomizerBodyState extends State<_CustomizerBody> {
                 child: ElevatedButton(
                   onPressed: canSubmit ? tapSound(_confirm) : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorPalette.opsPurple,
-                    foregroundColor: ColorPalette.white,
-                    disabledBackgroundColor: ColorPalette.opsSurfaceSubtle,
-                    disabledForegroundColor: ColorPalette.textSecondary,
+                    backgroundColor: context.appColors.brandPrimary,
+                    foregroundColor: context.appColors.fgOnBrand,
+                    disabledBackgroundColor: context.appColors.bgSubtle,
+                    disabledForegroundColor: context.appColors.fgSubtle,
                     minimumSize: const Size.fromHeight(52),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -272,7 +272,7 @@ class _Handle extends StatelessWidget {
       height: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: ColorPalette.opsBorder,
+        color: context.appColors.borderBase,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -326,7 +326,7 @@ class _ImageBackedHeader extends StatelessWidget {
                         item.name,
                         style: TypographyManager.titleMedium.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: ColorPalette.textPrimary,
+                          color: context.appColors.fgBase,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -334,7 +334,7 @@ class _ImageBackedHeader extends StatelessWidget {
                       Text(
                         'Base: ${formatMoney(item.basePrice)}',
                         style: TypographyManager.bodySmall.copyWith(
-                          color: ColorPalette.textSecondary,
+                          color: context.appColors.fgSubtle,
                         ),
                       ),
                     ],
@@ -353,7 +353,7 @@ class _ImageBackedHeader extends StatelessWidget {
               child: Text(
                 item.description,
                 style: TypographyManager.bodyMedium.copyWith(
-                  color: ColorPalette.textSecondary,
+                  color: context.appColors.fgSubtle,
                 ),
               ),
             ),
@@ -373,8 +373,8 @@ class _ImageBackedHeader extends StatelessWidget {
             item.name,
             style: TypographyManager.titleMedium.copyWith(
               fontWeight: FontWeight.w700,
-              color: ColorPalette.white,
-              shadows: _textShadows,
+              color: context.appColors.fgOnBrand,
+              shadows: _textShadows(context),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -382,8 +382,8 @@ class _ImageBackedHeader extends StatelessWidget {
           Text(
             'Base: ${formatMoney(item.basePrice)}',
             style: TypographyManager.bodySmall.copyWith(
-              color: const Color(0xE6FFFFFF),
-              shadows: _textShadows,
+              color: context.appColors.scrimWhite.withValues(alpha: 0.9),
+              shadows: _textShadows(context),
             ),
           ),
           if (item.description.isNotEmpty) ...[
@@ -391,8 +391,8 @@ class _ImageBackedHeader extends StatelessWidget {
             Text(
               item.description,
               style: TypographyManager.bodyMedium.copyWith(
-                color: const Color(0xF2FFFFFF),
-                shadows: _textShadows,
+                color: context.appColors.scrimWhite.withValues(alpha: 0.95),
+                shadows: _textShadows(context),
               ),
             ),
           ],
@@ -414,19 +414,19 @@ class _ImageBackedHeader extends StatelessWidget {
               item.imageUrl!,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) =>
-                  ColoredBox(color: ColorPalette.opsSurface),
+                  ColoredBox(color: context.appColors.bgBase),
             ),
           ),
-          const Positioned.fill(
+          Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0x55000000),
-                    Color(0x88000000),
-                    Color(0xCC000000),
+                    context.appColors.scrimBlack.withValues(alpha: 0.33),
+                    context.appColors.scrimBlack.withValues(alpha: 0.53),
+                    context.appColors.scrimBlack.withValues(alpha: 0.8),
                   ],
                   stops: [0.0, 0.55, 1.0],
                 ),
@@ -473,9 +473,13 @@ class _ImageBackedHeader extends StatelessWidget {
     );
   }
 
-  static const List<Shadow> _textShadows = [
-    Shadow(color: Color(0xCC000000), blurRadius: 3, offset: Offset(0, 1)),
-  ];
+  static List<Shadow> _textShadows(BuildContext context) => [
+        Shadow(
+          color: context.appColors.scrimBlack.withValues(alpha: 0.8),
+          blurRadius: 3,
+          offset: const Offset(0, 1),
+        ),
+      ];
 }
 
 class _CircleIcon extends StatelessWidget {
@@ -496,8 +500,8 @@ class _CircleIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: onImage
-          ? Colors.black.withValues(alpha: 0.45)
-          : ColorPalette.opsSurfaceSubtle,
+          ? context.appColors.scrimBlack.withValues(alpha: 0.45)
+          : context.appColors.bgSubtle,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -509,7 +513,7 @@ class _CircleIcon extends StatelessWidget {
           child: Icon(
             icon,
             size: 16,
-            color: onImage ? Colors.white : ColorPalette.textPrimary,
+            color: onImage ? context.appColors.fgOnBrand : context.appColors.fgBase,
           ),
         ),
       ),
@@ -538,16 +542,16 @@ class _GroupHeader extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
             color: group.required
-                ? ColorPalette.error.withValues(alpha: 0.12)
-                : ColorPalette.opsSurfaceSubtle,
+                ? context.appColors.fgError.withValues(alpha: 0.12)
+                : context.appColors.bgSubtle,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             group.required ? s.catalogTagRequired : s.catalogTagOptional,
             style: TypographyManager.bodySmall.copyWith(
               color: group.required
-                  ? ColorPalette.error
-                  : ColorPalette.textSecondary,
+                  ? context.appColors.fgError
+                  : context.appColors.fgSubtle,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.4,
             ),
@@ -574,8 +578,8 @@ class _RadioRow extends StatelessWidget {
     final s = context.l10n;
     return Material(
       color: selected
-          ? ColorPalette.itemTileSelectedBg
-          : ColorPalette.opsSurface,
+          ? context.appColors.brandPrimaryTint
+          : context.appColors.bgBase,
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -585,8 +589,8 @@ class _RadioRow extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border.all(
               color: selected
-                  ? ColorPalette.opsPurple
-                  : ColorPalette.opsBorder,
+                  ? context.appColors.brandPrimary
+                  : context.appColors.borderBase,
               width: selected ? 1.5 : 1,
             ),
             borderRadius: BorderRadius.circular(12),
@@ -600,8 +604,8 @@ class _RadioRow extends StatelessWidget {
                   option.name,
                   style: TypographyManager.bodyMedium.copyWith(
                     color: selected
-                        ? ColorPalette.opsPurpleDark
-                        : ColorPalette.textPrimary,
+                        ? context.appColors.brandPrimaryHover
+                        : context.appColors.fgBase,
                     fontWeight:
                         selected ? FontWeight.w600 : FontWeight.w500,
                   ),
@@ -612,7 +616,7 @@ class _RadioRow extends StatelessWidget {
                     ? s.catalogPriceFree
                     : '+${formatMoney(option.priceDelta)}',
                 style: TypographyManager.bodyMedium.copyWith(
-                  color: ColorPalette.textSecondary,
+                  color: context.appColors.fgSubtle,
                 ),
               ),
             ],
@@ -635,7 +639,7 @@ class _RadioMark extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected ? ColorPalette.opsPurple : ColorPalette.opsBorder,
+          color: selected ? context.appColors.brandPrimary : context.appColors.borderBase,
           width: 2,
         ),
       ),
@@ -645,7 +649,7 @@ class _RadioMark extends StatelessWidget {
               width: 10,
               height: 10,
               decoration: BoxDecoration(
-                color: ColorPalette.opsPurple,
+                color: context.appColors.brandPrimary,
                 shape: BoxShape.circle,
               ),
             )
@@ -674,11 +678,11 @@ class _AddOnRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: selected
-            ? ColorPalette.itemTileSelectedBg
-            : ColorPalette.opsSurface,
+            ? context.appColors.brandPrimaryTint
+            : context.appColors.bgBase,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: selected ? ColorPalette.opsPurple : ColorPalette.opsBorder,
+          color: selected ? context.appColors.brandPrimary : context.appColors.borderBase,
           width: selected ? 1.5 : 1,
         ),
       ),
@@ -689,8 +693,8 @@ class _AddOnRow extends StatelessWidget {
               option.name,
               style: TypographyManager.bodyMedium.copyWith(
                 color: selected
-                    ? ColorPalette.opsPurpleDark
-                    : ColorPalette.textPrimary,
+                    ? context.appColors.brandPrimaryHover
+                    : context.appColors.fgBase,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
@@ -698,7 +702,7 @@ class _AddOnRow extends StatelessWidget {
           Text(
             '+${formatMoney(option.priceDelta)}',
             style: TypographyManager.bodySmall.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -733,9 +737,9 @@ class _MiniStepper extends StatelessWidget {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: ColorPalette.opsSurface,
+            color: context.appColors.bgBase,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: ColorPalette.opsBorder),
+            border: Border.all(color: context.appColors.borderBase),
           ),
           child: InkWell(
             onTap: value > 0 ? tapSound(onMinus, SoundCategory.button) : null,
@@ -744,8 +748,8 @@ class _MiniStepper extends StatelessWidget {
               Icons.remove_rounded,
               size: 14,
               color: value > 0
-                  ? ColorPalette.textPrimary
-                  : ColorPalette.textDisabled,
+                  ? context.appColors.fgBase
+                  : context.appColors.fgDisabled,
             ),
           ),
         ),
@@ -760,18 +764,18 @@ class _MiniStepper extends StatelessWidget {
           ),
         ),
         Material(
-          color: ColorPalette.opsPurple,
+          color: context.appColors.brandPrimary,
           borderRadius: BorderRadius.circular(6),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: tapSound(onPlus, SoundCategory.button),
-            child: const SizedBox(
+            child: SizedBox(
               width: 28,
               height: 28,
               child: Icon(
                 Icons.add_rounded,
                 size: 14,
-                color: ColorPalette.white,
+                color: context.appColors.fgOnBrand,
               ),
             ),
           ),
@@ -796,7 +800,7 @@ class _TotalRow extends StatelessWidget {
             child: Text(
               label,
               style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textSecondary,
+                color: context.appColors.fgSubtle,
               ),
             ),
           ),
@@ -804,7 +808,7 @@ class _TotalRow extends StatelessWidget {
             amount,
             style: TypographyManager.titleMedium.copyWith(
               fontWeight: FontWeight.w800,
-              color: ColorPalette.textPrimary,
+              color: context.appColors.fgBase,
             ),
           ),
         ],

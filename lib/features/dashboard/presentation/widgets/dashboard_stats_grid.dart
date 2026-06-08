@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/dashboard_view.dart';
 
@@ -135,7 +135,7 @@ enum _OverdueVariant { zero, warning, danger }
 
 /// Visual tone of a [StatNoteCard]. Each tone resolves to a (background,
 /// foreground, accent) triple from the active theme — see [_palette].
-/// Brand purple is intentionally static (legacy `ColorPalette.opsPurple*`)
+/// Brand purple is intentionally static (legacy `context.appColors.brandPrimary*`)
 /// because brand colour stays consistent across light/dark.
 enum StatNoteTone { neutral, purple, red, orange, blue }
 

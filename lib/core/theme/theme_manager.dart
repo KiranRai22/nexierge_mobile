@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_radii.dart';
 import 'app_shadows.dart';
-import 'color_palette.dart';
 import 'typography_manager.dart';
 
 /// Light + dark `ThemeData` for the app.
@@ -17,9 +16,9 @@ import 'typography_manager.dart';
 ///    Material defaults (AlertDialog, ListTile, SnackBar, etc.) flip
 ///    correctly when the user toggles light/dark.
 ///
-/// The legacy `ColorPalette.primary` is preserved as the brand colour for
-/// `ElevatedButton` / outlined / text button defaults so existing CTAs
-/// (login, logout) keep their look during the migration.
+/// `ColorScheme.primary` and the `ElevatedButton` default both read
+/// `AppColors.brandPrimary` so every Material widget picks up the brand
+/// colour from the single source of truth.
 abstract class ThemeManager {
   static ThemeData get lightTheme => _build(brightness: Brightness.light);
   static ThemeData get darkTheme => _build(brightness: Brightness.dark);
@@ -32,11 +31,8 @@ abstract class ThemeManager {
 
     final colorScheme = ColorScheme(
       brightness: brightness,
-      // Brand primary stays on the legacy `ColorPalette.primary` so existing
-      // pink CTAs (logout, login button) keep working without per-widget
-      // overrides. New work should read explicit AppColors tokens.
-      primary: ColorPalette.primary,
-      onPrimary: colors.fgOnColor,
+      primary: colors.brandPrimary,
+      onPrimary: colors.fgOnBrand,
       secondary: colors.bgInteractive,
       onSecondary: colors.fgOnColor,
       error: colors.fgError,
@@ -140,7 +136,7 @@ abstract class ThemeManager {
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colors.fgInteractive,
       ),
-      elevatedButtonTheme: _elevatedButtonTheme,
+      elevatedButtonTheme: _elevatedButtonTheme(colors),
       outlinedButtonTheme: _outlinedButtonTheme(colors),
       textButtonTheme: _textButtonTheme(colors),
       inputDecorationTheme: _inputDecorationTheme(colors, radii),
@@ -176,17 +172,19 @@ abstract class ThemeManager {
             TypographyManager.labelSmall.copyWith(color: colors.fgSubtle),
       );
 
-  static final ElevatedButtonThemeData _elevatedButtonTheme =
+  static ElevatedButtonThemeData _elevatedButtonTheme(AppColors c) =>
       ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: ColorPalette.primary,
-      foregroundColor: ColorPalette.textOnPrimary,
-      minimumSize: const Size.fromHeight(52),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      textStyle: TypographyManager.labelLarge,
-      elevation: 0,
-    ),
-  );
+        style: ElevatedButton.styleFrom(
+          backgroundColor: c.brandPrimary,
+          foregroundColor: c.fgOnBrand,
+          minimumSize: const Size.fromHeight(52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          textStyle: TypographyManager.labelLarge,
+          elevation: 0,
+        ),
+      );
 
   static OutlinedButtonThemeData _outlinedButtonTheme(AppColors c) =>
       OutlinedButtonThemeData(

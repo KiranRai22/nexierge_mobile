@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../domain/entities/add_time_validation.dart';
 import '../providers/checked_in_guest_stays_provider.dart';
@@ -561,13 +561,13 @@ class _ChangeDueTimeBottomSheetState
                         ),
                       ),
                       child: _submitting
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                                  context.appColors.fgOnBrand,
                                 ),
                               ),
                             )

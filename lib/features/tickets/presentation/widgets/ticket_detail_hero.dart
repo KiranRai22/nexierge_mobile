@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nexierge/l10n/generated/app_localizations.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Hero card for ticket detail screen
@@ -88,12 +88,12 @@ class TicketDetailHero extends StatelessWidget {
         border: Border.all(color: c.borderBase),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: context.appColors.scrimBlack.withValues(alpha: 0.06),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.appColors.scrimBlack.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

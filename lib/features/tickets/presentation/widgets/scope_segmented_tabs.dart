@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/session_providers.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Pill-style segmented control: My Dept | All Hotel, with a trailing
 /// filter icon button. Pure UI — caller wires state via [scope] /
@@ -48,7 +48,7 @@ class _SegmentedTrack extends StatelessWidget {
       height: 36,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: ColorPalette.subTabBg,
+        color: context.appColors.bgComponent,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -94,12 +94,12 @@ class _SegmentTab extends StatelessWidget {
             curve: Curves.easeOut,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: selected ? ColorPalette.white : Colors.transparent,
+              color: selected ? context.appColors.fgOnBrand : Colors.transparent,
               borderRadius: BorderRadius.circular(999),
               boxShadow: selected
                   ? [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
+                        color: context.appColors.scrimBlack.withValues(alpha: 0.06),
                         blurRadius: 6,
                         offset: const Offset(0, 1),
                       ),
@@ -111,8 +111,8 @@ class _SegmentTab extends StatelessWidget {
               style: TypographyManager.tabText.copyWith(
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                 color: selected
-                    ? ColorPalette.textPrimary
-                    : ColorPalette.subTabInactiveFg,
+                    ? context.appColors.fgBase
+                    : context.appColors.fgSubtle,
               ),
             ),
           ),
@@ -139,17 +139,17 @@ class _FilterButton extends StatelessWidget {
           height: 36,
           width: 36,
           decoration: BoxDecoration(
-            color: active ? ColorPalette.opsPurpleTint : ColorPalette.subTabBg,
+            color: active ? context.appColors.brandPrimaryTint : context.appColors.bgComponent,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: active ? ColorPalette.opsPurple : ColorPalette.opsBorder,
+              color: active ? context.appColors.brandPrimary : context.appColors.borderBase,
             ),
           ),
           alignment: Alignment.center,
           child: Icon(
             Icons.tune_rounded,
             size: 18,
-            color: active ? ColorPalette.opsPurple : ColorPalette.textSecondary,
+            color: active ? context.appColors.brandPrimary : context.appColors.fgSubtle,
           ),
         ),
       ),

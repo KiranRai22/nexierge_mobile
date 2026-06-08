@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/app_version.dart';
 
 /// Bottom sheet shown once per session for optional updates.
@@ -56,7 +55,7 @@ class OptionalUpdateSheet extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: context.appColors.scrimBlack.withValues(alpha: 0.12),
             blurRadius: 24,
             offset: const Offset(0, -4),
           ),
@@ -82,7 +81,7 @@ class OptionalUpdateSheet extends StatelessWidget {
                 height: 48,
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: ColorPalette.opsPurpleTint,
+                  color: context.appColors.brandPrimaryTint,
                   shape: BoxShape.circle,
                 ),
                 child: Image.asset(
@@ -144,8 +143,8 @@ class OptionalUpdateSheet extends StatelessWidget {
               Expanded(
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorPalette.opsPurple,
-                    foregroundColor: Colors.white,
+                    backgroundColor: context.appColors.brandPrimary,
+                    foregroundColor: context.appColors.fgOnBrand,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -156,7 +155,7 @@ class OptionalUpdateSheet extends StatelessWidget {
                     s.updateDialogUpdateNow,
                     style: TypographyManager.labelMedium.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: context.appColors.fgOnBrand,
                     ),
                   ),
                 ),

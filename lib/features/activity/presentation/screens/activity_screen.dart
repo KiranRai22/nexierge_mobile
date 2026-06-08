@@ -4,7 +4,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/language_picker_sheet.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -19,6 +18,7 @@ import '../providers/activity_controller.dart';
 import '../widgets/activity_row.dart';
 import '../widgets/activity_type_chip_bar.dart';
 import '../widgets/day_section.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Activity feed — full-history view with type filter and day grouping.
 class ActivityScreen extends ConsumerStatefulWidget {
@@ -45,7 +45,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
     final session = ref.watch(operatorSessionProvider);
 
     return Container(
-      color: ColorPalette.opsSurface,
+      color: context.appColors.bgBase,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -94,7 +94,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refresh,
-                color: ColorPalette.opsPurple,
+                color: context.appColors.brandPrimary,
                 child: asyncFeed.when(
                   data: (events) => _ActivityList(events: events),
                   loading: () => const _LoadingFeed(),
@@ -208,8 +208,8 @@ class _LoadingFeed extends StatelessWidget {
             Container(
               width: 36,
               height: 36,
-              decoration: const BoxDecoration(
-                color: ColorPalette.opsSurfaceSubtle,
+              decoration: BoxDecoration(
+                color: context.appColors.bgSubtle,
                 shape: BoxShape.circle,
               ),
             ),
@@ -218,7 +218,7 @@ class _LoadingFeed extends StatelessWidget {
               child: Container(
                 height: 14,
                 decoration: BoxDecoration(
-                  color: ColorPalette.opsSurfaceSubtle,
+                  color: context.appColors.bgSubtle,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -238,17 +238,17 @@ class _EmptyView extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: 80),
-        const Icon(
+        Icon(
           LucideIcons.chartLine,
           size: 56,
-          color: ColorPalette.textDisabled,
+          color: context.appColors.fgDisabled,
         ),
         const SizedBox(height: 12),
         Center(
           child: Text(
             context.l10n.emptyState,
             style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
             ),
           ),
         ),
@@ -266,10 +266,10 @@ class _ErrorView extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
       children: [
-        const Icon(
+        Icon(
           LucideIcons.triangleAlert,
           size: 56,
-          color: ColorPalette.statusOverdue,
+          color: context.appColors.fgDanger,
         ),
         const SizedBox(height: 12),
         Text(

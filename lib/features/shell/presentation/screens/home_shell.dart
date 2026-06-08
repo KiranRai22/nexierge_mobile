@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/color_palette.dart';
 import '../../../dashboard/presentation/screens/dashboard_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
 import '../../../tickets/presentation/providers/my_tickets_notifier.dart';
@@ -15,6 +14,7 @@ import '../../../tickets/presentation/widgets/tickets_main_tabs.dart';
 import '../widgets/app_bottom_nav.dart';
 import 'create_router.dart';
 import '../widgets/center_fab.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Single host that owns the bottom-nav state.
 ///
@@ -87,7 +87,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     ref.watch(ticketFormOptionsProvider);
 
     return Scaffold(
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       body: TicketEventOrchestrator(
         onNavigateToTickets: _navigateToTicketsTab,
         child: IndexedStack(

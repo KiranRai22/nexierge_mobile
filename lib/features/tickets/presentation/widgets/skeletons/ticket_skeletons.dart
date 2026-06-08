@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/unified_theme_manager.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/widgets/shimmer_widget.dart';
 
 /// Skeleton card mirroring [TicketCardNew]'s shape:

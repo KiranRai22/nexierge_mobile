@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/services/sound_manager.dart';
-import '../../../../../core/theme/color_palette.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/entities/checked_in_guest_stay.dart';
 import '../../providers/checked_in_guest_stays_provider.dart';
@@ -19,7 +19,7 @@ class RoomPickerSheet {
     return showModalBottomSheet<CheckedInGuestStay>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -84,7 +84,7 @@ class _CheckedInGrid extends StatelessWidget {
         child: Text(
           context.l10n.emptyState,
           style: TypographyManager.bodyMedium.copyWith(
-            color: ColorPalette.textSecondary,
+            color: context.appColors.fgSubtle,
           ),
         ),
       );
@@ -126,7 +126,7 @@ class _ErrorView extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: TypographyManager.bodySmall.copyWith(
-                color: ColorPalette.error,
+                color: context.appColors.fgError,
               ),
             ),
             const SizedBox(height: 12),
@@ -150,7 +150,7 @@ class _Handle extends StatelessWidget {
       height: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: ColorPalette.opsBorder,
+        color: context.appColors.borderBase,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -175,7 +175,7 @@ class _Header extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.close_rounded),
-            color: ColorPalette.textSecondary,
+            color: context.appColors.fgSubtle,
             onPressed: tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
           ),
         ],
@@ -195,7 +195,7 @@ class _RoomCell extends StatelessWidget {
       button: true,
       label: context.l10n.roomNumber(label),
       child: Material(
-        color: ColorPalette.opsSurface,
+        color: context.appColors.bgBase,
         borderRadius: BorderRadius.circular(12),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -204,7 +204,7 @@ class _RoomCell extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: ColorPalette.opsBorder),
+              border: Border.all(color: context.appColors.borderBase),
             ),
             child: Text(
               label,
@@ -233,7 +233,7 @@ class GuestPickerSheet {
     return showModalBottomSheet<CheckedInGuestStay>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -274,7 +274,7 @@ class _GuestPickerSheetBody extends ConsumerWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
-                      color: ColorPalette.textSecondary,
+                      color: context.appColors.fgSubtle,
                       onPressed: tapSound(
                         () => Navigator.of(context).pop(),
                         SoundCategory.back,
@@ -294,7 +294,7 @@ class _GuestPickerSheetBody extends ConsumerWidget {
                         child: Text(
                           context.l10n.emptyState,
                           style: TypographyManager.bodyMedium.copyWith(
-                            color: ColorPalette.textSecondary,
+                            color: context.appColors.fgSubtle,
                           ),
                         ),
                       );
@@ -304,7 +304,7 @@ class _GuestPickerSheetBody extends ConsumerWidget {
                       itemCount: guests.length,
                       separatorBuilder: (_, __) => Divider(
                         height: 1,
-                        color: ColorPalette.opsBorder,
+                        color: context.appColors.borderBase,
                       ),
                       itemBuilder: (_, i) {
                         final g = guests[i];
@@ -318,9 +318,9 @@ class _GuestPickerSheetBody extends ConsumerWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          trailing: const Icon(
+                          trailing: Icon(
                             Icons.chevron_right_rounded,
-                            color: ColorPalette.textSecondary,
+                            color: context.appColors.fgSubtle,
                           ),
                           onTap: tapSound(
                             () => Navigator.of(context).pop(g),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../../../core/widgets/widget_manager.dart';
@@ -23,10 +23,10 @@ class CatalogCreateScreen extends ConsumerWidget {
     final catalogsAsync = ref.watch(serviceCatalogsNotifierProvider);
 
     return Scaffold(
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       appBar: AppBar(
-        backgroundColor: ColorPalette.opsSurface,
-        foregroundColor: ColorPalette.textPrimary,
+        backgroundColor: context.appColors.bgBase,
+        foregroundColor: context.appColors.fgBase,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
@@ -106,13 +106,13 @@ class _EmptyView extends StatelessWidget {
           Icon(
             Icons.receipt_long_outlined,
             size: 64,
-            color: ColorPalette.textSecondary,
+            color: context.appColors.fgSubtle,
           ),
           const SizedBox(height: 16),
           Text(
             'No service catalogs available',
             style: TypographyManager.bodyLarge.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
             ),
           ),
           const SizedBox(height: 8),
@@ -143,14 +143,14 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: ColorPalette.error),
+            Icon(Icons.error_outline, size: 64, color: context.appColors.fgError),
             const SizedBox(height: 16),
             Text('Failed to load catalogs', style: TypographyManager.bodyLarge),
             const SizedBox(height: 8),
             Text(
               error,
               style: TypographyManager.bodySmall.copyWith(
-                color: ColorPalette.textSecondary,
+                color: context.appColors.fgSubtle,
               ),
               textAlign: TextAlign.center,
             ),
@@ -204,15 +204,15 @@ class _CatalogCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brandColor = catalog.brandColor != null
-        ? _parseColor(catalog.brandColor!)
-        : ColorPalette.opsPurple;
+        ? _parseColor(context, catalog.brandColor!)
+        : context.appColors.brandPrimary;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: ColorPalette.opsBorder),
+        side: BorderSide(color: context.appColors.borderBase),
       ),
       child: InkWell(
         onTap: onTap,
@@ -269,7 +269,7 @@ class _CatalogCard extends StatelessWidget {
                       Text(
                         catalog.description!,
                         style: TypographyManager.bodySmall.copyWith(
-                          color: ColorPalette.textSecondary,
+                          color: context.appColors.fgSubtle,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -296,7 +296,7 @@ class _CatalogCard extends StatelessWidget {
                 ),
               ),
               // Arrow
-              Icon(Icons.chevron_right, color: ColorPalette.textSecondary),
+              Icon(Icons.chevron_right, color: context.appColors.fgSubtle),
             ],
           ),
         ),
@@ -304,11 +304,11 @@ class _CatalogCard extends StatelessWidget {
     );
   }
 
-  Color _parseColor(String hex) {
+  Color _parseColor(BuildContext context, String hex) {
     try {
       return Color(int.parse(hex.replaceFirst('#', '0xFF')));
     } catch (_) {
-      return ColorPalette.opsPurple;
+      return context.appColors.brandPrimary;
     }
   }
 }
@@ -329,12 +329,12 @@ class _StatBadge extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: ColorPalette.textSecondary),
+        Icon(icon, size: 14, color: context.appColors.fgSubtle),
         const SizedBox(width: 4),
         Text(
           '$value $label',
           style: TypographyManager.bodySmall.copyWith(
-            color: ColorPalette.textSecondary,
+            color: context.appColors.fgSubtle,
           ),
         ),
       ],

@@ -4,7 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/profile_section_expansion_provider.dart';
 

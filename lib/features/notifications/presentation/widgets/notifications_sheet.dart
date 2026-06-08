@@ -5,8 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/color_palette.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/entities/notification_inbox_item.dart';
@@ -43,7 +42,7 @@ class NotificationsSheet extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.4),
+      barrierColor: context.appColors.scrimBlack.withValues(alpha: 0.4),
       builder: (_) => NotificationsSheet(
         onOpenTicket: onOpenTicket,
         onOpenAllTickets: onOpenAllTickets,
@@ -133,7 +132,7 @@ class _OpenTicketsFooter extends ConsumerWidget {
             }, SoundCategory.button),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color.fromARGB(255, 245, 175, 23),
-              foregroundColor: ColorPalette.white,
+              foregroundColor: context.appColors.fgOnBrand,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               shape: RoundedRectangleBorder(
@@ -144,7 +143,7 @@ class _OpenTicketsFooter extends ConsumerWidget {
             label: Text(
               s.notificationsOpenTickets,
               style: TypographyManager.textLabel.copyWith(
-                color: ColorPalette.white,
+                color: context.appColors.fgOnBrand,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -891,8 +890,8 @@ class _SwipeCoachBannerState extends State<_SwipeCoachBanner>
               child: ElevatedButton(
                 onPressed: tapSound(widget.onDismiss, SoundCategory.button),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorPalette.accentDark,
-                  foregroundColor: ColorPalette.white,
+                  backgroundColor: context.appColors.fgWarning,
+                  foregroundColor: context.appColors.fgOnBrand,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   shape: RoundedRectangleBorder(
@@ -902,7 +901,7 @@ class _SwipeCoachBannerState extends State<_SwipeCoachBanner>
                 child: Text(
                   s.notificationsCoachGotIt,
                   style: TypographyManager.textLabel.copyWith(
-                    color: ColorPalette.white,
+                    color: context.appColors.fgOnBrand,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

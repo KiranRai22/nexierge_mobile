@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/app_version.dart';
 
 /// Bottom sheet shown for force/mandatory updates.
@@ -80,7 +79,7 @@ class ForceUpdateBottomSheet extends StatelessWidget {
                 height: 64,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: ColorPalette.opsPurpleTint,
+                  color: context.appColors.brandPrimaryTint,
                   shape: BoxShape.circle,
                 ),
                 child: Image.asset(
@@ -114,14 +113,14 @@ class ForceUpdateBottomSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: ColorPalette.opsPurpleTint.withOpacity(0.5),
+                  color: context.appColors.brandPrimaryTint.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       Icons.lock_outline,
-                      color: ColorPalette.opsPurple,
+                      color: context.appColors.brandPrimary,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -129,7 +128,7 @@ class ForceUpdateBottomSheet extends StatelessWidget {
                       child: Text(
                         'Update required to continue using the app',
                         style: TypographyManager.bodySmall.copyWith(
-                          color: ColorPalette.opsPurple,
+                          color: context.appColors.brandPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -143,8 +142,8 @@ class ForceUpdateBottomSheet extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorPalette.opsPurple,
-                    foregroundColor: Colors.white,
+                    backgroundColor: context.appColors.brandPrimary,
+                    foregroundColor: context.appColors.fgOnBrand,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -155,7 +154,7 @@ class ForceUpdateBottomSheet extends StatelessWidget {
                     s.updateDialogUpdateNow,
                     style: TypographyManager.labelLarge.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: Colors.white,
+                      color: context.appColors.fgOnBrand,
                     ),
                   ),
                 ),

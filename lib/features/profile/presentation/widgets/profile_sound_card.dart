@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/sound_preferences_provider.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/color_palette.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Sound toggle card in profile preferences section
@@ -115,7 +114,7 @@ class _ToggleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     return Material(
-      color: isSelected ? ColorPalette.opsPurple : Colors.transparent,
+      color: isSelected ? context.appColors.brandPrimary : Colors.transparent,
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -125,7 +124,7 @@ class _ToggleChip extends StatelessWidget {
           child: Text(
             label,
             style: TypographyManager.labelLarge.copyWith(
-              color: isSelected ? Colors.white : c.fgSubtle,
+              color: isSelected ? context.appColors.fgOnBrand : c.fgSubtle,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.4,
             ),

@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/i18n/language_picker_sheet.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -71,7 +71,7 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
     final asyncList = ref.watch(ticketsListProvider);
 
     return Container(
-      color: ColorPalette.opsSurface,
+      color: context.appColors.bgBase,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -114,13 +114,13 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: ColorPalette.opsSurfaceSubtle,
+                          color: context.appColors.bgSubtle,
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.filter_list,
                           size: 18,
-                          color: ColorPalette.textSecondary,
+                          color: context.appColors.fgSubtle,
                         ),
                       ),
                     ),
@@ -207,7 +207,7 @@ class _TicketsScreenState extends ConsumerState<TicketsScreen> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _refresh,
-                color: ColorPalette.opsPurple,
+                color: context.appColors.brandPrimary,
                 child: _TicketsList(view: asyncList.forSubTab(subTab)),
               ),
             ),
@@ -252,29 +252,29 @@ class _SearchField extends ConsumerWidget {
       decoration: InputDecoration(
         hintText: context.l10n.ticketsSearchHint,
         hintStyle: TypographyManager.bodyMedium.copyWith(
-          color: ColorPalette.textSecondary,
+          color: context.appColors.fgSubtle,
         ),
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.search_rounded,
-          color: ColorPalette.textSecondary,
+          color: context.appColors.fgSubtle,
         ),
         filled: true,
-        fillColor: ColorPalette.opsSurfaceSubtle,
+        fillColor: context.appColors.bgSubtle,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: ColorPalette.opsBorder),
+          borderSide: BorderSide(color: context.appColors.borderBase),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: ColorPalette.opsBorder),
+          borderSide: BorderSide(color: context.appColors.borderBase),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: ColorPalette.opsPurple),
+          borderSide: BorderSide(color: context.appColors.brandPrimary),
         ),
       ),
     );
@@ -359,7 +359,7 @@ class _SectionHeader extends StatelessWidget {
           Text(
             '· $count',
             style: TypographyManager.sectionOverline.copyWith(
-              color: ColorPalette.textDisabled,
+              color: context.appColors.fgDisabled,
             ),
           ),
         ],
@@ -377,13 +377,13 @@ class _EmptyView extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         const SizedBox(height: 80),
-        Icon(Icons.inbox_outlined, size: 56, color: ColorPalette.textDisabled),
+        Icon(Icons.inbox_outlined, size: 56, color: context.appColors.fgDisabled),
         const SizedBox(height: 12),
         Center(
           child: Text(
             context.l10n.emptyState,
             style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
             ),
           ),
         ),

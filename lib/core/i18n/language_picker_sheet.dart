@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../theme/color_palette.dart';
 import '../theme/typography_manager.dart';
 import '../../shared/widgets/app_toast.dart';
 import 'app_locale.dart';
 import 'l10n_extension.dart';
 import 'locale_controller.dart';
+import '../../core/theme/app_colors.dart';
 
 /// Modal bottom sheet for choosing the app language. Mirrors the layout of
 /// `FilterDepartmentSheet` (handle on top, header w/ subtitle, divider,
@@ -26,7 +26,7 @@ class LanguagePickerSheet {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -80,9 +80,9 @@ class _LanguageSheetBodyState extends ConsumerState<_LanguageSheetBody> {
           children: [
             const _Handle(),
             _Header(title: s.languageTitle, subtitle: s.languageSubtitle),
-            const Divider(height: 1, color: ColorPalette.opsDividerSubtle),
+            Divider(height: 1, color: context.appColors.borderBase),
             _LocaleList(selected: _draft, onSelect: _select),
-            const Divider(height: 1, color: ColorPalette.opsDividerSubtle),
+            Divider(height: 1, color: context.appColors.borderBase),
             _Footer(
               onCancel: () => Navigator.of(context).pop(),
               onApply: _apply,
@@ -103,7 +103,7 @@ class _Handle extends StatelessWidget {
       height: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: ColorPalette.opsBorder,
+        color: context.appColors.borderBase,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -163,8 +163,8 @@ class _LocaleList extends StatelessWidget {
                       ? Icons.radio_button_checked_rounded
                       : Icons.radio_button_unchecked_rounded,
                   color: isOn
-                      ? ColorPalette.opsPurple
-                      : ColorPalette.textSecondary,
+                      ? context.appColors.brandPrimary
+                      : context.appColors.fgSubtle,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -177,7 +177,7 @@ class _LocaleList extends StatelessWidget {
                   Text(
                     locale.nativeName(s),
                     style: TypographyManager.bodySmall.copyWith(
-                      color: ColorPalette.textSecondary,
+                      color: context.appColors.fgSubtle,
                     ),
                   ),
               ],
@@ -204,7 +204,7 @@ class _Footer extends StatelessWidget {
           TextButton(
             onPressed: onCancel,
             style: TextButton.styleFrom(
-              foregroundColor: ColorPalette.textSecondary,
+              foregroundColor: context.appColors.fgSubtle,
             ),
             child: Text(s.cancel),
           ),
@@ -212,8 +212,8 @@ class _Footer extends StatelessWidget {
           ElevatedButton(
             onPressed: onApply,
             style: ElevatedButton.styleFrom(
-              backgroundColor: ColorPalette.opsPurple,
-              foregroundColor: ColorPalette.white,
+              backgroundColor: context.appColors.brandPrimary,
+              foregroundColor: context.appColors.fgOnBrand,
               minimumSize: const Size(96, 44),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 typedef ResetConfirmCallback = Future<void> Function();
@@ -152,20 +152,20 @@ class _ResetAcknowledgementBottomSheetState
                 child: ElevatedButton.icon(
                   onPressed: _submitting ? null : tapSound(_handleConfirm),
                   icon: _submitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                                AlwaysStoppedAnimation<Color>(context.appColors.fgOnBrand),
                           ),
                         )
                       : const Icon(LucideIcons.rotateCcw, size: 18),
                   label: const Text('Reset'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.tagRedIcon,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.appColors.fgOnBrand,
                     minimumSize: const Size.fromHeight(48),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

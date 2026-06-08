@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/date_utils.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -16,7 +16,7 @@ class ActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spec = _resolve(event.type);
+    final spec = _resolve(context.appColors, event.type);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -41,49 +41,49 @@ class ActivityRow extends StatelessWidget {
     );
   }
 
-  static ({IconData icon, Color bg, Color fg}) _resolve(ActivityType t) {
+  static ({IconData icon, Color bg, Color fg}) _resolve(AppColors c, ActivityType t) {
     switch (t) {
       case ActivityType.created:
         return (
           icon: LucideIcons.circlePlus,
-          bg: ColorPalette.activityCreatedBg,
-          fg: ColorPalette.activityCreatedFg,
+          bg: c.tagNeutralBg,
+          fg: c.tagNeutralText,
         );
       case ActivityType.accepted:
         return (
           icon: LucideIcons.circleCheck,
-          bg: ColorPalette.activityAcceptedBg,
-          fg: ColorPalette.activityAcceptedFg,
+          bg: c.brandPrimaryTint,
+          fg: c.brandPrimaryHover,
         );
       case ActivityType.done:
         return (
           icon: LucideIcons.circleCheckBig,
-          bg: ColorPalette.activityDoneBg,
-          fg: ColorPalette.activityDoneFg,
+          bg: c.tagGreenBg,
+          fg: c.tagGreenText,
         );
       case ActivityType.overdue:
         return (
           icon: LucideIcons.circleAlert,
-          bg: ColorPalette.activityOverdueBg,
-          fg: ColorPalette.activityOverdueFg,
+          bg: c.tagRedBg,
+          fg: c.fgDanger,
         );
       case ActivityType.cancelled:
         return (
           icon: LucideIcons.circleX,
-          bg: ColorPalette.activityCancelledBg,
-          fg: ColorPalette.activityCancelledFg,
+          bg: c.tagNeutralBg,
+          fg: c.fgMuted,
         );
       case ActivityType.note:
         return (
           icon: LucideIcons.stickyNote,
-          bg: ColorPalette.activityNoteBg,
-          fg: ColorPalette.activityNoteFg,
+          bg: c.tagAmberBg,
+          fg: c.tagAmberText,
         );
       case ActivityType.reassigned:
         return (
           icon: LucideIcons.arrowLeftRight,
-          bg: ColorPalette.activityReassignedBg,
-          fg: ColorPalette.activityReassignedFg,
+          bg: c.tagBlueBg,
+          fg: c.tagBlueText,
         );
     }
   }

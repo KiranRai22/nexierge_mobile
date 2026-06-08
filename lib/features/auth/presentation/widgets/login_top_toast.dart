@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Severity for the top-positioned toast
@@ -21,7 +22,7 @@ class LoginTopToast {
     hide();
 
     final overlay = Overlay.of(context);
-    final palette = _palette(severity);
+    final palette = _palette(context.appColors, severity);
 
     _currentOverlay = OverlayEntry(
       builder: (context) => Positioned(
@@ -92,30 +93,30 @@ class _ToastPalette {
   });
 }
 
-_ToastPalette _palette(ToastSeverity severity) {
+_ToastPalette _palette(AppColors c, ToastSeverity severity) {
   switch (severity) {
     case ToastSeverity.error:
-      return const _ToastPalette(
-        bg: Color(0xFFFFE5E5), // Light red
-        fg: Color(0xFFB91C1C), // Dark red
-        border: Color(0xFFFECACA), // Red border
-        shadow: Color(0xFFEF4444),
+      return _ToastPalette(
+        bg: c.bgError,
+        fg: c.fgError,
+        border: c.borderError,
+        shadow: c.fgError,
         icon: LucideIcons.triangleAlert,
       );
     case ToastSeverity.info:
-      return const _ToastPalette(
-        bg: Color(0xFFDBEAFE), // Light blue
-        fg: Color(0xFF1D4ED8), // Dark blue
-        border: Color(0xFFBFDBFE), // Blue border
-        shadow: Color(0xFF3B82F6),
+      return _ToastPalette(
+        bg: c.bgInfo,
+        fg: c.fgInfo,
+        border: c.borderInfo,
+        shadow: c.fgInfo,
         icon: Icons.info_outline_rounded,
       );
     case ToastSeverity.success:
-      return const _ToastPalette(
-        bg: Color(0xFFDCFCE7), // Light green
-        fg: Color(0xFF15803D), // Dark green
-        border: Color(0xFFBBF7D0), // Green border
-        shadow: Color(0xFF22C55E),
+      return _ToastPalette(
+        bg: c.bgSuccess,
+        fg: c.fgSuccess,
+        border: c.borderSuccess,
+        shadow: c.fgSuccess,
         icon: Icons.check_circle_outline_rounded,
       );
   }

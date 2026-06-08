@@ -127,6 +127,99 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color tagAmberBorder;
 
   // ---------------------------------------------------------------------------
+  // Brand (HotelOps purple) — used for primary actions, selected states,
+  // ticket-status accents. Single source of truth replacing the legacy
+  // `ColorPalette.opsPurple*` tokens.
+  // ---------------------------------------------------------------------------
+  final Color brandPrimary;
+  final Color brandPrimaryHover;
+  final Color brandPrimaryTint;
+  final Color fgOnBrand;
+
+  // ---------------------------------------------------------------------------
+  // Tiles / cards (catalog + universal item pickers). `tileBg` is the
+  // neutral resting state; selected state reuses brand tokens.
+  // ---------------------------------------------------------------------------
+  final Color tileBg;
+
+  // ---------------------------------------------------------------------------
+  // Semantic status colors (success / warning / info / danger).
+  // Each family has fg + bg (filled) + bgSubtle (lightest tint) + border.
+  // ---------------------------------------------------------------------------
+  final Color fgSuccess;
+  final Color bgSuccess;
+  final Color bgSuccessSubtle;
+  final Color borderSuccess;
+  final Color fgWarning;
+  final Color bgWarning;
+  final Color bgWarningSubtle;
+  final Color borderWarning;
+  final Color fgInfo;
+  final Color bgInfo;
+  final Color bgInfoSubtle;
+  final Color borderInfo;
+  final Color fgDanger;
+  final Color bgError;
+  final Color bgErrorSubtle;
+
+  // ---------------------------------------------------------------------------
+  // Shimmer placeholders (loading skeletons).
+  // ---------------------------------------------------------------------------
+  final Color shimmerBase;
+  final Color shimmerHighlight;
+
+  // ---------------------------------------------------------------------------
+  // Login screen palette. The login screen is intentionally a fixed dark
+  // purple splash in BOTH themes, so each token uses the same hex in light
+  // and dark. They live here so the whole app reads color from one place.
+  // ---------------------------------------------------------------------------
+  final Color loginBgTop;
+  final Color loginBgBottom;
+  final Color loginCardBorder;
+  final Color loginDivider;
+  final Color loginTitle;
+  final Color loginSubtitle;
+  final Color loginFieldLabel;
+  final Color loginTabSelectedBg;
+  final Color loginInputBg;
+  final Color loginInputBorder;
+  final Color loginInputIcon;
+  final Color loginInputText;
+  final Color loginInputHint;
+  final Color loginInputDivider;
+  final Color loginButtonDisabledBg;
+  final Color loginButtonDisabledFg;
+  final Color loginTabTrack;
+  final Color loginTabBorder;
+  final Color loginTabSelectedFg;
+
+  // ---------------------------------------------------------------------------
+  // Guest-note callout (sticky-note style block surfaced in ticket details).
+  // Theme-invariant so the warm-yellow visual identity stays consistent.
+  // ---------------------------------------------------------------------------
+  final Color noteCalloutBg;
+  final Color noteCalloutFg;
+  final Color noteCalloutAccent;
+
+  // ---------------------------------------------------------------------------
+  // Image-overlay scrims. Theme-invariant: image content is universal, so
+  // a dark scrim + white text on top must stay dark + white regardless of
+  // the host theme. Vary alpha at call site (e.g. `c.scrimBlack.withValues
+  // (alpha: 0.65)`).
+  // ---------------------------------------------------------------------------
+  final Color scrimBlack;
+  final Color scrimWhite;
+
+  // ---------------------------------------------------------------------------
+  // Strong success banner (the dark green sticky cart-summary bar). It is
+  // intentionally a dark insert in BOTH themes — like `contrastBg*` is a
+  // dark insert in the light theme — so the visual identity stays consistent.
+  // ---------------------------------------------------------------------------
+  final Color bgSuccessStrong;
+  final Color fgSuccessOnStrong;
+  final Color fgMutedOnStrong;
+
+  // ---------------------------------------------------------------------------
   // High-contrast surfaces (used for dark inserts inside light themes etc.)
   // ---------------------------------------------------------------------------
   final Color contrastBgBase;
@@ -225,6 +318,55 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.tagAmberText,
     required this.tagAmberIcon,
     required this.tagAmberBorder,
+    required this.brandPrimary,
+    required this.brandPrimaryHover,
+    required this.brandPrimaryTint,
+    required this.fgOnBrand,
+    required this.tileBg,
+    required this.fgSuccess,
+    required this.bgSuccess,
+    required this.bgSuccessSubtle,
+    required this.borderSuccess,
+    required this.fgWarning,
+    required this.bgWarning,
+    required this.bgWarningSubtle,
+    required this.borderWarning,
+    required this.fgInfo,
+    required this.bgInfo,
+    required this.bgInfoSubtle,
+    required this.borderInfo,
+    required this.fgDanger,
+    required this.bgError,
+    required this.bgErrorSubtle,
+    required this.shimmerBase,
+    required this.shimmerHighlight,
+    required this.loginBgTop,
+    required this.loginBgBottom,
+    required this.loginCardBorder,
+    required this.loginDivider,
+    required this.loginTitle,
+    required this.loginSubtitle,
+    required this.loginFieldLabel,
+    required this.loginTabSelectedBg,
+    required this.loginInputBg,
+    required this.loginInputBorder,
+    required this.loginInputIcon,
+    required this.loginInputText,
+    required this.loginInputHint,
+    required this.loginInputDivider,
+    required this.loginButtonDisabledBg,
+    required this.loginButtonDisabledFg,
+    required this.loginTabTrack,
+    required this.loginTabBorder,
+    required this.loginTabSelectedFg,
+    required this.noteCalloutBg,
+    required this.noteCalloutFg,
+    required this.noteCalloutAccent,
+    required this.scrimBlack,
+    required this.scrimWhite,
+    required this.bgSuccessStrong,
+    required this.fgSuccessOnStrong,
+    required this.fgMutedOnStrong,
     required this.contrastBgBase,
     required this.contrastBgBaseHover,
     required this.contrastBgBasePressed,
@@ -325,6 +467,55 @@ class AppColors extends ThemeExtension<AppColors> {
     tagAmberText: Color(0xFF78350F),
     tagAmberIcon: Color(0xFFCA8A04),
     tagAmberBorder: Color(0xFFFCD34D),
+    brandPrimary: Color(0xFF7B5CFF),
+    brandPrimaryHover: Color(0xFF5C3BE5),
+    brandPrimaryTint: Color(0xFFEFE8FF),
+    fgOnBrand: Color(0xFFFFFFFF),
+    tileBg: Color(0xFFF7F7FB),
+    fgSuccess: Color(0xFF21B26A),
+    bgSuccess: Color(0xFFECFDF5),
+    bgSuccessSubtle: Color(0xFFF0FDF4),
+    borderSuccess: Color(0xFFA7F3D0),
+    fgWarning: Color(0xFFB45309),
+    bgWarning: Color(0xFFFFFBEB),
+    bgWarningSubtle: Color(0xFFFEFCE8),
+    borderWarning: Color(0xFFFDE68A),
+    fgInfo: Color(0xFF1D4ED8),
+    bgInfo: Color(0xFFEFF6FF),
+    bgInfoSubtle: Color(0xFFF0F9FF),
+    borderInfo: Color(0xFFBFDBFE),
+    fgDanger: Color(0xFFD7263D),
+    bgError: Color(0xFFFFE4E6),
+    bgErrorSubtle: Color(0xFFFFF1F2),
+    shimmerBase: Color(0xFFE0E0E0),
+    shimmerHighlight: Color(0xFFF5F5F5),
+    loginBgTop: Color(0xFF2A1B4A),
+    loginBgBottom: Color(0xFF0E0A1B),
+    loginCardBorder: Color(0x14FFFFFF),
+    loginDivider: Color(0x1AFFFFFF),
+    loginTitle: Color(0xFFFFFFFF),
+    loginSubtitle: Color(0xFF9A93AE),
+    loginFieldLabel: Color(0xFFFFFFFF),
+    loginTabSelectedBg: Color(0xFF1A1230),
+    loginInputBg: Color(0x0AFFFFFF),
+    loginInputBorder: Color(0x1FFFFFFF),
+    loginInputIcon: Color(0xFF7A7390),
+    loginInputText: Color(0xFFFFFFFF),
+    loginInputHint: Color(0xFF6B6582),
+    loginInputDivider: Color(0x1FFFFFFF),
+    loginButtonDisabledBg: Color(0xFF2A2440),
+    loginButtonDisabledFg: Color(0xFF8A8499),
+    loginTabTrack: Color(0xFFF0EDF8),
+    loginTabBorder: Color(0xFFDDD9E8),
+    loginTabSelectedFg: Color(0xFF1A1025),
+    noteCalloutBg: Color(0xFFFFF7CC),
+    noteCalloutFg: Color(0xFF6B5A00),
+    noteCalloutAccent: Color(0xFFE7C800),
+    scrimBlack: Color(0xFF000000),
+    scrimWhite: Color(0xFFFFFFFF),
+    bgSuccessStrong: Color(0xFF0D2A1F),
+    fgSuccessOnStrong: Color(0xFF2DD47E),
+    fgMutedOnStrong: Color(0xFFB8C2BD),
     contrastBgBase: Color(0xFF18181B),
     contrastBgBaseHover: Color(0xFF27272A),
     contrastBgBasePressed: Color(0xFF3F3F46),
@@ -427,6 +618,55 @@ class AppColors extends ThemeExtension<AppColors> {
     tagAmberText: Color(0xFFFCD34D),
     tagAmberIcon: Color(0xFFFCD34D),
     tagAmberBorder: Color(0xFFB45309),
+    brandPrimary: Color(0xFFA78BFA),
+    brandPrimaryHover: Color(0xFF7B5CFF),
+    brandPrimaryTint: Color(0xFF2E1065),
+    fgOnBrand: Color(0xFFFFFFFF),
+    tileBg: Color(0xFF1E1E22),
+    fgSuccess: Color(0xFF34D399),
+    bgSuccess: Color(0xFF064E3B),
+    bgSuccessSubtle: Color(0xFF022C22),
+    borderSuccess: Color(0xFF065F46),
+    fgWarning: Color(0xFFFCD34D),
+    bgWarning: Color(0xFF78350F),
+    bgWarningSubtle: Color(0xFF2B1D04),
+    borderWarning: Color(0xFFB45309),
+    fgInfo: Color(0xFF93C5FD),
+    bgInfo: Color(0xFF172554),
+    bgInfoSubtle: Color(0xFF0C1E3A),
+    borderInfo: Color(0xFF1E3A8A),
+    fgDanger: Color(0xFFFB7185),
+    bgError: Color(0xFF4C0519),
+    bgErrorSubtle: Color(0xFF220B10),
+    shimmerBase: Color(0xFF2A2A2A),
+    shimmerHighlight: Color(0xFF3A3A3A),
+    loginBgTop: Color(0xFF2A1B4A),
+    loginBgBottom: Color(0xFF0E0A1B),
+    loginCardBorder: Color(0x14FFFFFF),
+    loginDivider: Color(0x1AFFFFFF),
+    loginTitle: Color(0xFFFFFFFF),
+    loginSubtitle: Color(0xFF9A93AE),
+    loginFieldLabel: Color(0xFFFFFFFF),
+    loginTabSelectedBg: Color(0xFF1A1230),
+    loginInputBg: Color(0x0AFFFFFF),
+    loginInputBorder: Color(0x1FFFFFFF),
+    loginInputIcon: Color(0xFF7A7390),
+    loginInputText: Color(0xFFFFFFFF),
+    loginInputHint: Color(0xFF6B6582),
+    loginInputDivider: Color(0x1FFFFFFF),
+    loginButtonDisabledBg: Color(0xFF2A2440),
+    loginButtonDisabledFg: Color(0xFF8A8499),
+    loginTabTrack: Color(0xFFF0EDF8),
+    loginTabBorder: Color(0xFFDDD9E8),
+    loginTabSelectedFg: Color(0xFF1A1025),
+    noteCalloutBg: Color(0xFFFFF7CC),
+    noteCalloutFg: Color(0xFF6B5A00),
+    noteCalloutAccent: Color(0xFFE7C800),
+    scrimBlack: Color(0xFF000000),
+    scrimWhite: Color(0xFFFFFFFF),
+    bgSuccessStrong: Color(0xFF064E3B),
+    fgSuccessOnStrong: Color(0xFF34D399),
+    fgMutedOnStrong: Color(0xFF9CA3AF),
     contrastBgBase: Color(0xFF27272A),
     contrastBgBaseHover: Color(0xFF3F3F46),
     contrastBgBasePressed: Color(0xFF52525B),
@@ -538,6 +778,55 @@ class AppColors extends ThemeExtension<AppColors> {
       tagAmberText: tagAmberText,
       tagAmberIcon: tagAmberIcon,
       tagAmberBorder: tagAmberBorder,
+      brandPrimary: brandPrimary,
+      brandPrimaryHover: brandPrimaryHover,
+      brandPrimaryTint: brandPrimaryTint,
+      fgOnBrand: fgOnBrand,
+      tileBg: tileBg,
+      fgSuccess: fgSuccess,
+      bgSuccess: bgSuccess,
+      bgSuccessSubtle: bgSuccessSubtle,
+      borderSuccess: borderSuccess,
+      fgWarning: fgWarning,
+      bgWarning: bgWarning,
+      bgWarningSubtle: bgWarningSubtle,
+      borderWarning: borderWarning,
+      fgInfo: fgInfo,
+      bgInfo: bgInfo,
+      bgInfoSubtle: bgInfoSubtle,
+      borderInfo: borderInfo,
+      fgDanger: fgDanger,
+      bgError: bgError,
+      bgErrorSubtle: bgErrorSubtle,
+      shimmerBase: shimmerBase,
+      shimmerHighlight: shimmerHighlight,
+      loginBgTop: loginBgTop,
+      loginBgBottom: loginBgBottom,
+      loginCardBorder: loginCardBorder,
+      loginDivider: loginDivider,
+      loginTitle: loginTitle,
+      loginSubtitle: loginSubtitle,
+      loginFieldLabel: loginFieldLabel,
+      loginTabSelectedBg: loginTabSelectedBg,
+      loginInputBg: loginInputBg,
+      loginInputBorder: loginInputBorder,
+      loginInputIcon: loginInputIcon,
+      loginInputText: loginInputText,
+      loginInputHint: loginInputHint,
+      loginInputDivider: loginInputDivider,
+      loginButtonDisabledBg: loginButtonDisabledBg,
+      loginButtonDisabledFg: loginButtonDisabledFg,
+      loginTabTrack: loginTabTrack,
+      loginTabBorder: loginTabBorder,
+      loginTabSelectedFg: loginTabSelectedFg,
+      noteCalloutBg: noteCalloutBg,
+      noteCalloutFg: noteCalloutFg,
+      noteCalloutAccent: noteCalloutAccent,
+      scrimBlack: scrimBlack,
+      scrimWhite: scrimWhite,
+      bgSuccessStrong: bgSuccessStrong,
+      fgSuccessOnStrong: fgSuccessOnStrong,
+      fgMutedOnStrong: fgMutedOnStrong,
       contrastBgBase: contrastBgBase,
       contrastBgBaseHover: contrastBgBaseHover,
       contrastBgBasePressed: contrastBgBasePressed,
@@ -653,6 +942,55 @@ class AppColors extends ThemeExtension<AppColors> {
       tagAmberText: l(tagAmberText, other.tagAmberText),
       tagAmberIcon: l(tagAmberIcon, other.tagAmberIcon),
       tagAmberBorder: l(tagAmberBorder, other.tagAmberBorder),
+      brandPrimary: l(brandPrimary, other.brandPrimary),
+      brandPrimaryHover: l(brandPrimaryHover, other.brandPrimaryHover),
+      brandPrimaryTint: l(brandPrimaryTint, other.brandPrimaryTint),
+      fgOnBrand: l(fgOnBrand, other.fgOnBrand),
+      tileBg: l(tileBg, other.tileBg),
+      fgSuccess: l(fgSuccess, other.fgSuccess),
+      bgSuccess: l(bgSuccess, other.bgSuccess),
+      bgSuccessSubtle: l(bgSuccessSubtle, other.bgSuccessSubtle),
+      borderSuccess: l(borderSuccess, other.borderSuccess),
+      fgWarning: l(fgWarning, other.fgWarning),
+      bgWarning: l(bgWarning, other.bgWarning),
+      bgWarningSubtle: l(bgWarningSubtle, other.bgWarningSubtle),
+      borderWarning: l(borderWarning, other.borderWarning),
+      fgInfo: l(fgInfo, other.fgInfo),
+      bgInfo: l(bgInfo, other.bgInfo),
+      bgInfoSubtle: l(bgInfoSubtle, other.bgInfoSubtle),
+      borderInfo: l(borderInfo, other.borderInfo),
+      fgDanger: l(fgDanger, other.fgDanger),
+      bgError: l(bgError, other.bgError),
+      bgErrorSubtle: l(bgErrorSubtle, other.bgErrorSubtle),
+      shimmerBase: l(shimmerBase, other.shimmerBase),
+      shimmerHighlight: l(shimmerHighlight, other.shimmerHighlight),
+      loginBgTop: l(loginBgTop, other.loginBgTop),
+      loginBgBottom: l(loginBgBottom, other.loginBgBottom),
+      loginCardBorder: l(loginCardBorder, other.loginCardBorder),
+      loginDivider: l(loginDivider, other.loginDivider),
+      loginTitle: l(loginTitle, other.loginTitle),
+      loginSubtitle: l(loginSubtitle, other.loginSubtitle),
+      loginFieldLabel: l(loginFieldLabel, other.loginFieldLabel),
+      loginTabSelectedBg: l(loginTabSelectedBg, other.loginTabSelectedBg),
+      loginInputBg: l(loginInputBg, other.loginInputBg),
+      loginInputBorder: l(loginInputBorder, other.loginInputBorder),
+      loginInputIcon: l(loginInputIcon, other.loginInputIcon),
+      loginInputText: l(loginInputText, other.loginInputText),
+      loginInputHint: l(loginInputHint, other.loginInputHint),
+      loginInputDivider: l(loginInputDivider, other.loginInputDivider),
+      loginButtonDisabledBg: l(loginButtonDisabledBg, other.loginButtonDisabledBg),
+      loginButtonDisabledFg: l(loginButtonDisabledFg, other.loginButtonDisabledFg),
+      loginTabTrack: l(loginTabTrack, other.loginTabTrack),
+      loginTabBorder: l(loginTabBorder, other.loginTabBorder),
+      loginTabSelectedFg: l(loginTabSelectedFg, other.loginTabSelectedFg),
+      noteCalloutBg: l(noteCalloutBg, other.noteCalloutBg),
+      noteCalloutFg: l(noteCalloutFg, other.noteCalloutFg),
+      noteCalloutAccent: l(noteCalloutAccent, other.noteCalloutAccent),
+      scrimBlack: l(scrimBlack, other.scrimBlack),
+      scrimWhite: l(scrimWhite, other.scrimWhite),
+      bgSuccessStrong: l(bgSuccessStrong, other.bgSuccessStrong),
+      fgSuccessOnStrong: l(fgSuccessOnStrong, other.fgSuccessOnStrong),
+      fgMutedOnStrong: l(fgMutedOnStrong, other.fgMutedOnStrong),
       contrastBgBase: l(contrastBgBase, other.contrastBgBase),
       contrastBgBaseHover: l(contrastBgBaseHover, other.contrastBgBaseHover),
       contrastBgBasePressed: l(
@@ -679,10 +1017,13 @@ class AppColors extends ThemeExtension<AppColors> {
   }
 }
 
-/// Convenience accessor: `context.themeColors.bgBase`. Reads the active
+/// Convenience accessor: `context.appColors.bgBase`. Reads the active
 /// `AppColors` extension from the current `ThemeData`. Throws (in debug)
 /// if the extension wasn't installed by `ThemeManager` — that's the
 /// signal that the theme wasn't built via this project's ThemeManager.
+///
+/// `themeColors` is a legacy alias kept for back-compat with widgets that
+/// already read via `context.themeColors`. New code MUST use `appColors`.
 extension AppColorsContext on BuildContext {
   AppColors get appColors {
     final ext = Theme.of(this).extension<AppColors>();
@@ -693,4 +1034,9 @@ extension AppColorsContext on BuildContext {
     );
     return ext ?? AppColors.light;
   }
+
+  /// Deprecated alias for [appColors]. Kept so the ~200 existing call sites
+  /// that read `context.themeColors.*` keep compiling during the migration.
+  /// Do not introduce new uses — read `context.appColors` instead.
+  AppColors get themeColors => appColors;
 }

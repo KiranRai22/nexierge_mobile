@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../shared/widgets/app_toast.dart';
 
@@ -317,7 +317,7 @@ class _TimeChip extends StatelessWidget {
             Text(
               primary,
               style: TypographyManager.titleMedium.copyWith(
-                color: selected ? Colors.white : c.fgBase,
+                color: selected ? context.appColors.fgOnBrand : c.fgBase,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -325,7 +325,7 @@ class _TimeChip extends StatelessWidget {
               secondary,
               style: TypographyManager.bodySmall.copyWith(
                 color: selected
-                    ? Colors.white.withValues(alpha: 0.8)
+                    ? context.appColors.scrimWhite.withValues(alpha: 0.8)
                     : c.fgMuted,
               ),
             ),
@@ -406,7 +406,7 @@ class _CustomTimeChipState extends State<_CustomTimeChip> {
             Icon(
               LucideIcons.clock,
               size: 20,
-              color: hasSelection ? Colors.white : c.fgMuted,
+              color: hasSelection ? context.appColors.fgOnBrand : c.fgMuted,
             ),
             const SizedBox(height: 4),
             Text(
@@ -415,7 +415,7 @@ class _CustomTimeChipState extends State<_CustomTimeChip> {
                   : 'Custom',
               style: TypographyManager.bodySmall.copyWith(
                 color: hasSelection
-                    ? Colors.white.withValues(alpha: 0.8)
+                    ? context.appColors.scrimWhite.withValues(alpha: 0.8)
                     : c.fgMuted,
               ),
             ),

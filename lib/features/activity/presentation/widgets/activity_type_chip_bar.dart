@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/activity_controller.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Horizontally scrollable filter pills above the activity feed.
 class ActivityTypeChipBar extends StatelessWidget {
@@ -97,8 +97,8 @@ class _Chip extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected
-                ? ColorPalette.subTabActiveBg
-                : ColorPalette.subTabBg,
+                ? context.appColors.contrastBgBase
+                : context.appColors.bgComponent,
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
@@ -106,8 +106,8 @@ class _Chip extends StatelessWidget {
             style: TypographyManager.tabText.copyWith(
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               color: selected
-                  ? ColorPalette.subTabActiveFg
-                  : ColorPalette.subTabInactiveFg,
+                  ? context.appColors.contrastFgPrimary
+                  : context.appColors.fgSubtle,
             ),
           ),
         ),

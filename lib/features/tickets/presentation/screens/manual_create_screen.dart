@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../shell/presentation/widgets/coming_soon_view.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Stub screen for the Manual create flow — upstream prototype is 404.
 class ManualCreateScreen extends StatelessWidget {
@@ -13,10 +13,10 @@ class ManualCreateScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.l10n;
     return Scaffold(
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       appBar: AppBar(
-        backgroundColor: ColorPalette.opsSurface,
-        foregroundColor: ColorPalette.textPrimary,
+        backgroundColor: context.appColors.bgBase,
+        foregroundColor: context.appColors.fgBase,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(

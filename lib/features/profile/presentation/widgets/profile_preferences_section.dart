@@ -8,10 +8,9 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../core/i18n/locale_controller.dart';
 import '../../../../core/providers/sound_preferences_provider.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../providers/profile_section_expansion_provider.dart';
 
 /// Preferences section with expand/collapse.
@@ -394,7 +393,7 @@ class _ProfilePreferencesSectionState
         children: options.map((opt) {
           final isSelected = opt == selected;
           return Material(
-            color: isSelected ? ColorPalette.opsPurple : Colors.transparent,
+            color: isSelected ? context.appColors.brandPrimary : Colors.transparent,
             borderRadius: BorderRadius.circular(999),
             child: InkWell(
               onTap: () => onChanged(opt),
@@ -407,7 +406,7 @@ class _ProfilePreferencesSectionState
                 child: Text(
                   opt,
                   style: TypographyManager.labelLarge.copyWith(
-                    color: isSelected ? Colors.white : c.fgSubtle,
+                    color: isSelected ? context.appColors.fgOnBrand : c.fgSubtle,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.4,
                   ),
@@ -441,7 +440,7 @@ class _ThemeChip extends StatelessWidget {
     final c = context.themeColors;
     return Expanded(
       child: Material(
-        color: isSelected ? ColorPalette.opsPurple : Colors.transparent,
+        color: isSelected ? context.appColors.brandPrimary : Colors.transparent,
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: onTap,
@@ -454,13 +453,13 @@ class _ThemeChip extends StatelessWidget {
                 Icon(
                   icon,
                   size: 16,
-                  color: isSelected ? Colors.white : c.fgSubtle,
+                  color: isSelected ? context.appColors.fgOnBrand : c.fgSubtle,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   label,
                   style: TypographyManager.labelSmall.copyWith(
-                    color: isSelected ? Colors.white : c.fgSubtle,
+                    color: isSelected ? context.appColors.fgOnBrand : c.fgSubtle,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.3,
                   ),
@@ -489,7 +488,7 @@ class _ToggleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     return Material(
-      color: isSelected ? ColorPalette.opsPurple : Colors.transparent,
+      color: isSelected ? context.appColors.brandPrimary : Colors.transparent,
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -499,7 +498,7 @@ class _ToggleChip extends StatelessWidget {
           child: Text(
             label,
             style: TypographyManager.labelLarge.copyWith(
-              color: isSelected ? Colors.white : c.fgSubtle,
+              color: isSelected ? context.appColors.fgOnBrand : c.fgSubtle,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.4,
             ),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nexierge/core/theme/unified_theme_manager.dart';
+import 'package:nexierge/core/theme/app_colors.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../domain/entities/service_catalog.dart';
@@ -135,11 +134,11 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
         _tabs.index == 1 && catalogDraft.step == CatalogStep.selectItems;
 
     return Scaffold(
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(64 + 96),
         child: Material(
-          color: ColorPalette.opsSurface,
+          color: context.appColors.bgBase,
           child: SafeArea(
             bottom: false,
             child: Column(
@@ -182,10 +181,10 @@ class _CreateScreenState extends ConsumerState<CreateScreen>
                 Divider(
                   height: .5,
                   thickness: 1,
-                  color: ColorPalette.opsBorder,
+                  color: context.appColors.borderBase,
                 ),
                 _CreateTabBar(controller: _tabs),
-                Divider(height: 1, thickness: 1, color: ColorPalette.opsBorder),
+                Divider(height: 1, thickness: 1, color: context.appColors.borderBase),
               ],
             ),
           ),
@@ -264,7 +263,7 @@ class _CreateAppBar extends StatelessWidget {
                     child: Text(
                       subtitle!,
                       style: TypographyManager.bodySmall.copyWith(
-                        color: ColorPalette.textSecondary,
+                        color: context.appColors.fgSubtle,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -277,8 +276,8 @@ class _CreateAppBar extends StatelessWidget {
             OutlinedButton(
               onPressed: onCustom,
               style: OutlinedButton.styleFrom(
-                foregroundColor: ColorPalette.textPrimary,
-                side: BorderSide(color: ColorPalette.opsBorder),
+                foregroundColor: context.appColors.fgBase,
+                side: BorderSide(color: context.appColors.borderBase),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -326,7 +325,7 @@ class _CircleIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: ColorPalette.opsSurfaceSubtle,
+      color: context.appColors.bgSubtle,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -335,7 +334,7 @@ class _CircleIconButton extends StatelessWidget {
         child: SizedBox(
           width: 36,
           height: 36,
-          child: Icon(icon, size: 18, color: ColorPalette.textPrimary),
+          child: Icon(icon, size: 18, color: context.appColors.fgBase),
         ),
       ),
     );
@@ -397,8 +396,8 @@ class _SegmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? ColorPalette.opsPurpleTint
-          : ColorPalette.opsSurfaceSubtle,
+          ? context.appColors.brandPrimaryTint
+          : context.appColors.bgSubtle,
       borderRadius: BorderRadius.circular(14),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -417,8 +416,8 @@ class _SegmentCard extends StatelessWidget {
                 style: TypographyManager.labelMedium.copyWith(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   color: selected
-                      ? ColorPalette.opsPurpleDark
-                      : ColorPalette.textPrimary,
+                      ? context.appColors.brandPrimaryHover
+                      : context.appColors.fgBase,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -490,16 +489,16 @@ class _FilterChipItem extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? ColorPalette.opsPurple : ColorPalette.opsSurface,
+          color: selected ? context.appColors.brandPrimary : context.appColors.bgBase,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? ColorPalette.opsPurple : ColorPalette.opsBorder,
+            color: selected ? context.appColors.brandPrimary : context.appColors.borderBase,
           ),
         ),
         child: Text(
           label,
           style: TypographyManager.labelMedium.copyWith(
-            color: selected ? ColorPalette.white : ColorPalette.textPrimary,
+            color: selected ? context.appColors.fgOnBrand : context.appColors.fgBase,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),

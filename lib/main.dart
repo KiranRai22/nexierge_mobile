@@ -17,7 +17,7 @@ import 'core/services/notification_service.dart';
 import 'core/services/realtime/xano_notification_channel.dart';
 import 'core/services/realtime/xano_socket_lifecycle.dart';
 import 'core/services/sound_manager.dart';
-import 'core/theme/unified_theme_manager.dart';
+import 'core/theme/theme_manager.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'core/utils/string_manager.dart';
 import 'core/widgets/no_internet_dialog.dart';
@@ -223,8 +223,8 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       title: StringManager.appName,
       debugShowCheckedModeBanner: false,
-      theme: UnifiedThemeManager.lightTheme,
-      darkTheme: UnifiedThemeManager.darkTheme,
+      theme: ThemeManager.lightTheme,
+      darkTheme: ThemeManager.darkTheme,
       themeMode: mode,
       // i18n. `null` locale = follow device. Always pass the full delegate
       // bundle so Material/Cupertino widgets localize too.

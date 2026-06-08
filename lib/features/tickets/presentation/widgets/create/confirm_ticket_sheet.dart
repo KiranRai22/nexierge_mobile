@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/services/sound_manager.dart';
-import '../../../../../core/theme/color_palette.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
 import '../../../domain/models/catalog.dart';
@@ -26,7 +26,7 @@ class ConfirmTicketSheet {
       isScrollControlled: true,
       isDismissible: false,
       enableDrag: false,
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -149,8 +149,8 @@ class _ConfirmBodyState extends ConsumerState<_ConfirmBody> {
                             ? null
                             : tapSound(() => Navigator.of(context).pop(), SoundCategory.back),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: ColorPalette.textPrimary,
-                          side: BorderSide(color: ColorPalette.opsBorder),
+                          foregroundColor: context.appColors.fgBase,
+                          side: BorderSide(color: context.appColors.borderBase),
                           minimumSize: const Size.fromHeight(50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -168,8 +168,8 @@ class _ConfirmBodyState extends ConsumerState<_ConfirmBody> {
                       child: ElevatedButton(
                         onPressed: _submitting ? null : tapSound(_handleConfirm),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: ColorPalette.textPrimary,
-                          foregroundColor: ColorPalette.white,
+                          backgroundColor: context.appColors.fgBase,
+                          foregroundColor: context.appColors.fgOnBrand,
                           minimumSize: const Size.fromHeight(50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -179,12 +179,12 @@ class _ConfirmBodyState extends ConsumerState<_ConfirmBody> {
                           ),
                         ),
                         child: _submitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: ColorPalette.white,
+                                  color: context.appColors.fgOnBrand,
                                 ),
                               )
                             : Text(s.confirmTicketCta),
@@ -227,7 +227,7 @@ class _Handle extends StatelessWidget {
       height: 4,
       margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: ColorPalette.opsBorder,
+        color: context.appColors.borderBase,
         borderRadius: BorderRadius.circular(2),
       ),
     );
@@ -254,7 +254,7 @@ class _Header extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.close_rounded),
-            color: ColorPalette.textSecondary,
+            color: context.appColors.fgSubtle,
             onPressed: tapSound(onClose, SoundCategory.back),
           ),
         ],
@@ -293,9 +293,9 @@ class _SummaryBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: ColorPalette.opsSurface,
+        color: context.appColors.bgBase,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorPalette.opsBorder),
+        border: Border.all(color: context.appColors.borderBase),
       ),
       child: Column(
         children: [
@@ -307,7 +307,7 @@ class _SummaryBlock extends StatelessWidget {
                   : _InlineRow(row: rows[i]),
             ),
             if (i != rows.length - 1)
-              Divider(height: 1, color: ColorPalette.opsBorder),
+              Divider(height: 1, color: context.appColors.borderBase),
           ],
         ],
       ),
@@ -327,7 +327,7 @@ class _InlineRow extends StatelessWidget {
           child: Text(
             row.label,
             style: TypographyManager.bodySmall.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.4,
             ),
@@ -360,14 +360,14 @@ class _InlineRow extends StatelessWidget {
                       return Container(
                         width: 24,
                         height: 24,
-                        color: ColorPalette.opsSurface,
+                        color: context.appColors.bgBase,
                         child: Center(
                           child: SizedBox(
                             width: 12,
                             height: 12,
                             child: CircularProgressIndicator(
                               strokeWidth: 1,
-                              color: ColorPalette.textSecondary,
+                              color: context.appColors.fgSubtle,
                             ),
                           ),
                         ),
@@ -391,7 +391,7 @@ class _InlineRow extends StatelessWidget {
               Text(
                 row.value,
                 style: TypographyManager.bodyMedium.copyWith(
-                  color: ColorPalette.textPrimary,
+                  color: context.appColors.fgBase,
                   fontWeight: row.emphasize ? FontWeight.w800 : FontWeight.w600,
                 ),
               ),
@@ -401,7 +401,7 @@ class _InlineRow extends StatelessWidget {
           Text(
             row.value,
             style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.textPrimary,
+              color: context.appColors.fgBase,
               fontWeight: row.emphasize ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
@@ -422,7 +422,7 @@ class _BlockRow extends StatelessWidget {
         Text(
           row.label,
           style: TypographyManager.bodySmall.copyWith(
-            color: ColorPalette.textSecondary,
+            color: context.appColors.fgSubtle,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.4,
           ),
@@ -431,7 +431,7 @@ class _BlockRow extends StatelessWidget {
         Text(
           row.value,
           style: TypographyManager.bodyMedium.copyWith(
-            color: ColorPalette.textPrimary,
+            color: context.appColors.fgBase,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -450,9 +450,9 @@ class _ItemsBlock extends StatelessWidget {
     final perItemIndex = <String, int>{};
     return Container(
       decoration: BoxDecoration(
-        color: ColorPalette.opsSurface,
+        color: context.appColors.bgBase,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorPalette.opsBorder),
+        border: Border.all(color: context.appColors.borderBase),
       ),
       child: Column(
         children: [
@@ -478,9 +478,9 @@ class _ItemsBlock extends StatelessWidget {
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: ColorPalette.opsSurface,
+                              color: context.appColors.bgBase,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: ColorPalette.opsBorder),
+                              border: Border.all(color: context.appColors.borderBase),
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(6),
@@ -506,7 +506,7 @@ class _ItemsBlock extends StatelessWidget {
                                             return Container(
                                               width: 26,
                                               height: 26,
-                                              color: ColorPalette.opsSurface,
+                                              color: context.appColors.bgBase,
                                               child: Center(
                                                 child: SizedBox(
                                                   width: 12,
@@ -514,8 +514,7 @@ class _ItemsBlock extends StatelessWidget {
                                                   child:
                                                       CircularProgressIndicator(
                                                         strokeWidth: 1,
-                                                        color: ColorPalette
-                                                            .textSecondary,
+                                                        color: context.appColors.fgSubtle,
                                                       ),
                                                 ),
                                               ),
@@ -552,14 +551,14 @@ class _ItemsBlock extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: ColorPalette.opsPurpleSoft,
+                              color: context.appColors.brandPrimaryTint,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
                               'x${line.quantity}',
                               style: TypographyManager.bodySmall.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: ColorPalette.opsPurpleDark,
+                                color: context.appColors.brandPrimaryHover,
                               ),
                             ),
                           ),
@@ -569,7 +568,7 @@ class _ItemsBlock extends StatelessWidget {
                               line.item.name,
                               style: TypographyManager.titleSmall.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: ColorPalette.textPrimary,
+                                color: context.appColors.fgBase,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -579,7 +578,7 @@ class _ItemsBlock extends StatelessWidget {
                             formatMoney(line.lineTotal),
                             style: TypographyManager.titleSmall.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: ColorPalette.textPrimary,
+                              color: context.appColors.fgBase,
                             ),
                           ),
                         ],
@@ -593,7 +592,7 @@ class _ItemsBlock extends StatelessWidget {
                                 child: Text(
                                   s.catalogLineLabel(n, summary),
                                   style: TypographyManager.bodySmall.copyWith(
-                                    color: ColorPalette.textSecondary,
+                                    color: context.appColors.fgSubtle,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -602,7 +601,7 @@ class _ItemsBlock extends StatelessWidget {
                               Text(
                                 formatMoney(line.lineTotal),
                                 style: TypographyManager.bodySmall.copyWith(
-                                  color: ColorPalette.textSecondary,
+                                  color: context.appColors.fgSubtle,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -615,7 +614,7 @@ class _ItemsBlock extends StatelessWidget {
               },
             ),
             if (i != cart.length - 1)
-              Divider(height: 1, color: ColorPalette.opsBorder),
+              Divider(height: 1, color: context.appColors.borderBase),
           ],
         ],
       ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/color_palette.dart';
 import '../providers/dashboard_bootstrap_controller.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Shimmer loading screen shown during dashboard bootstrap.
 /// Mimics the dashboard layout so the transition feels seamless.
@@ -16,7 +16,7 @@ class DashboardShimmerScreen extends ConsumerWidget {
     final progress = bootstrap.valueOrNull?.progress ?? 0.0;
 
     return Scaffold(
-      backgroundColor: ColorPalette.opsSurface,
+      backgroundColor: context.appColors.bgBase,
       body: SafeArea(
         child: Column(
           children: [
@@ -72,8 +72,8 @@ class _ProgressIndicator extends StatelessWidget {
       children: [
         LinearProgressIndicator(
           value: progress > 0 ? progress : null, // Indeterminate if 0
-          backgroundColor: ColorPalette.chipUniversalBg,
-          valueColor: AlwaysStoppedAnimation<Color>(ColorPalette.loginTitle),
+          backgroundColor: context.appColors.brandPrimaryTint,
+          valueColor: AlwaysStoppedAnimation<Color>(context.appColors.loginTitle),
           minHeight: 2,
         ),
         if (progress > 0)
@@ -85,7 +85,7 @@ class _ProgressIndicator extends StatelessWidget {
                 '${(progress * 100).toInt()}%',
                 style: TextStyle(
                   fontSize: 10,
-                  color: ColorPalette.loginSubtitle,
+                  color: context.appColors.loginSubtitle,
                 ),
               ),
             ),
@@ -267,13 +267,13 @@ class _BottomNavShimmer extends StatelessWidget {
     // gesture bar so the bar's full height is actually visible. Without it
     // the bottom row of icons collides with the system gesture area.
     return Material(
-      color: Colors.white,
+      color: context.appColors.fgOnBrand,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.appColors.fgOnBrand,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: context.appColors.scrimBlack.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, -4),
             ),

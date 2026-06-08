@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
 import '../../../../../core/theme/card_theme.dart';
-import '../../../../../core/theme/color_palette.dart';
-import '../../../../../core/theme/unified_theme_manager.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/typography_manager.dart';
 
 /// Yellow callout used for the guest's freeform note. Stripe + sticky-note
@@ -19,7 +18,7 @@ class GuestNoteCallout extends StatelessWidget {
       decoration: CardDecoration.standard(
         colors: context.themeColors,
         borderRadius: BorderRadius.circular(12),
-        backgroundColor: ColorPalette.noteCalloutBg,
+        backgroundColor: context.appColors.noteCalloutBg,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,16 +26,16 @@ class GuestNoteCallout extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.sticky_note_2_outlined,
                 size: 16,
-                color: ColorPalette.noteCalloutFg,
+                color: context.appColors.noteCalloutFg,
               ),
               const SizedBox(width: 6),
               Text(
                 context.l10n.detailGuestNoteLabel,
                 style: TypographyManager.kpiLabel.copyWith(
-                  color: ColorPalette.noteCalloutFg,
+                  color: context.appColors.noteCalloutFg,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -46,7 +45,7 @@ class GuestNoteCallout extends StatelessWidget {
           Text(
             note,
             style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.noteCalloutFg,
+              color: context.appColors.noteCalloutFg,
             ),
           ),
         ],

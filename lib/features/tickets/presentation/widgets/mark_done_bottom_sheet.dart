@@ -5,7 +5,7 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/utils/string_utils.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 typedef MarkDoneConfirmCallback = Future<void> Function(String note);
@@ -253,13 +253,13 @@ class _MarkDoneBottomSheetState extends State<MarkDoneBottomSheet> {
                   child: ElevatedButton.icon(
                     onPressed: _canConfirm ? tapSound(_handleConfirm) : null,
                     icon: _submitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                                context.appColors.fgOnBrand,
                               ),
                             ),
                           )

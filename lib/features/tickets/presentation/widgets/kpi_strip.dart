@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Three-up KPI strip: Incoming · In Progress · Overdue.
 /// Numbers reflect the full snapshot, not the filtered sub-tab.
@@ -27,8 +27,8 @@ class KpiStrip extends StatelessWidget {
           child: _KpiCard(
             label: s.kpiIncoming,
             count: incoming,
-            background: ColorPalette.kpiNeutralTint,
-            countColor: ColorPalette.textPrimary,
+            background: context.appColors.bgSubtle,
+            countColor: context.appColors.fgBase,
           ),
         ),
         const SizedBox(width: 8),
@@ -36,8 +36,8 @@ class KpiStrip extends StatelessWidget {
           child: _KpiCard(
             label: s.kpiInProgress,
             count: inProgress,
-            background: ColorPalette.kpiNeutralTint,
-            countColor: ColorPalette.textPrimary,
+            background: context.appColors.bgSubtle,
+            countColor: context.appColors.fgBase,
           ),
         ),
         const SizedBox(width: 8),
@@ -45,8 +45,8 @@ class KpiStrip extends StatelessWidget {
           child: _KpiCard(
             label: s.kpiOverdue,
             count: overdue,
-            background: ColorPalette.kpiOverdueTint,
-            countColor: ColorPalette.kpiOverdueText,
+            background: context.appColors.tagRedBg,
+            countColor: context.appColors.fgDanger,
           ),
         ),
       ],

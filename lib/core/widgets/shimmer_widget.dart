@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 /// Shimmer effect — sliding diagonal gradient on a neutral block.
 ///
 /// Mirrors the dashboard loading style so every screen converges on a
@@ -47,11 +49,9 @@ class _ShimmerWidgetState extends State<ShimmerWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = widget.baseColor ??
-        (isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0));
-    final highlightColor = widget.highlightColor ??
-        (isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF5F5F5));
+    final c = context.appColors;
+    final baseColor = widget.baseColor ?? c.shimmerBase;
+    final highlightColor = widget.highlightColor ?? c.shimmerHighlight;
 
     return AnimatedBuilder(
       animation: _animation,
@@ -105,7 +105,6 @@ class ShimmerContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ShimmerWidget(
       child: Container(
         width: width,
@@ -113,7 +112,7 @@ class ShimmerContainer extends StatelessWidget {
         margin: margin,
         padding: padding,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+          color: context.appColors.shimmerBase,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
         child: child,
@@ -130,13 +129,12 @@ class ShimmerCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ShimmerWidget(
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+          color: context.appColors.shimmerBase,
           shape: BoxShape.circle,
         ),
       ),
@@ -159,13 +157,12 @@ class ShimmerText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ShimmerWidget(
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+          color: context.appColors.shimmerBase,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),

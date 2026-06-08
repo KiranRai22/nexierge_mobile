@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/user_profile_controller.dart';
 
@@ -209,7 +209,7 @@ class ProfileAvatarWithStatus extends ConsumerWidget {
               width: size * 0.25,
               height: size * 0.25,
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: context.appColors.fgSuccess,
                 shape: BoxShape.circle,
                 border: Border.all(color: context.themeColors.bgBase, width: 2),
               ),

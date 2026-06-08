@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Bottom sheet shown when the user taps the logout button.
@@ -122,7 +122,7 @@ class _LogoutConfirmationBottomSheetState
                     label: Text(s.profileLogoutConfirmAction),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.tagRedIcon,
-                      foregroundColor: Colors.white,
+                      foregroundColor: context.appColors.fgOnBrand,
                       minimumSize: const Size.fromHeight(48),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

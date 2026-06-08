@@ -11,9 +11,8 @@ import '../../../../core/providers/vibration_preferences_provider.dart';
 import '../../../../core/services/app_info_service.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/services/vibration_manager.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/utils/name_validator.dart';
 import '../../../../core/utils/string_utils.dart';
@@ -321,9 +320,9 @@ class _ProfileBodyState extends State<_ProfileBody>
         // ── Tab bar ──────────────────────────────────────────────────────────
         TabBar(
           controller: _tabController,
-          labelColor: ColorPalette.opsPurple,
+          labelColor: context.appColors.brandPrimary,
           unselectedLabelColor: c.fgMuted,
-          indicatorColor: ColorPalette.opsPurple,
+          indicatorColor: context.appColors.brandPrimary,
           indicatorSize: TabBarIndicatorSize.tab,
           labelStyle: TypographyManager.labelSmall.copyWith(
             fontWeight: FontWeight.w600,
@@ -526,7 +525,7 @@ class _AboutTab extends StatelessWidget {
               border: Border.all(color: c.borderBase, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
+                  color: context.appColors.scrimBlack.withValues(alpha: 0.06),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -569,8 +568,8 @@ class _AboutTab extends StatelessWidget {
                   mode: LaunchMode.inAppBrowserView,
                 )),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: ColorPalette.opsPurple,
-                  side: const BorderSide(color: ColorPalette.opsPurple),
+                  foregroundColor: context.appColors.brandPrimary,
+                  side: BorderSide(color: context.appColors.brandPrimary),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   textStyle: TypographyManager.labelSmall.copyWith(fontWeight: FontWeight.w500),
@@ -586,8 +585,8 @@ class _AboutTab extends StatelessWidget {
                   mode: LaunchMode.inAppBrowserView,
                 )),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: ColorPalette.opsPurple,
-                  side: const BorderSide(color: ColorPalette.opsPurple),
+                  foregroundColor: context.appColors.brandPrimary,
+                  side: BorderSide(color: context.appColors.brandPrimary),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   textStyle: TypographyManager.labelSmall.copyWith(fontWeight: FontWeight.w500),
@@ -718,7 +717,7 @@ class _SegmentToggle extends StatelessWidget {
         children: options.map((opt) {
           final sel = opt == selected;
           return Material(
-            color: sel ? ColorPalette.opsPurple : Colors.transparent,
+            color: sel ? context.appColors.brandPrimary : Colors.transparent,
             borderRadius: BorderRadius.circular(999),
             child: InkWell(
               onTap: tapSound(() => onChanged(opt), SoundCategory.preference),
@@ -726,7 +725,7 @@ class _SegmentToggle extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 child: Text(opt, style: TypographyManager.labelSmall.copyWith(
-                  color: sel ? Colors.white : c.fgSubtle,
+                  color: sel ? context.appColors.fgOnBrand : c.fgSubtle,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
                 )),
@@ -794,7 +793,7 @@ class _ThemeChip extends StatelessWidget {
     final c = context.themeColors;
     return Expanded(
       child: Material(
-        color: selected ? ColorPalette.opsPurple : Colors.transparent,
+        color: selected ? context.appColors.brandPrimary : Colors.transparent,
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: tapSound(onTap, SoundCategory.preference),
@@ -804,10 +803,10 @@ class _ThemeChip extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 14, color: selected ? Colors.white : c.fgSubtle),
+                Icon(icon, size: 14, color: selected ? context.appColors.fgOnBrand : c.fgSubtle),
                 const SizedBox(width: 4),
                 Flexible(child: Text(label, style: TypographyManager.labelSmall.copyWith(
-                  color: selected ? Colors.white : c.fgSubtle,
+                  color: selected ? context.appColors.fgOnBrand : c.fgSubtle,
                   fontWeight: FontWeight.w600,
                   fontSize: 11,
                 ), overflow: TextOverflow.ellipsis)),

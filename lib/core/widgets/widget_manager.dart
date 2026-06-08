@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../i18n/l10n_extension.dart';
-import '../theme/color_palette.dart';
 import '../theme/typography_manager.dart';
+import '../../core/theme/app_colors.dart';
 
 /// Full-width primary action button with optional loading state and leading icon.
 class AppPrimaryButton extends StatelessWidget {
@@ -28,20 +28,20 @@ class AppPrimaryButton extends StatelessWidget {
       width: width ?? double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: ColorPalette.black,
-          foregroundColor: ColorPalette.white,
+          backgroundColor: context.appColors.fgBase,
+          foregroundColor: context.appColors.fgOnBrand,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 height: 20,
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: ColorPalette.white,
+                  color: context.appColors.fgOnBrand,
                 ),
               )
             : Row(
@@ -49,7 +49,7 @@ class AppPrimaryButton extends StatelessWidget {
                 children: [
                   if (leadingIcon != null) ...[
                     IconTheme.merge(
-                      data: const IconThemeData(color: ColorPalette.white),
+                      data: IconThemeData(color: context.appColors.fgOnBrand),
                       child: leadingIcon!,
                     ),
                     const SizedBox(width: 8),
@@ -58,7 +58,7 @@ class AppPrimaryButton extends StatelessWidget {
                     label,
                     style: TypographyManager.bodyMedium.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: ColorPalette.white,
+                      color: context.appColors.fgOnBrand,
                     ),
                   ),
                 ],
@@ -87,9 +87,9 @@ class AppOutlinedButton extends StatelessWidget {
       width: width ?? double.infinity,
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          backgroundColor: ColorPalette.white,
-          foregroundColor: ColorPalette.black,
-          side: const BorderSide(color: ColorPalette.grey300),
+          backgroundColor: context.appColors.fgOnBrand,
+          foregroundColor: context.appColors.fgBase,
+          side: BorderSide(color: context.appColors.borderStrong),
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -167,7 +167,7 @@ class AppLoader extends StatelessWidget {
         height: size,
         child: CircularProgressIndicator(
           strokeWidth: 2.5,
-          color: color ?? ColorPalette.primary,
+          color: color ?? context.appColors.brandPrimary,
         ),
       ),
     );
@@ -199,12 +199,12 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: ColorPalette.grey400),
+            Icon(icon, size: 64, color: context.appColors.fgMuted),
             const SizedBox(height: 16),
             Text(
               resolved,
               style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textSecondary,
+                color: context.appColors.fgSubtle,
               ),
               textAlign: TextAlign.center,
             ),
@@ -238,16 +238,16 @@ class AppErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               LucideIcons.triangleAlert,
               size: 64,
-              color: ColorPalette.error,
+              color: context.appColors.fgError,
             ),
             const SizedBox(height: 16),
             Text(
               message,
               style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textSecondary,
+                color: context.appColors.fgSubtle,
               ),
               textAlign: TextAlign.center,
             ),

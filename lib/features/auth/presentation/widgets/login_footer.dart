@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Bottom block on the login screen: admin-contact reminder and the
 /// app version. Wrapped in SizedBox with 80% width and larger font.
@@ -24,7 +24,7 @@ class LoginAdminFooter extends StatelessWidget {
               s.loginAdminContactFooter,
               textAlign: TextAlign.center,
               style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.loginFooterText,
+                color: context.appColors.loginSubtitle,
                 height: 1.4,
               ),
             ),
@@ -33,7 +33,7 @@ class LoginAdminFooter extends StatelessWidget {
               s.loginAppVersion,
               textAlign: TextAlign.center,
               style: TypographyManager.bodySmall.copyWith(
-                color: ColorPalette.loginFooterText,
+                color: context.appColors.loginSubtitle,
               ),
             ),
           ],

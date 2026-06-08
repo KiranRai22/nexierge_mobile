@@ -7,18 +7,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../core/time/server_clock.dart';
 import '../../../../core/widgets/shimmer_widget.dart';
 import '../../domain/models/ticket.dart';
 import '../providers/my_tickets_notifier.dart';
 import '../providers/ticket_busy_provider.dart';
-
-/// Light green border used to highlight a ticket whose status just changed
-/// (or that just arrived). Visible for [kRecentChangeHighlightWindow]
-/// after the realtime event lands.
-const Color _kRecentChangeBorder = Color(0xFF34A853);
 
 /// Resolves the left accent border color based on ticket status / overdue.
 Color _resolveLeftBorderColor(Ticket ticket, AppColors c) {
@@ -107,7 +102,7 @@ class TicketCardNew extends ConsumerWidget {
     final decoration = isRecentlyChanged
         ? (baseDecoration is BoxDecoration
               ? baseDecoration.copyWith(
-                  border: Border.all(color: _kRecentChangeBorder, width: 2),
+                  border: Border.all(color: context.appColors.fgSuccess, width: 2),
                 )
               : baseDecoration)
         : baseDecoration;
@@ -1295,12 +1290,12 @@ class _ActionButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LucideIcons.check, size: 14, color: Colors.white),
+                Icon(LucideIcons.check, size: 14, color: context.appColors.fgOnBrand),
                 const SizedBox(width: 4),
                 Text(
                   s.actionAcceptShort,
                   style: TypographyManager.labelSmall.copyWith(
-                    color: Colors.white,
+                    color: context.appColors.fgOnBrand,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1329,12 +1324,12 @@ class _ActionButton extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(LucideIcons.play, size: 14, color: Colors.white),
+                Icon(LucideIcons.play, size: 14, color: context.appColors.fgOnBrand),
                 const SizedBox(width: 4),
                 Text(
                   s.ticketActionAcceptAndStart,
                   style: TypographyManager.labelSmall.copyWith(
-                    color: Colors.white,
+                    color: context.appColors.fgOnBrand,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1358,12 +1353,12 @@ class _ActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(LucideIcons.play, size: 14, color: Colors.white),
+            Icon(LucideIcons.play, size: 14, color: c.fgOnBrand),
             const SizedBox(width: 4),
             Text(
               'Start Work',
               style: TypographyManager.labelSmall.copyWith(
-                color: Colors.white,
+                color: c.fgOnBrand,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1385,12 +1380,12 @@ class _ActionButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(LucideIcons.circleCheck, size: 14, color: Colors.white),
+            Icon(LucideIcons.circleCheck, size: 14, color: c.fgOnBrand),
             const SizedBox(width: 4),
             Text(
               'Mark Done',
               style: TypographyManager.labelSmall.copyWith(
-                color: Colors.white,
+                color: c.fgOnBrand,
                 fontWeight: FontWeight.w600,
               ),
             ),

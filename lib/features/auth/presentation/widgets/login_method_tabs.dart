@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/login_controller.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Pill-shaped segmented control for choosing the login method (dark).
 class LoginModeTabs extends StatelessWidget {
@@ -23,9 +23,9 @@ class LoginModeTabs extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: ColorPalette.loginTabTrack,
+        color: context.appColors.loginTabTrack,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorPalette.loginTabBorder, width: 1),
+        border: Border.all(color: context.appColors.loginTabBorder, width: 1),
       ),
       child: Row(
         children: [
@@ -71,18 +71,18 @@ class _Segment extends StatelessWidget {
         height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected ? ColorPalette.loginTabSelectedBg : null,
+          color: isSelected ? context.appColors.loginTabSelectedBg : null,
           borderRadius: BorderRadius.circular(8),
           border: isSelected
-              ? Border.all(color: ColorPalette.loginTabBorder, width: 1)
+              ? Border.all(color: context.appColors.loginTabBorder, width: 1)
               : null,
         ),
         child: Text(
           label,
           style: TypographyManager.labelLarge.copyWith(
             color: isSelected
-                ? ColorPalette.loginTabSelectedFg
-                : ColorPalette.loginTabUnselectedFg,
+                ? context.appColors.loginTabSelectedFg
+                : context.appColors.loginSubtitle,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),

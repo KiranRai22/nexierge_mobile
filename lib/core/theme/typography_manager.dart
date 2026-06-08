@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'color_palette.dart';
-
 abstract class TypographyManager {
   /// Single source of truth for the app's UI typeface. Bundled locally —
   /// see `assets/fonts/Geist/` and the `fonts:` block in `pubspec.yaml`.
@@ -11,12 +9,16 @@ abstract class TypographyManager {
 
   /// Internal builder so every preset shares the same font family. Swap
   /// `_fontFamily` to switch the entire app's UI typeface.
+  /// Color is intentionally null — `ThemeManager._textTheme` wires the
+  /// active `AppColors.fgBase` / `fgSubtle` onto every preset, and most
+  /// widget call sites already override with `.copyWith(color: ...)`.
+  /// Leaving it null lets `DefaultTextStyle` (driven by the theme)
+  /// resolve the colour, which is what we want for theme-aware text.
   static TextStyle _t({
     required double fontSize,
     required FontWeight fontWeight,
     double? height,
     double letterSpacing = 0,
-    Color color = ColorPalette.textPrimary,
   }) {
     return TextStyle(
       fontFamily: _fontFamily,
@@ -24,7 +26,6 @@ abstract class TypographyManager {
       fontWeight: fontWeight,
       height: height,
       letterSpacing: letterSpacing,
-      color: color,
     );
   }
 
@@ -84,7 +85,6 @@ abstract class TypographyManager {
         fontSize: 12,
         fontWeight: FontWeight.w400,
         letterSpacing: 0.4,
-        color: ColorPalette.textSecondary,
       );
 
   // Label
@@ -104,7 +104,6 @@ abstract class TypographyManager {
         fontSize: 11,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.5,
-        color: ColorPalette.textSecondary,
       );
 
   // ---------------------------------------------------------------------------
@@ -131,7 +130,6 @@ abstract class TypographyManager {
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.6,
-        color: ColorPalette.textSecondary,
       );
 
   /// ALL-CAPS section header used between groups (`INCOMING NOW · 2`).
@@ -139,7 +137,6 @@ abstract class TypographyManager {
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.8,
-        color: ColorPalette.textSecondary,
       );
 
   /// Ticket card title.
@@ -153,7 +150,6 @@ abstract class TypographyManager {
   static TextStyle get cardMeta => _t(
         fontSize: 12.5,
         fontWeight: FontWeight.w400,
-        color: ColorPalette.textSecondary,
       );
 
   /// Tab / chip text.

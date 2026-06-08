@@ -3,8 +3,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Acknowledge-only dialog for state-based account errors (pending
 /// review, rejected, disabled, hotel inactive). Spec §10 / §15.4.
@@ -30,16 +30,16 @@ abstract class LoginStateDialog {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
+              Icon(
                 LucideIcons.triangleAlert,
-                color: ColorPalette.activityOverdueFg,
+                color: context.appColors.fgDanger,
                 size: 32,
               ),
               const SizedBox(height: 12),
               Text(
                 title,
                 style: TypographyManager.titleMedium.copyWith(
-                  color: ColorPalette.textPrimary,
+                  color: context.appColors.fgBase,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -49,7 +49,7 @@ abstract class LoginStateDialog {
             message,
             textAlign: TextAlign.center,
             style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
               height: 1.4,
             ),
           ),

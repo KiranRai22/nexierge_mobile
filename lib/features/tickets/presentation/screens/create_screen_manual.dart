@@ -126,9 +126,9 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                             height: 48,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
-                              color: ColorPalette.opsSurfaceSubtle,
+                              color: context.appColors.bgSubtle,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: ColorPalette.opsBorder),
+                              border: Border.all(color: context.appColors.borderBase),
                             ),
                             child: Row(
                               children: [
@@ -143,17 +143,17 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                                         .copyWith(
                                           color:
                                               draft.selectedRoomNumber != null
-                                              ? ColorPalette.textPrimary
-                                              : ColorPalette.textSecondary,
+                                              ? context.appColors.fgBase
+                                              : context.appColors.fgSubtle,
                                         ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right_rounded,
                                   size: 16,
-                                  color: ColorPalette.textSecondary,
+                                  color: context.appColors.fgSubtle,
                                 ),
                               ],
                             ),
@@ -178,10 +178,10 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                           style: TypographyManager.bodyMedium,
                           decoration: _inputDecoration(
                             hint: s.createGuestHint,
-                            prefixIcon: const Icon(
+                            prefixIcon: Icon(
                               Icons.person_outline,
                               size: 18,
-                              color: ColorPalette.textSecondary,
+                              color: context.appColors.fgSubtle,
                             ),
                           ),
                         ),
@@ -233,23 +233,23 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
     return InputDecoration(
       hintText: hint,
       hintStyle: TypographyManager.bodyMedium.copyWith(
-        color: ColorPalette.textSecondary,
+        color: context.appColors.fgSubtle,
       ),
       prefixIcon: prefixIcon,
       filled: true,
-      fillColor: ColorPalette.opsSurfaceSubtle,
+      fillColor: context.appColors.bgSubtle,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: ColorPalette.opsBorder),
+        borderSide: BorderSide(color: context.appColors.borderBase),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: ColorPalette.opsBorder),
+        borderSide: BorderSide(color: context.appColors.borderBase),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: ColorPalette.opsPurple),
+        borderSide: BorderSide(color: context.appColors.brandPrimary),
       ),
     );
   }
@@ -266,14 +266,14 @@ class _FieldLabel extends StatelessWidget {
       text: TextSpan(
         text: text,
         style: TypographyManager.labelMedium.copyWith(
-          color: ColorPalette.textPrimary,
+          color: context.appColors.fgBase,
           fontWeight: FontWeight.w600,
         ),
         children: required
-            ? const [
+            ? [
                 TextSpan(
                   text: ' *',
-                  style: TextStyle(color: ColorPalette.error),
+                  style: TextStyle(color: context.appColors.fgError),
                 ),
               ]
             : null,
@@ -376,13 +376,13 @@ class _SourceChips extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected
-                  ? ColorPalette.opsPurpleTint
-                  : ColorPalette.opsSurfaceSubtle,
+                  ? context.appColors.brandPrimaryTint
+                  : context.appColors.bgSubtle,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isSelected
-                    ? ColorPalette.opsPurple
-                    : ColorPalette.opsBorder,
+                    ? context.appColors.brandPrimary
+                    : context.appColors.borderBase,
                 width: isSelected ? 1.5 : 1,
               ),
             ),
@@ -395,8 +395,8 @@ class _SourceChips extends StatelessWidget {
                   label,
                   style: TypographyManager.labelMedium.copyWith(
                     color: isSelected
-                        ? ColorPalette.opsPurpleDark
-                        : ColorPalette.textPrimary,
+                        ? context.appColors.brandPrimaryHover
+                        : context.appColors.fgBase,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
@@ -429,8 +429,8 @@ class _ManualBottomBar extends StatelessWidget {
                 SoundCategory.back,
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: ColorPalette.textPrimary,
-                side: BorderSide(color: ColorPalette.opsBorder),
+                foregroundColor: context.appColors.fgBase,
+                side: BorderSide(color: context.appColors.borderBase),
                 minimumSize: const Size.fromHeight(50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -448,10 +448,10 @@ class _ManualBottomBar extends StatelessWidget {
             child: ElevatedButton(
               onPressed: draft.canSubmit ? onSubmit : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: ColorPalette.opsPurple,
-                foregroundColor: ColorPalette.white,
-                disabledBackgroundColor: ColorPalette.opsBorder,
-                disabledForegroundColor: ColorPalette.textDisabled,
+                backgroundColor: context.appColors.brandPrimary,
+                foregroundColor: context.appColors.fgOnBrand,
+                disabledBackgroundColor: context.appColors.borderBase,
+                disabledForegroundColor: context.appColors.fgDisabled,
                 minimumSize: const Size.fromHeight(50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -461,13 +461,13 @@ class _ManualBottomBar extends StatelessWidget {
                 ),
               ),
               child: draft.submitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.4,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          ColorPalette.white,
+                          context.appColors.fgOnBrand,
                         ),
                       ),
                     )

@@ -5,7 +5,7 @@ import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/time/server_clock.dart';
 
 /// Result data when acknowledging a ticket with ETA selection

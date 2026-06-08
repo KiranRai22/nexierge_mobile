@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TicketsFilterChip extends StatelessWidget {
   final String label;
@@ -17,9 +17,9 @@ class TicketsFilterChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: selected ? ColorPalette.opsSurface : ColorPalette.white,
+        color: selected ? context.appColors.bgBase : context.appColors.fgOnBrand,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: ColorPalette.opsBorder),
+        border: Border.all(color: context.appColors.borderBase),
       ),
       child: Row(
         children: [
@@ -33,13 +33,13 @@ class TicketsFilterChip extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: ColorPalette.opsPurpleTint,
+              color: context.appColors.brandPrimaryTint,
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
               '$count',
               style: TypographyManager.bodySmall.copyWith(
-                color: ColorPalette.opsPurple,
+                color: context.appColors.brandPrimary,
               ),
             ),
           ),

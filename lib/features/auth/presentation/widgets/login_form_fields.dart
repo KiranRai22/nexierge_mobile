@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../providers/login_controller.dart';
 import '../utils/login_validators.dart';
@@ -34,7 +34,7 @@ class LabeledField extends StatelessWidget {
             text: label,
             style: TypographyManager.labelLarge.copyWith(
               fontSize: 13,
-              color: ColorPalette.loginFieldLabel,
+              color: context.appColors.loginFieldLabel,
               fontWeight: FontWeight.w600,
             ),
             children: [
@@ -42,7 +42,7 @@ class LabeledField extends StatelessWidget {
                 text: ' *',
                 style: TypographyManager.labelLarge.copyWith(
                   fontSize: 13,
-                  color: ColorPalette.loginRequiredAsterisk,
+                  color: context.appColors.fgError,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -56,7 +56,7 @@ class LabeledField extends StatelessWidget {
           Text(
             errorText!,
             style: TypographyManager.labelSmall.copyWith(
-              color: ColorPalette.activityOverdueFg,
+              color: context.appColors.fgDanger,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -65,7 +65,7 @@ class LabeledField extends StatelessWidget {
           Text(
             helperText!,
             style: TypographyManager.labelSmall.copyWith(
-              color: ColorPalette.loginSubtitle,
+              color: context.appColors.loginSubtitle,
             ),
           ),
         ],
@@ -110,11 +110,11 @@ class _LoginTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = hasError
-        ? ColorPalette.activityOverdueFg
-        : ColorPalette.loginInputBorder;
+        ? context.appColors.fgDanger
+        : context.appColors.loginInputBorder;
     return Container(
       decoration: BoxDecoration(
-        color: ColorPalette.loginInputBg,
+        color: context.appColors.loginInputBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderColor, width: 1),
       ),
@@ -124,7 +124,7 @@ class _LoginTextField extends StatelessWidget {
             padding: const EdgeInsets.only(left: 16, right: 12),
             child: Icon(
               prefixIcon,
-              color: ColorPalette.loginInputIcon,
+              color: context.appColors.loginInputIcon,
               size: 20,
             ),
           ),
@@ -140,7 +140,7 @@ class _LoginTextField extends StatelessWidget {
                 textInputAction: textInputAction,
                 onSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
                 onChanged: onChanged,
-                cursorColor: ColorPalette.loginInputText,
+                cursorColor: context.appColors.loginInputText,
                 inputFormatters: [
                   LengthLimitingTextInputFormatter(
                     LoginValidators.maxFieldLength,
@@ -152,7 +152,7 @@ class _LoginTextField extends StatelessWidget {
                 ],
                 autofillHints: autofillHint == null ? null : [autofillHint!],
                 style: TypographyManager.bodyMedium.copyWith(
-                  color: ColorPalette.loginInputText,
+                  color: context.appColors.loginInputText,
                 ),
                 decoration: InputDecoration(
                   isDense: true,
@@ -160,7 +160,7 @@ class _LoginTextField extends StatelessWidget {
                   fillColor: Colors.transparent,
                   hintText: hint,
                   hintStyle: TypographyManager.bodyMedium.copyWith(
-                    color: ColorPalette.loginInputHint,
+                    color: context.appColors.loginInputHint,
                   ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
@@ -277,7 +277,7 @@ class SecretField extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 24,
-                    color: ColorPalette.loginInputDivider,
+                    color: context.appColors.loginInputDivider,
                   ),
                   IconButton(
                     onPressed: tapSound(
@@ -289,7 +289,7 @@ class SecretField extends StatelessWidget {
                       obscure
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: ColorPalette.loginInputIcon,
+                      color: context.appColors.loginInputIcon,
                       size: 20,
                     ),
                   ),

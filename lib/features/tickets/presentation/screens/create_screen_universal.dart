@@ -99,31 +99,31 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
                     decoration: InputDecoration(
                       hintText: s.createSearchHint,
                       hintStyle: TypographyManager.bodyMedium.copyWith(
-                        color: ColorPalette.textSecondary,
+                        color: context.appColors.fgSubtle,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search_rounded,
                         size: 20,
-                        color: ColorPalette.textSecondary,
+                        color: context.appColors.fgSubtle,
                       ),
                       filled: true,
-                      fillColor: ColorPalette.opsSurfaceSubtle,
+                      fillColor: context.appColors.bgSubtle,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 10,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: ColorPalette.opsBorder),
+                        borderSide: BorderSide(color: context.appColors.borderBase),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: ColorPalette.opsBorder),
+                        borderSide: BorderSide(color: context.appColors.borderBase),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: ColorPalette.opsPurple,
+                        borderSide: BorderSide(
+                          color: context.appColors.brandPrimary,
                         ),
                       ),
                     ),
@@ -153,7 +153,7 @@ class _UniversalStepSelectState extends ConsumerState<_UniversalStepSelect> {
           },
         ),
         // 4. Divider
-        Divider(height: 1, thickness: 1, color: ColorPalette.opsBorder),
+        Divider(height: 1, thickness: 1, color: context.appColors.borderBase),
         // 5. Item list with department sections — dynamic from API.
         const SizedBox(height: 10),
         Expanded(
@@ -262,16 +262,16 @@ class _SelectionInfoBar extends StatelessWidget {
     final s = context.l10n;
     // Matches the desktop selection banner: deep green-tinted black surface
     // with bright green selection label and a muted "Clear all" link.
-    const bg = Color.fromARGB(255, 181, 229, 210);
-    const borderColor = Color(0xFF1E5E3A);
-    const accent = Color.fromARGB(255, 252, 253, 253);
-    const muted = Color.fromARGB(255, 188, 28, 10);
+    final bg = context.appColors.bgSuccessStrong;
+    final accent = context.appColors.fgSuccessOnStrong;
+    final muted = context.appColors.fgMutedOnStrong;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: bg, width: 1),
       ),
       child: Row(
         children: [
@@ -280,7 +280,7 @@ class _SelectionInfoBar extends StatelessWidget {
               s.createSelectionBarSelected(count),
               style: TypographyManager.labelMedium.copyWith(
                 fontWeight: FontWeight.w600,
-                color: const Color.fromARGB(255, 87, 94, 94),
+                color: accent,
               ),
             ),
           ),
@@ -291,7 +291,7 @@ class _SelectionInfoBar extends StatelessWidget {
               s.createSelectionBarClearAll,
               style: TypographyManager.labelMedium.copyWith(
                 color: muted,
-
+                decoration: TextDecoration.underline,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -316,8 +316,8 @@ class _StickyContinueCta extends StatelessWidget {
       child: ElevatedButton(
         onPressed: tapSound(onTap, SoundCategory.button),
         style: ElevatedButton.styleFrom(
-          backgroundColor: ColorPalette.opsPurple,
-          foregroundColor: ColorPalette.white,
+          backgroundColor: context.appColors.brandPrimary,
+          foregroundColor: context.appColors.fgOnBrand,
           minimumSize: const Size.fromHeight(54),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -419,7 +419,7 @@ class _UniversalItemTile extends StatelessWidget {
   void _openPreview(BuildContext context) {
     showDialog<void>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.85),
+      barrierColor: context.appColors.scrimBlack.withValues(alpha: 0.85),
       builder: (_) => _ItemPreviewDialog(
         title: _localizedItemTitle(context, item),
         description: item.description,
@@ -437,7 +437,7 @@ class _UniversalItemTile extends StatelessWidget {
       selected: selected,
       label: _localizedItemTitle(context, item),
       child: Material(
-        color: ColorPalette.itemTileBg,
+        color: context.appColors.tileBg,
         borderRadius: radius,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -481,10 +481,10 @@ class _UniversalItemTile extends StatelessWidget {
                         _localizedItemTitle(context, item),
                         style: TypographyManager.titleSmall.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: ColorPalette.white,
-                          shadows: const [
+                          color: context.appColors.fgOnBrand,
+                          shadows: [
                             Shadow(
-                              color: Color(0xCC000000),
+                              color: context.appColors.scrimBlack.withValues(alpha: 0.8),
                               blurRadius: 3,
                               offset: Offset(0, 1),
                             ),
@@ -500,10 +500,10 @@ class _UniversalItemTile extends StatelessWidget {
                         Text(
                           item.description,
                           style: TypographyManager.bodySmall.copyWith(
-                            color: ColorPalette.white,
-                            shadows: const [
+                            color: context.appColors.fgOnBrand,
+                            shadows: [
                               Shadow(
-                                color: Color(0xCC000000),
+                                color: context.appColors.scrimBlack.withValues(alpha: 0.8),
                                 blurRadius: 3,
                                 offset: Offset(0, 1),
                               ),
@@ -535,20 +535,20 @@ class _UniversalItemTile extends StatelessWidget {
                       width: 22,
                       height: 22,
                       decoration: BoxDecoration(
-                        color: ColorPalette.opsPurple,
+                        color: context.appColors.brandPrimary,
                         borderRadius: BorderRadius.circular(11),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: Color(0x66000000),
+                            color: context.appColors.scrimBlack.withValues(alpha: 0.4),
                             blurRadius: 4,
                             offset: Offset(0, 1),
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.check_rounded,
                         size: 14,
-                        color: ColorPalette.white,
+                        color: context.appColors.fgOnBrand,
                       ),
                     ),
                   ),
@@ -589,7 +589,7 @@ class _CardIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black.withValues(alpha: 0.45),
+      color: context.appColors.scrimBlack.withValues(alpha: 0.45),
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -599,7 +599,7 @@ class _CardIconButton extends StatelessWidget {
           child: SizedBox(
             width: 28,
             height: 28,
-            child: Icon(icon, size: 16, color: Colors.white),
+            child: Icon(icon, size: 16, color: context.appColors.fgOnBrand),
           ),
         ),
       ),
@@ -619,7 +619,7 @@ class _CardCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fallback = Container(
-      color: ColorPalette.opsSurface,
+      color: context.appColors.bgBase,
       alignment: Alignment.center,
       child: Text(emoji, style: const TextStyle(fontSize: 48)),
     );
@@ -659,10 +659,10 @@ class _QuantityStepper extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TypographyManager.titleSmall.copyWith(
               fontWeight: FontWeight.w800,
-              color: ColorPalette.white,
-              shadows: const [
+              color: context.appColors.fgOnBrand,
+              shadows: [
                 Shadow(
-                  color: Color(0xCC000000),
+                  color: context.appColors.scrimBlack.withValues(alpha: 0.8),
                   blurRadius: 3,
                   offset: Offset(0, 1),
                 ),
@@ -689,8 +689,8 @@ class _StepperButton extends StatelessWidget {
     final enabled = onTap != null;
     return Material(
       color: enabled
-          ? ColorPalette.white
-          : ColorPalette.white.withValues(alpha: 0.5),
+          ? context.appColors.fgOnBrand
+          : context.appColors.fgOnBrand.withValues(alpha: 0.5),
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -702,8 +702,8 @@ class _StepperButton extends StatelessWidget {
             icon,
             size: 16,
             color: enabled
-                ? ColorPalette.opsPurpleDark
-                : ColorPalette.textDisabled,
+                ? context.appColors.brandPrimaryHover
+                : context.appColors.fgDisabled,
           ),
         ),
       ),
@@ -738,7 +738,7 @@ class _ItemPreviewDialog extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 520, maxHeight: 700),
             child: Container(
               decoration: BoxDecoration(
-                color: ColorPalette.white,
+                color: context.appColors.fgOnBrand,
                 borderRadius: BorderRadius.circular(16),
               ),
               clipBehavior: Clip.antiAlias,
@@ -749,7 +749,7 @@ class _ItemPreviewDialog extends StatelessWidget {
                   AspectRatio(
                     aspectRatio: 1,
                     child: ColoredBox(
-                      color: ColorPalette.opsSurface,
+                      color: context.appColors.bgBase,
                       child: imageUrl.isEmpty
                           ? Center(
                               child: Text(
@@ -783,7 +783,7 @@ class _ItemPreviewDialog extends StatelessWidget {
                           title,
                           style: TypographyManager.titleMedium.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: ColorPalette.textPrimary,
+                            color: context.appColors.fgBase,
                           ),
                         ),
                         if (description.isNotEmpty) ...[
@@ -791,7 +791,7 @@ class _ItemPreviewDialog extends StatelessWidget {
                           Text(
                             description,
                             style: TypographyManager.bodyMedium.copyWith(
-                              color: ColorPalette.textSecondary,
+                              color: context.appColors.fgSubtle,
                             ),
                           ),
                         ],
@@ -929,9 +929,9 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                             height: 48,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
-                              color: ColorPalette.opsSurfaceSubtle,
+                              color: context.appColors.bgSubtle,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: ColorPalette.opsBorder),
+                              border: Border.all(color: context.appColors.borderBase),
                             ),
                             child: Row(
                               children: [
@@ -946,17 +946,17 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                                         .copyWith(
                                           color:
                                               draft.selectedRoomNumber != null
-                                              ? ColorPalette.textPrimary
-                                              : ColorPalette.textSecondary,
+                                              ? context.appColors.fgBase
+                                              : context.appColors.fgSubtle,
                                         ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right_rounded,
                                   size: 16,
-                                  color: ColorPalette.textSecondary,
+                                  color: context.appColors.fgSubtle,
                                 ),
                               ],
                             ),
@@ -992,10 +992,10 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                                 horizontal: 12,
                               ),
                               decoration: BoxDecoration(
-                                color: ColorPalette.opsSurfaceSubtle,
+                                color: context.appColors.bgSubtle,
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: ColorPalette.opsBorder,
+                                  color: context.appColors.borderBase,
                                 ),
                               ),
                               child: Row(
@@ -1008,17 +1008,17 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                                       style: TypographyManager.bodyMedium
                                           .copyWith(
                                             color: draft.guestName.isNotEmpty
-                                                ? ColorPalette.textPrimary
-                                                : ColorPalette.textSecondary,
+                                                ? context.appColors.fgBase
+                                                : context.appColors.fgSubtle,
                                           ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  const Icon(
+                                  Icon(
                                     Icons.chevron_right_rounded,
                                     size: 16,
-                                    color: ColorPalette.textSecondary,
+                                    color: context.appColors.fgSubtle,
                                   ),
                                 ],
                               ),
@@ -1031,10 +1031,10 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
                             style: TypographyManager.bodyMedium,
                             decoration: _inputDecoration(
                               hint: s.createGuestHint,
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.person_outline,
                                 size: 18,
-                                color: ColorPalette.textSecondary,
+                                color: context.appColors.fgSubtle,
                               ),
                             ),
                           ),
@@ -1084,23 +1084,23 @@ class _UniversalStepDetailsState extends ConsumerState<_UniversalStepDetails> {
     return InputDecoration(
       hintText: hint,
       hintStyle: TypographyManager.bodyMedium.copyWith(
-        color: ColorPalette.textSecondary,
+        color: context.appColors.fgSubtle,
       ),
       prefixIcon: prefixIcon,
       filled: true,
-      fillColor: ColorPalette.opsSurfaceSubtle,
+      fillColor: context.appColors.bgSubtle,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: ColorPalette.opsBorder),
+        borderSide: BorderSide(color: context.appColors.borderBase),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: ColorPalette.opsBorder),
+        borderSide: BorderSide(color: context.appColors.borderBase),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: ColorPalette.opsPurple),
+        borderSide: BorderSide(color: context.appColors.brandPrimary),
       ),
     );
   }
@@ -1118,9 +1118,9 @@ class _UniversalSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: ColorPalette.opsPurpleTint,
+        color: context.appColors.brandPrimaryTint,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorPalette.opsPurple),
+        border: Border.all(color: context.appColors.brandPrimary),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1132,7 +1132,7 @@ class _UniversalSummaryCard extends StatelessWidget {
                 child: Text(
                   s.createSummaryCardTitle(picks.length, draft.totalUnits),
                   style: TypographyManager.sectionOverline.copyWith(
-                    color: ColorPalette.opsPurpleDark,
+                    color: context.appColors.brandPrimaryHover,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1146,14 +1146,14 @@ class _UniversalSummaryCard extends StatelessWidget {
                     Text(
                       s.createSummaryEdit,
                       style: TypographyManager.labelMedium.copyWith(
-                        color: ColorPalette.opsPurpleDark,
+                        color: context.appColors.brandPrimaryHover,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
                       size: 16,
-                      color: ColorPalette.opsPurpleDark,
+                      color: context.appColors.brandPrimaryHover,
                     ),
                   ],
                 ),
@@ -1164,7 +1164,7 @@ class _UniversalSummaryCard extends StatelessWidget {
           Divider(
             height: 1,
             thickness: .5,
-            color: ColorPalette.opsPurpleDark.withValues(alpha: 0.4),
+            color: context.appColors.brandPrimaryHover.withValues(alpha: 0.4),
           ),
           // Room + Guest row
           SizedBox(height: 10),
@@ -1207,7 +1207,7 @@ class _SummaryItemChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.transparent,
             // borderRadius: BorderRadius.circular(8),
-            // border: Border.all(color: ColorPalette.opsBorder),
+            // border: Border.all(color: context.appColors.borderBase),
           ),
           alignment: Alignment.center,
           child: Text(emoji, style: const TextStyle(fontSize: 14)),
@@ -1216,15 +1216,15 @@ class _SummaryItemChip extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: ColorPalette.opsSurface,
+            color: context.appColors.bgBase,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: ColorPalette.opsBorder),
+            border: Border.all(color: context.appColors.borderBase),
           ),
           child: Text(
             'x$quantity',
             style: TypographyManager.bodySmall.copyWith(
               fontWeight: FontWeight.w700,
-              color: ColorPalette.textPrimary,
+              color: context.appColors.fgBase,
             ),
           ),
         ),
@@ -1232,7 +1232,7 @@ class _SummaryItemChip extends StatelessWidget {
         Text(
           title,
           style: TypographyManager.labelMedium.copyWith(
-            color: ColorPalette.opsPurpleDark,
+            color: context.appColors.brandPrimaryHover,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -1252,9 +1252,9 @@ class _AutoDepartmentField extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: ColorPalette.opsSurfaceSubtle,
+        color: context.appColors.bgSubtle,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ColorPalette.opsBorder),
+        border: Border.all(color: context.appColors.borderBase),
       ),
       child: Row(
         children: [
@@ -1262,7 +1262,7 @@ class _AutoDepartmentField extends StatelessWidget {
             child: Text(
               department.label(s),
               style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textPrimary,
+                color: context.appColors.fgBase,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1271,14 +1271,14 @@ class _AutoDepartmentField extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: ColorPalette.opsPurpleTint,
+              color: context.appColors.brandPrimaryTint,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: ColorPalette.opsPurple),
+              border: Border.all(color: context.appColors.brandPrimary),
             ),
             child: Text(
               s.createDepartmentAuto,
               style: TypographyManager.bodySmall.copyWith(
-                color: ColorPalette.opsPurpleDark,
+                color: context.appColors.brandPrimaryHover,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.4,
               ),
@@ -1312,8 +1312,8 @@ class _UniversalDetailsBottomBar extends StatelessWidget {
             child: OutlinedButton(
               onPressed: tapSound(onCancel, SoundCategory.back),
               style: OutlinedButton.styleFrom(
-                foregroundColor: ColorPalette.textPrimary,
-                side: BorderSide(color: ColorPalette.opsBorder),
+                foregroundColor: context.appColors.fgBase,
+                side: BorderSide(color: context.appColors.borderBase),
                 minimumSize: const Size.fromHeight(50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1331,12 +1331,12 @@ class _UniversalDetailsBottomBar extends StatelessWidget {
             child: ElevatedButton(
               onPressed: draft.canSubmit ? tapSound(onSubmit) : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: ColorPalette.opsPurple,
-                foregroundColor: ColorPalette.white,
-                disabledBackgroundColor: ColorPalette.opsPurple.withValues(
+                backgroundColor: context.appColors.brandPrimary,
+                foregroundColor: context.appColors.fgOnBrand,
+                disabledBackgroundColor: context.appColors.brandPrimary.withValues(
                   alpha: 0.4,
                 ),
-                disabledForegroundColor: ColorPalette.white.withValues(
+                disabledForegroundColor: context.appColors.fgOnBrand.withValues(
                   alpha: 0.85,
                 ),
                 minimumSize: const Size.fromHeight(50),
@@ -1348,13 +1348,13 @@ class _UniversalDetailsBottomBar extends StatelessWidget {
                 ),
               ),
               child: draft.submitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.4,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          ColorPalette.white,
+                          context.appColors.fgOnBrand,
                         ),
                       ),
                     )

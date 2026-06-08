@@ -114,14 +114,14 @@ class _CatalogStepSelect extends ConsumerWidget {
               Text(
                 s.createCatalogSelectHeading,
                 style: TypographyManager.textHeading.copyWith(
-                  color: ColorPalette.textPrimary,
+                  color: context.appColors.fgBase,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 s.createCatalogSelectSubheading,
                 style: TypographyManager.bodyMedium.copyWith(
-                  color: ColorPalette.textSecondary,
+                  color: context.appColors.fgSubtle,
                 ),
               ),
               const SizedBox(height: 20),
@@ -151,7 +151,7 @@ class _CatalogSelectorCard extends StatelessWidget {
     final s = context.l10n;
     final radius = BorderRadius.circular(14);
     return Material(
-      color: ColorPalette.opsSurface,
+      color: context.appColors.bgBase,
       borderRadius: radius,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -159,7 +159,7 @@ class _CatalogSelectorCard extends StatelessWidget {
         borderRadius: radius,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: ColorPalette.opsBorder),
+            border: Border.all(color: context.appColors.borderBase),
             borderRadius: radius,
           ),
           child: SizedBox(
@@ -192,7 +192,7 @@ class _CatalogSelectorCard extends StatelessWidget {
                               width: 8,
                               height: 8,
                               decoration: BoxDecoration(
-                                color: ColorPalette.opsPurple,
+                                color: context.appColors.brandPrimary,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -231,7 +231,7 @@ class _CatalogSelectorCard extends StatelessWidget {
                   child: Center(
                     child: Icon(
                       Icons.chevron_right_rounded,
-                      color: ColorPalette.textSecondary,
+                      color: context.appColors.fgSubtle,
                     ),
                   ),
                 ),
@@ -254,7 +254,7 @@ class _CatalogCoverImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasImage = logoUrl != null && logoUrl!.isNotEmpty;
     final fallback = ColoredBox(
-      color: ColorPalette.opsSurfaceSubtle,
+      color: context.appColors.bgSubtle,
       child: const Center(
         child: Text('🍽️', style: TextStyle(fontSize: 30)),
       ),
@@ -278,9 +278,9 @@ class _CatalogLogoTile extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: ColorPalette.opsSurfaceSubtle,
+        color: context.appColors.bgSubtle,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ColorPalette.opsBorder),
+        border: Border.all(color: context.appColors.borderBase),
       ),
       clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
@@ -304,15 +304,15 @@ class _CatalogSelectShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: ColorPalette.opsSurfaceSubtle,
-      highlightColor: ColorPalette.opsSurface,
+      baseColor: context.appColors.bgSubtle,
+      highlightColor: context.appColors.bgBase,
       child: ListView(
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
-          _shimmerBox(width: 200, height: 22),
+          _shimmerBox(context, width: 200, height: 22),
           const SizedBox(height: 8),
-          _shimmerBox(width: 280, height: 14),
+          _shimmerBox(context, width: 280, height: 14),
           const SizedBox(height: 20),
           for (int i = 0; i < 4; i++)
             Padding(
@@ -320,7 +320,7 @@ class _CatalogSelectShimmer extends StatelessWidget {
               child: Container(
                 height: 84,
                 decoration: BoxDecoration(
-                  color: ColorPalette.opsSurfaceSubtle,
+                  color: context.appColors.bgSubtle,
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
@@ -330,12 +330,12 @@ class _CatalogSelectShimmer extends StatelessWidget {
     );
   }
 
-  Widget _shimmerBox({required double width, required double height}) {
+  Widget _shimmerBox(BuildContext context, {required double width, required double height}) {
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: ColorPalette.opsSurfaceSubtle,
+        color: context.appColors.bgSubtle,
         borderRadius: BorderRadius.circular(6),
       ),
     );
@@ -357,14 +357,14 @@ class _CatalogSelectEmpty extends StatelessWidget {
           Icon(
             Icons.receipt_long_outlined,
             size: 64,
-            color: ColorPalette.textSecondary,
+            color: context.appColors.fgSubtle,
           ),
           const SizedBox(height: 16),
           Text(
             'No service catalogs available',
             textAlign: TextAlign.center,
             style: TypographyManager.bodyLarge.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
             ),
           ),
           const SizedBox(height: 8),
@@ -393,13 +393,13 @@ class _CatalogSelectError extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
         children: [
-          Icon(Icons.error_outline, size: 56, color: ColorPalette.error),
+          Icon(Icons.error_outline, size: 56, color: context.appColors.fgError),
           const SizedBox(height: 16),
           Text(
             error,
             textAlign: TextAlign.center,
             style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
             ),
           ),
           const SizedBox(height: 16),
@@ -547,31 +547,31 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                     decoration: InputDecoration(
                       hintText: s.catalogSearchHintNamed(catalog.name),
                       hintStyle: TypographyManager.bodyMedium.copyWith(
-                        color: ColorPalette.textSecondary,
+                        color: context.appColors.fgSubtle,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search_rounded,
                         size: 20,
-                        color: ColorPalette.textSecondary,
+                        color: context.appColors.fgSubtle,
                       ),
                       filled: true,
-                      fillColor: ColorPalette.opsSurfaceSubtle,
+                      fillColor: context.appColors.bgSubtle,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 10,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: ColorPalette.opsBorder),
+                        borderSide: BorderSide(color: context.appColors.borderBase),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: ColorPalette.opsBorder),
+                        borderSide: BorderSide(color: context.appColors.borderBase),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide:
-                            const BorderSide(color: ColorPalette.opsPurple),
+                            BorderSide(color: context.appColors.brandPrimary),
                       ),
                     ),
                   ),
@@ -604,7 +604,7 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
         ),
 
         // 3. Divider
-        Divider(height: 1, thickness: 1, color: ColorPalette.opsBorder),
+        Divider(height: 1, thickness: 1, color: context.appColors.borderBase),
 
         // 4. Item list
         Expanded(
@@ -637,7 +637,7 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                           : s.emptyState,
                       textAlign: TextAlign.center,
                       style: TypographyManager.bodyMedium.copyWith(
-                        color: ColorPalette.textSecondary,
+                        color: context.appColors.fgSubtle,
                       ),
                     ),
                   ),
@@ -661,7 +661,7 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                         child: Text(
                           groupedItem.category ?? 'Other',
                           style: TypographyManager.sectionOverline.copyWith(
-                            color: ColorPalette.textSecondary,
+                            color: context.appColors.fgSubtle,
                           ),
                         ),
                       );
@@ -715,8 +715,8 @@ class _CatalogItemsShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: ColorPalette.opsSurfaceSubtle,
-      highlightColor: ColorPalette.opsSurface,
+      baseColor: context.appColors.bgSubtle,
+      highlightColor: context.appColors.bgBase,
       child: ListView.separated(
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -725,7 +725,7 @@ class _CatalogItemsShimmer extends StatelessWidget {
         itemBuilder: (_, __) => Container(
           height: 92,
           decoration: BoxDecoration(
-            color: ColorPalette.opsSurfaceSubtle,
+            color: context.appColors.bgSubtle,
             borderRadius: BorderRadius.circular(14),
           ),
         ),
@@ -747,13 +747,13 @@ class _CatalogItemsError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: ColorPalette.error),
+            Icon(Icons.error_outline, size: 48, color: context.appColors.fgError),
             const SizedBox(height: 12),
             Text(
               error,
               textAlign: TextAlign.center,
               style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textSecondary,
+                color: context.appColors.fgSubtle,
               ),
             ),
             const SizedBox(height: 12),
@@ -819,8 +819,8 @@ class _CatalogMenuCard extends StatelessWidget {
             style: TypographyManager.titleSmall.copyWith(
               fontWeight: FontWeight.w700,
               color: selected
-                  ? ColorPalette.opsPurpleDark
-                  : ColorPalette.textPrimary,
+                  ? context.appColors.brandPrimaryHover
+                  : context.appColors.fgBase,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -829,7 +829,7 @@ class _CatalogMenuCard extends StatelessWidget {
           Text(
             item.description,
             style: TypographyManager.bodySmall.copyWith(
-              color: ColorPalette.textSecondary,
+              color: context.appColors.fgSubtle,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -843,7 +843,7 @@ class _CatalogMenuCard extends StatelessWidget {
                   priceLabel,
                   style: TypographyManager.titleSmall.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: ColorPalette.textPrimary,
+                    color: context.appColors.fgBase,
                   ),
                 ),
               ),
@@ -862,13 +862,13 @@ class _CatalogMenuCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: selected
-            ? ColorPalette.itemTileSelectedBg
-            : ColorPalette.opsSurface,
+            ? context.appColors.brandPrimaryTint
+            : context.appColors.bgBase,
         borderRadius: radius,
         border: Border.all(
           color: selected
-              ? ColorPalette.itemTileSelectedBorder
-              : ColorPalette.opsBorder,
+              ? context.appColors.brandPrimary
+              : context.appColors.borderBase,
           width: selected ? 1.5 : 1,
         ),
       ),
@@ -916,7 +916,7 @@ class _CatalogMenuCard extends StatelessWidget {
                 children: [
                   for (int i = 0; i < lines.length; i++) ...[
                     if (i == 0)
-                      Divider(height: 1, color: ColorPalette.opsPurple),
+                      Divider(height: 1, color: context.appColors.brandPrimary),
                     Padding(
                       padding: const EdgeInsets.only(top: 8, bottom: 4),
                       child: _CartLineRow(
@@ -949,7 +949,7 @@ class _CatalogItemCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasImage = imageUrl != null && imageUrl!.isNotEmpty;
     final fallback = ColoredBox(
-      color: ColorPalette.opsSurface,
+      color: context.appColors.bgBase,
       child: Center(
         child: Text(emoji, style: const TextStyle(fontSize: 28)),
       ),
@@ -961,14 +961,14 @@ class _CatalogItemCover extends StatelessWidget {
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
         return ColoredBox(
-          color: ColorPalette.opsSurface,
+          color: context.appColors.bgBase,
           child: Center(
             child: SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: ColorPalette.textSecondary,
+                color: context.appColors.fgSubtle,
               ),
             ),
           ),
@@ -1002,7 +1002,7 @@ class _CartLineRow extends StatelessWidget {
           child: Text(
             s.catalogLineLabel(index, summary),
             style: TypographyManager.bodyMedium.copyWith(
-              color: ColorPalette.opsPurpleDark,
+              color: context.appColors.brandPrimaryHover,
               fontWeight: FontWeight.w600,
             ),
             maxLines: 2,
@@ -1014,20 +1014,20 @@ class _CartLineRow extends StatelessWidget {
           formatMoney(line.lineTotal),
           style: TypographyManager.titleSmall.copyWith(
             fontWeight: FontWeight.w700,
-            color: ColorPalette.textPrimary,
+            color: context.appColors.fgBase,
           ),
         ),
         const SizedBox(width: 8),
         _LineActionIcon(
           icon: Icons.edit_outlined,
-          color: ColorPalette.opsPurpleDark,
+          color: context.appColors.brandPrimaryHover,
           onTap: onEdit,
           soundCategory: SoundCategory.preference,
         ),
         const SizedBox(width: 4),
         _LineActionIcon(
           icon: Icons.delete_outline_rounded,
-          color: ColorPalette.error,
+          color: context.appColors.fgError,
           onTap: onDelete,
           soundCategory: SoundCategory.back,
         ),
@@ -1099,13 +1099,13 @@ class _CatalogTrailingControl extends StatelessWidget {
             height: 24,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: ColorPalette.opsPurple,
+              color: context.appColors.brandPrimary,
               shape: BoxShape.circle,
             ),
             child: Text(
               '$quantity',
               style: TypographyManager.bodySmall.copyWith(
-                color: ColorPalette.white,
+                color: context.appColors.fgOnBrand,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1127,17 +1127,17 @@ class _CircleAddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: ColorPalette.opsPurple,
+      color: context.appColors.brandPrimary,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: tapSound(onTap, SoundCategory.button),
         customBorder: const CircleBorder(),
-        child: const SizedBox(
+        child: SizedBox(
           width: 36,
           height: 36,
           child: Center(
-            child: Icon(Icons.add_rounded, size: 20, color: ColorPalette.white),
+            child: Icon(Icons.add_rounded, size: 20, color: context.appColors.fgOnBrand),
           ),
         ),
       ),
@@ -1159,9 +1159,9 @@ class _InlineStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: ColorPalette.opsSurface,
+        color: context.appColors.bgBase,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ColorPalette.itemTileSelectedBorder),
+        border: Border.all(color: context.appColors.brandPrimary),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1174,7 +1174,7 @@ class _InlineStepper extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TypographyManager.titleSmall.copyWith(
                 fontWeight: FontWeight.w700,
-                color: ColorPalette.textPrimary,
+                color: context.appColors.fgBase,
               ),
             ),
           ),
@@ -1198,7 +1198,7 @@ class _StepperBtn extends StatelessWidget {
       child: SizedBox(
         width: 32,
         height: 32,
-        child: Icon(icon, size: 16, color: ColorPalette.opsPurpleDark),
+        child: Icon(icon, size: 16, color: context.appColors.brandPrimaryHover),
       ),
     );
   }
@@ -1211,7 +1211,7 @@ class _StepperPlus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: ColorPalette.opsPurple,
+      color: context.appColors.brandPrimary,
       borderRadius: const BorderRadius.only(
         topRight: Radius.circular(9),
         bottomRight: Radius.circular(9),
@@ -1219,10 +1219,10 @@ class _StepperPlus extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: tapSound(onTap, SoundCategory.button),
-        child: const SizedBox(
+        child: SizedBox(
           width: 32,
           height: 32,
-          child: Icon(Icons.add_rounded, size: 16, color: ColorPalette.white),
+          child: Icon(Icons.add_rounded, size: 16, color: context.appColors.fgOnBrand),
         ),
       ),
     );
@@ -1261,7 +1261,7 @@ class _CatalogCircleStepper extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TypographyManager.titleSmall.copyWith(
               fontWeight: FontWeight.w800,
-              color: ColorPalette.textPrimary,
+              color: context.appColors.fgBase,
             ),
           ),
         ),
@@ -1286,7 +1286,7 @@ class _CatalogCircleStepperButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: ColorPalette.opsPurple,
+      color: context.appColors.brandPrimary,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1294,7 +1294,7 @@ class _CatalogCircleStepperButton extends StatelessWidget {
         child: SizedBox(
           width: 28,
           height: 28,
-          child: Icon(icon, size: 16, color: ColorPalette.white),
+          child: Icon(icon, size: 16, color: context.appColors.fgOnBrand),
         ),
       ),
     );
@@ -1319,9 +1319,9 @@ class _CatalogStickyContinue extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF0D2A1F),
+              color: context.appColors.bgSuccessStrong,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFF1E5E3A), width: 1),
+              border: Border.all(color: context.appColors.bgSuccessStrong, width: 1),
             ),
             child: Row(
               children: [
@@ -1332,7 +1332,7 @@ class _CatalogStickyContinue extends StatelessWidget {
                       formatMoney(draft.total),
                     ),
                     style: TypographyManager.labelMedium.copyWith(
-                      color: const Color(0xFF2DD47E),
+                      color: context.appColors.fgSuccessOnStrong,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1343,7 +1343,7 @@ class _CatalogStickyContinue extends StatelessWidget {
                   child: Text(
                     s.createSelectionBarClearAll,
                     style: TypographyManager.labelMedium.copyWith(
-                      color: const Color(0xFFB8C2BD),
+                      color: context.appColors.fgMutedOnStrong,
                       decoration: TextDecoration.underline,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1360,8 +1360,8 @@ class _CatalogStickyContinue extends StatelessWidget {
           child: ElevatedButton(
             onPressed: tapSound(ctl.goToDetails),
             style: ElevatedButton.styleFrom(
-              backgroundColor: ColorPalette.opsPurple,
-              foregroundColor: ColorPalette.white,
+              backgroundColor: context.appColors.brandPrimary,
+              foregroundColor: context.appColors.fgOnBrand,
               minimumSize: const Size.fromHeight(54),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -1511,9 +1511,9 @@ class _CatalogStepDetailsState
                             height: 48,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
-                              color: ColorPalette.opsSurfaceSubtle,
+                              color: context.appColors.bgSubtle,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: ColorPalette.opsBorder),
+                              border: Border.all(color: context.appColors.borderBase),
                             ),
                             child: Row(
                               children: [
@@ -1525,17 +1525,17 @@ class _CatalogStepDetailsState
                                     style: TypographyManager.bodyMedium
                                         .copyWith(
                                           color: selectedStay != null
-                                              ? ColorPalette.textPrimary
-                                              : ColorPalette.textSecondary,
+                                              ? context.appColors.fgBase
+                                              : context.appColors.fgSubtle,
                                         ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const Icon(
+                                Icon(
                                   Icons.chevron_right_rounded,
                                   size: 16,
-                                  color: ColorPalette.textSecondary,
+                                  color: context.appColors.fgSubtle,
                                 ),
                               ],
                             ),
@@ -1568,9 +1568,9 @@ class _CatalogStepDetailsState
                               height: 48,
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: ColorPalette.opsSurfaceSubtle,
+                                color: context.appColors.bgSubtle,
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: ColorPalette.opsBorder),
+                                border: Border.all(color: context.appColors.borderBase),
                               ),
                               child: Row(
                                 children: [
@@ -1581,17 +1581,17 @@ class _CatalogStepDetailsState
                                           : s.guestPickerTitle,
                                       style: TypographyManager.bodyMedium.copyWith(
                                         color: draft.guestName.isNotEmpty
-                                            ? ColorPalette.textPrimary
-                                            : ColorPalette.textSecondary,
+                                            ? context.appColors.fgBase
+                                            : context.appColors.fgSubtle,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  const Icon(
+                                  Icon(
                                     Icons.chevron_right_rounded,
                                     size: 16,
-                                    color: ColorPalette.textSecondary,
+                                    color: context.appColors.fgSubtle,
                                   ),
                                 ],
                               ),
@@ -1603,11 +1603,12 @@ class _CatalogStepDetailsState
                             onChanged: ctl.setGuestName,
                             style: TypographyManager.bodyMedium,
                             decoration: _catalogInput(
+                              context,
                               hint: s.createGuestHint,
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.person_outline,
                                 size: 18,
-                                color: ColorPalette.textSecondary,
+                                color: context.appColors.fgSubtle,
                               ),
                             ),
                           ),
@@ -1639,7 +1640,7 @@ class _CatalogStepDetailsState
                 minLines: 3,
                 maxLines: 5,
                 style: TypographyManager.bodyMedium,
-                decoration: _catalogInput(hint: s.createNotesHint),
+                decoration: _catalogInput(context, hint: s.createNotesHint),
               ),
             ],
           ),
@@ -1654,27 +1655,27 @@ class _CatalogStepDetailsState
   }
 }
 
-InputDecoration _catalogInput({required String hint, Widget? prefixIcon}) {
+InputDecoration _catalogInput(BuildContext context, {required String hint, Widget? prefixIcon}) {
   return InputDecoration(
     hintText: hint,
     hintStyle: TypographyManager.bodyMedium.copyWith(
-      color: ColorPalette.textSecondary,
+      color: context.appColors.fgSubtle,
     ),
     prefixIcon: prefixIcon,
     filled: true,
-    fillColor: ColorPalette.opsSurfaceSubtle,
+    fillColor: context.appColors.bgSubtle,
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: ColorPalette.opsBorder),
+      borderSide: BorderSide(color: context.appColors.borderBase),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: BorderSide(color: ColorPalette.opsBorder),
+      borderSide: BorderSide(color: context.appColors.borderBase),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: ColorPalette.opsPurple),
+      borderSide: BorderSide(color: context.appColors.brandPrimary),
     ),
   );
 }
@@ -1701,9 +1702,9 @@ class _CatalogSummaryCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: ColorPalette.opsPurpleTint,
+        color: context.appColors.brandPrimaryTint,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorPalette.opsPurple),
+        border: Border.all(color: context.appColors.brandPrimary),
       ),
       child: Column(
         children: [
@@ -1716,9 +1717,9 @@ class _CatalogSummaryCard extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: ColorPalette.opsSurface,
+                    color: context.appColors.bgBase,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: ColorPalette.opsBorder),
+                    border: Border.all(color: context.appColors.borderBase),
                   ),
                   alignment: Alignment.center,
                   clipBehavior: Clip.antiAlias,
@@ -1736,7 +1737,7 @@ class _CatalogSummaryCard extends StatelessWidget {
                               height: 14,
                               child: CircularProgressIndicator(
                                 strokeWidth: 1,
-                                color: ColorPalette.textSecondary,
+                                color: context.appColors.fgSubtle,
                               ),
                             );
                           },
@@ -1762,7 +1763,7 @@ class _CatalogSummaryCard extends StatelessWidget {
                         catalog.name,
                         style: TypographyManager.titleSmall.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: ColorPalette.opsPurpleDark,
+                          color: context.appColors.brandPrimaryHover,
                         ),
                       ),
                       Text(
@@ -1771,7 +1772,7 @@ class _CatalogSummaryCard extends StatelessWidget {
                           formatMoney(draft.total),
                         ),
                         style: TypographyManager.bodySmall.copyWith(
-                          color: ColorPalette.opsPurpleDark,
+                          color: context.appColors.brandPrimaryHover,
                         ),
                       ),
                     ],
@@ -1786,14 +1787,14 @@ class _CatalogSummaryCard extends StatelessWidget {
                       Text(
                         s.createSummaryEdit,
                         style: TypographyManager.labelMedium.copyWith(
-                          color: ColorPalette.opsPurpleDark,
+                          color: context.appColors.brandPrimaryHover,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right_rounded,
                         size: 16,
-                        color: ColorPalette.opsPurpleDark,
+                        color: context.appColors.brandPrimaryHover,
                       ),
                     ],
                   ),
@@ -1801,7 +1802,7 @@ class _CatalogSummaryCard extends StatelessWidget {
               ],
             ),
           ),
-          Divider(height: 1, color: ColorPalette.opsPurple),
+          Divider(height: 1, color: context.appColors.brandPrimary),
           // Lines
           for (final (idx, line) in indexed)
             Padding(
@@ -1847,14 +1848,14 @@ class _CatalogSummaryLine extends StatelessWidget {
                           return Container(
                             width: 24,
                             height: 24,
-                            color: ColorPalette.opsSurface,
+                            color: context.appColors.bgBase,
                             alignment: Alignment.center,
                             child: SizedBox(
                               width: 12,
                               height: 12,
                               child: CircularProgressIndicator(
                                 strokeWidth: 1,
-                                color: ColorPalette.textSecondary,
+                                color: context.appColors.fgSubtle,
                               ),
                             ),
                           );
@@ -1882,15 +1883,15 @@ class _CatalogSummaryLine extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: ColorPalette.opsSurface,
+                color: context.appColors.bgBase,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: ColorPalette.opsBorder),
+                border: Border.all(color: context.appColors.borderBase),
               ),
               child: Text(
                 'x${line.quantity}',
                 style: TypographyManager.bodySmall.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: ColorPalette.textPrimary,
+                  color: context.appColors.fgBase,
                 ),
               ),
             ),
@@ -1899,7 +1900,7 @@ class _CatalogSummaryLine extends StatelessWidget {
               child: Text(
                 line.item.name,
                 style: TypographyManager.labelMedium.copyWith(
-                  color: ColorPalette.opsPurpleDark,
+                  color: context.appColors.brandPrimaryHover,
                   fontWeight: FontWeight.w700,
                 ),
                 maxLines: 1,
@@ -1910,7 +1911,7 @@ class _CatalogSummaryLine extends StatelessWidget {
               formatMoney(line.lineTotal),
               style: TypographyManager.titleSmall.copyWith(
                 fontWeight: FontWeight.w700,
-                color: ColorPalette.textPrimary,
+                color: context.appColors.fgBase,
               ),
             ),
           ],
@@ -1924,7 +1925,7 @@ class _CatalogSummaryLine extends StatelessWidget {
                   child: Text(
                     s.catalogLineLabel(lineIndex, summary),
                     style: TypographyManager.bodySmall.copyWith(
-                      color: ColorPalette.opsPurpleDark,
+                      color: context.appColors.brandPrimaryHover,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -1933,7 +1934,7 @@ class _CatalogSummaryLine extends StatelessWidget {
                 Text(
                   formatMoney(line.lineTotal),
                   style: TypographyManager.bodySmall.copyWith(
-                    color: ColorPalette.opsPurpleDark,
+                    color: context.appColors.brandPrimaryHover,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1967,8 +1968,8 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
             child: OutlinedButton(
               onPressed: tapSound(onCancel, SoundCategory.back),
               style: OutlinedButton.styleFrom(
-                foregroundColor: ColorPalette.textPrimary,
-                side: BorderSide(color: ColorPalette.opsBorder),
+                foregroundColor: context.appColors.fgBase,
+                side: BorderSide(color: context.appColors.borderBase),
                 minimumSize: const Size.fromHeight(50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1986,12 +1987,12 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
             child: ElevatedButton(
               onPressed: draft.canSubmit ? tapSound(onSubmit) : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: ColorPalette.opsPurple,
-                foregroundColor: ColorPalette.white,
-                disabledBackgroundColor: ColorPalette.opsPurple.withValues(
+                backgroundColor: context.appColors.brandPrimary,
+                foregroundColor: context.appColors.fgOnBrand,
+                disabledBackgroundColor: context.appColors.brandPrimary.withValues(
                   alpha: 0.4,
                 ),
-                disabledForegroundColor: ColorPalette.white.withValues(
+                disabledForegroundColor: context.appColors.fgOnBrand.withValues(
                   alpha: 0.85,
                 ),
                 minimumSize: const Size.fromHeight(50),
@@ -2003,13 +2004,13 @@ class _CatalogDetailsBottomBar extends StatelessWidget {
                 ),
               ),
               child: draft.submitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.4,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          ColorPalette.white,
+                          context.appColors.fgOnBrand,
                         ),
                       ),
                     )
@@ -2034,9 +2035,9 @@ class _CatalogAutoDepartmentField extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: ColorPalette.opsSurfaceSubtle,
+        color: context.appColors.bgSubtle,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ColorPalette.opsBorder),
+        border: Border.all(color: context.appColors.borderBase),
       ),
       child: Row(
         children: [
@@ -2044,7 +2045,7 @@ class _CatalogAutoDepartmentField extends StatelessWidget {
             child: Text(
               'Department Auto Selected',
               style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textPrimary,
+                color: context.appColors.fgBase,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2053,14 +2054,14 @@ class _CatalogAutoDepartmentField extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: ColorPalette.opsPurpleTint,
+              color: context.appColors.brandPrimaryTint,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: ColorPalette.opsPurple),
+              border: Border.all(color: context.appColors.brandPrimary),
             ),
             child: Text(
               s.createDepartmentAuto,
               style: TypographyManager.bodySmall.copyWith(
-                color: ColorPalette.opsPurpleDark,
+                color: context.appColors.brandPrimaryHover,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.4,
               ),

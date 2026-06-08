@@ -4,7 +4,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../auth/presentation/providers/auth_session_controller.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart'
@@ -12,6 +11,7 @@ import '../../../auth/presentation/providers/user_profile_controller.dart'
 import '../../../fcm/data/repositories/fcm_repository.dart';
 import '../../../../core/services/device_token_service.dart';
 import 'logout_confirmation_bottom_sheet.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Full-width destructive CTA at the bottom of the profile screen. Confirms
 /// before signing out. Deregisters the FCM token from the backend (remove: true)
@@ -71,22 +71,22 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
       child: ElevatedButton(
         onPressed: _busy ? null : tapSound(() => _confirmAndSignOut(context)),
         style: ElevatedButton.styleFrom(
-          backgroundColor: ColorPalette.primary,
-          foregroundColor: ColorPalette.white,
-          disabledBackgroundColor: ColorPalette.primary.withValues(alpha: 0.6),
-          disabledForegroundColor: ColorPalette.white,
+          backgroundColor: context.appColors.brandPrimary,
+          foregroundColor: context.appColors.fgOnBrand,
+          disabledBackgroundColor: context.appColors.brandPrimary.withValues(alpha: 0.6),
+          disabledForegroundColor: context.appColors.fgOnBrand,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: _busy
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.4,
-                  color: ColorPalette.white,
+                  color: context.appColors.fgOnBrand,
                 ),
               )
             : Row(
@@ -97,7 +97,7 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
                   Text(
                     s.profileLogout,
                     style: TypographyManager.titleMedium.copyWith(
-                      color: ColorPalette.white,
+                      color: context.appColors.fgOnBrand,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

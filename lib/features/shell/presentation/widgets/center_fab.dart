@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Raised, centered FAB used in the bottom-nav notch. Triggers the
 /// Create-new sheet at any tab.
@@ -19,14 +19,14 @@ class CenterFab extends StatelessWidget {
         height: 56,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            colors: [ColorPalette.opsPurple, ColorPalette.opsPurpleDark],
+          gradient: LinearGradient(
+            colors: [context.appColors.brandPrimary, context.appColors.brandPrimaryHover],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           boxShadow: [
             BoxShadow(
-              color: ColorPalette.opsPurple.withValues(alpha: 0.35),
+              color: context.appColors.brandPrimary.withValues(alpha: 0.35),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -38,7 +38,7 @@ class CenterFab extends StatelessWidget {
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: tapSound(onPressed),
-            child: const Icon(Icons.add, size: 26, color: Colors.white),
+            child: Icon(Icons.add, size: 26, color: context.appColors.fgOnBrand),
           ),
         ),
       ),

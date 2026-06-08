@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
-import '../../../../../core/theme/color_palette.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../domain/models/ticket.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 /// `REQUEST` block: section overline + each item as a small tile.
 class RequestList extends StatelessWidget {
@@ -38,9 +38,9 @@ class _ItemRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: ColorPalette.itemTileBg,
+        color: context.appColors.tileBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ColorPalette.itemTileBorder),
+        border: Border.all(color: context.appColors.borderBase),
       ),
       child: Row(
         children: [
@@ -63,9 +63,9 @@ class _ItemRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: ColorPalette.opsSurface,
+              color: context.appColors.bgBase,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: ColorPalette.opsBorder),
+              border: Border.all(color: context.appColors.borderBase),
             ),
             child: Text(
               '×${item.quantity}',

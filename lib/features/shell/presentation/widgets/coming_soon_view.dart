@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Reusable "Coming soon" view used by Modules, Profile, Catalog, Manual
 /// stub screens. Keeps the layout consistent across placeholders so the
@@ -34,10 +34,10 @@ class ComingSoonView extends StatelessWidget {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: ColorPalette.opsPurpleSoft,
+                color: context.appColors.brandPrimaryTint,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 38, color: ColorPalette.opsPurple),
+              child: Icon(icon, size: 38, color: context.appColors.brandPrimary),
             ),
             const SizedBox(height: 24),
             Text(
@@ -51,7 +51,7 @@ class ComingSoonView extends StatelessWidget {
             Text(
               description,
               style: TypographyManager.bodyMedium.copyWith(
-                color: ColorPalette.textSecondary,
+                color: context.appColors.fgSubtle,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -61,8 +61,8 @@ class ComingSoonView extends StatelessWidget {
               FilledButton(
                 onPressed: tapSound(onPrimaryAction),
                 style: FilledButton.styleFrom(
-                  backgroundColor: ColorPalette.opsPurple,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.appColors.brandPrimary,
+                  foregroundColor: context.appColors.fgOnBrand,
                   minimumSize: const Size(180, 48),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

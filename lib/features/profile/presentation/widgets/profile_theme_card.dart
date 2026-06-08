@@ -5,8 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
-import '../../../../core/theme/color_palette.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/theme_mode_controller.dart';
 import '../../../../core/theme/typography_manager.dart';
 
@@ -117,7 +116,7 @@ class _Chip extends StatelessWidget {
     return Expanded(
       child: Material(
         // Brand purple selected state — intentionally NOT theme-aware.
-        color: isSelected ? ColorPalette.opsPurple : Colors.transparent,
+        color: isSelected ? context.appColors.brandPrimary : Colors.transparent,
         borderRadius: BorderRadius.circular(999),
         child: InkWell(
           onTap: tapSound(onTap, SoundCategory.preference),
@@ -130,13 +129,13 @@ class _Chip extends StatelessWidget {
                 Icon(
                   icon,
                   size: 16,
-                  color: isSelected ? Colors.white : c.fgSubtle,
+                  color: isSelected ? context.appColors.fgOnBrand : c.fgSubtle,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   label,
                   style: TypographyManager.labelSmall.copyWith(
-                    color: isSelected ? Colors.white : c.fgSubtle,
+                    color: isSelected ? context.appColors.fgOnBrand : c.fgSubtle,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.3,
                   ),

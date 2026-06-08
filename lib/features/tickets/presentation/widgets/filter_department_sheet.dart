@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../domain/entities/ticket_form_options.dart';
@@ -322,7 +322,7 @@ class _CustomCheckbox extends StatelessWidget {
         color: isChecked ? activeColor : Colors.transparent,
       ),
       child: isChecked
-          ? Icon(Icons.check, size: 16, color: Colors.white)
+          ? Icon(Icons.check, size: 16, color: context.appColors.fgOnBrand)
           : null,
     );
   }

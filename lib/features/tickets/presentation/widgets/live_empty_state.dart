@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/i18n/l10n_extension.dart';
-import '../../../../core/theme/color_palette.dart';
 import '../../../../core/theme/typography_manager.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 
 /// Animated empty state for ticket lists and the needs-attention section.
 ///
@@ -267,8 +266,8 @@ class _GreenDotState extends State<_GreenDot>
       child: Container(
         width: 8,
         height: 8,
-        decoration: const BoxDecoration(
-          color: ColorPalette.ticketStripeDone,
+        decoration: BoxDecoration(
+          color: context.appColors.fgSuccess,
           shape: BoxShape.circle,
         ),
       ),

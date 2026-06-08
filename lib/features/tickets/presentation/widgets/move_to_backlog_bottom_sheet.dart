@@ -3,7 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
-import '../../../../core/theme/unified_theme_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
 
 /// Callback that receives the reason and completes asynchronously.
@@ -171,13 +171,13 @@ class _MoveToBacklogBottomSheetState extends State<MoveToBacklogBottomSheet> {
                         ? null
                         : tapSound(_handleConfirm),
                     icon: _submitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                                context.appColors.fgOnBrand,
                               ),
                             ),
                           )

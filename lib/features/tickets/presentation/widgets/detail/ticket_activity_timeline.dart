@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/i18n/l10n_extension.dart';
-import '../../../../../core/theme/unified_theme_manager.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/typography_manager.dart';
 import '../../../../../core/utils/date_utils.dart';
 import '../../../../../l10n/generated/app_localizations.dart';
