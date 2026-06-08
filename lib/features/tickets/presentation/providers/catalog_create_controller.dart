@@ -212,6 +212,34 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
     );
   }
 
+  /// Bump a configured line's quantity by 1 (clamped at 99). Works for both
+  /// option-bearing and no-option lines — the on-card inline stepper for
+  /// no-option items goes through [setItemQuantity] instead.
+  void incrementLineQuantity(String lineId) {
+    final idx = state.cart.indexWhere((l) => l.id == lineId);
+    if (idx == -1) return;
+    final next = [...state.cart];
+    final current = next[idx];
+    next[idx] = current.copyWith(quantity: (current.quantity + 1).clamp(1, 99));
+    state = state.copyWith(cart: next);
+  }
+
+  /// Decrement a configured line. Removes the line entirely once quantity
+  /// would drop to zero, so the user can clear a variant with a single tap
+  /// on the stepper minus button.
+  void decrementLineQuantity(String lineId) {
+    final idx = state.cart.indexWhere((l) => l.id == lineId);
+    if (idx == -1) return;
+    final current = state.cart[idx];
+    if (current.quantity <= 1) {
+      removeLine(lineId);
+      return;
+    }
+    final next = [...state.cart];
+    next[idx] = current.copyWith(quantity: current.quantity - 1);
+    state = state.copyWith(cart: next);
+  }
+
   /// Inline stepper — used by no-options items in the menu list.
   void setItemQuantity(CatalogItem item, int qty) {
     if (item.hasOptions) return;
@@ -409,17 +437,19 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
         );
       }
 
-      // No-options items get one entry per cart line. Items with options
-      // are 1-unit per line by construction; for collapsed no-option
-      // lines we still send a single item entry — the backend treats the
-      // `quantity` semantic via repeated rows or downstream logic.
-      items.add(
-        CreateOrderItemDto(
-          itemId: line.item.id,
-          specialInstructions: '',
-          modifierGroups: groups,
-        ),
-      );
+      // Quantity is encoded as repeated item rows. Backend treats the
+      // `quantity` semantic via row multiplicity (no `quantity` field on
+      // the DTO). This keeps no-option collapsed lines and option-bearing
+      // lines with quantity > 1 (via the in-cart stepper) consistent.
+      for (var i = 0; i < line.quantity; i++) {
+        items.add(
+          CreateOrderItemDto(
+            itemId: line.item.id,
+            specialInstructions: '',
+            modifierGroups: groups,
+          ),
+        );
+      }
     }
 
     return CreateCatalogOrderRequestDto(

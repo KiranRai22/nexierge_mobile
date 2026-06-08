@@ -164,7 +164,15 @@ class _StatusPill extends StatelessWidget {
     late Color fg;
     late String label;
 
-    // isOverdue takes priority over the raw API status
+    // Semantic colour per status. isOverdue overrides the raw API status
+    // because an in-progress-but-overdue ticket must read as urgent, not
+    // "still in progress". Each status now has its own colour family:
+    //   blue   → incoming / accepted (received, not started)
+    //   purple → in progress (active, brand)
+    //   green  → done (success)
+    //   amber  → backlog / on hold (parked)
+    //   red    → overdue (urgent override)
+    //   grey   → canceled (terminal, not urgent)
     if (ticket.isOverdue) {
       bg = c.tagRedBg;
       fg = c.tagRedText;
@@ -176,29 +184,29 @@ class _StatusPill extends StatelessWidget {
           fg = c.tagBlueText;
           label = s.ticketStatusBadgeNew;
         case TicketStatus.accepted:
-          bg = c.tagGreenBg;
-          fg = c.tagGreenText;
+          bg = c.tagBlueBg;
+          fg = c.tagBlueText;
           label = s.ticketStatusBadgeAccepted;
         case TicketStatus.inProgress:
-          bg = c.tagGreenBg;
-          fg = c.tagGreenText;
+          bg = c.brandPrimaryTint;
+          fg = c.brandPrimaryHover;
           label = s.ticketStatusBadgeInProgress;
         case TicketStatus.done:
-          bg = c.tagNeutralBg;
-          fg = c.tagNeutralText;
+          bg = c.tagGreenBg;
+          fg = c.tagGreenText;
           label = s.ticketStatusBadgeDone;
         case TicketStatus.canceled:
-          bg = c.tagRedBg;
-          fg = c.tagRedText;
-          label = s.ticketStatusBadgeCancelled;
-        case TicketStatus.onHold:
-          bg = c.tagPurpleBg;
-          fg = c.tagPurpleText;
-          label = s.ticketStatusBadgeOnHold;
-        case TicketStatus.backlog:
           bg = c.tagNeutralBg;
           fg = c.tagNeutralText;
-          label = 'Backlog';
+          label = s.ticketStatusBadgeCancelled;
+        case TicketStatus.onHold:
+          bg = c.tagAmberBg;
+          fg = c.tagAmberText;
+          label = s.ticketStatusBadgeOnHold;
+        case TicketStatus.backlog:
+          bg = c.tagAmberBg;
+          fg = c.tagAmberText;
+          label = s.subTabBacklog;
       }
     }
 

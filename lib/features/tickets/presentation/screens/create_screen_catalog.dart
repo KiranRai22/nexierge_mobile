@@ -691,7 +691,10 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                           draft.quantityFor(item.id) - 1,
                         ),
                         onEditLine: _onEditLine,
-                        onDeleteLine: (l) => ctl.removeLine(l.id),
+                        onIncrementLine: (l) =>
+                            ctl.incrementLineQuantity(l.id),
+                        onDecrementLine: (l) =>
+                            ctl.decrementLineQuantity(l.id),
                       ),
                     );
                   },
@@ -772,7 +775,8 @@ class _CatalogMenuCard extends StatelessWidget {
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
   final void Function(CartLine line) onEditLine;
-  final void Function(CartLine line) onDeleteLine;
+  final void Function(CartLine line) onIncrementLine;
+  final void Function(CartLine line) onDecrementLine;
 
   const _CatalogMenuCard({
     required this.item,
@@ -781,7 +785,8 @@ class _CatalogMenuCard extends StatelessWidget {
     required this.onIncrement,
     required this.onDecrement,
     required this.onEditLine,
-    required this.onDeleteLine,
+    required this.onIncrementLine,
+    required this.onDecrementLine,
   });
 
   @override
@@ -865,11 +870,14 @@ class _CatalogMenuCard extends StatelessWidget {
             ? context.appColors.brandPrimaryTint
             : context.appColors.bgBase,
         borderRadius: radius,
+        // Selected state is conveyed by the tint fill alone — the previous
+        // bright purple border collided with the in-cart line divider and
+        // made the card feel boxed in. Unselected cards keep their neutral
+        // hairline so they still register as separate cards.
         border: Border.all(
           color: selected
-              ? context.appColors.brandPrimary
+              ? Colors.transparent
               : context.appColors.borderBase,
-          width: selected ? 1.5 : 1,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -923,7 +931,8 @@ class _CatalogMenuCard extends StatelessWidget {
                         index: i + 1,
                         line: lines[i],
                         onEdit: () => onEditLine(lines[i]),
-                        onDelete: () => onDeleteLine(lines[i]),
+                        onIncrement: () => onIncrementLine(lines[i]),
+                        onDecrement: () => onDecrementLine(lines[i]),
                       ),
                     ),
                   ],
@@ -983,13 +992,15 @@ class _CartLineRow extends StatelessWidget {
   final int index;
   final CartLine line;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
 
   const _CartLineRow({
     required this.index,
     required this.line,
     required this.onEdit,
-    required this.onDelete,
+    required this.onIncrement,
+    required this.onDecrement,
   });
 
   @override
@@ -998,15 +1009,22 @@ class _CartLineRow extends StatelessWidget {
     final summary = line.optionsSummary.isEmpty ? '—' : line.optionsSummary;
     return Row(
       children: [
+        // Tapping the line label re-opens the customizer pre-populated with
+        // this line's selections. Previously this was a separate pencil icon
+        // alongside a trash icon; both were replaced with the stepper below,
+        // so the only path to edit the variant is via the label itself.
         Expanded(
-          child: Text(
-            s.catalogLineLabel(index, summary),
-            style: TypographyManager.bodyMedium.copyWith(
-              color: context.appColors.brandPrimaryHover,
-              fontWeight: FontWeight.w600,
+          child: InkWell(
+            onTap: tapSound(onEdit, SoundCategory.preference),
+            child: Text(
+              s.catalogLineLabel(index, summary),
+              style: TypographyManager.bodyMedium.copyWith(
+                color: context.appColors.brandPrimaryHover,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(width: 8),
@@ -1018,46 +1036,16 @@ class _CartLineRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        _LineActionIcon(
-          icon: Icons.edit_outlined,
-          color: context.appColors.brandPrimaryHover,
-          onTap: onEdit,
-          soundCategory: SoundCategory.preference,
-        ),
-        const SizedBox(width: 4),
-        _LineActionIcon(
-          icon: Icons.delete_outline_rounded,
-          color: context.appColors.fgError,
-          onTap: onDelete,
-          soundCategory: SoundCategory.back,
+        // Same stepper widget the no-options inline path uses, so the look
+        // and feel matches the seasonal-fruit-plate card. Minus on a line
+        // of quantity 1 deletes the line outright (handled by the
+        // controller's decrementLineQuantity).
+        _CatalogCircleStepper(
+          value: line.quantity,
+          onMinus: onDecrement,
+          onPlus: onIncrement,
         ),
       ],
-    );
-  }
-}
-
-class _LineActionIcon extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  final SoundCategory soundCategory;
-  const _LineActionIcon({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-    this.soundCategory = SoundCategory.button,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: tapSound(onTap, soundCategory),
-      borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        width: 28,
-        height: 28,
-        child: Icon(icon, size: 18, color: color),
-      ),
     );
   }
 }
@@ -1087,35 +1075,12 @@ class _CatalogTrailingControl extends StatelessWidget {
         onPlus: onIncrement,
       );
     }
-    // With-options + has lines → count badge + circular +
-    if (item.hasOptions && quantity > 0) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: context.appColors.brandPrimary,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              '$quantity',
-              style: TypographyManager.bodySmall.copyWith(
-                color: context.appColors.fgOnBrand,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          _CircleAddButton(onTap: onAdd),
-        ],
-      );
-    }
-    // Default: just circular +
+    // With-options: always a single circular `+` button on the trailing
+    // edge. Per-variant quantity is controlled via the in-card line rows
+    // below, so we don't need to surface a count here. Keeping this
+    // trailing slot at a fixed 36 px avoids the right-edge overflow that
+    // the previous count-badge + button combo produced inside the 15%
+    // trailing column.
     return _CircleAddButton(onTap: onAdd);
   }
 }
