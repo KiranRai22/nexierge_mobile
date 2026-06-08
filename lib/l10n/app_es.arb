@@ -408,6 +408,15 @@
   "notifGenericTitle": "Nexierge",
   "notifNewTicket": "Nuevo ticket: {ticketCode}",
 
+  "ticketSlaChannelName": "Recordatorios de SLA de tickets",
+  "ticketSlaChannelDescription": "Alertas antes del vencimiento de un ticket y al entrar en periodo de gracia.",
+  "ticketSlaAboutToExpireTitle": "Ticket a punto de vencer",
+  "ticketSlaEnteredGraceTitle": "Ticket en periodo de gracia",
+  "ticketSlaNotifBody": "#{ticketId} · {title}\nEstado: {status}\nCreado {created} · Vence {due}\n{footer}",
+  "ticketSlaFooterMinutesLeft": "{minutes} min restantes",
+  "ticketSlaFooterGrace": "En periodo de gracia — actúa ahora",
+  "ticketSlaGroupSummary": "Tickets que requieren tu atención",
+
   "profileAvatarSheetTitle": "Cambiar foto de perfil",
   "profileAvatarSheetSubtitle": "Elige cómo quieres actualizar tu foto",
   "profileAvatarSheetUploadTitle": "Subir foto",
@@ -528,6 +537,7 @@
   "ticketPriorityP2": "P2",
   "ticketPriorityP3": "P3",
   "ticketStatusBadgeAccepted": "ACEPTADO",
+  "ticketStatusBadgeNew": "NUEVO",
   "ticketStatusBadgeIncoming": "ENTRANTE",
   "ticketStatusBadgeInProgress": "EN CURSO",
   "ticketStatusBadgeDone": "HECHO",

@@ -451,7 +451,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get ticketStatusBadgeAccepted => 'ACEPTADO';
 
   @override
-  String get ticketStatusBadgeNew => 'NEW';
+  String get ticketStatusBadgeNew => 'NUEVO';
 
   @override
   String get ticketStatusBadgeIncoming => 'ENTRANTE';
@@ -1368,6 +1368,42 @@ class AppLocalizationsEs extends AppLocalizations {
   String notifNewTicket(String ticketCode) {
     return 'Nuevo ticket: $ticketCode';
   }
+
+  @override
+  String get ticketSlaChannelName => 'Recordatorios de SLA de tickets';
+
+  @override
+  String get ticketSlaChannelDescription =>
+      'Alertas antes del vencimiento de un ticket y al entrar en periodo de gracia.';
+
+  @override
+  String get ticketSlaAboutToExpireTitle => 'Ticket a punto de vencer';
+
+  @override
+  String get ticketSlaEnteredGraceTitle => 'Ticket en periodo de gracia';
+
+  @override
+  String ticketSlaNotifBody(
+    String ticketId,
+    String title,
+    String status,
+    String created,
+    String due,
+    String footer,
+  ) {
+    return '#$ticketId · $title\nEstado: $status\nCreado $created · Vence $due\n$footer';
+  }
+
+  @override
+  String ticketSlaFooterMinutesLeft(int minutes) {
+    return '$minutes min restantes';
+  }
+
+  @override
+  String get ticketSlaFooterGrace => 'En periodo de gracia — actúa ahora';
+
+  @override
+  String get ticketSlaGroupSummary => 'Tickets que requieren tu atención';
 
   @override
   String get notificationsTitle => 'Notificaciones';

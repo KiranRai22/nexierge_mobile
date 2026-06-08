@@ -140,11 +140,14 @@ class NotificationService {
     // Allow iOS to display FCM notification banners while the app is in
     // foreground. Without this, iOS silently swallows the system banner and
     // we rely solely on flutter_local_notifications — which can fail silently.
-    await _messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    // No-op on Android (the API is iOS-only under the hood).
+    if (Platform.isIOS) {
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
     _listenForeground();
     _listenTaps();
     await _checkInitialMessage();

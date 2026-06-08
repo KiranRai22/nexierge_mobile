@@ -648,6 +648,30 @@
     }
   },
 
+  "ticketSlaChannelName": "Ticket SLA reminders",
+  "ticketSlaChannelDescription": "Alerts before a ticket's due time and when it enters the grace period.",
+  "ticketSlaAboutToExpireTitle": "Ticket about to expire",
+  "ticketSlaEnteredGraceTitle": "Ticket entered grace period",
+  "ticketSlaNotifBody": "#{ticketId} · {title}\nStatus: {status}\nCreated {created} · Due {due}\n{footer}",
+  "@ticketSlaNotifBody": {
+    "placeholders": {
+      "ticketId":  { "type": "String", "example": "1234" },
+      "title":     { "type": "String", "example": "Charging cables" },
+      "status":    { "type": "String", "example": "In Progress" },
+      "created":   { "type": "String", "example": "12:00 AM" },
+      "due":       { "type": "String", "example": "12:18 AM" },
+      "footer":    { "type": "String", "example": "3 min left" }
+    }
+  },
+  "ticketSlaFooterMinutesLeft": "{minutes} min left",
+  "@ticketSlaFooterMinutesLeft": {
+    "placeholders": {
+      "minutes": { "type": "int", "example": "3" }
+    }
+  },
+  "ticketSlaFooterGrace": "In grace period — act now",
+  "ticketSlaGroupSummary": "Tickets need your attention",
+
   "ticketActivityCreated": "Ticket created",
   "ticketActivityStatusChange": "{from} → {to}",
   "@ticketActivityStatusChange": {

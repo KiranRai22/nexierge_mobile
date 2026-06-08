@@ -29,6 +29,7 @@ import 'features/dashboard/domain/entities/dashboard_bootstrap_state.dart';
 import 'features/dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import 'features/dashboard/presentation/screens/dashboard_shimmer_screen.dart';
 import 'features/shell/presentation/screens/home_shell.dart';
+import 'features/tickets/notifications/ticket_sla_scheduler.dart';
 import 'features/version_control/presentation/providers/version_check_notifier.dart';
 import 'features/version_control/presentation/services/update_notification_service.dart';
 import 'features/version_control/presentation/widgets/force_update_bottom_sheet.dart';
@@ -49,8 +50,10 @@ Future<void> main() async {
 
   // iOS Keychain persists across app deletion; SharedPreferences does not.
   // Wipe stale Keychain data on a fresh install so auto-login can't resurrect
-  // a session from a previous install.
-  await _clearKeychainOnFreshInstall();
+  // a session from a previous install. Android has no equivalent leak.
+  if (Platform.isIOS) {
+    await _clearKeychainOnFreshInstall();
+  }
 
   // Firebase must initialize before any Firebase service is used (Critical)
   await FirebaseService.initialize();
@@ -124,6 +127,10 @@ class MyApp extends ConsumerWidget {
     // Log all events received from the hub_notifications channel
     ref.watch(xanoHubNotificationsLoggerProvider);
 
+    // Schedule local SLA reminder notifications when tickets are loaded /
+    // updated. Fires at (dueAt - 3min) and dueAt; grouped on Android.
+    ref.watch(ticketSlaSchedulerProvider);
+
     // Sync sound manager with preferences in a listener.
     ref.listen<bool>(soundPreferencesProvider, (_, next) {
       SoundManager.instance.setEnabled(next);
@@ -188,7 +195,7 @@ class MyApp extends ConsumerWidget {
 
         // Show in-app sheet once (after first frame)
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final ctx = _navigatorKey.currentContext;
+          final ctx = appNavigatorKey.currentContext;
           if (ctx == null || !ctx.mounted) return;
           OptionalUpdateSheet.show(
             ctx,
@@ -202,7 +209,7 @@ class MyApp extends ConsumerWidget {
 
         // Show non-dismissable force update bottom sheet (after first frame)
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final ctx = _navigatorKey.currentContext;
+          final ctx = appNavigatorKey.currentContext;
           if (ctx == null || !ctx.mounted) return;
           ForceUpdateBottomSheet.show(
             ctx,
@@ -229,7 +236,7 @@ class MyApp extends ConsumerWidget {
       // 2. No session → Login
       // 3. Session + Bootstrap loading → Shimmer
       // 4. Session + Bootstrap complete → HomeShell
-      navigatorKey: _navigatorKey,
+      navigatorKey: appNavigatorKey,
       builder: (context, child) =>
           ConnectivityGate(child: child ?? const SizedBox.shrink()),
       home: _resolveHome(session, bootstrap, ref),
@@ -276,7 +283,7 @@ class MyApp extends ConsumerWidget {
 
 /// Single navigator key so we can push the optional-update sheet from the
 /// version-check listener without requiring a BuildContext.
-final _navigatorKey = GlobalKey<NavigatorState>();
+final appNavigatorKey = GlobalKey<NavigatorState>();
 
 class _AuthBootstrapSplash extends StatelessWidget {
   const _AuthBootstrapSplash();

@@ -1362,6 +1362,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get ticketSlaChannelName => 'Ticket SLA reminders';
+
+  @override
+  String get ticketSlaChannelDescription =>
+      'Alerts before a ticket\'s due time and when it enters the grace period.';
+
+  @override
+  String get ticketSlaAboutToExpireTitle => 'Ticket about to expire';
+
+  @override
+  String get ticketSlaEnteredGraceTitle => 'Ticket entered grace period';
+
+  @override
+  String ticketSlaNotifBody(
+    String ticketId,
+    String title,
+    String status,
+    String created,
+    String due,
+    String footer,
+  ) {
+    return '#$ticketId · $title\nStatus: $status\nCreated $created · Due $due\n$footer';
+  }
+
+  @override
+  String ticketSlaFooterMinutesLeft(int minutes) {
+    return '$minutes min left';
+  }
+
+  @override
+  String get ticketSlaFooterGrace => 'In grace period — act now';
+
+  @override
+  String get ticketSlaGroupSummary => 'Tickets need your attention';
+
+  @override
   String get notificationsTitle => 'Notifications';
 
   @override

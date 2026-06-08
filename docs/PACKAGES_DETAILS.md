@@ -270,6 +270,14 @@ Last updated: 2026-04-26.
 - **Description:** Streams native network-interface state (wifi / mobile / ethernet / none) on iOS and Android. BSD-3-Clause permits commercial and closed-source use.
 - **Why we use it:** Powers the `ConnectivityService` that continuously monitors network availability. Interface events are paired with an active DNS probe (`InternetAddress.lookup`) because interface "connected" does not guarantee real internet (captive portals, upstream outages). The service drives the global "No Internet Connection" dialog mounted via `ConnectivityGate` at the MaterialApp root.
 
+### `timezone`
+- **Package name:** `timezone`
+- **Version:** `^0.9.4`
+- **Owner:** srawlins / Dart team contributors
+- **License:** BSD-3-Clause
+- **Description:** Pure-Dart implementation of the IANA timezone database. BSD-3-Clause permits commercial and closed-source use.
+- **Why we use it:** Required by `flutter_local_notifications.zonedSchedule()` so the ticket-SLA reminder scheduler (`TicketSlaScheduler`) can post wall-clock-accurate local notifications that survive app suspension. We pin notifications to `tz.UTC` and convert all ticket `dueAt` instants from epoch ms — no device-zone lookup is needed.
+
 ---
 
 All planned i18n packages are now landed and documented above:

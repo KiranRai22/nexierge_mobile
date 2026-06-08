@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -82,7 +83,10 @@ class TicketCardCompact extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${ticket.code} ${ticket.title}',
-      child: Material(
+      child: _UrgencyWrapper(
+        ticket: ticket,
+        borderRadius: radius,
+        child: Material(
         color: Colors.transparent,
         borderRadius: radius,
         clipBehavior: Clip.antiAlias,
@@ -142,7 +146,175 @@ class TicketCardCompact extends StatelessWidget {
             ),
           ),
         ),
+        ),
       ),
+    );
+  }
+}
+
+// ─── Urgency wrapper: shake at ≤3 min, soft tint for urgent / grace ──────────
+
+/// Wraps a ticket card to convey time-pressure visually:
+///   • Healthy w/ timeLeft ≤ 3 min  → amber halo + subtle horizontal shake
+///   • Past dueAt, before graceAt    → soft red tint (grace period)
+///   • Past graceAt (not incoming)   → soft red tint (overdue)
+/// Cheap when not urgent: animation controller is only created/started when
+/// the ticket enters the urgent window.
+class _UrgencyWrapper extends StatefulWidget {
+  final Ticket ticket;
+  final BorderRadius borderRadius;
+  final Widget child;
+
+  const _UrgencyWrapper({
+    required this.ticket,
+    required this.borderRadius,
+    required this.child,
+  });
+
+  @override
+  State<_UrgencyWrapper> createState() => _UrgencyWrapperState();
+}
+
+class _UrgencyWrapperState extends State<_UrgencyWrapper>
+    with SingleTickerProviderStateMixin {
+  static const _urgentWindow = Duration(minutes: 3);
+
+  Timer? _tick;
+  AnimationController? _shake;
+
+  bool get _isTerminal {
+    final s = widget.ticket.status;
+    return s == TicketStatus.done || s == TicketStatus.canceled;
+  }
+
+  /// True when the ticket is healthy but ≤ 3 min from dueAt.
+  bool get _isUrgent {
+    if (_isTerminal) return false;
+    final due = widget.ticket.eta;
+    if (due == null) return false;
+    final left = due.difference(ServerClock.now());
+    return !left.isNegative && left <= _urgentWindow;
+  }
+
+  /// True when past dueAt but before dueAtWithGrace, OR incoming past grace
+  /// (which is the transient "still in grace" state).
+  bool get _isInGrace {
+    if (_isTerminal) return false;
+    final due = widget.ticket.eta;
+    if (due == null) return false;
+    final now = ServerClock.now();
+    if (now.isBefore(due)) return false;
+    final grace = widget.ticket.dueAtWithGrace ?? due;
+    if (now.isBefore(grace)) return true;
+    return widget.ticket.status == TicketStatus.incoming;
+  }
+
+  /// True when past dueAtWithGrace and not incoming (hard overdue).
+  bool get _isOverdue {
+    if (_isTerminal) return false;
+    final grace = widget.ticket.dueAtWithGrace ?? widget.ticket.eta;
+    if (grace == null) return false;
+    if (ServerClock.now().isBefore(grace)) return false;
+    return widget.ticket.status != TicketStatus.incoming;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_isTerminal) {
+      _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _UrgencyWrapper old) {
+    super.didUpdateWidget(old);
+    if (_isTerminal) {
+      _tick?.cancel();
+      _tick = null;
+      _shake?.stop();
+    } else if (_tick == null) {
+      _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    _shake?.dispose();
+    super.dispose();
+  }
+
+  void _ensureShakeRunning() {
+    _shake ??= AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    if (!_shake!.isAnimating) _shake!.repeat();
+  }
+
+  void _stopShake() {
+    if (_shake != null && _shake!.isAnimating) {
+      _shake!.stop();
+      _shake!.value = 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final urgent = _isUrgent;
+    final grace = _isInGrace;
+    final overdue = _isOverdue;
+
+    if (urgent) {
+      _ensureShakeRunning();
+    } else {
+      _stopShake();
+    }
+
+    // Pick the wrapper background/halo. Urgent wins over grace/overdue.
+    Color? tint;
+    List<BoxShadow>? halo;
+    if (urgent) {
+      const amber = Color(0xFFFFB020);
+      tint = amber.withOpacity(0.08);
+      halo = [
+        BoxShadow(
+          color: amber.withOpacity(0.45),
+          blurRadius: 10,
+          spreadRadius: 0.5,
+        ),
+      ];
+    } else if (overdue) {
+      tint = ColorPalette.statusOverdue.withOpacity(0.10);
+    } else if (grace) {
+      tint = ColorPalette.statusOverdue.withOpacity(0.06);
+    }
+
+    final wrapped = AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      decoration: BoxDecoration(
+        borderRadius: widget.borderRadius,
+        color: tint,
+        boxShadow: halo,
+      ),
+      child: widget.child,
+    );
+
+    if (_shake == null) return wrapped;
+    return AnimatedBuilder(
+      animation: _shake!,
+      builder: (_, child) {
+        final dx = urgent
+            ? math.sin(_shake!.value * 2 * math.pi) * 2.5
+            : 0.0;
+        return Transform.translate(offset: Offset(dx, 0), child: child);
+      },
+      child: wrapped,
     );
   }
 }
@@ -533,52 +705,66 @@ class _Row3State extends State<_Row3> {
     final ticket = widget.ticket;
     final now = ServerClock.now();
 
-    final isOverdue = ticket.isOverdue;
     final isDone =
         ticket.status == TicketStatus.done ||
         ticket.status == TicketStatus.canceled;
     final isInProgress =
         ticket.status == TicketStatus.inProgress ||
         ticket.status == TicketStatus.accepted;
+    final isIncoming = ticket.status == TicketStatus.incoming;
 
-    // Due date display time — prefer dueAtWithGrace for display, fall back to eta
-    final displayDue = ticket.eta ?? ticket.dueAtWithGrace;
-    final dueColor = (!isDone && isOverdue)
+    // Time-state machine driven by the two server thresholds:
+    //   dueAt   = ticket.eta              (SLA deadline)
+    //   graceAt = ticket.dueAtWithGrace   (hard overdue threshold; server moves
+    //                                      tickets to backlog past this point)
+    // Healthy : now <= dueAt
+    // Grace   : dueAt < now < graceAt    → render "Grace Period"
+    //           Incoming past graceAt also stays in Grace until the server
+    //           event moves it to backlog (transient, avoids a red flash).
+    // Overdue : now >= graceAt (in-progress / backlog) → "Overdue by"
+    final dueAt = ticket.eta;
+    final graceAt = ticket.dueAtWithGrace ?? ticket.eta;
+    final pastDue = dueAt != null && !now.isBefore(dueAt);
+    final pastGrace = graceAt != null && !now.isBefore(graceAt);
+    final isInGrace = !isDone && pastDue && (!pastGrace || isIncoming);
+    final isOverdue = !isDone && pastGrace && !isIncoming;
+
+    // Due date display — show dueAt (the SLA the user expects)
+    final displayDue = dueAt ?? graceAt;
+    final dueColor = isOverdue
         ? ColorPalette.statusOverdue
-        : c.fgMuted;
+        : isInGrace
+            ? c.tagOrangeIcon
+            : c.fgMuted;
 
     // Time indicator on the right
     Widget? indicator;
     if (!isDone) {
-      if (!isOverdue) {
-        // ── Healthy: countdown to dueAtWithGrace (or eta if no grace) ─────────
-        final deadline = ticket.dueAtWithGrace ?? ticket.eta;
-        if (deadline != null) {
-          final timeLeft = deadline.difference(now);
-          indicator = _CountdownIndicator(
-            label: s.ticketTimeLeftLabel,
-            duration: timeLeft.isNegative ? Duration.zero : timeLeft,
-            color: ColorPalette.statusInProgress,
-          );
-        }
-      } else if (isInProgress) {
-        // ── Grace Period (in-progress overdue) ────────────────────────────────
-        indicator = _LabelIndicator(
-          topLabel: s.ticketTimeLeftLabel,
-          valueLabel: s.ticketGracePeriod,
-          color: c.tagOrangeIcon,
-        );
-      } else {
-        // ── Overdue by X (backlog / incoming overdue) ─────────────────────────
-        final overdueRef = ticket.dueAtWithGrace ?? ticket.eta;
-        final overdueBy = overdueRef != null
-            ? now.difference(overdueRef)
+      if (isOverdue) {
+        // ── Overdue by X (in-progress past grace, or backlog) ─────────────────
+        final overdueBy = graceAt != null
+            ? now.difference(graceAt)
             : Duration.zero;
         indicator = _CountdownIndicator(
           label: s.ticketOverdueByLabel,
           duration: overdueBy.isNegative ? Duration.zero : overdueBy,
           color: ColorPalette.statusOverdue,
           countingUp: true,
+        );
+      } else if (isInGrace) {
+        // ── Grace Period (incoming past due, or in-progress past due) ─────────
+        indicator = _LabelIndicator(
+          topLabel: s.ticketTimeLeftLabel,
+          valueLabel: s.ticketGracePeriod,
+          color: c.tagOrangeIcon,
+        );
+      } else if (dueAt != null) {
+        // ── Healthy: countdown to dueAt ───────────────────────────────────────
+        final timeLeft = dueAt.difference(now);
+        indicator = _CountdownIndicator(
+          label: s.ticketTimeLeftLabel,
+          duration: timeLeft.isNegative ? Duration.zero : timeLeft,
+          color: ColorPalette.statusInProgress,
         );
       }
     }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import '../../main.dart' show appNavigatorKey;
 import '../services/connectivity_service.dart';
 
 /// Listens to [connectivityStatusProvider] and shows/dismisses the offline
@@ -30,16 +31,21 @@ class _ConnectivityGateState extends ConsumerState<ConnectivityGate> {
         WidgetsBinding.instance.addPostFrameCallback((_) => _showDialog());
       } else if (status == ConnectivityStatus.online && _dialogOpen) {
         _dialogOpen = false;
-        final nav = Navigator.of(context, rootNavigator: true);
-        if (nav.canPop()) nav.pop();
+        final nav = appNavigatorKey.currentState;
+        if (nav != null && nav.canPop()) nav.pop();
       }
     });
     return widget.child;
   }
 
   Future<void> _showDialog() async {
+    final navContext = appNavigatorKey.currentContext;
+    if (navContext == null) {
+      _dialogOpen = false;
+      return;
+    }
     await showDialog<void>(
-      context: context,
+      context: navContext,
       barrierDismissible: false,
       useRootNavigator: true,
       builder: (_) => const _NoInternetDialog(),

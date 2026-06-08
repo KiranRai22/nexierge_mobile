@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'dart:async';
+
 import '../../../features/dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
+import '../../../features/dashboard/presentation/providers/dashboard_counts_controller.dart';
 import '../../../features/notifications/presentation/providers/notification_inbox_controller.dart';
+import '../../../features/tickets/presentation/providers/tickets_paged_notifier.dart';
 import 'socket_connection_status.dart';
 import 'xano_socket_service.dart';
 
@@ -52,14 +56,47 @@ final xanoNotificationChannelProvider = Provider<void>((ref) {
 final xanoHubNotificationsListenerProvider = Provider<void>((ref) {
   final socket = ref.watch(xanoSocketServiceProvider);
 
+  // Debounce ticket-list refreshes so a burst of hub_notification events
+  // collapses into a single request per tab + counts call.
+  Timer? ticketsRefreshDebounce;
+  void scheduleTicketsRefresh() {
+    ticketsRefreshDebounce?.cancel();
+    ticketsRefreshDebounce = Timer(const Duration(milliseconds: 600), () {
+      // Incoming, In-Progress (+ overdue, shares endpoint), Done today,
+      // Done history, and Backlog — the four ticket tabs the user sees.
+      const tabs = <TicketsTab>[
+        TicketsTab.incoming,
+        TicketsTab.todayInProgress,
+        TicketsTab.overdue,
+        TicketsTab.todayDone,
+        TicketsTab.backlog,
+      ];
+      for (final tab in tabs) {
+        ref.read(ticketsPagedProvider(specForTab(tab)).notifier).refresh();
+      }
+      ref.invalidate(dashboardCountsControllerProvider);
+    });
+  }
+
   final sub = socket.messageStream.listen(
     (raw) {
       final decoded = _decodeFrame(raw);
       if (decoded == null) return;
 
-      // Only process hub_notifications channel frames
-      final channel = decoded['channel'] as String?;
+      // Channel lives at `options.channel` in Xano frames; tolerate legacy
+      // top-level `channel` too.
+      final channel =
+          ((decoded['options'] as Map<String, dynamic>?)?['channel']
+                  as String?) ??
+              (decoded['channel'] as String?);
       if (channel == null || !channel.startsWith('hub_notifications')) return;
+
+      final action = decoded['action'] as String?;
+      // Refresh all ticket tabs on every `action: event` frame on the hub
+      // channel (skip presence_update, join acks, etc.).
+      if (action == 'event') {
+        scheduleTicketsRefresh();
+      }
 
       final payload = decoded['payload'];
       if (payload is! Map<String, dynamic>) return;
@@ -84,7 +121,10 @@ final xanoHubNotificationsListenerProvider = Provider<void>((ref) {
     },
   );
 
-  ref.onDispose(sub.cancel);
+  ref.onDispose(() {
+    ticketsRefreshDebounce?.cancel();
+    sub.cancel();
+  });
 
   if (kDebugMode) {
     //debugPrint('[HubNotificationsListener] subscribed to hub_notifications');

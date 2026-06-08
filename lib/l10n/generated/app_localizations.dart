@@ -2528,6 +2528,61 @@ abstract class AppLocalizations {
   /// **'New ticket: {ticketCode}'**
   String notifNewTicket(String ticketCode);
 
+  /// No description provided for @ticketSlaChannelName.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket SLA reminders'**
+  String get ticketSlaChannelName;
+
+  /// No description provided for @ticketSlaChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts before a ticket\'s due time and when it enters the grace period.'**
+  String get ticketSlaChannelDescription;
+
+  /// No description provided for @ticketSlaAboutToExpireTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket about to expire'**
+  String get ticketSlaAboutToExpireTitle;
+
+  /// No description provided for @ticketSlaEnteredGraceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket entered grace period'**
+  String get ticketSlaEnteredGraceTitle;
+
+  /// No description provided for @ticketSlaNotifBody.
+  ///
+  /// In en, this message translates to:
+  /// **'#{ticketId} · {title}\nStatus: {status}\nCreated {created} · Due {due}\n{footer}'**
+  String ticketSlaNotifBody(
+    String ticketId,
+    String title,
+    String status,
+    String created,
+    String due,
+    String footer,
+  );
+
+  /// No description provided for @ticketSlaFooterMinutesLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min left'**
+  String ticketSlaFooterMinutesLeft(int minutes);
+
+  /// No description provided for @ticketSlaFooterGrace.
+  ///
+  /// In en, this message translates to:
+  /// **'In grace period — act now'**
+  String get ticketSlaFooterGrace;
+
+  /// No description provided for @ticketSlaGroupSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Tickets need your attention'**
+  String get ticketSlaGroupSummary;
+
   /// No description provided for @notificationsTitle.
   ///
   /// In en, this message translates to:

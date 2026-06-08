@@ -40,6 +40,8 @@ dependencies:
 
   # Local notifications (foreground display)
   flutter_local_notifications: ^17.2.2
+  # Required by flutter_local_notifications.zonedSchedule for ticket SLA reminders
+  timezone: ^0.9.4
 
   # Fonts
   google_fonts: ^6.2.1
