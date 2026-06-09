@@ -29,61 +29,69 @@ class TicketHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.themeColors;
     final radius = BorderRadius.circular(12);
-    // Fixed height gives the Row bounded cross-axis constraints, avoiding the
-    // CrossAxisAlignment.stretch + ListView unbounded-height crash, and prevents
-    // the semantics.parentDataDirty assertion triggered by Image.network async
-    // loads inside an intrinsic-height measurement context.
-    return SizedBox(
-      height: 110,
-      child: ClipRRect(
-        borderRadius: radius,
-        child: Container(
-          decoration: CardDecoration.standard(
-            colors: c,
-            borderRadius: radius,
-            backgroundColor: c.bgSubtle,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Column 1: full-bleed image ─────────────────────────────
-              SizedBox(
-                width: 88,
-                child: _HeroThumbnail(ticket: ticket),
-              ),
-              // ── Column 2: title + status + time row ────────────────────
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              ticket.title,
-                              style: TypographyManager.textBodyStrong.copyWith(
-                                color: c.fgBase,
-                                fontWeight: FontWeight.w700,
+    // 110 dp is the resting size — single-line titles, one-line time
+    // indicator. When the title wraps to 2 lines or the time-row picks
+    // up a longer overdue / grace label, the card needs to grow. We use
+    // `IntrinsicHeight` so the image column stretches to whatever the
+    // text column actually needs, with `minHeight: 110` so single-line
+    // tickets keep the original baseline. The image is given a finite
+    // width on its own so `Image.network` never measures into an
+    // unbounded cross-axis (the old failure mode that justified the
+    // previous fixed-height workaround).
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 110),
+      child: IntrinsicHeight(
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Container(
+            decoration: CardDecoration.standard(
+              colors: c,
+              borderRadius: radius,
+              backgroundColor: c.bgSubtle,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Column 1: full-bleed image ─────────────────────────────
+                SizedBox(
+                  width: 88,
+                  child: _HeroThumbnail(ticket: ticket),
+                ),
+                // ── Column 2: title + status + time row ────────────────────
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                ticket.title,
+                                style: TypographyManager.textBodyStrong.copyWith(
+                                  color: c.fgBase,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          _StatusPill(ticket: ticket),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      _HeroTimeRow(ticket: ticket),
-                    ],
+                            const SizedBox(width: 8),
+                            _StatusPill(ticket: ticket),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        _HeroTimeRow(ticket: ticket),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

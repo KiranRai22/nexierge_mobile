@@ -9,6 +9,7 @@ import '../../../auth/presentation/providers/auth_session_controller.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart'
     as auth_ctrl;
 import '../../../fcm/data/repositories/fcm_repository.dart';
+import '../../../tickets/data/services/tickets_cache_store.dart';
 import '../../../../core/services/device_token_service.dart';
 import 'logout_confirmation_bottom_sheet.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -55,6 +56,13 @@ class _ProfileLogoutButtonState extends ConsumerState<ProfileLogoutButton> {
       await ref
           .read(auth_ctrl.userProfileControllerProvider.notifier)
           .clearProfile();
+
+      // Drop the on-disk tickets cold-start cache so a different operator
+      // logging into this device on next launch never briefly paints the
+      // previous user's tickets while their own fetch is in flight.
+      // Best-effort — `clearAll()` swallows internal failures.
+      await ref.read(ticketsCacheStoreProvider).clearAll();
+
       await ref.read(authSessionControllerProvider.notifier).clear();
       // Root widget reactively swaps to LoginScreen — no Navigator call.
     } finally {

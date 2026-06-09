@@ -97,9 +97,22 @@ class _ChangeDueTimeBottomSheetState
     (label: '+24 hrs', minutes: 1440),
   ];
 
+  /// Hard cap on the custom-time stepper. Mirrors the user-facing rule
+  /// "user cannot select 24 hour 01 mins" — total custom extension must
+  /// strictly fit within a single day (≤ 24:00).
+  static const int _maxCustomHours = 24;
+  static const int _maxCustomMinutes = 59;
+
   // +15 min is auto-selected on open.
   int? _selectedMinutes = 15;
-  DateTime? _customDue;
+
+  /// When true, the inline hour/minute steppers replace the chip selection
+  /// as the source of `_resolvedMinutes`. Toggled by the "Set custom time"
+  /// expander.
+  bool _customMode = false;
+  int _customHours = 0;
+  int _customMinutes = 0;
+
   bool _submitting = false;
   final _reasonCtl = TextEditingController();
 
@@ -117,18 +130,20 @@ class _ChangeDueTimeBottomSheetState
       ? DateTime.fromMillisecondsSinceEpoch(widget.currentDueAtMs)
       : DateTime.now();
 
+  /// Minutes to add to the existing due time. In custom-mode this is the
+  /// hour+minute stepper value; in chip-mode it's the selected chip.
   int get _resolvedMinutes {
-    if (_customDue != null) {
-      final diff = _customDue!.difference(DateTime.now()).inMinutes;
-      return diff > 0 ? diff : 1;
+    if (_customMode) {
+      return _customHours * 60 + _customMinutes;
     }
     return _selectedMinutes ?? 15;
   }
 
-  DateTime get _resolvedDue {
-    if (_customDue != null) return _customDue!;
-    return _baseDue.add(Duration(minutes: _resolvedMinutes));
-  }
+  /// Always derived from `_baseDue + Duration(minutes: _resolvedMinutes)`.
+  /// The displayed "Due …" pill reads off this getter so it stays in sync
+  /// with whatever the user is currently choosing.
+  DateTime get _resolvedDue =>
+      _baseDue.add(Duration(minutes: _resolvedMinutes));
 
   // ── Guest stay lookup ───────────────────────────────────────────────────────
 
@@ -143,20 +158,10 @@ class _ChangeDueTimeBottomSheetState
     return null;
   }
 
-  // ── Checkout cap for the custom date picker ─────────────────────────────────
-
-  DateTime? get _checkoutDeadline {
-    final stay = _matchingStay;
-    if (stay == null) return null;
-    final raw = stay.checkoutDate;
-    if (raw.isEmpty) return null;
-    try {
-      return DateTime.parse(raw).toLocal();
-    } catch (_) {}
-    final ms = int.tryParse(raw);
-    if (ms != null) return DateTime.fromMillisecondsSinceEpoch(ms).toLocal();
-    return null;
-  }
+  // The checkout-deadline cap is enforced by `validateAddTime` directly
+  // from the matched stay — `_resolvedMinutes` past the guest's checkout
+  // surfaces as `validation.blockedReason` and disables save. No separate
+  // accessor needed now that the custom-date picker is gone.
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -166,11 +171,17 @@ class _ChangeDueTimeBottomSheetState
         stay: _matchingStay,
       );
 
-  bool get _canSave =>
-      !_submitting &&
-      (_selectedMinutes != null || _customDue != null) &&
-      _reasonCtl.text.trim().isNotEmpty &&
-      _validation.allowed;
+  bool get _canSave {
+    if (_submitting) return false;
+    if (_reasonCtl.text.trim().isEmpty) return false;
+    if (!_validation.allowed) return false;
+    if (_customMode) {
+      // Custom mode requires at least one minute of extension — saving 0
+      // would be a no-op the user almost certainly didn't mean.
+      return _resolvedMinutes > 0;
+    }
+    return _selectedMinutes != null;
+  }
 
   // ── Confirm ─────────────────────────────────────────────────────────────────
 
@@ -194,34 +205,52 @@ class _ChangeDueTimeBottomSheetState
     }
   }
 
-  // ── Custom date/time picker ─────────────────────────────────────────────────
+  // ── Custom hour / minute steppers ───────────────────────────────────────────
 
-  Future<void> _pickCustom() async {
-    final deadline = _checkoutDeadline;
-    final lastDate = deadline ?? DateTime.now().add(const Duration(days: 365));
-
-    final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(hours: 1)),
-      firstDate: DateTime.now(),
-      lastDate: lastDate,
-    );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (time == null || !mounted) return;
+  /// Toggle the inline "Set Custom Time" expander. Entering custom mode
+  /// clears the chip selection; exiting it falls back to the +15 min chip
+  /// so the form is never in a "nothing selected" state.
+  void _toggleCustomMode() {
     setState(() {
-      _customDue = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      );
-      _selectedMinutes = null;
+      _customMode = !_customMode;
+      if (_customMode) {
+        _selectedMinutes = null;
+        // Reset stepper to 0/0 each time the user opens the section. Keeps
+        // the affordance honest — there is no carried-over value to guess.
+        _customHours = 0;
+        _customMinutes = 0;
+      } else {
+        _selectedMinutes = 15;
+      }
     });
+  }
+
+  void _incrementHours() {
+    if (_customHours >= _maxCustomHours) return;
+    setState(() {
+      _customHours++;
+      // Total cap is < 24:00 — if the user nudges hours to 24, force
+      // minutes back to 0 so the resolved duration never exceeds the day.
+      if (_customHours == _maxCustomHours) _customMinutes = 0;
+    });
+  }
+
+  void _decrementHours() {
+    if (_customHours <= 0) return;
+    setState(() => _customHours--);
+  }
+
+  void _incrementMinutes() {
+    // Reject any nudge that would push the total past 24:00. Practically
+    // this means "minutes are pinned to 0 once hours == 24".
+    if (_customHours == _maxCustomHours) return;
+    if (_customMinutes >= _maxCustomMinutes) return;
+    setState(() => _customMinutes++);
+  }
+
+  void _decrementMinutes() {
+    if (_customMinutes <= 0) return;
+    setState(() => _customMinutes--);
   }
 
   // ── Formatters ──────────────────────────────────────────────────────────────
@@ -320,7 +349,7 @@ class _ChangeDueTimeBottomSheetState
               runSpacing: 8,
               children: _chips.map((chip) {
                 final selected =
-                    _customDue == null && _selectedMinutes == chip.minutes;
+                    !_customMode && _selectedMinutes == chip.minutes;
                 // Hide chips whose extension exceeds the checkout budget.
                 final blocked = !validation.chipVisible(chip.minutes);
                 return GestureDetector(
@@ -329,7 +358,7 @@ class _ChangeDueTimeBottomSheetState
                       : tapSound(
                           () => setState(() {
                             _selectedMinutes = chip.minutes;
-                            _customDue = null;
+                            _customMode = false;
                           }),
                           SoundCategory.preference,
                         ),
@@ -386,24 +415,70 @@ class _ChangeDueTimeBottomSheetState
               }).toList(),
             ),
             const SizedBox(height: 12),
-            // Custom date/time toggle
+            // ── Custom time expander ────────────────────────────────────
+            // Toggle row — tapping flips `_customMode`. The hour/minute
+            // steppers below render only when expanded.
             GestureDetector(
-              onTap: tapSound(_pickCustom, SoundCategory.preference),
-              child: Row(
+              behavior: HitTestBehavior.opaque,
+              onTap: tapSound(_toggleCustomMode, SoundCategory.preference),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      _customMode
+                          ? LucideIcons.chevronUp
+                          : LucideIcons.chevronDown,
+                      size: 14,
+                      color: c.fgMuted,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Set Custom Time',
+                      style: TypographyManager.bodySmall.copyWith(
+                        color: c.fgBase,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_customMode) ...[
+              const SizedBox(height: 8),
+              Row(
                 children: [
-                  Icon(LucideIcons.chevronDown, size: 14, color: c.fgMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Set custom date/time',
-                    style: TypographyManager.bodySmall.copyWith(
-                      color: c.fgBase,
-                      fontWeight: FontWeight.w500,
+                  Expanded(
+                    child: _NumericStepper(
+                      value: _customHours,
+                      unitLabel: 'hour(s)',
+                      onMinus: _customHours > 0 ? _decrementHours : null,
+                      onPlus: _customHours < _maxCustomHours
+                          ? _incrementHours
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _NumericStepper(
+                      value: _customMinutes,
+                      unitLabel: 'minute(s)',
+                      onMinus: _customMinutes > 0 ? _decrementMinutes : null,
+                      // When hours hit 24, minutes are pinned at 0 — the
+                      // plus button is disabled to make the cap obvious.
+                      onPlus: (_customHours < _maxCustomHours &&
+                              _customMinutes < _maxCustomMinutes)
+                          ? _incrementMinutes
+                          : null,
                     ),
                   ),
                 ],
               ),
-            ),
-            if (_customDue != null || _selectedMinutes != null) ...[
+            ],
+            // ── Resulting "Due …" pill — same look as before, just driven
+            //    by the unified `_resolvedDue` getter.
+            if (_selectedMinutes != null ||
+                (_customMode && _resolvedMinutes > 0)) ...[
               const SizedBox(height: 10),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -577,6 +652,95 @@ class _ChangeDueTimeBottomSheetState
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact `−  NN unit  +` pill used by the custom-time expander.
+///
+/// - `value` is always rendered as a zero-padded two-digit number so 0 reads
+///   as "00", 5 reads as "05", matching the spec.
+/// - `unitLabel` is the suffix shown after the value (e.g. "hour(s)" or
+///   "minute(s)"); kept as a string so the same widget can drive both
+///   steppers without enums.
+/// - `onMinus` / `onPlus` are nullable: a null callback renders the button
+///   in a disabled state and ignores taps. The caller is responsible for
+///   the clamping logic (see `_decrementHours` / `_incrementMinutes` in
+///   the parent state).
+class _NumericStepper extends StatelessWidget {
+  final int value;
+  final String unitLabel;
+  final VoidCallback? onMinus;
+  final VoidCallback? onPlus;
+
+  const _NumericStepper({
+    required this.value,
+    required this.unitLabel,
+    required this.onMinus,
+    required this.onPlus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    return Container(
+      height: 44,
+      decoration: BoxDecoration(
+        color: c.bgSubtle,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: c.borderBase),
+      ),
+      child: Row(
+        children: [
+          _StepperButton(
+            icon: LucideIcons.minus,
+            onTap: onMinus,
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                '${value.toString().padLeft(2, '0')} $unitLabel',
+                style: TypographyManager.bodyMedium.copyWith(
+                  color: c.fgBase,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          _StepperButton(
+            icon: LucideIcons.plus,
+            onTap: onPlus,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 36×36 square tap-target for the stepper's `−` / `+` buttons. Null
+/// `onTap` renders the icon in a muted disabled colour and swallows taps.
+class _StepperButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _StepperButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.themeColors;
+    final enabled = onTap != null;
+    return InkWell(
+      onTap: enabled ? tapSound(onTap!, SoundCategory.preference) : null,
+      borderRadius: BorderRadius.circular(10),
+      child: SizedBox(
+        width: 36,
+        height: 36,
+        child: Icon(
+          icon,
+          size: 16,
+          color: enabled ? c.fgBase : c.fgDisabled,
         ),
       ),
     );
