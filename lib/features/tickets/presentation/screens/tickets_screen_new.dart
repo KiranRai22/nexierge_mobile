@@ -786,19 +786,6 @@ class _PagedTicketsTabListState extends ConsumerState<_PagedTicketsTabList> {
       loading: () => const _LoadingList(),
       error: (e, _) => _ErrorView(error: e),
       data: (page) {
-        // Debug: Log items and their status for troubleshooting
-        if (widget.tab == TicketsTab.todayInProgress && page.items.isNotEmpty) {
-          //debugPrint('=== DEBUG: Today In Progress Tab ===');
-          //debugPrint('Total items from API: ${page.items.length}');
-          for (final item in page.items) {
-            //debugPrint('Ticket ${item.id}: status=${item.status}, isInProgress=${item.isInProgress}, isOverdue=${item.isOverdue}, dueAt=${item.dueAt}');
-          }
-          //debugPrint('Current filter: $filter');
-          final activeCount = page.items.where((t) => t.isInProgress && !t.isOverdue).length;
-          final overdueCount = page.items.where((t) => t.isInProgress && t.isOverdue).length;
-          //debugPrint('Active count: $activeCount, Overdue count: $overdueCount');
-          //debugPrint('=====================================');
-        }
         // Apply Backlog sub-filter (all / inprogress / overdue) on top
         // of the server-side status filter. Other tabs use server-side
         // filtering exclusively.

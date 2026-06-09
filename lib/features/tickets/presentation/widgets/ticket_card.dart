@@ -164,7 +164,7 @@ class TicketCard extends StatelessWidget {
                               color: context.appColors.fgOnBrand,
                             ),
                             label: Text(
-                              'Start Work',
+                              context.l10n.ticketActionStartWork,
                               style: TypographyManager.labelSmall.copyWith(
                                 color: context.appColors.fgOnBrand,
                                 fontWeight: FontWeight.w600,
@@ -359,7 +359,7 @@ class _StatusBadge extends StatelessWidget {
       case TicketStatus.onHold:
         return (label: s.ticketStatusBadgeOnHold, color: c.brandPrimary);
       case TicketStatus.backlog:
-        return (label: 'Backlog', color: c.fgMuted);
+        return (label: s.subTabBacklog, color: c.fgMuted);
     }
   }
 

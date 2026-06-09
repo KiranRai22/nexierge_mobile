@@ -71,8 +71,6 @@ class _ProfileHeaderCardAnimatedState extends State<ProfileHeaderCardAnimated>
   bool _isCollapsed = false;
   bool _isAnimating = false;
 
-  static const double _shrinkThreshold = 50;
-
   @override
   void initState() {
     super.initState();
@@ -496,8 +494,6 @@ class _HubAccessRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.themeColors;
-
     return Wrap(
       alignment: WrapAlignment.center,
       spacing: compact ? 4 : 6,

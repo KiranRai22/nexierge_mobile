@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -201,7 +202,7 @@ class _CancelTicketBottomSheetState extends State<CancelTicketBottomSheet> {
                           size: 18,
                           color: _canConfirm ? context.appColors.fgOnBrand : c.fgMuted,
                         ),
-                  label: const Text('Confirm'),
+                  label: Text(context.l10n.confirm),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.tagRedIcon,
                     foregroundColor: context.appColors.fgOnBrand,

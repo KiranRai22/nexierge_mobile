@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:io';
 
 import '../../domain/entities/user_profile.dart';
@@ -24,15 +26,15 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       final dto = await service.fetchMe();
       return dto.toEntity();
     } catch (e) {
-      print('[UserProfileRepository] Fetch profile error: $e');
-      print('[UserProfileRepository] Error type: ${e.runtimeType}');
+      debugPrint('[UserProfileRepository] Fetch profile error: $e');
+      debugPrint('[UserProfileRepository] Error type: ${e.runtimeType}');
       rethrow;
     }
   }
 
   @override
   Future<UserProfile> updateProfilePicture(File imageFile) async {
-    print('[UserProfileRepository] Starting updateProfilePicture');
+    debugPrint('[UserProfileRepository] Starting updateProfilePicture');
     try {
       // Get current profile to preserve existing name fields
       final currentProfile = await fetchProfile();
@@ -43,7 +45,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         firstName: currentProfile.firstName,
         lastName: currentProfile.lastName,
       );
-      print(
+      debugPrint(
         '[UserProfileRepository] Upload service returned: ${dto != null ? 'success' : 'null dto'}',
       );
 
@@ -52,17 +54,17 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       final UserProfile updated = dto != null
           ? dto.toEntity()
           : await fetchProfile();
-      print(
+      debugPrint(
         '[UserProfileRepository] Updated profile picture URL: ${updated.pictureProfile?.url}',
       );
 
       // Persist immediately so cold-start reflects the new avatar.
       await _profileService.saveProfile(updated);
-      print('[UserProfileRepository] Profile saved successfully');
+      debugPrint('[UserProfileRepository] Profile saved successfully');
       return updated;
     } catch (e) {
-      print('[UserProfileRepository] updateProfilePicture error: $e');
-      print('[UserProfileRepository] Error type: ${e.runtimeType}');
+      debugPrint('[UserProfileRepository] updateProfilePicture error: $e');
+      debugPrint('[UserProfileRepository] Error type: ${e.runtimeType}');
       rethrow;
     }
   }

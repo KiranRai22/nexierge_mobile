@@ -268,34 +268,6 @@ class _CatalogCoverImage extends StatelessWidget {
   }
 }
 
-class _CatalogLogoTile extends StatelessWidget {
-  final String? logoUrl;
-  const _CatalogLogoTile({this.logoUrl});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: context.appColors.bgSubtle,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: context.appColors.borderBase),
-      ),
-      clipBehavior: Clip.antiAlias,
-      alignment: Alignment.center,
-      child: (logoUrl != null && logoUrl!.isNotEmpty)
-          ? Image.network(
-              logoUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  const Text('🍽️', style: TextStyle(fontSize: 22)),
-            )
-          : const Text('🍽️', style: TextStyle(fontSize: 22)),
-    );
-  }
-}
-
 // ── Loading / empty / error states ────────────────────────────────────────
 
 class _CatalogSelectShimmer extends StatelessWidget {
@@ -348,6 +320,7 @@ class _CatalogSelectEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(
@@ -361,7 +334,7 @@ class _CatalogSelectEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No service catalogs available',
+            s.catalogsEmpty,
             textAlign: TextAlign.center,
             style: TypographyManager.bodyLarge.copyWith(
               color: context.appColors.fgSubtle,
@@ -371,7 +344,7 @@ class _CatalogSelectEmpty extends StatelessWidget {
           Center(
             child: TextButton(
               onPressed: onRefresh,
-              child: const Text('Refresh'),
+              child: Text(s.refresh),
             ),
           ),
         ],
@@ -387,6 +360,7 @@ class _CatalogSelectError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     return RefreshIndicator(
       onRefresh: onRetry,
       child: ListView(
@@ -406,7 +380,7 @@ class _CatalogSelectError extends StatelessWidget {
           Center(
             child: ElevatedButton(
               onPressed: onRetry,
-              child: const Text('Retry'),
+              child: Text(s.retry),
             ),
           ),
         ],
@@ -656,10 +630,13 @@ class _CatalogStepItemsState extends ConsumerState<_CatalogStepItems> {
                   itemBuilder: (_, i) {
                     final groupedItem = groupedItems[i];
                     if (groupedItem.isHeader) {
+                      final rawCategory = groupedItem.category ?? 'Other';
                       return Padding(
                         padding: const EdgeInsets.only(top: 16, bottom: 8),
                         child: Text(
-                          groupedItem.category ?? 'Other',
+                          rawCategory == 'Other'
+                              ? context.l10n.categoryOther
+                              : rawCategory,
                           style: TypographyManager.sectionOverline.copyWith(
                             color: context.appColors.fgSubtle,
                           ),
@@ -744,6 +721,7 @@ class _CatalogItemsError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -760,7 +738,7 @@ class _CatalogItemsError extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+            ElevatedButton(onPressed: onRetry, child: Text(s.retry)),
           ],
         ),
       ),

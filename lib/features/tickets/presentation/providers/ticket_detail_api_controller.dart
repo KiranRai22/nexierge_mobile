@@ -43,4 +43,9 @@ final ticketDetailApiControllerProvider =
     );
 
 /// Provider for the ticket ID being viewed. Set by the detail screen.
-final ticketIdProvider = StateProvider<String?>((ref) => null);
+///
+/// `autoDispose` so it resets to `null` when no detail screen is mounted —
+/// the "is this ticket currently being viewed?" check elsewhere (e.g. the
+/// toast suppressor in `my_tickets_notifier`) must not see a stale id from
+/// a previously-closed detail screen.
+final ticketIdProvider = StateProvider.autoDispose<String?>((ref) => null);

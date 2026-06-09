@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -185,7 +186,7 @@ class _StartWorkConfirmationBottomSheetState
                             ),
                           )
                         : const Icon(LucideIcons.circlePlay, size: 18),
-                    label: const Text('Start Work'),
+                    label: Text(context.l10n.ticketActionStartWork),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.buttonInverted,
                       foregroundColor: c.fgOnInverted,

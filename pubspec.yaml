@@ -101,6 +101,11 @@ dependencies:
   # active DNS probe to verify real internet reachability).
   connectivity_plus: ^6.0.5
 
+  # App-sandbox filesystem paths (used to write a fallback error log when
+  # catalog/universal ticket submission fails twice — see catalog_create_controller
+  # / universal_create_controller).
+  path_provider: ^2.1.4
+
 
 dev_dependencies:
   flutter_test:

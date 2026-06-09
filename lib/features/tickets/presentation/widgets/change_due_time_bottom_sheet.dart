@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -197,9 +198,7 @@ class _ChangeDueTimeBottomSheetState
 
   Future<void> _pickCustom() async {
     final deadline = _checkoutDeadline;
-    final lastDate = deadline != null
-        ? deadline
-        : DateTime.now().add(const Duration(days: 365));
+    final lastDate = deadline ?? DateTime.now().add(const Duration(days: 365));
 
     final date = await showDatePicker(
       context: context,
@@ -342,14 +341,14 @@ class _ChangeDueTimeBottomSheetState
                     ),
                     decoration: BoxDecoration(
                       color: blocked
-                          ? c.bgSubtle.withOpacity(0.5)
+                          ? c.bgSubtle.withValues(alpha: 0.5)
                           : selected
                               ? c.tagPurpleBg
                               : c.bgSubtle,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: blocked
-                            ? c.borderBase.withOpacity(0.4)
+                            ? c.borderBase.withValues(alpha: 0.4)
                             : selected
                                 ? c.tagPurpleIcon
                                 : c.borderBase,
@@ -363,7 +362,7 @@ class _ChangeDueTimeBottomSheetState
                           LucideIcons.clock,
                           size: 13,
                           color: blocked
-                              ? c.fgMuted.withOpacity(0.4)
+                              ? c.fgMuted.withValues(alpha: 0.4)
                               : selected
                                   ? c.tagPurpleIcon
                                   : c.fgMuted,
@@ -373,7 +372,7 @@ class _ChangeDueTimeBottomSheetState
                           chip.label,
                           style: TypographyManager.labelSmall.copyWith(
                             color: blocked
-                                ? c.fgMuted.withOpacity(0.4)
+                                ? c.fgMuted.withValues(alpha: 0.4)
                                 : selected
                                     ? c.tagPurpleText
                                     : c.fgBase,
@@ -571,7 +570,7 @@ class _ChangeDueTimeBottomSheetState
                                 ),
                               ),
                             )
-                          : const Text('Save'),
+                          : Text(context.l10n.save),
                     ),
                   ),
                 ],

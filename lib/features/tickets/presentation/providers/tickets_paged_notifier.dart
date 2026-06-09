@@ -156,6 +156,7 @@ class TicketsPageState {
     TicketsSortOrder? sortOrder,
     Set<String>? freshlyArrivedIds,
     DateTime? lastFetchedAt,
+    bool clearLastFetchedAt = false,
   }) {
     return TicketsPageState(
       items: items ?? this.items,
@@ -165,7 +166,8 @@ class TicketsPageState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       sortOrder: sortOrder ?? this.sortOrder,
       freshlyArrivedIds: freshlyArrivedIds ?? this.freshlyArrivedIds,
-      lastFetchedAt: lastFetchedAt ?? this.lastFetchedAt,
+      lastFetchedAt:
+          clearLastFetchedAt ? null : (lastFetchedAt ?? this.lastFetchedAt),
     );
   }
 }
@@ -182,17 +184,49 @@ class TicketsPagedNotifier
     _repo = ref.read(ticketRepositoryProvider);
 
     final hotelId = _hotelId();
-    //debugPrint(
-    //   '[TicketsPagedNotifier] build: hotelId=$hotelId, tab=${_spec.tab}',
-    // );
     if (hotelId == null) {
-      //debugPrint(
-      //   '[TicketsPagedNotifier] build: No hotelId, returning empty state',
-      // );
       return const TicketsPageState();
     }
 
+    // Cold-start hydration: only attempt a cache read when this is the
+    // default cold-start view (no filters). Filtered specs always go to
+    // network because the cache only persists the default response shape.
+    if (_isDefaultSpec()) {
+      final cached = await _repo.cachedTicketsV2Page(
+        tab: _spec.v2Tab,
+        hotelId: hotelId,
+      );
+      if (cached != null) {
+        // Paint last-known-good data immediately, then trigger a fresh
+        // network fetch in the background. The freshness timestamp is
+        // intentionally left null so [refreshIfStale] will refetch the
+        // moment the user lands on this tab.
+        // ignore: discarded_futures
+        Future.microtask(() => refresh());
+        return TicketsPageState(
+          items: cached.items,
+          nextPage: cached.nextPage,
+          itemsTotal: cached.itemsTotal,
+          overdueCount: cached.overdueCount,
+          isLoadingMore: false,
+          sortOrder: TicketsSortOrder.newestFirst,
+          freshlyArrivedIds: const {},
+          lastFetchedAt: null,
+        );
+      }
+    }
+
     return _fetchPage(page: 1, hotelId: hotelId);
+  }
+
+  /// True when the spec carries no filters — the only shape the data
+  /// layer persists. Keep this in sync with `_shouldCachePage` in
+  /// `_TicketRemoteDataSourceImpl`.
+  bool _isDefaultSpec() {
+    return _spec.departmentId == null &&
+        _spec.ticketType == null &&
+        _spec.createdAtStartDate == null &&
+        _spec.createdAtEndDate == null;
   }
 
   String? _hotelId() {
@@ -267,6 +301,20 @@ class TicketsPagedNotifier
     if (fetchedAt == null || DateTime.now().difference(fetchedAt) > maxAge) {
       await refresh();
     }
+  }
+
+  /// Mark the cached page as stale without refetching now. The next
+  /// [refreshIfStale] call (e.g. on tab-focus) will see a null
+  /// `lastFetchedAt` and re-fetch.
+  ///
+  /// Used by the realtime listener: when a hub event lands, only the
+  /// currently-visible tab is refreshed eagerly; the other tabs are
+  /// marked stale so they refetch when the user navigates to them. This
+  /// replaces the previous fan-out of 5 list refreshes per event.
+  void markStale() {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(clearLastFetchedAt: true));
   }
 
   /// Force-refetch from page 1. Discards any in-memory pages and resets

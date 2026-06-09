@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 import '../../../tickets/domain/entities/checked_in_guest_stay.dart';
 
@@ -131,7 +130,6 @@ AddTimeValidation validateAddTime({
   // Budget = how many minutes are left between the minimum anchor and checkout.
   final minutesUntilCheckout = checkoutDt.difference(anchor).inMinutes;
 
-  final hoursLeft = minutesUntilCheckout / 60;
   //debugPrint(
   //   '\n╔══════════════════════════════════════════════════════\n'
   //   '║  [AddTimeValidation] Checkout Budget Check\n'

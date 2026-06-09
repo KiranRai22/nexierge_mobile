@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/user_profile_repository.dart';
@@ -56,7 +57,7 @@ class UserProfileController extends StateNotifier<UserProfileState> {
       await _repository.saveProfile(profile);
       state = state.copyWith(profile: profile, isLoading: false);
     } catch (e) {
-      print('[UserProfileController] Load profile error: $e');
+      debugPrint('[UserProfileController] Load profile error: $e');
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
   }
@@ -116,16 +117,16 @@ class UserProfileController extends StateNotifier<UserProfileState> {
   /// profile returned by the server. Surfaces failures via [state.error]
   /// so the UI can show a snackbar without throwing.
   Future<bool> updateProfilePicture(File imageFile) async {
-    print('[UserProfileController] Starting updateProfilePicture');
+    debugPrint('[UserProfileController] Starting updateProfilePicture');
     state = state.copyWith(isUpdatingPicture: true, error: null);
     try {
       final updated = await _repository.updateProfilePicture(imageFile);
-      print('[UserProfileController] Update successful');
+      debugPrint('[UserProfileController] Update successful');
       state = state.copyWith(profile: updated, isUpdatingPicture: false);
       return true;
     } catch (e) {
-      print('[UserProfileController] Update failed: $e');
-      print('[UserProfileController] Error type: ${e.runtimeType}');
+      debugPrint('[UserProfileController] Update failed: $e');
+      debugPrint('[UserProfileController] Error type: ${e.runtimeType}');
       final errorString = e.toString();
       state = state.copyWith(isUpdatingPicture: false, error: errorString);
       return false;

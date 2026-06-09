@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -17,11 +19,11 @@ class AuthMeService {
   /// Fetch current user profile using Bearer token
   Future<UserProfileDto> fetchMe() async {
     try {
-      print('[AuthMeService] Fetching profile from: $_endpoint');
+      debugPrint('[AuthMeService] Fetching profile from: $_endpoint');
       final response = await _dio.get(_endpoint);
-      print('[AuthMeService] Response status: ${response.statusCode}');
-      print('[AuthMeService] Response data type: ${response.data.runtimeType}');
-      print('[AuthMeService] Response data: ${response.data}');
+      debugPrint('[AuthMeService] Response status: ${response.statusCode}');
+      debugPrint('[AuthMeService] Response data type: ${response.data.runtimeType}');
+      debugPrint('[AuthMeService] Response data: ${response.data}');
 
       final data = response.data;
       final status = response.statusCode ?? 0;

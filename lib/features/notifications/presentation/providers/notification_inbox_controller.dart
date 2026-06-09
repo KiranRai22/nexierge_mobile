@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/notification_inbox_datasource.dart';
@@ -291,7 +290,7 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
         totalUnreadCount: shouldUpdateCount ? response.meta.unreadCount : state.totalUnreadCount,
         error: null,
       );
-    } catch (e, st) {
+    } catch (e) {
       //debugPrint('[NotificationInboxController] fetch error: $e\n$st');
       state = state.copyWith(
         isLoading: false,

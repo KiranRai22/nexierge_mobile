@@ -133,7 +133,7 @@ class NotificationService {
   ValueNotifier<RemoteMessage?> get onNotificationTap => _onNotificationTap;
 
   Future<void> initialize() async {
-    print("Initializing notification service");
+    debugPrint("Initializing notification service");
     FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
     await _requestPermissions();
     await _setupLocalNotifications();
@@ -226,7 +226,7 @@ class NotificationService {
   //   - data-only payload (l10nKey lookup):
   //       both platforms → show local (only way to surface it)
   void _listenForeground() {
-    print("Listening to foreground fcm");
+    debugPrint("Listening to foreground fcm");
     FirebaseMessaging.onMessage.listen((message) async {
       final localized = _localizeFromPayload(message);
       if (localized.title == null && localized.body == null) return;
@@ -237,7 +237,7 @@ class NotificationService {
         return;
       }
 
-      print("Showing notification: ${localized.title} - ${localized.body}");
+      debugPrint("Showing notification: ${localized.title} - ${localized.body}");
       final s = LocaleAwareStrings.instance.strings;
       try {
         await _localNotifications.show(
@@ -278,7 +278,7 @@ class NotificationService {
   ///   2. `notification.title` / `notification.body` (server pre-localized
   ///      via topic-per-locale strategy).
   _LocalizedNotification _localizeFromPayload(RemoteMessage m) {
-    print("Localizing payload: ${m.data}");
+    debugPrint("Localizing payload: ${m.data}");
     final s = LocaleAwareStrings.instance.strings;
     final data = m.data;
     final n = m.notification;

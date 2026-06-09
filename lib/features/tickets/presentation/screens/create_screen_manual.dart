@@ -38,13 +38,13 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
       final id = await ref
           .read(manualDraftControllerProvider.notifier)
           .submit();
-      if (id == null || !mounted) {
+      if (!mounted) return;
+      if (id == null) {
         context.showFailure(context.l10n.serverError);
         return;
       }
       context.showSuccess(context.l10n.createSuccessToast);
       // Close create screen after successful ticket creation
-      if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop(true);
     } on AppException catch (e) {
       if (!mounted) return;
@@ -119,8 +119,9 @@ class _ManualTabBodyState extends ConsumerState<_ManualTabBody> {
                             final picked = await RoomPickerSheet.showCheckedIn(
                               context,
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               ctl.selectGuestStay(picked.guestStayId);
+                            }
                           },
                           child: Container(
                             height: 48,

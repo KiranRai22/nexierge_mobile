@@ -6,13 +6,13 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/utils/string_utils.dart';
 import '../../domain/entities/checked_in_guest_stay.dart';
+import '../../domain/models/catalog.dart';
 import '../../domain/models/department.dart';
 import '../../domain/models/ticket.dart';
 import '../../domain/models/universal_catalog.dart';
 import '../../domain/repositories/tickets_repository.dart';
 import '../../../auth/presentation/providers/user_profile_controller.dart';
 import '../../data/services/universal_request_service.dart';
-import '../../data/dtos/universal_request_order_dto.dart';
 import 'repository_providers.dart';
 import 'session_providers.dart';
 
@@ -284,27 +284,26 @@ class UniversalDraftController
 
     final universalRequestService = ref.read(universalRequestServiceProvider);
 
-    final orderItems = state.picks.values
-        .map(
-          (pick) => OrderItemDto(
-            activeUniversalRequestId: pick.item.id,
-            guestNotes: state.note.trim(),
-            price: 0.0,
-            quantity: pick.quantity,
-            itemName: pick.item.title,
-          ),
-        )
-        .toList();
+    final submission = UniversalOrderSubmission(
+      hotelId: userProfile.userHotelStatus.hotelId,
+      guestStayId: state.selectedRoomId ?? '',
+      contactId: state.contactId ?? userProfile.id,
+      notes: state.note,
+      items: state.picks.values
+          .map(
+            (pick) => UniversalOrderItem(
+              itemId: pick.item.id,
+              itemName: pick.item.title,
+              quantity: pick.quantity,
+            ),
+          )
+          .toList(growable: false),
+    );
 
     try {
-      await universalRequestService.createOrder(
-        guestStayId: state.selectedRoomId ?? '',
-        contactId: state.contactId ?? userProfile.id,
-        hotelId: userProfile.userHotelStatus.hotelId,
-        orderItems: orderItems,
-      );
+      await universalRequestService.createOrder(submission: submission);
       return true;
-    } on Exception catch (e) {
+    } on Exception {
       //debugPrint('[UniversalDraftController] Order creation failed: $e');
       return false;
     }

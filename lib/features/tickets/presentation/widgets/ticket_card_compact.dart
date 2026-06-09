@@ -235,8 +235,8 @@ class _UrgencyWrapperState extends State<_UrgencyWrapper>
       _tick?.cancel();
       _tick = null;
       _shake?.stop();
-    } else if (_tick == null) {
-      _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+    } else {
+      _tick ??= Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
       });
     }
@@ -281,18 +281,18 @@ class _UrgencyWrapperState extends State<_UrgencyWrapper>
     List<BoxShadow>? halo;
     if (urgent) {
       final amber = context.appColors.fgWarning;
-      tint = amber.withOpacity(0.08);
+      tint = amber.withValues(alpha: 0.08);
       halo = [
         BoxShadow(
-          color: amber.withOpacity(0.45),
+          color: amber.withValues(alpha: 0.45),
           blurRadius: 10,
           spreadRadius: 0.5,
         ),
       ];
     } else if (overdue) {
-      tint = context.appColors.fgDanger.withOpacity(0.10);
+      tint = context.appColors.fgDanger.withValues(alpha: 0.10);
     } else if (grace) {
-      tint = context.appColors.fgDanger.withOpacity(0.06);
+      tint = context.appColors.fgDanger.withValues(alpha: 0.06);
     }
 
     final wrapped = AnimatedContainer(
@@ -709,9 +709,6 @@ class _Row3State extends State<_Row3> {
     final isDone =
         ticket.status == TicketStatus.done ||
         ticket.status == TicketStatus.canceled;
-    final isInProgress =
-        ticket.status == TicketStatus.inProgress ||
-        ticket.status == TicketStatus.accepted;
     final isIncoming = ticket.status == TicketStatus.incoming;
 
     // Time-state machine driven by the two server thresholds:
@@ -743,9 +740,7 @@ class _Row3State extends State<_Row3> {
     if (!isDone) {
       if (isOverdue) {
         // ── Overdue by X (in-progress past grace, or backlog) ─────────────────
-        final overdueBy = graceAt != null
-            ? now.difference(graceAt)
-            : Duration.zero;
+        final overdueBy = now.difference(graceAt);
         indicator = _CountdownIndicator(
           label: s.ticketOverdueByLabel,
           duration: overdueBy.isNegative ? Duration.zero : overdueBy,
@@ -1039,7 +1034,7 @@ class _StatusBadge extends StatelessWidget {
         );
       case TicketStatus.backlog:
         return (
-          label: 'Backlog',
+          label: s.subTabBacklog,
           bg: c.fgMuted.withValues(alpha: 0.12),
           fg: c.fgMuted,
         );

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../domain/models/catalog.dart';
 import '../dtos/universal_request_order_dto.dart';
 
 class UniversalRequestService {
@@ -45,24 +48,35 @@ class UniversalRequestService {
     }
   }
 
-  /// Create a universal request order
+  /// Create a universal request order. Takes a domain
+  /// [UniversalOrderSubmission] — the wire DTOs are built here so the
+  /// presentation controller never has to reach for `OrderItemDto`.
   Future<UniversalRequestOrderResponseDto> createOrder({
-    required String guestStayId,
-    required String contactId,
-    required String hotelId,
-    required List<OrderItemDto> orderItems,
+    required UniversalOrderSubmission submission,
   }) async {
     try {
-      print('[UniversalRequestService] Creating order at: $_endpoint');
+      debugPrint('[UniversalRequestService] Creating order at: $_endpoint');
+
+      final orderItems = submission.items
+          .map(
+            (i) => OrderItemDto(
+              activeUniversalRequestId: i.itemId,
+              guestNotes: submission.notes.trim(),
+              price: 0.0,
+              quantity: i.quantity,
+              itemName: i.itemName,
+            ),
+          )
+          .toList(growable: false);
 
       final orderRequest = UniversalRequestOrderDto(
-        guestStayId: guestStayId,
-        contactId: contactId,
-        hotelId: hotelId,
+        guestStayId: submission.guestStayId,
+        contactId: submission.contactId,
+        hotelId: submission.hotelId,
         orderItems: orderItems,
       );
 
-      print(
+      debugPrint(
         '[UniversalRequestService] Payload: ${jsonEncode(orderRequest.toJson())}',
       );
 
@@ -77,10 +91,10 @@ class UniversalRequestService {
         ),
       );
 
-      print(
+      debugPrint(
         '[UniversalRequestService] Response status: ${response.statusCode}',
       );
-      print('[UniversalRequestService] Response data: ${response.data}');
+      debugPrint('[UniversalRequestService] Response data: ${response.data}');
 
       final data = response.data;
       final status = response.statusCode ?? 0;
@@ -106,7 +120,7 @@ class UniversalRequestService {
       if (data is List && data.isNotEmpty) {
         // List response - treat first ID as the main ticket ID
         final ticketId = data.first.toString();
-        print('[UniversalRequestService] List response with ${data.length} ticket(s), using first: $ticketId');
+        debugPrint('[UniversalRequestService] List response with ${data.length} ticket(s), using first: $ticketId');
         return UniversalRequestOrderResponseDto(
           id: ticketId,
           status: 'created',
@@ -137,9 +151,9 @@ class UniversalRequestService {
 
       return UniversalRequestOrderResponseDto.fromJson(jsonData);
     } on DioException catch (e) {
-      print('[UniversalRequestService] DioException: ${e.type}');
-      print('[UniversalRequestService] DioException response: ${e.response}');
-      print('[UniversalRequestService] DioException data: ${e.response?.data}');
+      debugPrint('[UniversalRequestService] DioException: ${e.type}');
+      debugPrint('[UniversalRequestService] DioException response: ${e.response}');
+      debugPrint('[UniversalRequestService] DioException data: ${e.response?.data}');
       throw _mapDioError(e);
     }
   }

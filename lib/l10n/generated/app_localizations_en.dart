@@ -196,6 +196,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t load services. Pull to refresh or tap retry.';
 
   @override
+  String get catalogsLoadFailed => 'Failed to load catalogs';
+
+  @override
+  String get catalogsEmpty => 'No service catalogs available';
+
+  @override
+  String get categoryOther => 'Other';
+
+  @override
+  String get termsAndConditions => 'Terms & Conditions';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
   String get back => 'Back';
 
   @override

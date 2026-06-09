@@ -619,7 +619,7 @@ class _Checkbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isDisabled
-        ? (isChecked ? activeColor.withOpacity(0.4) : inactiveColor.withOpacity(0.4))
+        ? (isChecked ? activeColor.withValues(alpha: 0.4) : inactiveColor.withValues(alpha: 0.4))
         : (isChecked ? activeColor : inactiveColor);
     return Container(
       width: 24,

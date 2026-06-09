@@ -198,6 +198,21 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudieron cargar los servicios. Desliza para actualizar o toca reintentar.';
 
   @override
+  String get catalogsLoadFailed => 'No se pudieron cargar los catálogos';
+
+  @override
+  String get catalogsEmpty => 'No hay catálogos de servicio disponibles';
+
+  @override
+  String get categoryOther => 'Otros';
+
+  @override
+  String get termsAndConditions => 'Términos y Condiciones';
+
+  @override
+  String get privacyPolicy => 'Política de Privacidad';
+
+  @override
   String get back => 'Atrás';
 
   @override

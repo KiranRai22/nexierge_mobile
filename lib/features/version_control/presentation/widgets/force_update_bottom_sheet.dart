@@ -48,8 +48,8 @@ class ForceUpdateBottomSheet extends StatelessWidget {
     final s = context.l10n;
     final c = context.themeColors;
 
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Container(
         decoration: BoxDecoration(
           color: c.bgBase,
@@ -113,7 +113,7 @@ class ForceUpdateBottomSheet extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: context.appColors.brandPrimaryTint.withOpacity(0.5),
+                  color: context.appColors.brandPrimaryTint.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

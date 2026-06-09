@@ -446,6 +446,36 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load services. Pull to refresh or tap retry.'**
   String get universalCatalogLoadError;
 
+  /// No description provided for @catalogsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load catalogs'**
+  String get catalogsLoadFailed;
+
+  /// No description provided for @catalogsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No service catalogs available'**
+  String get catalogsEmpty;
+
+  /// No description provided for @categoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get categoryOther;
+
+  /// No description provided for @termsAndConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms & Conditions'**
+  String get termsAndConditions;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
   /// No description provided for @back.
   ///
   /// In en, this message translates to:

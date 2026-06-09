@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -70,8 +72,8 @@ class UserEditService {
       // Server returned "Done" or other non-object response — refetch needed
       return null;
     } catch (e, st) {
-      print('[UserEditService] uploadProfilePicture error: $e');
-      print('[UserEditService] Stack trace: $st');
+      debugPrint('[UserEditService] uploadProfilePicture error: $e');
+      debugPrint('[UserEditService] Stack trace: $st');
       rethrow;
     }
   }
@@ -107,8 +109,8 @@ class UserEditService {
       // Server returned "Done" or other non-object response — refetch needed
       return null;
     } catch (e, st) {
-      print('[UserEditService] updateName error: $e');
-      print('[UserEditService] Stack trace: $st');
+      debugPrint('[UserEditService] updateName error: $e');
+      debugPrint('[UserEditService] Stack trace: $st');
       rethrow;
     }
   }

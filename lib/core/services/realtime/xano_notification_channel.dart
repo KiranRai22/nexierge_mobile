@@ -8,7 +8,9 @@ import 'dart:async';
 import '../../../features/dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
 import '../../../features/dashboard/presentation/providers/dashboard_counts_controller.dart';
 import '../../../features/notifications/presentation/providers/notification_inbox_controller.dart';
+import '../../../features/tickets/presentation/providers/tickets_main_tab_provider.dart';
 import '../../../features/tickets/presentation/providers/tickets_paged_notifier.dart';
+import '../../../features/tickets/presentation/widgets/tickets_main_tabs.dart';
 import 'socket_connection_status.dart';
 import 'xano_socket_service.dart';
 
@@ -18,6 +20,27 @@ final xanoSocketStatusProvider = StreamProvider<SocketConnectionStatus>((ref) {
   final socketService = ref.watch(xanoSocketServiceProvider);
   return socketService.statusStream;
 });
+
+/// Maps the user's currently-selected main tab to the set of paged tab(s)
+/// that back its on-screen list. Used by the hub-notifications listener to
+/// decide which paged providers must refresh eagerly vs be marked stale.
+///
+/// Today (In Progress) actually overlays IN_PROGRESS + OVERDUE on the same
+/// screen via a client-side sub-filter, so realtime events targeting either
+/// shape must refresh both backing providers for the visible counts to stay
+/// accurate.
+Set<TicketsTab> _visiblePagedTabsFor(TicketsMainTab mainTab) {
+  switch (mainTab) {
+    case TicketsMainTab.incoming:
+      return {TicketsTab.incoming};
+    case TicketsMainTab.today:
+      return {TicketsTab.todayInProgress, TicketsTab.overdue};
+    case TicketsMainTab.backlog:
+      return {TicketsTab.backlog};
+    case TicketsMainTab.done:
+      return {TicketsTab.todayDone};
+  }
+}
 
 /// Joins the `liveTickets/{hotelId}` channel when socket connects.
 /// This channel is used by the tickets realtime listener — it is NOT the
@@ -32,7 +55,7 @@ final xanoNotificationChannelProvider = Provider<void>((ref) {
   final profile = bootstrapAsync.valueOrNull?.userProfile;
 
   if (socketConnected && profile != null) {
-    final hotelId = profile.hotelDetails?.hotel.id ?? '';
+    final hotelId = profile.hotelDetails.hotel.id;
     final userId = profile.id;
 
     if (hotelId.isNotEmpty && userId.isNotEmpty) {
@@ -56,24 +79,43 @@ final xanoNotificationChannelProvider = Provider<void>((ref) {
 final xanoHubNotificationsListenerProvider = Provider<void>((ref) {
   final socket = ref.watch(xanoSocketServiceProvider);
 
-  // Debounce ticket-list refreshes so a burst of hub_notification events
-  // collapses into a single request per tab + counts call.
+  // All five paged tabs the user can land on.
+  const allTabs = <TicketsTab>[
+    TicketsTab.incoming,
+    TicketsTab.todayInProgress,
+    TicketsTab.overdue,
+    TicketsTab.todayDone,
+    TicketsTab.backlog,
+  ];
+
+  // Debounce realtime-driven refreshes so a burst of hub events collapses
+  // into a single per-tab refresh.
   Timer? ticketsRefreshDebounce;
   void scheduleTicketsRefresh() {
     ticketsRefreshDebounce?.cancel();
     ticketsRefreshDebounce = Timer(const Duration(milliseconds: 600), () {
-      // Incoming, In-Progress (+ overdue, shares endpoint), Done today,
-      // Done history, and Backlog — the four ticket tabs the user sees.
-      const tabs = <TicketsTab>[
-        TicketsTab.incoming,
-        TicketsTab.todayInProgress,
-        TicketsTab.overdue,
-        TicketsTab.todayDone,
-        TicketsTab.backlog,
-      ];
-      for (final tab in tabs) {
-        ref.read(ticketsPagedProvider(specForTab(tab)).notifier).refresh();
+      // Resolve the user's currently-visible main tab. We only eagerly
+      // refresh the paged provider(s) backing that tab — the other tabs
+      // are marked stale so they refetch when (and only when) the user
+      // navigates to them via the existing `refreshIfStale` tab-switch
+      // hook. This replaces the previous fan-out that refreshed all five
+      // tabs on every event regardless of visibility.
+      final mainTab = ref.read(ticketsMainTabProvider);
+      final visibleTabs = _visiblePagedTabsFor(mainTab);
+
+      for (final tab in allTabs) {
+        final notifier = ref.read(
+          ticketsPagedProvider(specForTab(tab)).notifier,
+        );
+        if (visibleTabs.contains(tab)) {
+          // ignore: discarded_futures
+          notifier.refresh();
+        } else {
+          notifier.markStale();
+        }
       }
+      // Counts are visible on the tab bar regardless of which tab is open,
+      // so they always refresh.
       ref.invalidate(dashboardCountsControllerProvider);
     });
   }
@@ -149,7 +191,6 @@ void _handleNotificationCreated(Ref ref, Map<String, dynamic> payload) {
 }
 
 void _handleNotificationRead(Ref ref, Map<String, dynamic> payload) {
-  final notificationId = payload['notification_event_id'] as String?;
   final readByUserId = payload['read_by_hotel_user_id'] as String?;
 
   if (readByUserId == null) return;

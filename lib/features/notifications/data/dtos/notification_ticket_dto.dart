@@ -3,6 +3,7 @@
 ///
 /// Field names match the exact Xano API response keys confirmed from
 /// the production payload (2026-05-28).
+library;
 
 // ─── Single event ────────────────────────────────────────────────────────────
 

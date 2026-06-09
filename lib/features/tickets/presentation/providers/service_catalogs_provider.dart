@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
@@ -55,7 +54,7 @@ class ServiceCatalogsNotifier extends AutoDisposeAsyncNotifier<ServiceCatalogsSt
       final catalogs = await repo.fetchServiceCatalogs(hotelId: hotelId);
       //debugPrint('[ServiceCatalogsNotifier] Fetched ${catalogs.length} catalogs');
       return ServiceCatalogsState(catalogs: catalogs);
-    } catch (e, st) {
+    } catch (e) {
       //debugPrint('[ServiceCatalogsNotifier] Error fetching catalogs: $e');
       //debugPrint('[ServiceCatalogsNotifier] Stack trace: $st');
       return ServiceCatalogsState(error: e.toString());

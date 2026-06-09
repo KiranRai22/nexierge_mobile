@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/card_theme.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -182,7 +183,7 @@ class _MoveToBacklogBottomSheetState extends State<MoveToBacklogBottomSheet> {
                             ),
                           )
                         : const Icon(LucideIcons.archive, size: 18),
-                    label: const Text('Confirm'),
+                    label: Text(context.l10n.confirm),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: c.buttonInverted,
                       foregroundColor: c.fgOnInverted,

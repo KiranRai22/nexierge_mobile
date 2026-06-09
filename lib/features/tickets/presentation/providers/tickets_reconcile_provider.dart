@@ -63,7 +63,9 @@ final ticketsReconcileProvider = Provider<void>((ref) {
 });
 
 void _reconcile(Ref ref, {required String reason}) {
-  if (kDebugMode) //debugPrint('[TicketsReconcile] reason=$reason → refresh');
+  if (kDebugMode) {
+    //debugPrint('[TicketsReconcile] reason=$reason → refresh');
+  }
   // V2: invalidate every paged ticket provider so each v2 tab refetches
   // from its server-curated endpoint. Counts likewise invalidated.
   for (final tab in kAllTicketsTabs) {

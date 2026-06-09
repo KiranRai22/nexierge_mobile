@@ -217,25 +217,3 @@ class _Option extends StatelessWidget {
   }
 }
 
-class _HintFooter extends StatelessWidget {
-  const _HintFooter();
-  @override
-  Widget build(BuildContext context) {
-    final c = context.themeColors;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, size: 16, color: c.fgMuted),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              context.l10n.createHint,
-              style: TypographyManager.bodySmall.copyWith(color: c.fgMuted),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

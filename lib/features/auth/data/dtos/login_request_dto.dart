@@ -1,3 +1,8 @@
+// Field names mirror the backend JSON shape (snake_case) so the DTO can
+// be (de)serialized directly without a mapping layer. Disable the
+// camelCase identifier lint at the file level.
+// ignore_for_file: non_constant_identifier_names
+
 /// JSON shape sent to `POST /auth/login/password_login`.
 class EmailLoginRequestDto {
   final String email;

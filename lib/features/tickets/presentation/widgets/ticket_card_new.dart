@@ -43,18 +43,6 @@ String _departmentLabel(BuildContext context, Ticket ticket) {
   return ticket.department.label(context.l10n);
 }
 
-/// Parses `#RRGGBB` (or `RRGGBB`) into a [Color]. Returns null on bad input.
-Color? _parseHexColor(String? hex) {
-  if (hex == null || hex.isEmpty) return null;
-  var cleaned = hex.trim();
-  if (cleaned.startsWith('#')) cleaned = cleaned.substring(1);
-  if (cleaned.length == 6) cleaned = 'FF$cleaned';
-  if (cleaned.length != 8) return null;
-  final value = int.tryParse(cleaned, radix: 16);
-  if (value == null) return null;
-  return Color(value);
-}
-
 /// Quick-and-dirty currency formatter: USD/usd → `$12.34`, anything else
 /// returns `12.34 EUR`. Keeps the card free of intl plumbing for now.
 String _formatMoney(double amount, String currency) {
@@ -100,11 +88,9 @@ class TicketCardNew extends ConsumerWidget {
       borderRadius: BorderRadius.circular(16),
     );
     final decoration = isRecentlyChanged
-        ? (baseDecoration is BoxDecoration
-              ? baseDecoration.copyWith(
+        ? (baseDecoration.copyWith(
                   border: Border.all(color: context.appColors.fgSuccess, width: 2),
-                )
-              : baseDecoration)
+                ))
         : baseDecoration;
 
     // Only show shimmer effect for transitioning tickets
@@ -491,7 +477,7 @@ class _StatusPill extends StatelessWidget {
           bg = c.tagRedBg;
           fg = c.tagRedText;
         case TicketStatus.backlog:
-          label = 'Backlog';
+          label = s.subTabBacklog;
           bg = c.tagNeutralBg;
           fg = c.tagNeutralText;
       }
@@ -580,7 +566,7 @@ class _TimingRowState extends State<_TimingRow> {
     // Timer side
     final threshold = ticket.eta ?? ticket.dueAtWithGrace;
     final now = ServerClock.now();
-    final diff = threshold != null ? threshold.difference(now) : null;
+    final diff = threshold?.difference(now);
     final isOverdue = diff != null && diff.isNegative;
     final timerColor = isOverdue ? c.tagRedText : c.tagPurpleIcon;
     final timerLabel = isOverdue ? 'Overdue by' : 'Time left';
@@ -917,13 +903,12 @@ class _CatalogInnerBlock extends StatelessWidget {
 }
 
 class _RoundThumbnail extends StatelessWidget {
+  static const double size = 56;
   final String? imageUrl;
   final String emoji;
-  final double size;
   const _RoundThumbnail({
     required this.imageUrl,
     required this.emoji,
-    this.size = 40,
   });
 
   @override
@@ -1275,40 +1260,8 @@ class _ActionButton extends StatelessWidget {
     );
   }
 
-  Widget _buildAcceptButton(AppColors c, VoidCallback? onTap) {
-    return Builder(
-      builder: (context) {
-        final s = context.l10n;
-        return GestureDetector(
-          onTap: tapSound(onTap),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: c.tagPurpleIcon,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(LucideIcons.check, size: 14, color: context.appColors.fgOnBrand),
-                const SizedBox(width: 4),
-                Text(
-                  s.actionAcceptShort,
-                  style: TypographyManager.labelSmall.copyWith(
-                    color: context.appColors.fgOnBrand,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   // [ACCEPT_AND_START_FLOW] New button for NEW-status cards. Replaces
-  // _buildAcceptButton in the build switch.
+  // the old `_buildAcceptButton` (removed) in the build switch.
   Widget _buildAcceptAndStartButton(AppColors c, VoidCallback? onTap) {
     return Builder(
       builder: (context) {
@@ -1342,7 +1295,8 @@ class _ActionButton extends StatelessWidget {
   }
 
   Widget _buildStartWorkButton(AppColors c, VoidCallback? onTap) {
-    return GestureDetector(
+    return Builder(
+      builder: (context) => GestureDetector(
       onTap: tapSound(onTap),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1356,7 +1310,7 @@ class _ActionButton extends StatelessWidget {
             Icon(LucideIcons.play, size: 14, color: c.fgOnBrand),
             const SizedBox(width: 4),
             Text(
-              'Start Work',
+              context.l10n.ticketActionStartWork,
               style: TypographyManager.labelSmall.copyWith(
                 color: c.fgOnBrand,
                 fontWeight: FontWeight.w600,
@@ -1365,6 +1319,7 @@ class _ActionButton extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 

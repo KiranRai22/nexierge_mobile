@@ -54,7 +54,7 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
       final tickets = await _repo.fetchMyTickets(hotelId: hotelId);
       //debugPrint('[MyTicketsNotifier] fetched ${tickets.length} tickets');
       return MyTicketsState(all: tickets, isLoading: false);
-    } catch (e, st) {
+    } catch (e) {
       //debugPrint('[MyTicketsNotifier] fetch error: $e');
       //debugPrint('$st');
       return MyTicketsState(error: e.toString());
@@ -168,17 +168,9 @@ class MyTicketsNotifier extends AsyncNotifier<MyTicketsState> {
       ),
     );
 
-    if (kDebugMode) {
-      final s = state.valueOrNull!;
-      //debugPrint(
-      //   '[MyTicketsNotifier] upsert applied: '
-      //   'todayAfter=${s.todayAllCount} '
-      //   'todayAccepted=${s.todayAcceptedCount} '
-      //   'todayInProgress=${s.todayInProgressCount} '
-      //   'todayOverdue=${s.todayOverdueCount} '
-      //   'incomingAfter=${s.incomingCount}',
-      // );
-    }
+    // Debug-only state snapshot block removed; the debugPrint it served was
+    // long-commented out. Re-add via `final s = state.valueOrNull!;` if you
+    // need to inspect counts after an upsert.
 
     if (isBrandNew) _scheduleFreshClear(ticket.id);
     if (isMeaningful) {

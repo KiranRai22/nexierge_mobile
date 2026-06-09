@@ -1024,7 +1024,7 @@ Widget _statusPill(BuildContext context, Ticket ticket) {
       case TicketStatus.onHold:
         return s.ticketStatusBadgeOnHold;
       case TicketStatus.backlog:
-        return 'Backlog';
+        return s.subTabBacklog;
     }
   }
 

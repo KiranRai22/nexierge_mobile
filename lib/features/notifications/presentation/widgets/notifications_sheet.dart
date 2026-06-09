@@ -752,15 +752,14 @@ class _NotificationCardSkeleton extends StatelessWidget {
 }
 
 class _NotificationListSkeleton extends StatelessWidget {
-  final int count;
-  const _NotificationListSkeleton({this.count = 6});
+  const _NotificationListSkeleton();
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: count,
+      itemCount: 6,
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, __) => const _NotificationCardSkeleton(),
     );

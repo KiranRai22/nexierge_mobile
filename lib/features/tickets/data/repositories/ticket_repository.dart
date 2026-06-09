@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../data/datasources/ticket_remote_data_source.dart';
 import '../../domain/entities/my_ticket.dart';
 import '../../domain/entities/service_catalog.dart';
 import '../../domain/entities/ticket_detail.dart';
 import '../../domain/entities/ticket_form_options.dart';
+import '../../domain/models/catalog.dart';
 
 /// Identifies which v2 list endpoint to call. The repo maps each to the
 /// matching `getTicketsV2*` data-source method.
@@ -149,6 +151,16 @@ abstract class TicketRepository {
     int? createdAtEndDate,
   });
 
+  /// Last-known-good page-1 snapshot for [tab] under [hotelId], read from
+  /// the on-disk cache the data source writes after each successful default
+  /// fetch. Returns null when nothing is cached yet. Filters/pagination
+  /// other than the default cold-start view are intentionally never
+  /// cached so the cache footprint stays small.
+  Future<TicketsPageResult?> cachedTicketsV2Page({
+    required TicketsV2Tab tab,
+    required String hotelId,
+  });
+
   /// POST /ticketsv2/start/{id}. [dueAt] is sent as UTC ISO-8601.
   Future<void> startTicketV2({
     required String ticketId,
@@ -196,8 +208,12 @@ abstract class TicketRepository {
   /// Submits a catalog (paid) order via
   /// `POST /service_catalogs/user_app/order/create`. Returns the created
   /// ticket id (may be empty when the backend doesn't echo one).
+  ///
+  /// Takes a domain [CatalogOrderSubmission] — the wire DTO is assembled
+  /// inside the implementation so the presentation layer never has to
+  /// reach for `CreateCatalogOrderRequestDto`.
   Future<String> createCatalogOrder({
-    required CreateCatalogOrderRequestDto request,
+    required CatalogOrderSubmission submission,
   });
 
   /// Get all service catalogs for a hotel
@@ -546,9 +562,10 @@ class _TicketRepositoryImpl implements TicketRepository {
 
   @override
   Future<String> createCatalogOrder({
-    required CreateCatalogOrderRequestDto request,
+    required CatalogOrderSubmission submission,
   }) async {
     try {
+      final request = _buildCatalogOrderRequest(submission);
       final dto = await _remote.createCatalogOrder(request: request);
       if (!dto.success) {
         throw Exception(dto.message ?? 'Catalog order create failed');
@@ -559,6 +576,94 @@ class _TicketRepositoryImpl implements TicketRepository {
     } catch (e) {
       throw ErrorHandler.handle(e);
     }
+  }
+
+  /// Translates a domain [CatalogOrderSubmission] into the wire-shape
+  /// [CreateCatalogOrderRequestDto]. Lives in the repo (not the
+  /// presentation controller) so the API contract stays an
+  /// implementation detail of the data layer.
+  ///
+  /// Quantity is encoded as repeated item rows: backend treats the
+  /// `quantity` semantic via row multiplicity (no `quantity` field on
+  /// the DTO). Both no-option collapsed lines and option-bearing
+  /// lines with `quantity > 1` (via the in-cart stepper) flow through
+  /// the same loop here so the two paths stay consistent.
+  CreateCatalogOrderRequestDto _buildCatalogOrderRequest(
+    CatalogOrderSubmission s,
+  ) {
+    final items = <CreateOrderItemDto>[];
+
+    for (final line in s.cart) {
+      final groups = <CreateOrderModifierGroupDto>[];
+
+      for (final group in line.item.optionGroups) {
+        final mods = <CreateOrderModifierDto>[];
+
+        if (group.type == OptionGroupType.singleSelect) {
+          final picked = line.selectedOptions[group.id];
+          if (picked != null) {
+            mods.add(
+              CreateOrderModifierDto(
+                modifierId: picked.id,
+                modifierName: picked.name,
+                modifierQuantity: 1,
+                modifierPrice: picked.priceDelta,
+              ),
+            );
+          }
+        } else {
+          // multiAddOn: one entry per non-zero stepper.
+          for (final option in group.options) {
+            final qty = line.selectedAddOns['${group.id}:${option.id}'] ?? 0;
+            if (qty <= 0) continue;
+            mods.add(
+              CreateOrderModifierDto(
+                modifierId: option.id,
+                modifierName: option.name,
+                modifierQuantity: qty,
+                modifierPrice: option.priceDelta,
+              ),
+            );
+          }
+        }
+
+        if (mods.isEmpty) continue;
+
+        groups.add(
+          CreateOrderModifierGroupDto(
+            modifierGroupId: group.id,
+            modifierGroupName: group.name,
+            modifiers: mods,
+          ),
+        );
+      }
+
+      for (var i = 0; i < line.quantity; i++) {
+        items.add(
+          CreateOrderItemDto(
+            itemId: line.item.id,
+            specialInstructions: '',
+            modifierGroups: groups,
+          ),
+        );
+      }
+    }
+
+    return CreateCatalogOrderRequestDto(
+      hotelId: s.hotelId,
+      // Empty strings allowed — walk-in / unattended orders.
+      guestStayId: s.guestStayId,
+      contactId: s.contactId,
+      serviceCatalogsId: s.catalogId,
+      notes: s.notes.trim(),
+      subTotal: s.subTotal,
+      // Catalog model carries no tax/sla fields yet — server will compute
+      // or default. Tracking id is intentionally empty per current spec.
+      tax: 0,
+      slaTargetMinutes: 0,
+      trackingId: '',
+      items: items,
+    );
   }
 
   @override
@@ -585,6 +690,7 @@ class _TicketRepositoryImpl implements TicketRepository {
     String? notes,
   }) async {
     try {
+      // ignore: deprecated_member_use_from_same_package
       await _remote.acknowledgeTicket(
         ticketId: ticketId,
         dueAt: dueAt,
@@ -604,6 +710,7 @@ class _TicketRepositoryImpl implements TicketRepository {
     String? notes,
   }) async {
     try {
+      // ignore: deprecated_member_use_from_same_package
       await _remote.acknowledgeAndStartTicket(
         ticketId: ticketId,
         dueAt: dueAt,
@@ -810,6 +917,37 @@ class _TicketRepositoryImpl implements TicketRepository {
       throw mapDioError(e);
     } catch (e) {
       throw ErrorHandler.handle(e);
+    }
+  }
+
+  @override
+  Future<TicketsPageResult?> cachedTicketsV2Page({
+    required TicketsV2Tab tab,
+    required String hotelId,
+  }) async {
+    final dto = await _remote.getTicketsV2PageFromCache(
+      tabUrl: _v2TabUrl(tab),
+      hotelId: hotelId,
+    );
+    if (dto == null) return null;
+    return _mapTicketsPageDto(dto);
+  }
+
+  /// Maps a [TicketsV2Tab] back to its endpoint URL. Mirrors the dispatch
+  /// in [fetchTicketsV2Page] so the cache key the data source persists
+  /// under is symmetric to the one the cache read uses.
+  String _v2TabUrl(TicketsV2Tab tab) {
+    switch (tab) {
+      case TicketsV2Tab.incoming:
+        return APIEndpoints.ticketsV2New;
+      case TicketsV2Tab.backlog:
+        return APIEndpoints.ticketsV2Backlog;
+      case TicketsV2Tab.inProgress:
+        return APIEndpoints.ticketsV2InProgress;
+      case TicketsV2Tab.doneToday:
+        return APIEndpoints.ticketsV2DoneToday;
+      case TicketsV2Tab.doneHistory:
+        return APIEndpoints.ticketsV2DoneHistory;
     }
   }
 

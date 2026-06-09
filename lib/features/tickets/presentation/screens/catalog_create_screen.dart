@@ -145,7 +145,7 @@ class _ErrorView extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 64, color: context.appColors.fgError),
             const SizedBox(height: 16),
-            Text('Failed to load catalogs', style: TypographyManager.bodyLarge),
+            Text(s.catalogsLoadFailed, style: TypographyManager.bodyLarge),
             const SizedBox(height: 8),
             Text(
               error,

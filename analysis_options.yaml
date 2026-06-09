@@ -9,6 +9,14 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  # Generated `*.g.dart` / `*.freezed.dart` files (json_serializable etc.)
+  # ship private helpers we don't directly reference — and we'd never edit
+  # them by hand anyway, so analyzing them is pure noise.
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

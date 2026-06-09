@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/i18n/l10n_extension.dart';
 import '../../../../core/services/sound_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/typography_manager.dart';
@@ -162,7 +163,7 @@ class _ResetAcknowledgementBottomSheetState
                           ),
                         )
                       : const Icon(LucideIcons.rotateCcw, size: 18),
-                  label: const Text('Reset'),
+                  label: Text(context.l10n.ticketActionReset),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: c.tagRedIcon,
                     foregroundColor: context.appColors.fgOnBrand,

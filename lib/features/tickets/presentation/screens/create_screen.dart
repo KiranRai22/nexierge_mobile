@@ -460,7 +460,10 @@ class _CategoryChips extends StatelessWidget {
           for (final cat in categories) ...[
             const SizedBox(width: 6),
             _FilterChipItem(
-              label: cat,
+              // Render the localized "Other" label when the internal
+              // bucket key is the English literal — the key stays stable
+              // for filtering even though the display flips with locale.
+              label: cat == 'Other' ? s.categoryOther : cat,
               selected: selected == cat,
               onTap: () => onSelect(cat),
             ),

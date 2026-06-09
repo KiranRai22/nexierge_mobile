@@ -170,3 +170,86 @@ class CartLine {
     );
   }
 }
+
+/// A single line item submitted as part of a universal order — the
+/// minimal shape the service needs (id, display name, quantity). Lives
+/// alongside the catalog submission so both flows share one home.
+@immutable
+class UniversalOrderItem {
+  final String itemId;
+  final String itemName;
+  final int quantity;
+
+  const UniversalOrderItem({
+    required this.itemId,
+    required this.itemName,
+    required this.quantity,
+  });
+}
+
+/// Domain object handed to the universal service when submitting a
+/// universal-request order. Wraps the picked items + identifying ids so
+/// the wire DTO (`OrderItemDto` / `UniversalRequestOrderDto`) stays an
+/// implementation detail of the data layer.
+@immutable
+class UniversalOrderSubmission {
+  final String hotelId;
+  final String guestStayId;
+  final String contactId;
+
+  /// Free-form notes typed by the operator. Propagated to every line's
+  /// `guest_notes` field on the wire (matches existing semantics).
+  final String notes;
+
+  final List<UniversalOrderItem> items;
+
+  const UniversalOrderSubmission({
+    required this.hotelId,
+    required this.guestStayId,
+    required this.contactId,
+    required this.notes,
+    required this.items,
+  });
+}
+
+/// Domain object handed to the repository when submitting a catalog order.
+///
+/// Kept in the domain layer so the presentation controller never has to
+/// reach for `CreateCatalogOrderRequestDto` (a data-layer DTO). The repo
+/// translates this submission into the wire DTO internally — see
+/// `_TicketRepositoryImpl.createCatalogOrder`.
+@immutable
+class CatalogOrderSubmission {
+  /// Acting hotel (from the bootstrap profile).
+  final String hotelId;
+
+  /// Selected `service_catalogs` row.
+  final String catalogId;
+
+  /// `guest_stay_id` of the picked checked-in stay. Empty for walk-in.
+  final String guestStayId;
+
+  /// `contact_id` of the picked guest. Empty for walk-in.
+  final String contactId;
+
+  /// Configured cart at submit time — each line carries its own quantity,
+  /// selected single-select options, and add-on stepper counts.
+  final List<CartLine> cart;
+
+  /// Free-form notes typed by the operator on the details step.
+  final String notes;
+
+  /// Sub-total computed from the cart. The repo passes this through to
+  /// the API; backend may recompute server-side.
+  final double subTotal;
+
+  const CatalogOrderSubmission({
+    required this.hotelId,
+    required this.catalogId,
+    required this.guestStayId,
+    required this.contactId,
+    required this.cart,
+    required this.notes,
+    required this.subTotal,
+  });
+}

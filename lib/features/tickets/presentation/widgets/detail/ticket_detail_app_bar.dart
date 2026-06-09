@@ -180,7 +180,7 @@ class _StatusPill extends StatelessWidget {
         return (
           bg: c.tagNeutralBg,
           fg: c.tagNeutralText,
-          label: 'Backlog',
+          label: s.subTabBacklog,
         );
     }
   }

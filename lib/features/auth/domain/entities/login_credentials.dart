@@ -1,3 +1,8 @@
+// `fcm_token` / `employee_code` fields below mirror the backend JSON shape
+// (snake_case) so the entity stays trivially (de)serialisable. Disable the
+// camelCase identifier lint at the file level.
+// ignore_for_file: non_constant_identifier_names
+
 /// Login mode chosen on the screen. Exposed by the controller so the
 /// UI can preserve per-mode state across toggles (spec §4.1, §15.1).
 enum LoginMode { email, employeeCode }

@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nexierge/features/dashboard/data/datasources/dashboard_remote_data_source.dart';
 
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/services/realtime/xano_socket_service.dart';
 import '../../../auth/data/dtos/user_profile_dto.dart';

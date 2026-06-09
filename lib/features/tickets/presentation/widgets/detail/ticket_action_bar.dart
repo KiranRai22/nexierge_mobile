@@ -139,8 +139,9 @@ class _TicketActionBarState extends ConsumerState<TicketActionBar> {
                 .refresh();
             if (mounted) Navigator.of(context).pop();
           } catch (e) {
-            if (mounted)
+            if (mounted) {
               context.showFailure('Failed to move ticket to backlog');
+            }
           }
         });
       },

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
+import '../services/tickets_cache_store.dart';
 
 abstract class TicketRemoteDataSource {
   Future<TicketDetailDto> getTicketDetails({required String ticketId});
@@ -82,6 +85,17 @@ abstract class TicketRemoteDataSource {
   // Per-status list endpoints. Response shape == v1 [TicketsPageDto].
   // Common query: page, per_page, hotel_id (required); optional
   // source, department, ticket_type, created_at_start_date, created_at_end_date.
+
+  /// Last-known-good snapshot of a V2 page, persisted on the previous
+  /// successful fetch. Returns null when there is no cached entry. Used by
+  /// the paged notifier to paint the list instantly on cold start.
+  ///
+  /// [tabUrl] is the [APIEndpoints.ticketsV2X] constant that identifies
+  /// which endpoint the cache entry belongs to.
+  Future<TicketsPageDto?> getTicketsV2PageFromCache({
+    required String tabUrl,
+    required String hotelId,
+  });
 
   Future<TicketsPageDto> getTicketsV2New({
     required String hotelId,
@@ -207,7 +221,14 @@ abstract class TicketRemoteDataSource {
 
 class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
   final Dio _dio;
-  _TicketRemoteDataSourceImpl(this._dio);
+
+  /// Disk-backed snapshot store. The data source writes the raw JSON for
+  /// each successful V2 page fetch (default filters only — see
+  /// [_shouldCachePage]) so the next cold start can hydrate from it
+  /// instantly. Reads are exposed via [getTicketsV2PageFromCache].
+  final TicketsCacheStore _cache;
+
+  _TicketRemoteDataSourceImpl(this._dio, this._cache);
 
   @override
   Future<TicketDetailDto> getTicketDetails({required String ticketId}) async {
@@ -280,10 +301,12 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
 
     // Add optional filtering parameters
     if (departmentId != null) queryParameters['department'] = departmentId;
-    if (createdAtStartDate != null)
+    if (createdAtStartDate != null) {
       queryParameters['created_at_start_date'] = createdAtStartDate;
-    if (createdAtEndDate != null)
+    }
+    if (createdAtEndDate != null) {
       queryParameters['created_at_end_date'] = createdAtEndDate;
+    }
     if (ticketType != null) queryParameters['ticket_type'] = ticketType;
 
     try {
@@ -306,7 +329,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
       //debugPrint('[TicketRemoteDataSource] Response data: ${res.data}');
 
       return TicketsPageDto.fromJson(res.data as Map<String, dynamic>);
-    } on DioException catch (e) {
+    } on DioException {
       //debugPrint('[TicketRemoteDataSource] DioException: ${e.type}');
       //debugPrint('[TicketRemoteDataSource] DioException message: ${e.message}');
       //debugPrint(
@@ -410,7 +433,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     // );
     // `resolution_notes` is always present in the body — sent as `null`
     // when the caller has no summary to attach (e.g. reset to NEW).
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] changeTicketStatus response: ${res.data}',
     // );
@@ -450,7 +473,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: IN_PROGRESS -> CHANGE_DUE\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] changeDueTime response: ${res.data}',
     // );
@@ -490,6 +513,36 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
 
   // ─── Tickets V2 implementations ──────────────────────────────────────
 
+  /// True for the "default cold-start view": page 1, no filters. Only these
+  /// pages are persisted so the cache stays tiny and cold-start hydration
+  /// always lines up with what the user would have fetched anyway.
+  bool _shouldCachePage({
+    required int page,
+    required String? departmentId,
+    required String? source,
+    required String? ticketType,
+    required int? createdAtStartDate,
+    required int? createdAtEndDate,
+  }) {
+    return page == 1 &&
+        departmentId == null &&
+        source == null &&
+        ticketType == null &&
+        createdAtStartDate == null &&
+        createdAtEndDate == null;
+  }
+
+  /// Stable cache id per V2 tab — matches the [TicketsV2Tab] enum names
+  /// produced by the repository so the lookup is symmetric.
+  static String cacheTabId(String url) {
+    if (url == APIEndpoints.ticketsV2New) return 'v2.new';
+    if (url == APIEndpoints.ticketsV2Backlog) return 'v2.backlog';
+    if (url == APIEndpoints.ticketsV2InProgress) return 'v2.in_progress';
+    if (url == APIEndpoints.ticketsV2DoneToday) return 'v2.done_today';
+    if (url == APIEndpoints.ticketsV2DoneHistory) return 'v2.done_history';
+    return 'v2.unknown';
+  }
+
   Future<TicketsPageDto> _fetchTicketsV2Page({
     required String url,
     required String hotelId,
@@ -509,30 +562,86 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     if (departmentId != null) q['department'] = departmentId;
     if (source != null) q['source'] = source;
     if (ticketType != null) q['ticket_type'] = ticketType;
-    if (createdAtStartDate != null)
+    if (createdAtStartDate != null) {
       q['created_at_start_date'] = createdAtStartDate;
+    }
     if (createdAtEndDate != null) q['created_at_end_date'] = createdAtEndDate;
 
     debugPrint('[v2 fetch] GET $url params=$q');
     final res = await _dio.get(url, queryParameters: q);
     debugPrint('[v2 fetch] status=${res.statusCode} dataType=${res.data?.runtimeType}');
     final raw = res.data;
+
+    // Normalise the response shape into the envelope `TicketsPageDto.fromJson`
+    // expects. We persist the normalised map (not the raw envelope) so the
+    // hydrate path can use the exact same parser without branching.
+    final Map<String, dynamic> envelope;
     if (raw is Map<String, dynamic>) {
-      return TicketsPageDto.fromJson(raw);
-    }
-    if (raw is List) {
-      // Endpoint returned a bare array — wrap into the standard envelope shape.
-      return TicketsPageDto.fromJson({
+      envelope = raw;
+    } else if (raw is List) {
+      envelope = <String, dynamic>{
         'items': raw,
         'itemsTotal': raw.length,
         'curPage': page,
         'nextPage': null,
-      });
+      };
+    } else {
+      throw AppException(
+        type: AppErrorType.serverError,
+        overrideMessage: 'Unexpected response type: ${raw?.runtimeType}',
+      );
     }
-    throw AppException(
-      type: AppErrorType.serverError,
-      overrideMessage: 'Unexpected response type: ${raw?.runtimeType}',
+
+    final dto = TicketsPageDto.fromJson(envelope);
+
+    // Fire-and-forget cache write — only the default cold-start view is
+    // persisted (page 1, no filters) so cache stays small and matches
+    // what hydrate-on-launch can use directly.
+    if (_shouldCachePage(
+      page: page,
+      departmentId: departmentId,
+      source: source,
+      ticketType: ticketType,
+      createdAtStartDate: createdAtStartDate,
+      createdAtEndDate: createdAtEndDate,
+    )) {
+      unawaited(
+        _cache.writeJsonMap(
+          TicketsCacheStore.pageKey(tab: cacheTabId(url), hotelId: hotelId),
+          envelope,
+        ),
+      );
+    }
+
+    return dto;
+  }
+
+  /// Reads the most-recently-persisted V2 page snapshot for `(tab, hotelId)`
+  /// off disk and re-parses it through [TicketsPageDto.fromJson]. Returns
+  /// null when there is no cached entry, when the schema version has
+  /// rolled over, or when the persisted blob fails to decode.
+  ///
+  /// Used by the paged notifier on cold start to paint last-known-good
+  /// data while the live fetch completes in the background.
+  @override
+  Future<TicketsPageDto?> getTicketsV2PageFromCache({
+    required String tabUrl,
+    required String hotelId,
+  }) async {
+    final key = TicketsCacheStore.pageKey(
+      tab: cacheTabId(tabUrl),
+      hotelId: hotelId,
     );
+    final envelope = await _cache.readJsonMap(key);
+    if (envelope == null) return null;
+    try {
+      return TicketsPageDto.fromJson(envelope);
+    } catch (_) {
+      // Parser threw — schema drift the version bump didn't catch. Drop the
+      // entry so we don't keep retrying it.
+      await _cache.invalidate(key);
+      return null;
+    }
   }
 
   @override
@@ -659,7 +768,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: INCOMING -> IN_PROGRESS\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] startTicketV2 response: ${res.data}',
     // );
@@ -685,7 +794,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: IN_PROGRESS -> DONE\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] completeTicketV2 response: ${res.data}',
     // );
@@ -705,7 +814,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: BACKLOG -> IN_PROGRESS\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] moveToInProgressV2 response: ${res.data}',
     // );
@@ -725,7 +834,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: -> BACKLOG\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] moveToBacklogV2 response: ${res.data}',
     // );
@@ -752,7 +861,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: IN_PROGRESS -> CHANGE_DUE\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] addTimeV2 response: ${res.data}',
     // );
@@ -772,7 +881,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: IN_PROGRESS -> RESET\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] resetAcknowledgeV2 response: ${res.data}',
     // );
@@ -792,7 +901,7 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
     //   '  Action: -> CANCELED\n'
     //   '  Payload: $payload',
     // );
-    final res = await _dio.post(url, data: payload);
+    await _dio.post(url, data: payload);
     //debugPrint(
     //   '[TicketRemoteDataSource] [API] cancelTicketV2 response: ${res.data}',
     // );
@@ -828,7 +937,8 @@ class _TicketRemoteDataSourceImpl implements TicketRemoteDataSource {
 
 final ticketRemoteDataSourceProvider = Provider<TicketRemoteDataSource>((ref) {
   final dio = ref.watch(authedDioProvider);
-  return _TicketRemoteDataSourceImpl(dio);
+  final cache = ref.watch(ticketsCacheStoreProvider);
+  return _TicketRemoteDataSourceImpl(dio, cache);
 });
 
 /// Wraps the `/tickets/add/get_departnents_and_rooms` response.

@@ -7,9 +7,8 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../../core/utils/string_utils.dart';
 import '../../../dashboard/presentation/providers/dashboard_bootstrap_controller.dart';
-import '../../domain/entities/checked_in_guest_stay.dart';
-import '../../data/datasources/ticket_remote_data_source.dart';
 import '../../data/repositories/ticket_repository.dart';
+import '../../domain/entities/checked_in_guest_stay.dart';
 import '../../domain/models/catalog.dart';
 import '../../domain/models/ticket.dart';
 import 'my_tickets_notifier.dart';
@@ -307,17 +306,13 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
               .hotel
               .id ??
           '';
-      final request = _buildCatalogOrderRequest(hotelId);
-      // Per user request: print the full payload before firing the API.
-      // //debugPrint(
-      //   '[CatalogDraftController] createCatalogOrder payload: ${request.toJson()}',
-      // );
+      final submission = _buildSubmission(hotelId);
 
       final repo = ref.read(ticketRepositoryProvider);
-      
+
       // First attempt
       try {
-        final ticketId = await repo.createCatalogOrder(request: request);
+        final ticketId = await repo.createCatalogOrder(submission: submission);
         // Refresh all ticket tabs as a safety net
         // ignore: discarded_futures
         ref.read(myTicketsNotifierProvider.notifier).refresh();
@@ -328,14 +323,14 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
           rethrow;
         }
       }
-      
+
       // Notify about retry attempt
       //debugPrint('[CatalogDraftController] First attempt failed with timeout, retrying...');
       onRetryMessage?.call('Ticket creation failed. Attempting to create again....');
-      
+
       // Second attempt (immediate retry)
       try {
-        final ticketId = await repo.createCatalogOrder(request: request);
+        final ticketId = await repo.createCatalogOrder(submission: submission);
         // Refresh all ticket tabs as a safety net
         // ignore: discarded_futures
         ref.read(myTicketsNotifierProvider.notifier).refresh();
@@ -385,87 +380,20 @@ class CatalogDraftController extends AutoDisposeNotifier<CatalogDraftState> {
     }
   }
 
-  /// Build the request body matching the API spec exactly. Single-select
-  /// modifier groups send `modifier_quantity = 1`; multi-add-on groups
-  /// send the stepper count. Empty groups are skipped.
-  CreateCatalogOrderRequestDto _buildCatalogOrderRequest(String hotelId) {
+  /// Assembles a [CatalogOrderSubmission] from the current draft state.
+  /// The wire DTO is built inside the repository — see
+  /// `_TicketRepositoryImpl._buildCatalogOrderRequest`.
+  CatalogOrderSubmission _buildSubmission(String hotelId) {
     final catalog = state.catalog!;
-    final items = <CreateOrderItemDto>[];
-
-    for (final line in state.cart) {
-      final groups = <CreateOrderModifierGroupDto>[];
-
-      for (final group in line.item.optionGroups) {
-        final mods = <CreateOrderModifierDto>[];
-
-        if (group.type == OptionGroupType.singleSelect) {
-          final picked = line.selectedOptions[group.id];
-          if (picked != null) {
-            mods.add(
-              CreateOrderModifierDto(
-                modifierId: picked.id,
-                modifierName: picked.name,
-                modifierQuantity: 1,
-                modifierPrice: picked.priceDelta,
-              ),
-            );
-          }
-        } else {
-          // multiAddOn: one entry per non-zero stepper.
-          for (final option in group.options) {
-            final qty = line.selectedAddOns['${group.id}:${option.id}'] ?? 0;
-            if (qty <= 0) continue;
-            mods.add(
-              CreateOrderModifierDto(
-                modifierId: option.id,
-                modifierName: option.name,
-                modifierQuantity: qty,
-                modifierPrice: option.priceDelta,
-              ),
-            );
-          }
-        }
-
-        if (mods.isEmpty) continue;
-
-        groups.add(
-          CreateOrderModifierGroupDto(
-            modifierGroupId: group.id,
-            modifierGroupName: group.name,
-            modifiers: mods,
-          ),
-        );
-      }
-
-      // Quantity is encoded as repeated item rows. Backend treats the
-      // `quantity` semantic via row multiplicity (no `quantity` field on
-      // the DTO). This keeps no-option collapsed lines and option-bearing
-      // lines with quantity > 1 (via the in-cart stepper) consistent.
-      for (var i = 0; i < line.quantity; i++) {
-        items.add(
-          CreateOrderItemDto(
-            itemId: line.item.id,
-            specialInstructions: '',
-            modifierGroups: groups,
-          ),
-        );
-      }
-    }
-
-    return CreateCatalogOrderRequestDto(
+    return CatalogOrderSubmission(
       hotelId: hotelId,
+      catalogId: catalog.id,
       // Empty strings allowed — walk-in / unattended orders.
       guestStayId: state.selectedRoomId ?? '',
       contactId: state.selectedContactId ?? '',
-      serviceCatalogsId: catalog.id,
-      notes: state.note.trim(),
+      cart: state.cart,
+      notes: state.note,
       subTotal: state.total,
-      // Catalog model carries no tax/sla fields yet — server will compute
-      // or default. Tracking id is intentionally empty per current spec.
-      tax: 0,
-      slaTargetMinutes: 0,
-      trackingId: '',
-      items: items,
     );
   }
 }

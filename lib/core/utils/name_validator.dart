@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 
 /// Utility class for name validation and formatting
 class NameValidator {
