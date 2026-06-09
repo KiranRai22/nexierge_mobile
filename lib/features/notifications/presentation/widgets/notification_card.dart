@@ -171,6 +171,8 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.l10n;
+
     // Build "Name · Xm ago" label — name only, time only, or combined.
     String? readerLabel;
     if (readByName != null && readTimeAgo != null) {
@@ -179,6 +181,24 @@ class _Body extends StatelessWidget {
       readerLabel = readByName;
     } else if (readTimeAgo != null) {
       readerLabel = readTimeAgo;
+    }
+
+    // Compose the "Created by … · …" line shown below the subtitle. Each
+    // half degrades independently — if only one of `createdByName` /
+    // `source` is present we still render that half on its own; if
+    // neither is present the row is omitted entirely.
+    String? ownerLine;
+    final hasOwner = item.createdByName != null &&
+        item.createdByName!.trim().isNotEmpty;
+    final hasSource =
+        item.source != null && item.source!.trim().isNotEmpty;
+    if (hasOwner && hasSource) {
+      ownerLine =
+          '${s.notifCreatedByLabel}: ${item.createdByName} · ${humanizeSource(item.source!)}';
+    } else if (hasOwner) {
+      ownerLine = '${s.notifCreatedByLabel}: ${item.createdByName}';
+    } else if (hasSource) {
+      ownerLine = '${s.notifSourceLabel}: ${humanizeSource(item.source!)}';
     }
 
     return Column(
@@ -197,6 +217,15 @@ class _Body extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             item.subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TypographyManager.textMeta.copyWith(color: c.fgMuted),
+          ),
+        ],
+        if (ownerLine != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            ownerLine,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TypographyManager.textMeta.copyWith(color: c.fgMuted),

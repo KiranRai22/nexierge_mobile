@@ -73,16 +73,30 @@ class NotificationsSheet extends ConsumerWidget {
               const _Header(),
               const _TabBar(),
               const _InfoBar(),
+              // Body and footer share one slot via Stack so the footer
+              // *overlays* the bottom of the list (gradient backdrop fades
+              // the last items into the footer) instead of taking its own
+              // row in the Column and clipping the list short. The body's
+              // ListView has extra bottom padding so the last item can be
+              // scrolled clear of the footer.
               Expanded(
-                child: _Body(
-                  scrollController: scrollController,
-                  onOpenTicket: onOpenTicket,
+                child: Stack(
+                  children: [
+                    _Body(
+                      scrollController: scrollController,
+                      onOpenTicket: onOpenTicket,
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: _OpenTicketsFooter(
+                        onPressed: onOpenAllTickets,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              // Always render the footer — its own build decides whether to
-              // show itself (only on the Unread tab, and only when there
-              // are unread items to act on).
-              _OpenTicketsFooter(onPressed: onOpenAllTickets),
             ],
           ),
         );
@@ -114,37 +128,61 @@ class _OpenTicketsFooter extends ConsumerWidget {
     if (state.statusFilter != 'unread') return const SizedBox.shrink();
     if (state.items.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: c.bgBase,
-        border: Border(top: BorderSide(color: c.borderBase, width: 1)),
-      ),
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 40,
-          child: ElevatedButton.icon(
-            onPressed: tapSound(() {
-              Navigator.of(context).pop();
-              onPressed?.call();
-            }, SoundCategory.button),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 245, 175, 23),
-              foregroundColor: context.appColors.fgOnBrand,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+    // Backdrop: a top-to-bottom gradient that fades from fully
+    // transparent into a slightly-darker-than-sheet surface. Using
+    // `bgBasePressed` (one shade down from `bgBase` in both themes)
+    // gives the footer a visible "panel" feel that reads as a distinct
+    // surface in light mode without going so dark that it competes with
+    // the content above. In dark mode it lifts ~1 step from the sheet
+    // background — same relative contrast.
+    final backdrop = c.bgBasePressed;
+    return IgnorePointer(
+      ignoring: false,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              backdrop.withValues(alpha: 0.0),
+              backdrop.withValues(alpha: 0.85),
+              backdrop,
+            ],
+            stops: const [0.0, 0.45, 1.0],
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.only(bottom: 4),
+          child: Align(
+            alignment: Alignment.center,
+            child: TextButton.icon(
+              onPressed: tapSound(() {
+                Navigator.of(context).pop();
+                onPressed?.call();
+              }, SoundCategory.button),
+              style: TextButton.styleFrom(
+                foregroundColor: context.appColors.brandPrimary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-            ),
-            icon: const Icon(LucideIcons.ticket, size: 16),
-            label: Text(
-              s.notificationsOpenTickets,
-              style: TypographyManager.textLabel.copyWith(
-                color: context.appColors.fgOnBrand,
-                fontWeight: FontWeight.w600,
+              icon: Icon(
+                LucideIcons.ticket,
+                size: 16,
+                color: context.appColors.brandPrimary,
+              ),
+              label: Text(
+                s.notificationsOpenTickets,
+                style: TypographyManager.textLabel.copyWith(
+                  color: context.appColors.brandPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -435,7 +473,10 @@ class _BodyState extends ConsumerState<_Body> {
           ref.read(notificationInboxControllerProvider.notifier).refresh(),
       child: ListView.separated(
         controller: widget.scrollController,
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        // Generous bottom padding so the last items can scroll clear of
+        // the floating "Open Tickets" footer (which now overlays the
+        // list via a gradient backdrop instead of taking its own row).
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount:
             leadingCount + state.items.length + (state.isLoadingMore ? 10 : 0),
@@ -757,7 +798,7 @@ class _NotificationListSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: 6,
       separatorBuilder: (_, __) => const SizedBox(height: 10),

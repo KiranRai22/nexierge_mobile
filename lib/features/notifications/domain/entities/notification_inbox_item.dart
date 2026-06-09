@@ -86,6 +86,15 @@ class NotificationInboxItem {
   /// When this notification was marked as read (epoch ms). Null if unread.
   final DateTime? readAt;
 
+  /// Display name of the user who created the underlying ticket — surfaced
+  /// on the card below the subtitle when present.
+  final String? createdByName;
+
+  /// Channel the ticket came in through (e.g. "WhatsApp", "Guest app").
+  /// Rendered next to the creator name; raw snake_case values are
+  /// humanised at display time, see `humanizeSource`.
+  final String? source;
+
   const NotificationInboxItem({
     required this.id,
     required this.kind,
@@ -99,6 +108,8 @@ class NotificationInboxItem {
     this.routeHint,
     this.readByName,
     this.readAt,
+    this.createdByName,
+    this.source,
   });
 
   // ── Factory: build from Xano DTO ──────────────────────────────────────────
@@ -130,6 +141,8 @@ class NotificationInboxItem {
       readAt: dto.readAt != null
           ? DateTime.fromMillisecondsSinceEpoch(dto.readAt!)
           : null,
+      createdByName: dto.createdByName,
+      source: dto.source,
     );
   }
 
@@ -162,6 +175,44 @@ class NotificationInboxItem {
       routeHint: routeHint,
       readByName: readByName,
       readAt: readAt,
+      createdByName: createdByName,
+      source: source,
     );
   }
+}
+
+/// Humanise a raw source token from the API payload.
+///
+/// The backend hands the source through as either an already-formatted
+/// label ("WhatsApp", "Front Desk") or a snake_case key
+/// (`whatsapp_business`, `guest_app`, `walk_in`). Known keys map to nice
+/// labels; anything else is passed through with underscores → spaces and
+/// the first letter of each word capitalised.
+String humanizeSource(String raw) {
+  final lower = raw.trim().toLowerCase();
+  if (lower.isEmpty) return raw;
+  switch (lower) {
+    case 'whatsapp':
+    case 'whatsapp_business':
+      return 'WhatsApp';
+    case 'guest_app':
+    case 'guestapp':
+      return 'Guest app';
+    case 'front_desk':
+    case 'frontdesk':
+      return 'Front Desk';
+    case 'walk_in':
+    case 'walkin':
+      return 'Walk-in';
+    case 'phone':
+      return 'Phone';
+    case 'system':
+      return 'System';
+  }
+  // Fallback: title-case the snake_case key.
+  return raw
+      .split(RegExp(r'[_\s]+'))
+      .where((p) => p.isNotEmpty)
+      .map((p) => p[0].toUpperCase() + p.substring(1).toLowerCase())
+      .join(' ');
 }

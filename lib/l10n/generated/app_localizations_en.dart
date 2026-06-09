@@ -199,6 +199,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get catalogsLoadFailed => 'Failed to load catalogs';
 
   @override
+  String get notifCreatedByLabel => 'Created by';
+
+  @override
+  String get notifSourceLabel => 'Source';
+
+  @override
   String get catalogsEmpty => 'No service catalogs available';
 
   @override

@@ -452,6 +452,18 @@ abstract class AppLocalizations {
   /// **'Failed to load catalogs'**
   String get catalogsLoadFailed;
 
+  /// No description provided for @notifCreatedByLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Created by'**
+  String get notifCreatedByLabel;
+
+  /// No description provided for @notifSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get notifSourceLabel;
+
   /// No description provided for @catalogsEmpty.
   ///
   /// In en, this message translates to:

@@ -55,6 +55,16 @@ class NotificationTicketEventDto {
   /// Epoch ms when this notification was marked as read. Null if unread.
   final int? readAt;
 
+  /// Display name of the user who *created* the underlying ticket, if the
+  /// API payload carries it (best-effort across a few likely field paths).
+  /// Rendered as the "Created by" line on the card.
+  final String? createdByName;
+
+  /// Source channel the ticket came in through (e.g. "WhatsApp", "Guest
+  /// app", "Walk-in"). Best-effort parse from a few likely payload paths;
+  /// snake_case raw values are humanised at render time.
+  final String? source;
+
   const NotificationTicketEventDto({
     required this.id,
     required this.typeKey,
@@ -70,6 +80,8 @@ class NotificationTicketEventDto {
     this.typeLabelEs,
     this.readByName,
     this.readAt,
+    this.createdByName,
+    this.source,
   });
 
   factory NotificationTicketEventDto.fromJson(Map<String, dynamic> json) {
@@ -131,6 +143,40 @@ class NotificationTicketEventDto {
     final readAtValue = (json['read_at'] as num?)?.toInt() ??
         (json['acknowledged_at'] as num?)?.toInt();
 
+    // --- ticket owner + source ---
+    // The backend payload shape isn't formally pinned for these two fields,
+    // so we probe a handful of likely paths: `payload.display.*` first
+    // (matches the existing `secondary_text` convention), then top-level
+    // `payload.*`, then nested objects (`created_by.name`). If none yield
+    // a non-empty string the card row degrades gracefully and renders
+    // nothing.
+    String? stringFrom(Map<String, dynamic> map, List<String> keys) {
+      for (final k in keys) {
+        final v = map[k];
+        if (v is String && v.isNotEmpty) return v;
+      }
+      return null;
+    }
+
+    String? nameFromNested(Map<String, dynamic> map, String key) {
+      final nested = map[key];
+      if (nested is Map<String, dynamic>) {
+        final name = nested['name'] ?? nested['full_name'] ?? nested['display_name'];
+        if (name is String && name.isNotEmpty) return name;
+      }
+      return null;
+    }
+
+    final createdByNameValue = stringFrom(displayMap,
+            ['created_by_name', 'creator_name']) ??
+        stringFrom(payloadMap,
+            ['created_by_name', 'creator_name', 'createdByName']) ??
+        nameFromNested(payloadMap, 'created_by') ??
+        nameFromNested(payloadMap, 'creator');
+
+    final sourceValue = stringFrom(displayMap, ['source', 'source_label']) ??
+        stringFrom(payloadMap, ['source', 'ticket_source']);
+
     return NotificationTicketEventDto(
       id: json['id'] as String,
       typeKey: json['type_key'] as String? ?? '',
@@ -147,6 +193,8 @@ class NotificationTicketEventDto {
       typeLabelEs: labelEs,
       readByName: readByNameValue,
       readAt: readAtValue,
+      createdByName: createdByNameValue,
+      source: sourceValue,
     );
   }
 }

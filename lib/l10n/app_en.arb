@@ -65,6 +65,8 @@
   "refresh": "Refresh",
   "universalCatalogLoadError": "Couldn't load services. Pull to refresh or tap retry.",
   "catalogsLoadFailed": "Failed to load catalogs",
+  "notifCreatedByLabel": "Created by",
+  "notifSourceLabel": "Source",
   "catalogsEmpty": "No service catalogs available",
   "categoryOther": "Other",
   "termsAndConditions": "Terms & Conditions",

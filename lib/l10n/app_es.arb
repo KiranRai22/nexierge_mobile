@@ -65,6 +65,8 @@
   "refresh": "Actualizar",
   "universalCatalogLoadError": "No se pudieron cargar los servicios. Desliza para actualizar o toca reintentar.",
   "catalogsLoadFailed": "No se pudieron cargar los catálogos",
+  "notifCreatedByLabel": "Creado por",
+  "notifSourceLabel": "Origen",
   "catalogsEmpty": "No hay catálogos de servicio disponibles",
   "categoryOther": "Otros",
   "termsAndConditions": "Términos y Condiciones",
